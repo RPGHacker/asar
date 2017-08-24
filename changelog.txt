@@ -1,0 +1,156 @@
+v1.50 (by RPG Hacker):
+
+New features:
+- Added support for structs. Credits go to p4plus2: https://github.com/p4plus2/asar
+- Added API to Asar lib for getting information on all blocks of data written by Asar.
+- Added API to Asar lib for getting the mapper currently used by Asar.
+- Added support for ExLoROM and ExHiROM mappers.
+  NOTE: Based entirely on conversion tables I got from Ladida; don't know if these conversions
+  are actually correct.
+  Some features may not work as intended when using those mappers (such as freedata, for example),
+  but I can't verify this.
+- Added pushtable and pulltable commands, which let you back-up or restore the current character
+  table to the/from the stack.
+- Added "ext\notepad-plus-plus\syntax-highlighting.xml". This file can be imported into Notepad++
+  as a user-defined language to add syntax highlighting for Asar patches, featuring all commands
+  currently supported by Asar. By default, this syntax highlighting is enabled on all files with
+  an extension of .asm or .asr, but this can be customized via Notepad++.
+
+Bug fixes:
+- Lines starting with @ or ;@ that don't map to a recognized special command now only throw
+  warnings at best and no errors.
+- Rewrote code of tests a little to make them easier to execute and make them clean up their
+  own mess.
+- C# wrapper for Asar DLL was non-functional since it didn't specify a calling convention,
+  making it always lead to an exception in some scenarios.
+
+Notes:
+- Just like the last version, this version of Asar was built in MSVC rather than g++, but this
+  time I also updated the Asar DLL (which I had overlooked last time). I'm not sure if
+  Windows applications are compatible with DLLs that were built by a different compiler, so
+  if you're planning to use the DLL, this is something to watch out for. If you're planning
+  to use a compiler other than MSVC, I recommend just rebuilding the DLL from source
+  in whatever compiler you're using (or directly including the Asar library code in your
+  project).
+
+
+
+v1.40 (by RPG Hacker):
+
+New features:
+- readfile functions: readfile1(filename, offset), readfile2(filename, offset),
+  readfile3(filename, offset), readfile4(filename, offset) -
+  similiar to read1() etc. functions, except data is read from another file instead of from
+  the ROM (note that offset is a PC offset, not a SNES offset). You can pass an optional
+  third value which is returned if the read fails. These functions are primarily intended
+  for reading bytes from another file and then doing math with them. For example: reading
+  bytes from a Lunar Magic .pal file, converting them into a different format and then
+  writing them to the ROM as a table that can directly be DMA'd to CGRAM without further
+  conversions (all conversions happen at compile-time). As an additional bonus, all of those
+  functions cache any file passed to them (up to 16 simultanous files), which means that
+  multiple readfile() calls on the same file will keep the file open rather than repeatedly
+  opening and closing the file.
+- canreadfile functions: canreadfile1(filename, offset), canreadfile2(filename, offset),
+  canreadfile3(filename, offset), canreadfile4(filename, offset),
+  canreadfile(filename, offset, length) -
+  basically the readfile() equivalents of canread1() etc.
+- snestopc(address) and pctosnes(address) functions: for manually converting addresses (note
+  that those functions are dependent on the ROM's current mapping mode, so use them with
+  caution - chances are you will never need them at all).
+- max(a, b), min(a, b) and clamp(value, min, max) functions: max()/min() return the
+  maximum/minimum of two values, whereas clamp() makes sure that that value is >= min and
+  <= max.
+- safediv(dividend, divisor, exception) function: divides dividend by divisor, unless divisor
+  is 0, in which case exception is returned.
+- select(statement, true, false) function: if statement is 0, false is returned, in any other
+  case, true is returned. Basically, a mathematical version of "if/else". Please note that
+  unlike if/else blocks, function arguments in Asar are always evaluated before a function
+  returns. In other words: if you do select(1, 1/1, 1/0), Asar will throw a "division by zero"
+  error, even though the function would return 1/1. In this particular case, it's recommended
+  to simply use the safediv() function in place of a regular division.
+- not(value) function: returns 1 if value is 0 and 0 in any other case.
+- comparison functions: equal(a, b), notequal(a, b), less(a, b), lessequal(a, b), greater(a, b),
+  greaterequal(a, b) -
+  rather self-explanatory, return 1 if the respective comparison is true and 0 otherwise.
+  Primarily intended to be passed as statement to select() function.
+- logical functions: and(a, b), or(a, b), nand(a, b), nor(a, b), xor(a, b) -
+  also self-explanatory, return 1 if the respective logical operation is true and 0 otherwise.
+  Primarily intended to be passed as statement to select() function.
+- while loops: Added compile-time while loops to Asar. Those work similar to if conditionals,
+  with the difference that their blocks are assembled repeatedly until their condition becomes
+  false. For easier implementation and higher compatibility, while loops are terminated with
+  endifs, just like if conditionals. When using while loops, be careful not to cause an
+  infinite loop. Asar won't make any effort to detect those.
+- Multiline operator: You can now put "\" at the end of any line of source code and Asar will
+  append the next line to it. This is similar to putting a "," at the end of a line, with the
+  difference, that the "\" itself does not appear in the concatenated string, whereas the ","
+  would. This is useful to split long function definitions into multiplie lines, for example.
+  Note that all whitespace following the \ is ignored, whereas whitespace preceeding the \
+  isn't. Therefore  
+      db\
+ 	  $FF 	   
+  turns into  
+      db$FF 	
+  for example, whereas  
+      db \
+ 	  $FF 	   
+  turns into  
+      db $FF 	
+- double(num) print function: Can be passed to print to print a double variable with its
+  fractional part. Has a default precision of 5 decimal places, but can be passed an optional
+  second argument to override the precision.
+- round(num, precision) function: Rounds the double variable "num" to "precision" decimal
+  places. Pass 0 as precision to round to the nearest integer.
+
+Bug fixes:
+- Asar 1.37 officially suppported overloaded versions of read1() to read4(), but always threw
+  "Wrong number of parameters to function" errors when actually using those overloaded versions.
+- Asar 1.37 threw "Wrong number of parameters to function" error for function canread() when
+  passing 2 arguments to it, because it actually treated it as canread1() due to an internal
+  error in string comparison.
+- Using better double -> int conversions in some places - where "dd $FFFFFFFF" would assemble
+  to "00 00 00 80" ($80000000) in Asar 1.37, it now assembles to "FF FF FF FF"
+- Defines in elseif conditionals now get properly resolved.
+- The #= define operator now doesn't truncate its value when using "math round off", making
+  it possible to do double-precision math with it.
+- Asar 1.37 detected misplaced elses and endifs, but not misplaced elseifs.
+- Putting "@xkas : @asar 1.37" on the first line would previously lead to an error, whereas
+  putting "@asar 1.37 : @xkas" there would not. Both variations lead to an error message
+  now, since it really doesn't make much sense to use them together in any combination.
+- Special commands like @asar or @include could previously be used on the first line only
+  and needed to be chained with a : inbetween. They can now be used on any line as long as
+  no other command comes before or inbetween them.
+- Asar 1.37 fixed a bug in SuperFX compilation, but src/test/arch-superfx.asm was never
+  edited to acknowledge this fix, so the test always failed
+- Added different define operators (=, +=, :=, #=, ?=) to manual.txt. Those have been in
+  Asar for quite a while, but were never documented yet, although they can be quite useful.
+
+Notes:
+- This version of Asar was built in MSVC rather than g++, mainly because I already had that
+  installed and use Visual Studo as an IDE, anyways. Functionally, this shouldn't make any
+  difference, unless using Asar in unintended ways, where anything goes. I did build the
+  Linux version in g++ to confirm compatibility, though.
+  
+
+
+v1.37 (by Raidenthequick):
+
+New features:
+- New freespace argument added; a $xx byte that will search the ROM for contiguous sections
+  of that byte. Before it was hardcoded to only search for $00. Default is still $00 if
+  not supplied, so past patches should not be broken.
+- In line with this, autoclean was hardcoded to clean using $00. This was fixed also to clean
+  with the byte supplied by freecode, or $00 if not supplied.
+  
+Bug fixes:
+- Super FX short addressing fixed, and added error checking for valid short address.
+  For example, lms r0,($00D4) used to output 3D A0 D4, which is actually incorrect
+  because short addressing doubles the byte supplied by the instruction to give a range from
+  $0000-$01FE with just one byte (since Super FX reads words). This now outputs
+  3D A0 6A which is correct. Also, asar now throws an error for anything outside $0000-$01FE
+  as well as all odd-numbered addresses for both sms and lms instructions. (Odd-numbered
+  addresses cannot be accessed using short addressing due to the multiplying by 2.)
+- Super FX and SPC700 labels were broken if used within freespace. This has been fixed by
+  doing what 65816 does: mask the address with 0xFFFFFF because freespace addresses use
+  a high byte to indicate that they're freespace.
+- Fixed SA-1 mapping using wrong Super MMC banks range.

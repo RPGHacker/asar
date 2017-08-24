@@ -1,0 +1,7 @@
+cmake_minimum_required(VERSION 3.9.0)
+
+add_subdirectory(asar)
+
+add_subdirectory(asar-test)
+
+add_subdirectory(dll-test)
