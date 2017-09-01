@@ -842,4 +842,5 @@ void initmathcore()
 void deinitmathcore()
 {
 	userfunc.reset();
+	numuserfunc = 0;
 }

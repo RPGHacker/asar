@@ -163,14 +163,15 @@ EXPORT int asar_apiversion()
 	return 300;
 }
 
+void deinitmathcore();
+
 EXPORT bool asar_reset()
 {
 	resetdllstuff();
+	deinitmathcore();
 	pass=0;
 	return true;
 }
-
-void deinitmathcore();
 
 EXPORT void asar_close()
 {
@@ -190,6 +191,7 @@ EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int *
 	romdata=(unsigned char*)malloc(maxromsize);
 	memcpy((unsigned char*)romdata, romdata_, *romlen_);
 	resetdllstuff();
+	deinitmathcore();
 	romlen=*romlen_;
 	romlen_r=*romlen_;
 	try
