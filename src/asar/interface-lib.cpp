@@ -69,7 +69,7 @@ void fillerror(errordata& myerr, const char * type, const char * str)
 	myerr.filename=strdup(thisfilename);
 	myerr.line=thisline;
 	if (thisblock) myerr.block=strdup(thisblock);
-	else myerr.block="";
+	else myerr.block=strdup("");
 	myerr.rawerrdata=strdup(str);
 	myerr.fullerrdata=strdup(S getdecor()+type+str+(thisblock?(S" ["+thisblock+"]"):""));
 	myerr.callerline=callerline;
@@ -111,7 +111,7 @@ void reseteverything();
 
 void resetdllstuff()
 {
-#define free(x) free((void*)x)
+#define free(x) free((void*)x); x = NULL
 	for (int i=0;i<numprint;i++)
 	{
 		free(prints[i]);
@@ -134,7 +134,7 @@ void resetdllstuff()
 		free(warnings[i].filename);
 		free(warnings[i].rawerrdata);
 		free(warnings[i].fullerrdata);
-		free(errors[i].block);
+		free(warnings[i].block);
 	}
 	warnings.reset();
 	numwarn=0;
