@@ -11,7 +11,6 @@ cmake_minimum_required(VERSION 3.9.0)
 # stand-alone application and library interface
 
 macro(set_asar_shared_properties target)
-	set_target_properties(${target} PROPERTIES OUTPUT_NAME asar)
 	target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 	
 	if(MSVC)
@@ -39,7 +38,12 @@ macro(set_asar_shared_properties target)
 			string(REGEX REPLACE "/W[0-4]" "/Wall" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 		else()
 			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall")
-		endif()
+		endif()		
+		
+		# These certainly aren't worth a warning, though
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4514")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4710")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820")
 	else()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
 	endif()
@@ -49,12 +53,12 @@ endmacro()
 
 
 
-# Define stand-alone application
+# Add shared source files for Asar
+set(ASAR_SHARED_SOURCE_FILES "")
 
-add_executable(
-	asar-executable
+list(
+	APPEND ASAR_SHARED_SOURCE_FILES
 	
-	"${CMAKE_CURRENT_SOURCE_DIR}/interface-cli.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-65816.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-spc700.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-superfx.cpp"
@@ -65,7 +69,6 @@ add_executable(
 	"${CMAKE_CURRENT_SOURCE_DIR}/macro.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/math.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/mathlib.cpp"
 	
 	# Not required in here, but useful so they're add to your VS solution
 	"${CMAKE_CURRENT_SOURCE_DIR}/asar.h"
@@ -76,9 +79,60 @@ add_executable(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/scapegoat.hpp"
+	
+	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
 )
 
-set_asar_shared_properties(asar-executable)
+
+# Add resource files and other platform-specific source files
+set(ASAR_RESOURCE_FILES "")
+
+if(WIN32)
+	# Windos-specific files
+	list(
+		APPEND ASAR_SHARED_SOURCE_FILES
+		
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/file-helpers-win32.cpp"
+	)
+	
+	list(
+		APPEND ASAR_RESOURCE_FILES		
+	
+		"${CMAKE_CURRENT_SOURCE_DIR}/res/windows/asar.rc"
+	)
+elseif(UNIX)
+	# Linux-specific files
+	list(
+		APPEND ASAR_SHARED_SOURCE_FILES
+		
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/linux/file-helpers-linux.cpp"
+	)
+else()
+	# Files for any other platform
+	list(
+		APPEND ASAR_SHARED_SOURCE_FILES
+		
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/file-helpers-generic.cpp"
+	)
+endif()
+
+
+
+
+
+# Define stand-alone application
+
+add_executable(
+	asar-standalone
+	
+	"${CMAKE_CURRENT_SOURCE_DIR}/interface-cli.cpp"
+	
+	${ASAR_SHARED_SOURCE_FILES}	
+	${ASAR_RESOURCE_FILES}
+)
+
+set_asar_shared_properties(asar-standalone)
 
 
 
@@ -87,30 +141,11 @@ set_asar_shared_properties(asar-executable)
 # Define dynamic library
 
 add_library(
-	asar-dynamic-lib SHARED	
+	asar SHARED	
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/arch-65816.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/arch-spc700.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/arch-superfx.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/assembleblock.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/libcon.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/macro.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/math.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/mathlib.cpp"
 	
-	# Not required in here, but useful so they're add to your VS solution
-	"${CMAKE_CURRENT_SOURCE_DIR}/asar.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/assocarr.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/autoarray.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/libcon.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/libmisc.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/scapegoat.hpp"
+	${ASAR_SHARED_SOURCE_FILES}
 )
 
-set_asar_shared_properties(asar-dynamic-lib)
+set_asar_shared_properties(asar)

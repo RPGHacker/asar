@@ -110,7 +110,7 @@ void endmacro(bool insert)
 void callmacro(const char * data)
 {
 	int numcm=reallycalledmacros++;
-	macrodata * thisone;
+	macrodata * thismacro;
 	if (!confirmqpar(data)) merror("Broken macro usage");
 	string line=data;
 	clean(line);
@@ -119,26 +119,26 @@ void callmacro(const char * data)
 	*startpar=0;
 	startpar++;
 	if (!confirmname(line)) merror("Bad macro name");
-	if (!macros.find(line, thisone)) merror("Unknown macro");
+	if (!macros.find(line, thismacro)) merror("Unknown macro");
 	char * endpar=strqrchr(startpar, ')');
 	if (endpar[1]) merror("Broken macro usage");
 	*endpar=0;
 	autoptr<const char **> args;
 	int numargs=0;
 	if (*startpar) args=(const char**)qpsplit(strdup(startpar), ",", &numargs);
-	if (numargs!=thisone->numargs) merror("Wrong number of arguments to macro");
+	if (numargs!= thismacro->numargs) merror("Wrong number of arguments to macro");
 	macrorecursion++;
 	int startif=numif;
-	for (int i=0;i<thisone->numlines;i++)
+	for (int i=0;i<thismacro->numlines;i++)
 	{
 		try
 		{
-			thisfilename=thisone->fname;
-			thisline=thisone->startline+i+1;
+			thisfilename= thismacro->fname;
+			thisline= thismacro->startline+i+1;
 			thisblock=NULL;
 			string out;
 			string connectedline;
-			int skiplines = getconnectedlines<autoarray<string> >(thisone->lines, i, connectedline);
+			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, connectedline);
 			string intmp = connectedline;
 			for (char * in=intmp.str;*in;)
 			{
@@ -160,17 +160,17 @@ void callmacro(const char * data)
 					in++;
 					if (!confirmname(in)) error<errline>(0, "Broken macro contents");
 					bool found=false;
-					for (int i=0;thisone->arguments[i];i++)
+					for (int j=0;thismacro->arguments[j];j++)
 					{
-						if (!strcmp(in, thisone->arguments[i]))
+						if (!strcmp(in, thismacro->arguments[j]))
 						{
 							found=true;
-							if (args[i][0]=='"')
+							if (args[j][0]=='"')
 							{
-								string s=args[i];
+								string s=args[j];
 								out+=dequote(s.str);
 							}
-							else out+=args[i];
+							else out+=args[j];
 							break;
 						}
 					}
@@ -181,10 +181,10 @@ void callmacro(const char * data)
 			}
 			calledmacros = numcm;
 			int prevnumif = numif;
-			assembleline(thisone->fname, thisone->startline+i, out);
+			assembleline(thismacro->fname, thismacro->startline+i, out);
 			i += skiplines;
 			if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
-				i = whilestatus[numif].startline - thisone->startline - 1;
+				i = whilestatus[numif].startline - thismacro->startline - 1;
 		}
 		catch(errline&){}
 	}

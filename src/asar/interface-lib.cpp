@@ -1,9 +1,7 @@
 #include "asar.h"
 #include "scapegoat.hpp"
 #include "libstr.h"
-//#include "libcon.h"
 #include "libsmw.h"
-//#include <stdio.h>
 
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -184,11 +182,13 @@ EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int *
 	if (buflen!=maxromsize)
 	{
 		romdata_r=(unsigned char*)malloc(maxromsize);
-		memcpy((char*)romdata_r/*we just allocated this, it's safe to violate its const*/, romdata_, *romlen_);
+		memcpy((char*)romdata_r/*we just allocated this, it's safe to violate its const*/, romdata_, (size_t)*romlen_);
 	}
 	else romdata_r=(unsigned char*)romdata_;
 	romdata=(unsigned char*)malloc(maxromsize);
-	memcpy((unsigned char*)romdata, romdata_, *romlen_);
+	// RPG Hacker: Without this memset, freespace commands can (and probably will) fail.
+	memset((void*)romdata, 0, maxromsize);
+	memcpy((unsigned char*)romdata, romdata_, (size_t)*romlen_);
 	resetdllstuff();
 	romlen=*romlen_;
 	romlen_r=*romlen_;
@@ -213,7 +213,7 @@ EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int *
 	{
 		*romlen_ = romlen;
 	}
-	memcpy(romdata_, romdata, romlen);
+	memcpy(romdata_, romdata, (size_t)romlen);
 	free((unsigned char*)romdata);
 	return true;
 }
@@ -270,7 +270,7 @@ extern int numopcodes;
 EXPORT int asar_getlabelval(const char * name)
 {
 	if (!stricmp(name, ":$:opcodes:$:")) return numopcodes;//aaah, you found me
-	int i=labelval(&name);
+	int i=(int)labelval(&name);
 	if (*name || i<0) return -1;
 	else return i&0xFFFFFF;
 }

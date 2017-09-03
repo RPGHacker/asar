@@ -3,7 +3,6 @@
 #include "libsmw.h"
 #include "scapegoat.hpp"
 #include "autoarray.h"
-//#include <stdio.h>
 
 int arch=arch_65816;
 
@@ -78,9 +77,9 @@ inline void write1_65816(unsigned int num)
 		if (pcpos<0)
 		{
 			movinglabelspossible=true;
-			error(2, S"SNES address $"+hex6(realsnespos)+" doesn't map to ROM");
+			error(2, S"SNES address $"+hex6((unsigned int)realsnespos)+" doesn't map to ROM");
 		}
-		writeromdata_byte(pcpos, num);
+		writeromdata_byte(pcpos, (unsigned char)num);
 		if (pcpos>=romlen) romlen=pcpos+1;
 	}
 	step(1);
@@ -161,33 +160,33 @@ void write4(unsigned int num)
 }
 
 //these are NOT used by the math parser - see math.cpp for that
-int read1(int snespos)
+int read1(int insnespos)
 {
-	int addr=snestopc(snespos);
+	int addr=snestopc(insnespos);
 	if (addr<0 || addr+1>romlen_r) return -1;
 	return
 			 romdata_r[addr  ]     ;
 }
 
-int read2(int snespos)
+int read2(int insnespos)
 {
 	//return
 	//		read1(snespos  )    |
 	//		read1(snespos+1)<< 8;
-	int addr=snestopc(snespos);
+	int addr=snestopc(insnespos);
 	if (addr<0 || addr+2>romlen_r) return -1;
 	return
 			 romdata_r[addr  ]     |
 			(romdata_r[addr+1]<< 8);
 }
 
-int read3(int snespos)
+int read3(int insnespos)
 {
 	//return
 	//		read1(snespos  )    |
 	//		read1(snespos+1)<< 8|
 	//		read1(snespos+2)<<16;
-	int addr=snestopc(snespos);
+	int addr=snestopc(insnespos);
 	if (addr<0 || addr+3>romlen_r) return -1;
 	return
 			 romdata_r[addr  ]     |
@@ -395,11 +394,11 @@ void setlabel(string name, int loc=-1)
 			movinglabelspossible=true;
 			error(0, S"Label \""+name+"\" redefined");
 		}
-		labels.insert(name, loc);
+		labels.insert(name, (unsigned int)loc);
 	}
 	else if (pass==1)
 	{
-		labels.insert(name, loc);
+		labels.insert(name, (unsigned int)loc);
 	}
 	else if (pass==2)
 	{
@@ -716,7 +715,7 @@ void assembleblock(const char * block)
 		while (true)
 		{
 			if (!nextword[0]) error(0, S"Broken "+lower(word[0])+" command");
-			bool thiscond;
+			bool thiscond = false;
 			if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
 			{
 				if (nextword[0][0]=='!')
@@ -942,7 +941,7 @@ void assembleblock(const char * block)
 	}
 	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
 	{
-		int len;
+		int len = 0;
 		if (!confirmqpar(par)) error(0, "Mismatched parentheses");
 		if (is1("db")) len=1;
 		if (is1("dw")) len=2;
@@ -968,10 +967,10 @@ void assembleblock(const char * block)
 				const char * math=pars[i];
 				if (math[0]=='#') math++;
 				int num=(pass!=0)?getnum(math):0;
-				if (len==1) write1(num);
-				if (len==2) write2(num);
-				if (len==3) write3(num);
-				if (len==4) write4(num);
+				if (len == 1) write1((unsigned int)num);
+				if (len == 2) write2((unsigned int)num);
+				if (len == 3) write3((unsigned int)num);
+				if (len == 4) write4((unsigned int)num);
 			}
 		}
 	}
@@ -1181,7 +1180,7 @@ void assembleblock(const char * block)
 				/*if (freespaceorgpos[freespaceid]==-2)   error(1, "A static freespace must be targeted by at least one autoclean.");*/
 			}
 			if (fixedpos && freespaceorgpos[freespaceid]) freespacepos[freespaceid]=snespos=(freespaceid<<24)|freespaceorgpos[freespaceid];
-			else freespacepos[freespaceid]=snespos=(freespaceid<<24)|getsnesfreespace(freespacelen[freespaceid], useram, true, true, align, freespacebyte[freespaceid]);
+			else freespacepos[freespaceid]=snespos=(freespaceid<<24)|getsnesfreespace(freespacelen[freespaceid], (useram != 0), true, true, align, freespacebyte[freespaceid]);
 		}
 		if (pass==2)
 		{
@@ -1218,15 +1217,15 @@ void assembleblock(const char * block)
 		write1('O');
 		write1('T');
 		if (num*3>255) error(0, "Too many entries to PROT.");
-		write1(num*3);
+		write1((unsigned int)(num*3));
 		for (int i=0;i<num;i++)
 		{
 			//int num=getnum(pars[i]);
 			const char * labeltest=pars[i];
-			int num=labelval(&labeltest);
+			int labelnum=(int)labelval(&labeltest);
 			if (*labeltest) error(0, "Not a label.");
-			write3(num);
-			if (pass==1) freespaceleak[num>>24]=false;
+			write3((unsigned int)labelnum);
+			if (pass==1) freespaceleak[labelnum >>24]=false;
 		}
 		write1('S');
 		write1('T');
@@ -1241,9 +1240,9 @@ void assembleblock(const char * block)
 		{
 			if (snespos&0xFF000000) error(0, "autoclean used in freespace");
 			const char * labeltest=word[2];
-			int num=labelval(&labeltest);
+			int num=(int)labelval(&labeltest);
 			if (*labeltest) error(0, "Not a label.");
-			unsigned char targetid=num>>24;
+			unsigned char targetid=(unsigned char)(num>>24);
 			if (pass==1) freespaceleak[targetid]=false;
 			num&=0xFFFFFF;
 			if (strlen(par)>3 && !stricmp(par+3, ".l")) par[3]=0;
@@ -1260,8 +1259,8 @@ void assembleblock(const char * block)
 					if (!freespacestatic[targetid] && pass==1) removerats(orgpos, freespacebyte[targetid]);
 				}
 				else if (ratsloc<0) ratsloc=0;
-				write1(firstbyte);
-				write3(num);
+				write1((unsigned int)firstbyte);
+				write3((unsigned int)num);
 				if (pass==2)
 				{
 					int start=ratsstart(num);
@@ -1286,7 +1285,7 @@ void assembleblock(const char * block)
 				else if (!ratsloc) ratsloc=0;
 				if ((start==num || start<0) && pass==2)
 					error(2, "Don't autoclean a label at the end of a freespace block, you'll remove some stuff you're not supposed to remove.");
-				write3(num);
+				write3((unsigned int)num);
 				freespaceorgpos[targetid]=ratsloc;
 				freespaceorglen[targetid]=read2(ratsloc-4)+1;
 			}
@@ -1332,9 +1331,9 @@ void assembleblock(const char * block)
 			if (!stricmp(par, "off")) ns="";
 			else
 			{
-				const char * tmp=dequote(par);
-				if (!confirmname(tmp)) error(0, "Bad namespace name");
-				ns=tmp;
+				const char * tmpstr=dequote(par);
+				if (!confirmname(tmpstr)) error(0, "Bad namespace name");
+				ns=tmpstr;
 			}
 		}
 		else ns="";
@@ -1344,9 +1343,9 @@ void assembleblock(const char * block)
 		int maxpos=getnum(par);
 		if (snespos&0xFF000000) error(0, "warnpc used in freespace");
 		if (maxpos&0xFF000000) error(0, "Broken warnpc argument");
-		if (snespos>maxpos) error(0, S"warnpc failed: Current position ("+hex6(snespos)+") is after end position ("+hex6(maxpos)+")");
+		if (snespos>maxpos) error(0, S"warnpc failed: Current position ("+hex6((unsigned int)snespos)+") is after end position ("+hex6((unsigned int)maxpos)+")");
 		if (warnxkas && snespos==maxpos) warn0(S"xkas conversion warning: warnpc is relaxed one byte in Asar");
-		if (emulatexkas && snespos==maxpos) error(0, S"warnpc failed: Current position ("+hex6(snespos)+") is equal to end position ("+hex6(maxpos)+")");
+		if (emulatexkas && snespos==maxpos) error(0, S"warnpc failed: Current position ("+hex6((unsigned int)snespos)+") is equal to end position ("+hex6((unsigned int)maxpos)+")");
 	}
 	else if (is1("rep"))
 	{
@@ -1457,9 +1456,9 @@ void assembleblock(const char * block)
 					if (end-start>65536) error(0, "Can't include more than 64 kilobytes at once");
 					pos=getpcfreespace(end-start, false, true, false);
 					if (pos<0) error(0, "No freespace found");
-					int freespaceid=getfreespaceid();
-					freespacepos[freespaceid]=pctosnes(pos)|(/*fastrom?0x800000:*/0x000000)|(freespaceid<<24);
-					setlabel(word[3], freespacepos[freespaceid]);
+					int foundfreespaceid=getfreespaceid();
+					freespacepos[foundfreespaceid]=pctosnes(pos)|(/*fastrom?0x800000:*/0x000000)|(foundfreespaceid <<24);
+					setlabel(word[3], freespacepos[foundfreespaceid]);
 					writeromdata_bytes(pos, 0xFF, end-start);
 				}
 				if (pass==1)
@@ -1468,16 +1467,16 @@ void assembleblock(const char * block)
 				}
 				if (pass==2)
 				{
-					int freespaceid=getfreespaceid();
-					if (freespaceleak[freespaceid]) warn2("This freespace appears to be leaked.");
-					writeromdata(snestopc(freespacepos[freespaceid]&0xFFFFFF), data+start, end-start);
+					int foundfreespaceid =getfreespaceid();
+					if (freespaceleak[foundfreespaceid]) warn2("This freespace appears to be leaked.");
+					writeromdata(snestopc(freespacepos[foundfreespaceid]&0xFFFFFF), data+start, end-start);
 					freespaceuse+=8+end-start;
 				}
 			}
 		}
 		else
 		{
-			for (int i=start;i<end;i++) write1(data[i]);
+			for (int i=start;i<end;i++) write1((unsigned int)data[i]);
 		}
 	}
 	else if (is1("skip"))//nobody ever uses this, but whatever
@@ -1528,7 +1527,7 @@ void assembleblock(const char * block)
 			{
 				if (tableline[1]=='x' || tableline[1]=='X') error(0, "Invalid table file");
 				char * eq;
-				unsigned int val=strtol(tableline, &eq, 16);
+				unsigned int val=(unsigned int)strtol(tableline, &eq, 16);
 				if (eq[0]!='=' || eq[2]) error(0, "Invalid table file");
 				table.table[(unsigned char)eq[1]]=val;
 			}
@@ -1579,9 +1578,9 @@ void assembleblock(const char * block)
 			else if (pars[i][0]=='"') out+=dequote(pars[i]);
 			else if (!stricmp(pars[i], "bytes")) out+=dec(bytes);
 			else if (!stricmp(pars[i], "freespaceuse")) out+=dec(freespaceuse);
-			else if (!stricmp(pars[i], "pc")) out+=hex6(snespos&0xFFFFFF);
+			else if (!stricmp(pars[i], "pc")) out+=hex6((unsigned int)(snespos&0xFFFFFF));
 			else if (!strncasecmp(pars[i], "dec(", strlen("dec("))) out+=dec(getnum(pars[i]+strlen("dec")));
-			else if (!strncasecmp(pars[i], "hex(", strlen("hex("))) out+=hex0(getnum(pars[i]+strlen("hex")));
+			else if (!strncasecmp(pars[i], "hex(", strlen("hex("))) out+=hex0((unsigned int)getnum(pars[i]+strlen("hex")));
 			else if (!strncasecmp(pars[i], "double(", strlen("double(")))
 			{
 				char * arg1pos = pars[i] + strlen("double(");
@@ -1622,12 +1621,12 @@ void assembleblock(const char * block)
 	}
 	else if (is1("padbyte") || is1("padword") || is1("padlong") || is1("paddword"))
 	{
-		int len;
+		int len = 0;
 		if (is("padbyte")) len=1;
 		if (is("padword")) len=2;
 		if (is("padlong")) len=3;
 		if (is("paddword")) len=4;
-		unsigned int val=getnum(par);
+		unsigned int val=(unsigned int)getnum(par);
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -1654,12 +1653,12 @@ void assembleblock(const char * block)
 	}
 	else if (is1("fillbyte") || is1("fillword") || is1("filllong") || is1("filldword"))
 	{
-		int len;
+		int len = 0;
 		if (is("fillbyte")) len=1;
 		if (is("fillword")) len=2;
 		if (is("filllong")) len=3;
 		if (is("filldword")) len=4;
-		unsigned int val=getnum(par);
+		unsigned int val= (unsigned int)getnum(par);
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -1686,7 +1685,7 @@ void assembleblock(const char * block)
 	}
 	else if (is2("math"))
 	{
-		bool val;
+		bool val = false;
 		if(0);
 		else if (!stricmp(word[2], "on")) val=true;
 		else if (!stricmp(word[2], "off")) val=false;
@@ -1698,7 +1697,7 @@ void assembleblock(const char * block)
 	}
 	else if (is2("warn"))
 	{
-		bool val;
+		bool val = false;
 		if(0);
 		else if (!stricmp(word[2], "on")) val=true;
 		else if (!stricmp(word[2], "off")) val=false;

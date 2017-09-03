@@ -1,7 +1,4 @@
-//#include <map>
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
+#include "std-includes.h"
 #include "libsmw.h"
 #include "libstr.h"
 #include "scapegoat.hpp"
@@ -115,7 +112,7 @@ string getdecor()
 //modified from somewhere in nall (license: ISC)
 string dir(char const *name) {
   string result = name;
-  for(signed i = strlen(result); i >= 0; i--) {
+  for(signed i = (int)strlen(result); i >= 0; i--) {
     if(result[i] == '/' || result[i] == '\\') {
       result[i + 1] = 0;
       break;
@@ -139,9 +136,9 @@ extern bool warnxkas;
 extern bool emulatexkas;
 
 static bool freespaced;
-static int getlenforlabel(int snespos, int thislabel, bool exists)
+static int getlenforlabel(int insnespos, int thislabel, bool exists)
 {
-	if (warnxkas && (((thislabel^snespos)&0xFFFF0000)==0))
+	if (warnxkas && (((thislabel^insnespos)&0xFFFF0000)==0))
 		warn1("xkas compatibility warning: label access is always 24bit in emulation mode, but may be 16bit in native mode");
 	if (!exists)
 	{
@@ -163,12 +160,12 @@ static int getlenforlabel(int snespos, int thislabel, bool exists)
 	{
 		return 2;
 	}
-	else if ((thislabel|snespos)&0xFF000000)
+	else if ((thislabel|insnespos)&0xFF000000)
 	{
-		if ((thislabel^snespos)&0xFF000000) return 3;
+		if ((thislabel^insnespos)&0xFF000000) return 3;
 		else return 2;
 	}
-	else if ((thislabel^snespos)&0xFF0000) return 3;
+	else if ((thislabel^insnespos)&0xFF0000) return 3;
 	else return 2;
 }
 
@@ -188,7 +185,7 @@ int getlen(const char * orgstr, bool optimizebankextraction)
 		bool found;
 		if (str[0]=='+') found=labelval(S":pos_"+dec(i)+"_"+dec(poslabels[i]), &labelpos);
 		else             found=labelval(S":neg_"+dec(i)+"_"+dec(neglabels[i]), &labelpos);
-		return getlenforlabel(snespos, labelpos, found);
+		return getlenforlabel(snespos, (int)labelpos, found);
 	}
 notposneglabel:
 	int len=0;
@@ -231,7 +228,7 @@ notposneglabel:
 		{
 			unsigned int thislabel;
 			bool exists=labelval(&str, &thislabel);
-			thislen=getlenforlabel(snespos, thislabel, exists);
+			thislen=getlenforlabel(snespos, (int)thislabel, exists);
 		}
 		else str++;
 		if (optimizebankextraction && maybebankextraction &&
@@ -252,12 +249,12 @@ int getnum(const char * str)
 	// RPG Hacker: this was originally an int - changed it into an unsigned int since I found
 	// that to yield the more predictable results when converting from a double
 	// (e.g.: $FFFFFFFF was originally converted to $80000000, whereas now it remains $FFFFFFFF
-	unsigned int num=math(str, &e);
+	unsigned int num=(unsigned int)math(str, &e);
 	if (e)
 	{
 		error<errblock>(1, e);
 	}
-	return num;
+	return (int)num;
 }
 
 // RPG Hacker: Same function as above, but doesn't truncate our number via int conversion
@@ -473,7 +470,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 		moreonline=true;
 		for (int block=0;moreonline;block++)
 		{
-			moreonline=blocks[block+1];
+			moreonline=(blocks[block+1] != 0);
 			int repeatthis=repeatnext;
 			repeatnext=1;
 			for (int i=0;i<repeatthis;i++)
@@ -525,7 +522,8 @@ void assemblefile(const char * filename, bool toplevel)
 			file.numlines++;
 			char * line= file.contents[i];
 			char * comment=line;
-			while ((comment=strqchr(comment, ';')))
+			comment = strqchr(comment, ';');
+			while (comment != NULL)
 			{
 				if (comment[1]!='@')
 				{
@@ -537,6 +535,7 @@ void assemblefile(const char * filename, bool toplevel)
 					//if (strncasecmp(comment+2, "xkas", 4)) comment[1]=' ';
 					comment[0]=' ';
 				}
+				comment = strqchr(comment, ';');
 			}
 			while (strqchr(line, '\t')) *strqchr(line, '\t')=' ';
 			if (!confirmquotes(line)) { thisline=i; thisblock=line; error<errnull>(0, "Mismatched quotes"); line[0]='\0'; }
@@ -631,6 +630,7 @@ extern lightweight_map<string, macrodata*> macros;
 #define cfree(x) free((void*)x)
 static void clearmacro(const string & key, macrodata* & macro)
 {
+	(void)key;
 	macro->lines.~autoarray();
 	cfree(macro->fname);
 	cfree(macro->arguments[0]);
@@ -640,6 +640,7 @@ static void clearmacro(const string & key, macrodata* & macro)
 
 static void clearfile(const string & key, sourcefile& filecontent)
 {
+	(void)key;
 	cfree(*filecontent.contents);
 	cfree(filecontent.contents);
 }

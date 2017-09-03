@@ -1,7 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
+#include "std-includes.h"
 #include "libsmw.h"
 #include "autoarray.h"
 
@@ -106,7 +103,7 @@ void addromwrite(int pcoffset, int numbytes)
 
 void writeromdata(int pcoffset, const void * indata, int numbytes)
 {
-	memcpy((unsigned char*)romdata + pcoffset, indata, numbytes);
+	memcpy((unsigned char*)romdata + pcoffset, indata, (size_t)numbytes);
 	addromwrite(pcoffset, numbytes);
 }
 
@@ -118,7 +115,7 @@ void writeromdata_byte(int pcoffset, unsigned char indata)
 
 void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes)
 {
-	memset((unsigned char*)romdata + pcoffset, indata, numbytes);
+	memset((unsigned char*)romdata + pcoffset, indata, (size_t)numbytes);
 	addromwrite(pcoffset, numbytes);
 }
 
@@ -129,17 +126,17 @@ void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes)
 #define CONV_LOROM 0
 int convaddr(int addr, int mode)
 {
-	bool header=mode&1;
-	bool ispc=mode&2;
+	bool with_header=mode&1;
+	bool ispc=((mode&2) != 0);
 	if (ispc)
 	{
-		if (header) addr-=512;
+		if (with_header) addr-=512;
 		addr=pctosnes(addr);
 	}
 	else
 	{
 		addr=snestopc(addr);
-		if (header) addr+=512;
+		if (with_header) addr+=512;
 	}
 	return addr;
 }
@@ -166,14 +163,16 @@ void resizerats(int snesaddr, int newlen)
 	int pos=snestopc(ratsstart(snesaddr));
 	if (pos<0) return;
 	if (newlen!=1) newlen--;
-	writeromdata_byte(pos+4, newlen&0xFF);
-	writeromdata_byte(pos+5, (newlen>>8)&0xFF);
-	writeromdata_byte(pos+6, (newlen&0xFF)^0xFF);
-	writeromdata_byte(pos+7, ((newlen>>8)&0xFF)^0xFF);
+	writeromdata_byte(pos+4, (unsigned char)(newlen&0xFF));
+	writeromdata_byte(pos+5, (unsigned char)((newlen>>8)&0xFF));
+	writeromdata_byte(pos+6, (unsigned char)((newlen&0xFF)^0xFF));
+	writeromdata_byte(pos+7, (unsigned char)(((newlen>>8)&0xFF)^0xFF));
 }
 
 static void handleprot(int loc, char * name, int len, const unsigned char * contents)
 {
+	(void)loc;		// RPG Hacker: Silence "unused argument" warning.
+
 	if (!strncmp(name, "PROT", 4))
 	{
 		strncpy(name, "NULL", 4);//to block recursion, in case someone is an idiot
@@ -235,10 +234,10 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 		writeromdata_byte(start+1, 'T');
 		writeromdata_byte(start+2, 'A');
 		writeromdata_byte(start+3, 'R');
-		writeromdata_byte(start+4, size&0xFF);
-		writeromdata_byte(start+5, (size>>8)&0xFF);
-		writeromdata_byte(start+6, (size&0xFF)^0xFF);
-		writeromdata_byte(start+7, ((size>>8)&0xFF)^0xFF);
+		writeromdata_byte(start+4, (unsigned char)(size&0xFF));
+		writeromdata_byte(start+5, (unsigned char)((size>>8)&0xFF));
+		writeromdata_byte(start+6, (unsigned char)((size&0xFF)^0xFF));
+		writeromdata_byte(start+7, (unsigned char)(((size>>8)&0xFF)^0xFF));
 		return start+8;
 	}
 	return -1;
@@ -405,14 +404,14 @@ bool openrom(const char * filename, bool confirm)
 	if (romlen<0) romlen=0;
 	fseek(thisfile, header*512, SEEK_SET);
 	romdata=(unsigned char*)malloc(sizeof(unsigned char)*16*1024*1024);
-	int truelen=fread((char*)romdata, 1, romlen, thisfile);
+	int truelen=(int)fread((char*)romdata, 1u, (size_t)romlen, thisfile);
 	if (truelen!=romlen)
 	{
 		openromerror="Couldn't open ROM";
 		free((unsigned char*)romdata);
 		return false;
 	}
-	memset((char*)romdata+romlen, 0x00, 16*1024*1024-romlen);
+	memset((char*)romdata+romlen, 0x00, (size_t)(16*1024*1024-romlen));
 	if (confirm && snestopc(0x00FFC0)+21<(int)romlen && strncmp((char*)romdata+snestopc(0x00FFC0), "SUPER MARIOWORLD     ", 21))
 	{
 		closerom(false);
@@ -427,7 +426,7 @@ void closerom(bool save)
 	if (thisfile && save && romlen)
 	{
 		fseek(thisfile, header*512, SEEK_SET);
-		fwrite((char*)romdata, 1, romlen, thisfile);
+		fwrite((char*)romdata, 1, (size_t)romlen, thisfile);
 	}
 	if (thisfile) fclose(thisfile);
 	if (romdata) free((unsigned char*)romdata);
@@ -497,16 +496,16 @@ static unsigned int getchecksum()
 
 bool goodchecksum()
 {
-	int checksum=getchecksum();
+	int checksum=(int)getchecksum();
 	return ((romdata[snestopc(0x00FFDE)]^romdata[snestopc(0x00FFDC)])==0xFF) && ((romdata[snestopc(0x00FFDF)]^romdata[snestopc(0x00FFDD)])==0xFF) &&
 					((romdata[snestopc(0x00FFDE)]&0xFF)==(checksum&0xFF)) && ((romdata[snestopc(0x00FFDF)]&0xFF)==((checksum>>8)&0xFF));
 }
 
 void fixchecksum()
 {
-	int checksum=getchecksum();
-	writeromdata_byte(snestopc(0x00FFDE), checksum&255);
-	writeromdata_byte(snestopc(0x00FFDF), (checksum>>8)&255);
-	writeromdata_byte(snestopc(0x00FFDC), (checksum&255)^255);
-	writeromdata_byte(snestopc(0x00FFDD), ((checksum>>8)&255)^255);
+	int checksum=(int)getchecksum();
+	writeromdata_byte(snestopc(0x00FFDE), (unsigned char)(checksum&255));
+	writeromdata_byte(snestopc(0x00FFDF), (unsigned char)((checksum>>8)&255));
+	writeromdata_byte(snestopc(0x00FFDC), (unsigned char)((checksum&255)^255));
+	writeromdata_byte(snestopc(0x00FFDD), (unsigned char)(((checksum>>8)&255)^255));
 }

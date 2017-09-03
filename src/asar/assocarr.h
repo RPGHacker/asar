@@ -34,9 +34,9 @@
 //Serializer support: Yes, if mytype is serializable.
 //"Undefined behaviour" means "segfault" in most cases.
 
-#include <new>//placement new
-#include <stdlib.h>//malloc, realloc, free
-#include <string.h>//strcmp, memmove, strdup
+#pragma once
+
+#include "std-includes.h"
 #include "libmisc.h"//bitround
 
 template<typename right> class assocarr {
@@ -69,7 +69,7 @@ right& rawadd(const char * index, bool collect)
 {
 	collectgarbage(index);
 	int loc=0;
-	int skip=bitround(num);
+	int skip= (int)bitround((unsigned int)num);
 	while (skip)
 	{
 		int dir;
@@ -111,7 +111,7 @@ right& rawadd(const char * index, bool collect)
 int find_i(const char * index) const
 {
 	int loc=0;
-	int skip=bitround((unsigned int)num);
+	int skip=(int)bitround((unsigned int)num);
 	while (skip)
 	{
 		int dir;
@@ -147,7 +147,7 @@ void remove(const char * index)
 {
 	collectgarbage();
 	int loc=0;
-	int skip=bitround(num);
+	int skip= (int)bitround((unsigned int)num);
 	while (skip)
 	{
 		int dir;

@@ -51,7 +51,7 @@ static bool getreg(const char * par, int * reg, reg_t type)
 //for LMS and SMS short addressing forms, check range & evenness
 static bool check_short_addr(int num) {
 	if (num % 2 > 0 || num < 0 || num > 0x1FE) {
-		error(0, S"Invalid short address argument: $" + hex(num) +
+		error(0, S"Invalid short address argument: $" + hex((unsigned int)num) +
 			" (must be even number and $0000-$01FE)");
 		return false;
 	}
@@ -119,18 +119,18 @@ bool asblock_superfx(char** word, int numwords)
 	else if (numwords==2)
 	{
 		string tmp=par;
-		int numwords;
+		int numwordsinner;
 		autoptr<char*> parcpy=strdup(par);
-		autoptr<char**> arg=qpsplit(parcpy, ",", &numwords);
+		autoptr<char**> arg=qpsplit(parcpy, ",", &numwordsinner);
 		bool ret=false;
 #define ok() ret=true
 #define op(op) if (is(op)) ok()
 #define w3d(val) ,write1(0x3D) w(val)
 #define w3e(val) ,write1(0x3E) w(val)
 #define w3f(val) ,write1(0x3F) w(val)
-		if (numwords==1)
+		if (numwordsinner ==1)
 		{
-#define w(val) ,write1(val+reg)
+#define w(val) ,write1((unsigned int)(val+reg))
 #define range(min, max) ,range(min, reg, max, "Invalid register for opcode; valid range is "#min"-"#max)
 			int reg;
 			if (getreg(par, &reg, reg_r))
@@ -201,12 +201,12 @@ bool asblock_superfx(char** word, int numwords)
 				int num=getnum(par);
 				if (len==1)
 				{
-					write1(byte); write1(num);
+					write1((unsigned int)byte); write1((unsigned int)num);
 				}
 				else
 				{
 					int pos=num-((snespos&0xFFFFFF)+2);
-					write1(byte); write1(pos);
+					write1((unsigned int)byte); write1((unsigned int)pos);
 					if (pass==2 && (pos<-128 || pos>127))
 					{
 						error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")");
@@ -214,9 +214,9 @@ bool asblock_superfx(char** word, int numwords)
 				}
 			}
 		}
-		if (numwords==2)
+		if (numwordsinner==2)
 		{
-#define w(val) ,write1(val)
+#define w(val) ,write1((unsigned int)val)
 			int reg1; bool isreg1=getreg(arg[0], &reg1, reg_r);
 			int reg2; bool isreg2=getreg(arg[1], &reg2, reg_r);
 			if (isreg1)
@@ -228,7 +228,7 @@ bool asblock_superfx(char** word, int numwords)
 				}
 				if (arg[1][0]=='#')
 				{
-					unsigned int num=getnum(arg[1]+1);
+					unsigned int num=(unsigned int)getnum(arg[1]+1);
 					num&=0xFFFF;
 					op("IBT") w(0xA0+reg1) w(num);
 					op("IWT") w(0xF0+reg1) w(num) w(num>>8);

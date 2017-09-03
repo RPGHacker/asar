@@ -1,8 +1,6 @@
 #pragma once
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <ctype.h>
+
+#include "std-includes.h"
 
 class string {
 public:
@@ -11,7 +9,7 @@ int len;
 
 int truelen() const
 {
-	return len?len:strlen(str);
+	return len?len:(int)strlen(str);
 }
 
 void fixlen()
@@ -23,13 +21,13 @@ private:
 //char shortbuf[32];
 int bufferlen;
 
-void resize(int len)
+void resize(int inlen)
 {
-	if (len>=bufferlen-4)
+	if (inlen >=bufferlen-4)
 	{
-		while (len>=bufferlen-4) bufferlen*=2;
+		while (inlen >=bufferlen-4) bufferlen*=2;
 		str=(char*)realloc(str, sizeof(char)*bufferlen);
-		memset(str+len, 0, (size_t)(bufferlen-len));
+		memset(str+ inlen, 0, (size_t)(bufferlen- inlen));
 	}
 }
 
@@ -86,7 +84,7 @@ string& operator+=(const string& newstr)
 string& operator+=(const char * newstr)
 {
 	fixlen();
-	int newlen=strlen(newstr);
+	int newlen=(int)strlen(newstr);
 	resize(len+newlen);
 	strcpy(str+len, newstr);
 	len+=newlen;
@@ -147,12 +145,12 @@ bool operator==(string& right) const
 
 bool operator!=(const char * right) const
 {
-	return strcmp(str, right);
+	return (strcmp(str, right) != 0);
 }
 
 bool operator!=(string& right) const
 {
-	return strcmp(str, right.str);
+	return (strcmp(str, right.str) != 0);
 }
 
 bool operator<(string& right) const
@@ -262,12 +260,12 @@ bool operator==(cstring& right) const
 
 bool operator!=(const char * right) const
 {
-	return strcmp(str, right);
+	return (strcmp(str, right) != 0);
 }
 
 bool operator!=(cstring& right) const
 {
-	return strcmp(str, right.str);
+	return (strcmp(str, right.str) != 0);
 }
 
 bool operator<(cstring& right) const
@@ -290,7 +288,7 @@ explicit
 #endif
 operator bool() const
 {
-	return str;
+	return (str != NULL);
 }
 
 cstring()
@@ -417,24 +415,6 @@ inline string dec(int value)
 	return buffer;
 }
 
-inline string bin(unsigned int value)
-{
-	char buffer[64];
-	int len;
-	for (len=0;!len || value || (len&7);len++)
-	{
-		buffer[len+31]=(char)((value&1)|0x30);
-		value>>=1;
-	}
-	buffer[len+31]=0;
-	for (int i=0;i<len;i++)
-	{
-		buffer[i]=buffer[len+31-i-1];
-	}
-	buffer[len]=0;
-	return buffer;
-}
-
 inline string ftostr(long double value)
 {
 	char rval[256];
@@ -460,26 +440,9 @@ inline string ftostrvar(long double value, int precision)
 	int clampedprecision = precision;
 	if (clampedprecision < 0) clampedprecision = 0;
 	if (clampedprecision > 100) clampedprecision = 100;
-
-	// RPG Hacker: Not the prettiest solution, but simple enough, and avoids security risks from using sprintf()
-	// (Note that those really matter that much)
-	static const char * formats[] =
-	{
-		"%.0f", "%.1f", "%.2f", "%.3f", "%.4f", "%.5f", "%.6f", "%.7", "%.8f", "%.9f",
-		"%.10f", "%.11f", "%.12f", "%.13f", "%.14f", "%.15f", "%.16f", "%.17", "%.18f", "%.19f",
-		"%.20f", "%.21f", "%.22f", "%.23f", "%.24f", "%.25f", "%.26f", "%.27", "%.28f", "%.29f",
-		"%.30f", "%.31f", "%.32f", "%.33f", "%.34f", "%.35f", "%.36f", "%.37", "%.38f", "%.39f",
-		"%.40f", "%.41f", "%.42f", "%.43f", "%.44f", "%.45f", "%.46f", "%.47", "%.48f", "%.49f",
-		"%.50f", "%.51f", "%.52f", "%.53f", "%.54f", "%.55f", "%.56f", "%.57", "%.58f", "%.59f",
-		"%.60f", "%.61f", "%.62f", "%.63f", "%.64f", "%.65f", "%.66f", "%.67", "%.68f", "%.69f",
-		"%.70f", "%.71f", "%.72f", "%.73f", "%.74f", "%.75f", "%.76f", "%.77", "%.78f", "%.79f",
-		"%.80f", "%.81f", "%.82f", "%.83f", "%.84f", "%.85f", "%.86f", "%.87", "%.88f", "%.89f",
-		"%.90f", "%.91f", "%.92f", "%.93f", "%.94f", "%.95f", "%.96f", "%.97", "%.98f", "%.99f",
-		"%.100f"
-	};
-
+	
 	char rval[256];
-	sprintf(rval, formats[clampedprecision], value);
+	sprintf(rval, "%.*f", clampedprecision, (double)value);
 	if (strchr(rval, '.'))//nuke useless zeroes
 	{
 		char * end = strrchr(rval, '\0') - 1;
@@ -615,7 +578,7 @@ inline bool strwcmp(const char *s, const char *p) {
     }
   }
   while(*p == '*') p++;
-  return *p;
+  return (*p != 0);
 }
 
 inline bool striwcmp(const char *s, const char *p) {
@@ -635,7 +598,7 @@ inline bool striwcmp(const char *s, const char *p) {
     }
   }
   while(*p == '*') p++;
-  return *p;
+  return (*p != 0);
 }
 
 #ifndef _MSC_VER//I thought this one was FreeBSD-only, and now it suddenly exists in MSVC but not GCC?
@@ -676,8 +639,6 @@ inline string lower(const char * old)
 	for (int i=0;s.str[i];i++) s.str[i]=(char)tolower(s.str[i]);
 	return s;
 }
-
-string urlencode(const char * in);
 
 inline int isualnum ( int c )
 {
@@ -745,10 +706,6 @@ inline char * stristr(const char * string, const char * pattern)
 	return NULL;
 }
 
-const char * unhtml(const char * html);
-const char * tohtml(const char * text);
-const char * htmlentities(const char * text);
-
 
 
 // Returns number of connected lines - 1
@@ -761,11 +718,11 @@ inline int getconnectedlines(stringarraytype& lines, int startline, string& out)
 	for (int i = startline; lines[i]; i++)
 	{
 		// The line should already be stripped of any comments at this point
-		int startpos = strlen(lines[i]);
+		int linestartpos = (int)strlen(lines[i]);
 
 		bool found = false;
 
-		for (int j = startpos; j > 0; j--)
+		for (int j = linestartpos; j > 0; j--)
 		{
 			if (!isspace(lines[i][j]) && lines[i][j] != '\0' && lines[i][j] != ';')
 			{

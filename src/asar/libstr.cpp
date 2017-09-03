@@ -1,7 +1,4 @@
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "std-includes.h"
 #include "libstr.h"
 
 #define malloc(type, count) (type*)malloc(sizeof(type)*(count))
@@ -15,7 +12,7 @@ char * readfile(const char * fname)
 	int datalen=ftell(myfile);
 	fseek(myfile, 0, SEEK_SET);
 	char * data=malloc(char, datalen+1);
-	data[fread(data, 1, datalen, myfile)]=0;
+	data[fread(data, 1, (size_t)datalen, myfile)]=0;
 	fclose(myfile);
 	int inpos=0;
 	int outpos=0;
@@ -36,7 +33,7 @@ bool readfile(const char * fname, char ** data, int * len)
 	int datalen=ftell(myfile);
 	fseek(myfile, 0, SEEK_SET);
 	*data=malloc(char, datalen);
-	*len=(int)fread(*data, 1, datalen, myfile);
+	*len=(int)fread(*data, 1, (size_t)datalen, myfile);
 	fclose(myfile);
 	return true;
 }
@@ -47,22 +44,22 @@ bool readfile(const char * fname, char ** data, int * len)
 
 string& string::replace(const char * instr, const char * outstr, bool all)
 {
-	string& str=*this;
+	string& thisstring=*this;
 	if (!all)
 	{
-		const char * ptr=strstr(str, instr);
-		if (!ptr) return str;
-		string out=S substr(str, ptr-str.str)+outstr+(ptr+strlen(instr));
-		str=out;
-		return str;
+		const char * ptr=strstr(thisstring, instr);
+		if (!ptr) return thisstring;
+		string out=S substr(thisstring, ptr-thisstring.str)+outstr+(ptr+strlen(instr));
+		thisstring =out;
+		return thisstring;
 	}
 	//performance hack (obviously for ", "->"," in asar, but who cares, it's a performance booster)
 	if (strlen(instr)==strlen(outstr)+1 && !memcmp(instr, outstr, strlen(outstr)))
 	{
-		const char * indat=str;
+		const char * indat= thisstring;
 		char * trueoutdat=malloc(char, strlen(indat)+1);
 		char * outdat=trueoutdat;
-		int thelen=strlen(outstr);
+		int thelen=(int)strlen(outstr);
 		//nested hack
 		if (thelen==0)
 		{
@@ -73,9 +70,9 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 				else *outdat++=*indat++;
 			}
 			*outdat=0;
-			str=trueoutdat;
+			thisstring =trueoutdat;
 			free(trueoutdat);
-			return str;
+			return thisstring;
 		}
 		else if (thelen==1)
 		{
@@ -91,9 +88,9 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 				else *outdat++=*indat++;
 			}
 			*outdat=0;
-			str=trueoutdat;
+			thisstring =trueoutdat;
 			free(trueoutdat);
-			return str;
+			return thisstring;
 		}
 		else
 		//end hack
@@ -101,9 +98,9 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 			char thehatedchar=instr[thelen];
 			while (*indat)
 			{
-				if (!memcmp(indat, outstr, thelen))
+				if (!memcmp(indat, outstr, (size_t)thelen))
 				{
-					memcpy(outdat, outstr, thelen);
+					memcpy(outdat, outstr, (size_t)thelen);
 					outdat+=thelen;
 					indat+=thelen;
 					while (*indat==thehatedchar) indat++;
@@ -112,9 +109,9 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 			}
 		}
 		*outdat=0;
-		str=trueoutdat;
+		thisstring =trueoutdat;
 		free(trueoutdat);
-		return str;
+		return thisstring;
 	}
 	//end hack
 	bool replaced=true;
@@ -122,11 +119,11 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 	{
 		replaced=false;
 		string out;
-		const char * in=str;
-		int inlen=strlen(instr);
+		const char * in= thisstring;
+		int inlen=(int)strlen(instr);
 		while (*in)
 		{
-			if (!memcmp(in, instr, inlen))
+			if (!memcmp(in, instr, (size_t)inlen))
 			{
 				replaced=true;
 				out+=outstr;
@@ -134,45 +131,45 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 			}
 			else out+=*in++;
 		}
-		str=out;
+		thisstring =out;
 	}
-	return str;
+	return thisstring;
 }
 
 string& string::qreplace(const char * instr, const char * outstr, bool all)
 {
-	string& str=*this;
-	if (!strstr(str, instr)) return str;
-	if (!strchr(str, '"'))
+	string& thisstring =*this;
+	if (!strstr(thisstring, instr)) return thisstring;
+	if (!strchr(thisstring, '"'))
 	{
-		str.replace(instr, outstr, all);
-		return str;
+		thisstring.replace(instr, outstr, all);
+		return thisstring;
 	}
 	bool replaced=true;
 	while (replaced)
 	{
 		replaced=false;
 		string out;
-		for (int i=0;str[i];)
+		for (int i=0;thisstring[i];)
 		{
-			dequote(str[i], out+=str[i++], return str);
-			if (!memcmp((const char*)str+i, instr, strlen(instr)))
+			dequote(thisstring[i], out+= thisstring[i++], return thisstring);
+			if (!memcmp((const char*)thisstring +i, instr, strlen(instr)))
 			{
 				replaced=true;
 				out+=outstr;
 				i+=strlen(instr);
 				if (!all)
 				{
-					out+=((const char*)str)+i;
-					str=out;
-					return str;
+					out+=((const char*)thisstring)+i;
+					thisstring =out;
+					return thisstring;
 				}
 			}
-			else out+=str[i++];
+			else out+= thisstring[i++];
 		}
-		str=out;
+		thisstring =out;
 	}
-	return str;
+	return thisstring;
 }
 
 bool confirmquotes(const char * str)
@@ -205,12 +202,12 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 		if (len) *len=1;
 		return out;
 	}
-	int keylen=strlen(key);
+	int keylen=(int)strlen(key);
 	int count=1;
 	char * thisentry=str;
 	while (*thisentry)
 	{
-		if (!memcmp(thisentry, key, keylen))
+		if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			count++;
 			thisentry+=keylen;
@@ -225,7 +222,7 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 	outdata[newcount++]=thisentry;
 	while (newcount<count)
 	{
-		if (!memcmp(thisentry, key, keylen))
+		if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
 			thisentry+=keylen;
@@ -240,13 +237,13 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 {
 	if (!strchr(str, '"')) return nsplit(str, key, maxlen, len);
-	int keylen=strlen(key);
+	int keylen=(int)strlen(key);
 	int count=1;
 	char * thisentry=str;
 	while (*thisentry)
 	{
 		dequote(*thisentry, thisentry++, return NULL);
-		else if (!memcmp(thisentry, key, keylen))
+		else if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			count++;
 			thisentry+=keylen;
@@ -262,7 +259,7 @@ char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 	while (newcount<count)
 	{
 		dequote(*thisentry, thisentry++, return NULL);
-		else if (!memcmp(thisentry, key, keylen))
+		else if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
 			thisentry+=keylen;
@@ -276,13 +273,13 @@ char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 
 char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 {
-	int keylen=strlen(key);
+	int keylen=(int)strlen(key);
 	int count=1;
 	char * thisentry=str;
 	while (*thisentry)
 	{
 		skippar(*thisentry, thisentry++, return NULL);
-		else if (!memcmp(thisentry, key, keylen))
+		else if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			count++;
 			thisentry+=keylen;
@@ -298,7 +295,7 @@ char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 	while (newcount<count)
 	{
 		skippar(*thisentry, thisentry++, return NULL);
-		else if (!memcmp(thisentry, key, keylen))
+		else if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
 			thisentry+=keylen;
@@ -310,24 +307,11 @@ char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 	return outdata;
 }
 
-string urlencode(const char * in)
-{
-	unsigned const char * uin=(unsigned const char*)in;
-	string out;
-	for (int i=0;uin[i];i++)
-	{
-		if (uin[i]==' ') out+='+';
-		else if (isalnum(uin[i]) && uin[i]<128) out+=(char)uin[i];
-		else out+=S"%"+hex2(uin[i]);
-	}
-	return out;
-}
-
 char * trim(char * str, const char * left, const char * right, bool multi)
 {
 	bool nukeright=true;
-	int totallen=strlen(str);
-	int rightlen=strlen(right);
+	int totallen=(int)strlen(str);
+	int rightlen=(int)strlen(right);
 	if (rightlen<=totallen)
 	{
 		do
@@ -355,7 +339,7 @@ char * trim(char * str, const char * left, const char * right, bool multi)
 		{
 			if (str[leftlen]!=left[leftlen]) nukeleft=false;
 		}
-		if (nukeleft) memmove(str, str+leftlen, totallen-leftlen+1);
+		if (nukeleft) memmove(str, str+leftlen, (size_t)(totallen-leftlen+1));
 	} while (multi && nukeleft);
 	return str;
 }
@@ -363,8 +347,8 @@ char * trim(char * str, const char * left, const char * right, bool multi)
 char * itrim(char * str, const char * left, const char * right, bool multi)
 {
 	bool nukeright=true;
-	int totallen=strlen(str);
-	int rightlen=strlen(right);
+	int totallen=(int)strlen(str);
+	int rightlen=(int)strlen(right);
 	if (rightlen<=totallen)
 	{
 		do
@@ -392,220 +376,8 @@ char * itrim(char * str, const char * left, const char * right, bool multi)
 		{
 			if (tolower(str[leftlen])!=tolower(left[leftlen])) nukeleft=false;
 		}
-		if (nukeleft) memmove(str, str+leftlen, totallen-leftlen+1);
+		if (nukeleft) memmove(str, str+leftlen, (size_t)(totallen-leftlen+1));
 	} while (multi && nukeleft);
 	return str;
-}
-
-const char * unhtml(const char * html)
-{
-	static string str;
-	str=html;
-	char * out=str.str;
-	char * in=str.str;
-	bool space=true;
-	while (*in)
-	{
-		if (*in=='\r' || *in=='\n' || *in==' ')
-		{
-			in++;
-			if (!space) *out++=' ';
-			space=true;
-			continue;
-		}
-		space=false;
-		if (!strncmp(in, "<br>", 4))
-		{
-			*out++='\n';
-			space=true;
-			in+=4;
-		}
-		else if (!strncmp(in, "<!--", 4))
-		{
-			char * end=strstr(in, "-->");
-			if (end) in=end+3;
-		}
-		else if (!strncmp(in, "<a href=\"", 9))
-		{
-			//<a href="http://www.smwiki.net/wiki/RAM_Address/$7E:0012">here</a>.
-			in+=9;
-			//http://www.smwiki.net/wiki/RAM_Address/$7E:0012">here</a>.
-			char * tmp=strchr(in, '"');
-			if (!tmp) continue;
-			if (strncmp(tmp, "\">here</a>", 10) && strncmp(tmp, "\" rel=\"nofollow\">here</a>", 25)) continue;
-			*tmp=0;
-			//http://www.smwiki.net/wiki/RAM_Address/$7E:0012@>here</a>.
-			out+=sprintf(out, "at %s ", in);
-			tmp=strchr(tmp+1, '>');
-			if (!tmp)
-			{
-				out+=sprintf(out, "AAAAAAAAAAAA");
-				continue;
-			}
-			in=tmp+9;
-			if ((*in=='.' && in[1]=='\0') || !strncmp(in, ".<br>", 5) || (!strncmp(in, ".<!--", 5) && strstr(in, "-->") && strstr(in, "-->")[3]=='\0'))
-			{
-				in++;
-				out--;
-			}
-		}
-#define entity(from, to) else if (!strncmp(in, from, strlen(from))) do { *out++=to; in+=strlen(from); } while(0)
-		entity("&lt;", '<');
-		entity("&gt;", '>');
-		entity("&amp;", '\"');
-		entity("&#010;", '\n');
-#undef entity
-		else if (!strncmp(in, "&deg;", strlen("&deg;")))
-		{
-			*out++='\xC2';
-			*out++='\xB0';
-			in+=strlen("&deg;");
-		}
-		else *out++=*in++;
-	}
-	*out=0;
-	return str;
-}
-
-static inline const char * htmlencode(const char * text, bool allowhtml)
-{
-	static char * ptrtmp=NULL;//weird trick to disarm destructors.
-	free(ptrtmp);
-	string out;
-	out="";
-	const char * in=text;
-	bool b=false;
-	bool u=false;
-	int fc=-1;
-	int bc=-1;
-	bool formatted=false;
-	bool sp=false;
-	char urlend=0;
-#define reformat() \
-			if (*in!='\x02' && *in!='\x03' && *in!='\x0F' && *in!='\x1F' && allowhtml) \
-			{                                                                          \
-				if (formatted) out+="</span>";                                           \
-				if (b || u || fc!=-1 || bc!=-1)                                          \
-				{                                                                        \
-					formatted=true;                                                        \
-					const char * sp="";                                                    \
-					out+="<span class=\"";                                                 \
-					if (b) { out+=sp; out+="b"; sp=" "; }                                  \
-					if (u) { out+=sp; out+="u"; sp=" "; }                                  \
-					if (fc!=-1) { out+=sp; out+=S"fc"+dec(fc); sp=" "; }                   \
-					if (bc!=-1) { out+=sp; out+=S"bc"+dec(bc); sp=" "; }                   \
-					out+="\">";                                                            \
-				}                                                                        \
-				else formatted=false;                                                    \
-			}
-	while (*in)
-	{
-		if ((sp || in==text) && (!strncmp(in, "http://", 7) || !strncmp(in, "https://", 8)))
-		{
-			string url;
-			while (true)
-			{
-				if ((*in=='.' || *in==',') && (in[1]==' ' || in[1]=='\0')) break;
-				if (*in==' ' || *in=='\0') break;
-				if (*in<0x20) url+="\xEF\xBF\xBD";//no formatting allowed in URLs
-				else if (*in=='<') url+="&lt;";
-				else if (*in=='>') url+="&gt;";
-				else if (*in=='&') url+="&amp;";
-				else if (*in=='"') url+="&quot;";
-				else if (*in==')' && (in[1]==' ' || in[1]=='\0') && !strchr(url, '(')) break;
-				else if (*in==urlend) break;//crappy way to handle file_get_contents("http://example.com/");
-				else url+=*in;
-				in++;
-			}
-			out+="<a href=\"";
-			out+=url;
-			out+="\">";
-			out+=url;
-			out+="</a>";
-			continue;
-		}
-		char c=*in;
-		in++;
-		if (c=='\x02')//bold
-		{
-			b=!b;
-			reformat();
-		}
-		else if (c=='\x03')//color
-		{
-			if (isdigit(*in))
-			{
-				fc=*in++-'0';
-				if (isdigit(*in)) fc=(fc*10)+(*in++-'0');
-				fc&=0x0F;
-				if (*in==',')
-				{
-					in++;
-					bc=*in++-'0';
-					if (isdigit(*in)) bc=(bc*10)+(*in++-'0');
-					bc&=0x0F;
-				}
-				reformat();
-			}
-		}
-		else if (c=='\x09')//tab
-		{
-			out+='\x09';
-		}
-		else if (c=='\x0A')//linebreak
-		{
-			out+='\n';
-		}
-		else if (c=='\x0F')//restore
-		{
-			b=false;
-			u=false;
-			fc=-1;
-			bc=-1;
-			reformat();
-		}
-		else if (c=='\x1F')//underline
-		{
-			u=!u;
-			reformat();
-		}
-		else if (c=='\x16')//reverse colors
-		{
-			int t=fc;
-			fc=bc;
-			bc=t;
-			reformat();
-		}
-		else if ((unsigned char)c<0x20)
-		{
-			out+="\xEF\xBF\xBD";//use the replacement character for various junk
-		}
-		else
-		{
-			if(0);
-			else if (c=='<') out+="&lt;";
-			else if (c=='>') out+="&gt;";
-			else if (c=='&') out+="&amp;";
-			else if (c=='"') out+="&quot;";
-			else out+=c;
-			sp=!isalnum(c);
-			urlend=c;
-		}
-	}
-#undef reformat
-	if (formatted) out+="</span>";
-	if (strstr(text, "\xE2\x80\xAE")) out+="\xE2\x80\xAD";//right-to-left mark
-	ptrtmp=strdup(out);
-	return ptrtmp;
-}
-
-const char * tohtml(const char * text)
-{
-	return htmlencode(text, true);
-}
-
-const char * htmlentities(const char * text)
-{
-	return htmlencode(text, false);
 }
 

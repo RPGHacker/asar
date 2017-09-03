@@ -1,6 +1,4 @@
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include "std-includes.h"
 #include "libcon.h"
 #include <signal.h>
 
