@@ -9,6 +9,7 @@ extern const int asarver_maj=1;
 extern const int asarver_min=5;
 extern const int asarver_bug=0;
 extern const bool asarver_beta=false;
+extern bool specifiedasarver;
 
 #ifdef _I_RELEASE
 extern char blockbetareleases[(!asarver_beta)?1:-1];
@@ -664,5 +665,10 @@ void reseteverything()
 	optimizeforbank=-1;
 
 	closecachedfiles();
+
+	incsrcdepth=0;
+	specifiedasarver=false;
+	errored = false;
+	checksum = true;
 #undef free
 }

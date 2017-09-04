@@ -13,7 +13,7 @@
 
 extern bool errored;
 
-//extern bool checksum;
+extern bool checksum;
 
 string dir(char const *name);
 
@@ -201,7 +201,8 @@ EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int *
 			finishpass();
 		}
 	}
-	catch(errfatal&){}
+	catch (errfatal&) {}
+	if (checksum) fixchecksum();
 	if (romdata_!=(char*)romdata_r) free((char*)romdata_r);
 	if (buflen<romlen) error<errnull>(pass, "The given buffer is too small to contain the resulting ROM.");
 	if (errored)
