@@ -647,6 +647,7 @@ static void clearfile(const string & key, sourcefile& filecontent)
 }
 
 void closecachedfiles();
+void deinitmathcore();
 
 void reseteverything()
 {
@@ -665,6 +666,8 @@ void reseteverything()
 	optimizeforbank=-1;
 
 	closecachedfiles();
+
+	deinitmathcore();
 
 	incsrcdepth=0;
 	specifiedasarver=false;

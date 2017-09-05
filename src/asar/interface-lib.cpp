@@ -161,12 +161,9 @@ EXPORT int asar_apiversion()
 	return 300;
 }
 
-void deinitmathcore();
-
 EXPORT bool asar_reset()
 {
 	resetdllstuff();
-	deinitmathcore();
 	pass=0;
 	return true;
 }
@@ -174,7 +171,6 @@ EXPORT bool asar_reset()
 EXPORT void asar_close()
 {
 	resetdllstuff();
-	deinitmathcore();
 }
 
 #define maxromsize (16*1024*1024)
@@ -191,7 +187,6 @@ EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int *
 	memset((void*)romdata, 0, maxromsize);
 	memcpy((unsigned char*)romdata, romdata_, (size_t)*romlen_);
 	resetdllstuff();
-	deinitmathcore();
 	romlen=*romlen_;
 	romlen_r=*romlen_;
 	try
