@@ -1,0 +1,2 @@
+;@err
+assert 0
