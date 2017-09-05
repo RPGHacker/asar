@@ -415,6 +415,52 @@ int main(int argc, char * argv[])
 				fwrite("\n", 1, strlen("\n"), err);
 			}
 		}
+		else
+		{
+			// Applying patch via DLL succeeded; print some stuff (mainly to verify most of our functions)
+			mappertype mapper = asar_getmapper();
+
+			printf("Detected mapper: %u\n", (unsigned int)mapper);
+
+			int count = 0;
+			const labeldata * labels = asar_getalllabels(&count);
+
+			if (count > 0)
+			{
+				printf("Found labels:\n");
+
+				for (int i = 0; i < count; ++i)
+				{
+					printf("  %s: %X\n", labels[i].name, (unsigned int)labels[i].location);
+				}
+			}
+
+
+			const definedata * defines = asar_getalldefines(&count);
+
+			if (count > 0)
+			{
+				printf("Found defines:\n");
+
+				for (int i = 0; i < count; ++i)
+				{
+					printf("  %s=%s\n", defines[i].name, defines[i].contents);
+				}
+			}
+
+
+			const writtenblockdata * writtenblocks = asar_getwrittenblocks(&count);
+
+			if (count > 0)
+			{
+				printf("Written blocks:\n");
+
+				for (int i = 0; i < count; ++i)
+				{
+					printf("  %u bytes at %X\n", (unsigned int)writtenblocks[i].numbytes, (unsigned int)writtenblocks[i].pcoffset);
+				}
+			}
+		}
 		fclose(err);
 #else
 		char cmd[1024];
