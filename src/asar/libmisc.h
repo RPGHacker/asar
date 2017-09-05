@@ -31,8 +31,9 @@ template<int N> struct forceconst { enum { value = N }; };
 //from nall, license: ISC
     //round up to next highest single bit:
     //round(15) == 16, round(16) == 16, round(17) == 32
-    inline unsigned bitround(unsigned x) {
-      if((x & (x - 1)) == 0) return x;
-      while(x & (x - 1)) x &= x - 1;
-      return x << 1;
-    }
+inline unsigned bitround(unsigned x)
+{
+	if ((x & (x - 1)) == 0) return x;
+	while (x & (x - 1)) x &= x - 1;
+	return x << 1;
+}

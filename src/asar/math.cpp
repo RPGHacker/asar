@@ -1,8 +1,5 @@
 //Don't try using this in your own project, it's got a lot of Asar-specific tweaks. Use mathlib.cpp instead.
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <math.h>
+#include "std-includes.h"
 #include "autoarray.h"
 #include "scapegoat.hpp"
 #include "libstr.h"
@@ -219,7 +216,7 @@ static long double validaddr(const funcparam& in, const funcparam& len)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(len, 1, Type_Double);
-	int addr=snestopc_pick(in.value.longdoublevalue);
+	int addr=snestopc_pick((int)in.value.longdoublevalue);
 	if (addr<0 || addr+len.value.longdoublevalue-1>romlen_r) return 0;
 	else return 1;
 }
@@ -227,43 +224,40 @@ static long double validaddr(const funcparam& in, const funcparam& len)
 static long double read1(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
-	int addr=snestopc_pick(in.value.longdoublevalue);
+	int addr=snestopc_pick((int)in.value.longdoublevalue);
 	if (addr<0) error("read1(): Address doesn't map to ROM.");
 	else if (addr+1>romlen_r) error("Address out of bounds.");
 	else return
 			 romdata_r[addr  ]     ;
-	return 0;
 }
 
 static long double read2(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
-	int addr=snestopc_pick(in.value.longdoublevalue);
+	int addr=snestopc_pick((int)in.value.longdoublevalue);
 	if (addr<0) error("read2(): Address doesn't map to ROM.");
 	else if (addr+2>romlen_r) error("Address out of bounds.");
 	else return
 			 romdata_r[addr  ]    |
 			(romdata_r[addr+1]<< 8);
-	return 0;
 }
 
 static long double read3(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
-	int addr=snestopc_pick(in.value.longdoublevalue);
+	int addr=snestopc_pick((int)in.value.longdoublevalue);
 	if (addr<0) error("read3(): Address doesn't map to ROM.");
 	else if (addr+3>romlen_r) error("Address out of bounds.");
 	else return
 			 romdata_r[addr  ]     |
 			(romdata_r[addr+1]<< 8)|
 			(romdata_r[addr+2]<<16);
-	return 0;
 }
 
 static long double read4(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
-	int addr=snestopc_pick(in.value.longdoublevalue);
+	int addr=snestopc_pick((int)in.value.longdoublevalue);
 	if (addr<0) error("read4(): Address doesn't map to ROM.");
 	else if (addr+4>romlen_r) error("Address out of bounds.");
 	else return
@@ -271,53 +265,49 @@ static long double read4(const funcparam& in)
 			(romdata_r[addr+1]<< 8)|
 			(romdata_r[addr+2]<<16)|
 			(romdata_r[addr+3]<<24);
-	return 0;
 }
 
 static long double read1s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
-	int addr=snestopc_pick(in.value.longdoublevalue);
+	int addr=snestopc_pick((int)in.value.longdoublevalue);
 	if (addr<0) return def.value.longdoublevalue;
 	else if (addr+0>romlen_r) return def.value.longdoublevalue;
 	else return
 			 romdata_r[addr  ]     ;
-	return 0;
 }
 
 static long double read2s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
-	int addr=snestopc_pick(in.value.longdoublevalue);
+	int addr=snestopc_pick((int)in.value.longdoublevalue);
 	if (addr<0) return def.value.longdoublevalue;
 	else if (addr+1>romlen_r) return def.value.longdoublevalue;
 	else return
 			 romdata_r[addr  ]    |
 			(romdata_r[addr+1]<< 8);
-	return 0;
 }
 
 static long double read3s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
-	int addr=snestopc_pick(in.value.longdoublevalue);
+	int addr=snestopc_pick((int)in.value.longdoublevalue);
 	if (addr<0) return def.value.longdoublevalue;
 	else if (addr+2>romlen_r) return def.value.longdoublevalue;
 	else return
 			 romdata_r[addr  ]     |
 			(romdata_r[addr+1]<< 8)|
 			(romdata_r[addr+2]<<16);
-	return 0;
 }
 
 static long double read4s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
-	int addr=snestopc_pick(in.value.longdoublevalue);
+	int addr=snestopc_pick((int)in.value.longdoublevalue);
 	if (addr<0) return def.value.longdoublevalue;
 	else if (addr+3>romlen_r) return def.value.longdoublevalue;
 	else return
@@ -325,7 +315,6 @@ static long double read4s(const funcparam& in, const funcparam& def)
 			(romdata_r[addr+1]<< 8)|
 			(romdata_r[addr+2]<<16)|
 			(romdata_r[addr+3]<<24);
-	return 0;
 }
 
 static long double readfilefunc(const funcparam& fname, const funcparam& offset, long numbytes)
@@ -338,7 +327,7 @@ static long double readfilefunc(const funcparam& fname, const funcparam& offset,
 	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - numbytes) error("File read offset out of bounds.");
 	fseek(fhandle->filehandle, (long)offset.value.longdoublevalue, SEEK_SET);
 	unsigned char readdata[4] = { 0, 0, 0, 0 };
-	fread(readdata, 1, numbytes, fhandle->filehandle);
+	fread(readdata, 1, (size_t)numbytes, fhandle->filehandle);
 	return
 		 readdata[0]       |
 		(readdata[1] << 8) |
@@ -357,7 +346,7 @@ static long double readfilefuncs(const funcparam& fname, const funcparam& offset
 	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - numbytes) return def.value.longdoublevalue;
 	fseek(fhandle->filehandle, (long)offset.value.longdoublevalue, SEEK_SET);
 	unsigned char readdata[4] = { 0, 0, 0, 0 };
-	fread(readdata, 1, numbytes, fhandle->filehandle);
+	fread(readdata, 1, (size_t)numbytes, fhandle->filehandle);
 	return
 		readdata[0] |
 		(readdata[1] << 8) |
@@ -392,7 +381,7 @@ static long double overlycomplicatedround(const funcparam& number, const funcpar
 	// Some hacky shenanigans with variables going on here
 	const char * strbackup = str;
 	str = asstring;
-	double asdouble = getnum();
+	double asdouble = (double)getnum();
 	str = strbackup;
 
 	return asdouble;
@@ -461,7 +450,7 @@ static long double getnumcore()
 			str++;
 			while (*str==' ') str++;
 
-			if (!strncasecmp(start, "sizeof", len)) {
+			if (!strncasecmp(start, "sizeof", (size_t)len)) {
 				string label;
 				while (*str == ' ') str++;
 				while (isalnum(*str) || *str == '.') label += *(str++);
@@ -469,7 +458,7 @@ static long double getnumcore()
 				if (*(str++) != ')') error("Malformed sizeof call.");
 				return struct_size(label);
 			}
-			if (!strncasecmp(start, "objectsize", len)) {
+			if (!strncasecmp(start, "objectsize", (size_t)len)) {
 				string label;
 				while (*str == ' ') str++;
 				while (isalnum(*str) || *str == '.') label += *(str++);
@@ -529,7 +518,7 @@ static long double getnumcore()
 			long double rval;
 			for (int i=0;i<numuserfunc;i++)
 			{
-				if ((int)strlen(userfunc[i].name)==len && !strncmp(start, userfunc[i].name, len))
+				if ((int)strlen(userfunc[i].name)==len && !strncmp(start, userfunc[i].name, (size_t)len))
 				{
 					if (userfunc[i].numargs!=numparams) error("Wrong number of parameters to function.");
 					char ** oldfuncargnames=funcargnames;
@@ -592,19 +581,19 @@ static long double getnumcore()
 						}                                                      \
 						else if (!hasfurtheroverloads) error("Wrong number of parameters to function."); \
 					}
-			wrappedfunc1("sqrt", params[0], sqrt(params[0].value.longdoublevalue), false);
-			wrappedfunc1("sin", params[0], sin(params[0].value.longdoublevalue), false);
-			wrappedfunc1("cos", params[0], cos(params[0].value.longdoublevalue), false);
-			wrappedfunc1("tan", params[0], tan(params[0].value.longdoublevalue), false);
-			wrappedfunc1("asin", params[0], asin(params[0].value.longdoublevalue), false);
-			wrappedfunc1("acos", params[0], acos(params[0].value.longdoublevalue), false);
-			wrappedfunc1("atan", params[0], atan(params[0].value.longdoublevalue), false);
-			wrappedfunc1("arcsin", params[0], asin(params[0].value.longdoublevalue), false);
-			wrappedfunc1("arccos", params[0], acos(params[0].value.longdoublevalue), false);
-			wrappedfunc1("arctan", params[0], atan(params[0].value.longdoublevalue), false);
-			wrappedfunc1("log", params[0], log(params[0].value.longdoublevalue), false);
-			wrappedfunc1("log10", params[0], log10(params[0].value.longdoublevalue), false);
-			wrappedfunc1("log2", params[0], log(params[0].value.longdoublevalue)/log(2.0), false);
+			wrappedfunc1("sqrt", params[0], sqrt((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("sin", params[0], sin((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("cos", params[0], cos((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("tan", params[0], tan((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("asin", params[0], asin((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("acos", params[0], acos((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("atan", params[0], atan((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("arcsin", params[0], asin((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("arccos", params[0], acos((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("arctan", params[0], atan((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("log", params[0], log((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("log10", params[0], log10((double)params[0].value.longdoublevalue), false);
+			wrappedfunc1("log2", params[0], log((double)params[0].value.longdoublevalue)/log(2.0), false);
 
 			func("read1", 1, read1(params[0]), true);
 			func("read2", 1, read2(params[0]), true);
@@ -633,8 +622,8 @@ static long double getnumcore()
 			func("canreadfile4", 2, canreadfilefunc(params[0], params[1], funcparam(4.0)), false);
 			func("canreadfile", 3, canreadfilefunc(params[0], params[1], params[2]), false);
 
-			wrappedfunc1("snestopc", params[0], snestopc(params[0].value.longdoublevalue), false);
-			wrappedfunc1("pctosnes", params[0], pctosnes(params[0].value.longdoublevalue), false);
+			wrappedfunc1("snestopc", params[0], snestopc((int)params[0].value.longdoublevalue), false);
+			wrappedfunc1("pctosnes", params[0], pctosnes((int)params[0].value.longdoublevalue), false);
 
 			wrappedfunc2("max", params[0], params[1], (params[0].value.longdoublevalue > params[1].value.longdoublevalue ? params[0].value.longdoublevalue : params[1].value.longdoublevalue), false);
 			wrappedfunc2("min", params[0], params[1], (params[0].value.longdoublevalue < params[1].value.longdoublevalue ? params[0].value.longdoublevalue : params[1].value.longdoublevalue), false);
@@ -669,7 +658,7 @@ static long double getnumcore()
 		{
 			for (int i=0;i<numuserfuncargs;i++)
 			{
-				if (!strncmp(start, funcargnames[i], len))
+				if (!strncmp(start, funcargnames[i], (size_t)len))
 				{
 					if (funcargvals[i].type == Type_Double)
 						return funcargvals[i].value.longdoublevalue;
@@ -686,7 +675,7 @@ static long double getnumcore()
 			foundlabel=true;
 
 			const char *old_start = start;
-			int i=labelval(&start);
+			int i=(int)labelval(&start);
 			bool scope_passed = false;
 			bool subscript_passed = false;
 			while (str < start)
@@ -785,10 +774,10 @@ notposneglabel:
 				left=sanitize(contents);             \
 				continue;                            \
 			}
-		oper("**", 4, pow(left, right));
+		oper("**", 4, pow((double)left, (double)right));
 		oper("*", 3, left*right);
 		oper("/", 3, right?left/right:error("Division by zero."));
-		oper("%", 3, right?fmod(left, right):error("Modulos by zero."));
+		oper("%", 3, right?fmod((double)left, (double)right):error("Modulos by zero."));
 		oper("+", 2, left+right);
 		oper("-", 2, left-right);
 		oper("<<", 1, (unsigned int)left<<(unsigned int)right);

@@ -3,7 +3,7 @@
 #include "libstr.h"
 #include "libcon.h"
 #include "libsmw.h"
-#include <stdio.h>
+#include "platform/file-helpers.h"
 
 #ifdef TIMELIMIT
 # if defined(linux)
@@ -18,31 +18,6 @@
 # else
 #  error Time limits not configured for this OS.
 # endif
-#endif
-
-//specialized for Linux and Windows for performance - it will still work on anything that only provides libc though
-#if defined(linux)
-#include <sys/stat.h>
-bool file_exists(const char * filename)
-{
-	struct stat st;
-	return (!stat(filename, &st));
-}
-
-#elif defined(_WIN32)
-#include <windows.h>
-bool file_exists(const char * filename)
-{
-	return (GetFileAttributes(filename)!=INVALID_FILE_ATTRIBUTES);
-}
-
-#else
-bool file_exists(const char * filename)
-{
-	FILE * f=fopen(filename, "rb");
-	if (f) fclose(f);
-	return f;
-}
 #endif
 
 extern bool errored;

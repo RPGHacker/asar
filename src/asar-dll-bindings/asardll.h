@@ -52,7 +52,7 @@ extern "C" {
 
 //Returns the version, in the format major*10000+minor*100+bugfix*1. This means that 1.2.34 would be
 // returned as 10234.
-asarfunc int (*asar_version)();
+asarfunc int (*asar_version)(void);
 
 //Returns the API version, format major*100+minor. Minor is incremented on backwards compatible
 // changes; major is incremented on incompatible changes. Does not have any correlation with the
@@ -60,16 +60,20 @@ asarfunc int (*asar_version)();
 //It's not very useful directly, since asar_init() verifies this automatically.
 //Calling this one also sets a flag that makes asar_init not instantly return false; this is so
 // programs expecting an older API won't do anything unexpected.
-asarfunc int (*asar_apiversion)();
+asarfunc int (*asar_apiversion)(void);
 
 //Initializes Asar. Call this before doing anything.
 //If it returns false, something went wrong, and you may not use any other Asar functions. This is
 //either due to not finding the library, or not finding all expected functions in the library.
-bool asar_init();
+bool asar_init(void);
+
+// Same as above, but instead of automatically looking for and trying to load asar.dll, takes
+// a path to the Asar DLL and tries to load it.
+bool asar_init_with_dll_path(const char * dllpath);
 
 //Clears out all errors, warnings and printed statements, and clears the file cache. Not really
 // useful, since asar_patch() already does this.
-asarfunc bool (*asar_reset)();
+asarfunc bool (*asar_reset)(void);
 
 //Applies a patch. The first argument is a filename (so Asar knows where to look for incsrc'd
 // stuff); however, the ROM is in memory.
@@ -82,11 +86,11 @@ asarfunc bool (*asar_patch)(const char * patchloc, char * romdata, int buflen, i
 //Returns the maximum possible size of the output ROM from asar_patch(). Giving this size to buflen
 // guarantees you will not get any buffer too small errors; however, it is safe to give smaller
 // buffers if you don't expect any ROMs larger than 4MB or something.
-asarfunc int (*asar_maxromsize)();
+asarfunc int (*asar_maxromsize)(void);
 
 //Frees all of Asar's structures and unloads the module. Only asar_init may be called after calling
 // this; anything else will lead to segfaults.
-void asar_close();
+void asar_close(void);
 
 //Get a list of all errors.
 //All pointers from these functions are valid only until the same function is called again, or until
@@ -126,7 +130,7 @@ asarfunc double (*asar_math)(const char * math, const char ** error);
 asarfunc const struct writtenblockdata * (*asar_getwrittenblocks)(int * count);
 
 //Get the mapper currently used by Asar
-asarfunc enum mappertype (*asar_getmapper)();
+asarfunc enum mappertype (*asar_getmapper)(void);
 
 #ifdef __cplusplus
 	}

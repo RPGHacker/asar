@@ -38,22 +38,22 @@ bool asblock_65816(char** word, int numwords)
 #define bankoptinit(left, right) itrim(par, left, right); getvars(true)
 #define blankinit() len=1; num=0
 #define end() return false
-#define as0(    op, byte) if (is(op)          ) { write1(byte);              return true; }
-#define as1(    op, byte) if (is(op) && len==1) { write1(byte); write1(num); return true; }
-#define as2(    op, byte) if (is(op) && len==2) { write1(byte); write2(num); return true; } \
+#define as0(    op, byte) if (is(op)          ) { write1((unsigned int)byte);              return true; }
+#define as1(    op, byte) if (is(op) && len==1) { write1((unsigned int)byte); write1((unsigned int)num); return true; }
+#define as2(    op, byte) if (is(op) && len==2) { write1((unsigned int)byte); write2((unsigned int)num); return true; } \
 													/*if (is(op) && len==3 && emulate) { write1(byte); write2(num); return true; }*/
-#define as3(    op, byte) if (is(op) && len==3) { write1(byte); write3(num); return true; }
+#define as3(    op, byte) if (is(op) && len==3) { write1((unsigned int)byte); write3((unsigned int)num); return true; }
 //#define as23(   op, byte) if (is(op) && (len==2 || len==3)) { write1(byte); write2(num); return true; }
-#define as32(   op, byte) if (is(op) && (len==2 || len==3)) { write1(byte); write3(num); return true; }
-#define as_a(   op, byte) if (is(op)) { if (len==1) { write1(byte); write1(num); } \
-																					 else { write1(byte); write2(num); } return true; }
-#define as_xy(  op, byte) if (is(op)) { if (len==1) { write1(byte); write1(num); } \
-																					 else {  write1(byte); write2(num); } return true; }
-#define as_rep( op, byte) if (is(op)) { if (pass==0) num=getnum(par); for (int i=0;i<num;i++) { write1(byte); } return true; }
-#define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?num:num-((snespos&0xFFFFFF)+2); write1(byte); write1(pos); \
+#define as32(   op, byte) if (is(op) && (len==2 || len==3)) { write1((unsigned int)byte); write3((unsigned int)num); return true; }
+#define as_a(   op, byte) if (is(op)) { if (len==1) { write1((unsigned int)byte); write1((unsigned int)num); } \
+																					 else { write1((unsigned int)byte); write2((unsigned int)num); } return true; }
+#define as_xy(  op, byte) if (is(op)) { if (len==1) { write1((unsigned int)byte); write1((unsigned int)num); } \
+																					 else {  write1((unsigned int)byte); write2((unsigned int)num); } return true; }
+#define as_rep( op, byte) if (is(op)) { if (pass==0) num=getnum(par); for (int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
+#define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
 													if (pass==2 && foundlabel && (pos<-128 || pos>127)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
 													return true; }
-#define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?num:num-((snespos&0xFFFFFF)+3); write1(byte); write2(pos);\
+#define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?num:num-((snespos&0xFFFFFF)+3); write1((unsigned int)byte); write2((unsigned int)pos);\
 											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
 											return true; }
 #define the8(offset, len) as##len("ORA", offset+0x00); as##len("AND", offset+0x20); as##len("EOR", offset+0x40); as##len("ADC", offset+0x60); \
@@ -123,7 +123,7 @@ bool asblock_65816(char** word, int numwords)
 		as2("JMP", 0x7C); as2("JSR", 0xFC);
 		end();
 	}
-	else if (match("(", ")") && confirmqpar(substr(word[1]+1, strlen(word[1]+1)-1)))
+	else if (match("(", ")") && confirmqpar(substr(word[1]+1, (int)(strlen(word[1]+1)-1))))
 	{
 		init("(", ")");
 		the8(0x12, 1);
@@ -134,7 +134,7 @@ bool asblock_65816(char** word, int numwords)
 	else if (match("", ",x"))
 	{
 		init("", ",x");
-		if (match("(", ")") && confirmqpar(substr(word[1]+1, strlen(word[1]+1)-2-1))) warn0("($yy),x does not exist, assuming $yy,x");
+		if (match("(", ")") && confirmqpar(substr(word[1]+1, (int)(strlen(word[1]+1)-2-1)))) warn0("($yy),x does not exist, assuming $yy,x");
 		the8(0x1F, 3);
 		the8(0x1D, 2);
 		the8(0x15, 1);
@@ -164,13 +164,13 @@ bool asblock_65816(char** word, int numwords)
 	{
 		if ((is("MVN") || is("MVP")) && confirmqpar(par))
 		{
-			int num;
-			autoptr<char**>param=qpsplit(par, ",", &num);
-			if (num==2)
+			int numargs;
+			autoptr<char**>param=qpsplit(par, ",", &numargs);
+			if (numargs ==2)
 			{
-				write1(is("MVN")?0x54:0x44);
-				write1(getnum(param[0]));
-				write1(getnum(param[1]));
+				write1(is("MVN")?(unsigned int)0x54:(unsigned int)0x44);
+				write1((unsigned int)getnum(param[0]));
+				write1((unsigned int)getnum(param[1]));
 				return true;
 			}
 		}
