@@ -9,7 +9,6 @@
 #pragma once
 #define Asar
 
-#include <libgen.h>
 #include "autoarray.h"
 #include "scapegoat.hpp"
 #include "libstr.h"
