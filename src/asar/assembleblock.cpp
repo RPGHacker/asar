@@ -3,6 +3,7 @@
 #include "libsmw.h"
 #include "scapegoat.hpp"
 #include "autoarray.h"
+#include "platform/file-helpers.h"
 
 int arch=arch_65816;
 
@@ -133,6 +134,9 @@ int getnum(const char * str);
 void assemblefile(const char * filename, bool toplevel);
 extern const char * thisfilename;
 extern int thisline;
+
+extern const char * thisromname;
+extern const char * libdir;
 
 const char * createuserfunc(const char * name, const char * arguments, const char * content);
 
@@ -1365,7 +1369,7 @@ void assembleblock(const char * block)
 		repeatnext=rep;
 	}
 #ifdef SANDBOX
-	else if (is("incsrc") || is("incbin") || is("table"))
+	else if (is("incsrc") || is("incbin") || is("table") || is("incdir") || is("import"))
 	{
 		error(0, "This command is disabled.");
 	}
@@ -1393,6 +1397,15 @@ void assembleblock(const char * block)
 		if (emulatexkas) name=dequote(par);
 		else name=S dir(thisfilename)+dequote(par);
 		assemblefile(name, false);
+	}
+	else if (is1("import")) // import from search directory
+	{
+		checkbankcross();
+		string name;
+        name=S dir(strdup(thisromname)); // get starting directory (up from rom name)
+        name=S name+dir(libdir)+dequote(par); // and append lib directory
+        if (!file_exists(name)) name = S name + ".asm"; // if file doesn't exist, assume omitted .asm
+        assemblefile(name, false);
 	}
 	else if (is1("incbin") || is3("incbin"))
 	{

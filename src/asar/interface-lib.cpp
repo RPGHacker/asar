@@ -27,6 +27,9 @@ extern const char * thisblock;
 extern const char * callerfilename;
 extern int callerline;
 
+extern const char * thisromname;
+extern const char * libdir;
+
 autoarray<const char *> prints;
 int numprint;
 
@@ -173,9 +176,24 @@ EXPORT void asar_close()
 	resetdllstuff();
 }
 
+EXPORT void asar_setromname(const char * name)
+{
+    thisromname = strdup(name);
+}
+
+EXPORT void asar_setlibdir(const char * dir)
+{
+    libdir = strdup(dir);
+}
+
 #define maxromsize (16*1024*1024)
 EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int * romlen_)
 {
+	if (!libdir)
+    {
+            // default to ./lib/ (relative to rom, if specified)
+            libdir = "./lib/";
+    }
 	if (buflen!=maxromsize)
 	{
 		romdata_r=(unsigned char*)malloc(maxromsize);
@@ -348,5 +366,3 @@ EXPORT mapper_t asar_getmapper()
 {
 	return mapper;
 }
-
-

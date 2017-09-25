@@ -45,6 +45,9 @@ extern const char * thisfilename;
 extern int thisline;
 extern const char * thisblock;
 
+extern const char * thisromname;
+extern const char * libdir;
+
 void print(const char * str)
 {
 	puts(str);
@@ -173,6 +176,10 @@ int main(int argc, char * argv[])
 				else if (par=="-pause=yes") pause=pause_yes;
 				else libcon_badusage();
 			}
+			else if (par=="-libdir")
+            {
+                libdir = libcon_option();
+            }
 			else libcon_badusage();
 		}
 		if (verbose)
@@ -183,6 +190,11 @@ int main(int argc, char * argv[])
 		string romname=libcon_optional_filename("Enter ROM name:", NULL);
 		//char * outname=libcon_optional_filename("Enter output ROM name:", NULL);
 		libcon_end();
+		if (!libdir)
+        {
+            // default to ./lib/ (relative to rom directory)
+            libdir = "./lib/";
+        }
 		if (!strchr(asmname, '.') && !file_exists(asmname)) asmname+=".asm";
 		if (!romname)
 		{
@@ -198,6 +210,7 @@ int main(int argc, char * argv[])
 			if (file_exists(S romname+".sfc")) romname+=".sfc";
 			else if (file_exists(S romname+".smc")) romname+=".smc";
 		}
+		thisromname = romname; // pass rom name into global context
 		if (!file_exists(romname))
 		{
 			FILE * f=fopen(romname, "wb");
@@ -311,4 +324,3 @@ int main(int argc, char * argv[])
 	}
 	return 0;
 }
-
