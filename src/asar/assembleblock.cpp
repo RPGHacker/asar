@@ -687,7 +687,18 @@ void assembleblock(const char * block)
 		}
 		return;
 	}
-	if (is("if") || is("elseif") || is("assert") || is("while"))
+	if (is1("undef"))
+    {
+        string def;
+        if (*par=='!') def = S par+1;
+        else def = S par;
+        
+        string out;
+        if (defines.find(def, out)) {
+            defines.remove(def);
+        }
+    }
+	else if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
 		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
 		const char * errmsg=NULL;
