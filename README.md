@@ -3,32 +3,7 @@
 This document assumes the reader is familiar with xkas. If this is not the case, please read xkas.html first.
 
 New features:
-- SMC headers are now detected from the filename extension instead of the "header" directive. This
-  allows applying the same patch to both headered and unheadered ROMs. The "header" directive is
-  silently ignored.
-- If not given a ROM name, Asar checks if patchname.sfc or patchname.smc exists and applies it to
-  the one it finds. If it finds zero or two ROMs with that filename, it picks .sfc. xkas always uses
-  .smc in this situation.
-- Asar will ask for more filenames if double-clicked, instead of closing instantly. This is much
-  more user friendly.
 - If you're in a namespace and a label isn't found, Asar looks in the global namespace.
-- If a line ends in a comma, the next line will be appended to it. This allows infinite macro
-  arguments in practice, not just in theory (300 character lines gets annoying pretty quickly).
-- Similarly, if a line ends in a backslash, the next line will be appended to it. The only difference
-  to a comma is that unlike the comma, the backslah won't appear in the concatenated string.
-  This is useful to split long function definitions into multiple lines.  Note that all whitespace
-  following the \ is ignored, whereas whitespace preceeding the \ isn't. Therefore  
-      db\
- 	  $FF 	   
-  becomes 
-      db$FF 	
-  for example, whereas  
-      db \
- 	  $FF 	   
-  becomes
-      db $FF
-  This is by design, since some statements in Asar require spaces inbetween, whereas other statements
-  (such as math or function definitions) don't allow spaces at all.
 - This technically isn't a change, but Label = Address is now a well defined operation. While it
   exists in xkas6, the only ways to find it are by inspecting the output of export.label, by
   inspecting the source code, and by mistake (I've seen it done thrice, leading to odd bugs in
@@ -100,56 +75,16 @@ If any of these dissatisfies you, put ;@xkas at the top of your patch and Asar w
  will still work, but they'll throw warnings everywhere.
 - Any comment starting with ;@ will be assembled by Asar. This is so you can detect xkas vs Asar
   without ugly hacks. Recommended usage is !Assembler = xkas : ;@!Assembler = Asar.
-- Asar will optimize label access from 24bit addressing to 16bit if possible (xkas doesn't try at
-  all without assume, raw addresses or .w). This may break stuff that doesn't use PHB : PHK : PLB :
-  a : PLB but still tries to read from tables.
-- incbin and incsrc will look in the folder the current file is in (if you're in a macro, it's
-  relative to the macro, not the caller), not in the current working directory (which is usually
-  where the base patch is). This may break dynamic sprites.
-- # is no longer valid in arbitrary locations in a math string. Beside the normal use (telling that
-  an opcode should use a constant, not a ROM address), it's only allowed at the start of an entry to
-  db/dw/dl/dd.
-- JSR.l and JMP.l are rejected. JSR.l support makes it totally impossible to figure out if RTS or
-  RTL should be used, and I don't belive JMP.l makes much sense either.
-- rep 0 will repeat the opcode following it 0 times. However, some patches abuses this for
-  conditional compilation and expects rep 0 to mean rep 1. Asar will print warnings for this, so use
-  the if command instead.
-- rep num : %macro() will repeat the macro num times, instead of capping it at 1. Same goes for
-  incsrc. This may break conditional compilation, though I don't think it's gonna happen without
-  triggering the rep 0 warnings.
-- warnpc has been changed. In xkas, org $00F606 : warnpc $00F606 fails; however, I belive this makes
-  no sense. Therefore, I have made Asar accept this code. org $00F607 : warnpc $00F606 will
-  obviously still fail. The argument is meant to be the first byte you want protected.
-- Calling defines like functions (!a()) no longer works. It's an ugly feature that breaks my macro
-  abuse (though I don't need much abuse in Asar anyways...).
 - Asar does not support these opcodes: DEA (synonym of DEC A), INA (synonym of INC A), TAD (TCD),
   TDA (TDC), TAS (TCS), TSA (TSC) and SWA (XBA).
 - Various operations that give undesirable behaviour in all circumstances (for example inaccessible
   labels) will print errors in Asar. (A bunch of crashes have been removed as well, but that will
   obviously not break old xkas codes.)
-- { and } are no longer treated like whitespace. They can be used alone as commands (they do
-  nothing), but they can't be used in the middle of opcodes. This means that NOP : { : RTS will
-  work, but LDA {$19} won't. They don't need to be matched.
 - Asar prefers uppercase hex over lowercase in print pc. This may confuse crappy tools, but I don't
   think any tools we use around here act like that.
-- Main() is not a valid label definition (xkas treats it like Main: ).
 - Asar initializes tables to garbage if you use table, while xkas initializes it to all 00.
 - Asar prints errors and warnings to stderr instead of stdout. However, to keep compatibility with
   old tools, Asar will send the errors to stdout if it's renamed to xkas.exe.
-
-Removed and limited commands:
-- loadpc and savepc have been removed. I have never seen them used for anything legitime, and
-  they're often misunderstood.
-- export doesn't exist either. It's never used for anything.
-- assume has been removed. It's supposed to do three things: Optimize LDA.w->LDA.b if it's in the
-  direct page (not implemented in xkas, everyone uses $19 directly), optimize LDA.l->LDA.w if bank
-  byte is given (can be prone to errors, Asar has a better algorithm for this), and automatically
-  set AXY sizes (everyone uses .b/.w or #$10/#$0010 for this). Therefore, I consider it useless.
-- print opcodes has been removed. It's never used for anything serious. However, I kept print bytes,
-  print pc, and print "text".
-- print 'asdf' is not implemented. Pointless syntactic sugar.
-- print "A\nA" prints two As on separate lines in xkas, but it just prints "A\nA" in Asar. I'll add
-  it if anyone can convince me it's useful for anything at all.
 
 New commands:
 - freespace/freecode/freedata: Automatic freespace finders, including automatic RATS tags. freespace
@@ -190,15 +125,6 @@ New commands:
 - if/elseif/else/endif: For conditional compilation. See section "Conditionals" below for details.
 - while: For repeated compilation of the same code. See section "Loops" below for details.
 - assert: Accepts an if-like condition; if the condition is false, it prints an error message.
-- arch: Assembles for another architecture. Valid values are the following:
-   65816 - default, the one you want in most circumstances.
-   spc700 - SPC700 code. Follows the format the SNES Dev Manual recommends, with the exception of
-     mov (x)+,a and mov a,(x)+, which are moved to mov (x+),a and mov a,(x+).
-   spc700-inline - Also SPC700 code. This one implements the standard upload system (16bit length,
-     then location, with a terminator at the end) automatically.
-   superfx - Guess three times.
-  Label/macro/etc syntax is the same across architectures; however, mixing labels created in
-   different architectures will give odd results, and macro mixing makes little sense.
 - math: Changes how the math parser works. It takes two arguments: First, it wants a setting name
   (valid settings are "pri" and "round"), then it wants "on" or "off" depending on whether you want
   it on or off. pri tells it to apply prioritization rules (exponentiation comes before
@@ -228,12 +154,9 @@ New commands:
 - sfxrom: Tells Asar to use the SuperFX mapper.
 - exlorom: Implements the ExLoROM mapper.
 - exhirom: Implements the ExHiROM mapper.
-- @asar: Demands a minimum version of Asar for assembling the patch. Since Asar is constantly
-  evolving, this is a way to tell the user why the patch breaks.
 - @include, @includefrom: Tells that an asm file may not be assembled directly, but must be included
   from another file. @includefrom tells which file it's supposed to be included from, though it
   doesn't verify that it really is included from this file. It's just a sanity check.
-- ;@xkas: Enters xkas emulation mode.
 - struct/endstruct: used to define a struct, which are basically just a convenient and easier-to-read way
   of accessing tables. The code for this was written by p4plus2 and I really can't explain it well, so
   just take a look at src/tests/structs.asm for usage examples.
@@ -348,6 +271,5 @@ Known bugs:
 Deprecated features:
 All of these should be avoided; they're only listed here to make sure people don't claim they've
   found any easter eggs. They may start throwing warnings in newer versions of Asar.
-- arch spc700-raw
 - if a = b
 - fastrom

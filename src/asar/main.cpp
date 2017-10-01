@@ -30,6 +30,7 @@ int optimizeforbank=-1;
 
 const char * thisfilename;
 int thisline;
+int lastspecialline=-1;
 const char * thisblock;
 
 const char * callerfilename=NULL;
@@ -481,8 +482,17 @@ void assembleline(const char * fname, int linenum, const char * line)
 					itrim(blocks[block], " ", " ", true);
 					thisfilename=fname;
 					thisline=linenum;//do not optimize, this one is recursive
-					thisblock=blocks[block];
-					assembleblock(blocks[block]);
+					thisblock = blocks[block];
+					if (thisblock[0] == '@')
+					{
+						lastspecialline = thisline;
+						thisblock++;
+						while (isspace(*thisblock))
+						{
+							thisblock++;
+						}
+					}
+					assembleblock(thisblock);
 				}
 				catch (errblock&) {}
 				if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
@@ -532,9 +542,7 @@ void assemblefile(const char * filename, bool toplevel)
 				}
 				else
 				{
-					// RPG Hacker: Why was this line even needed to begin with?
-					//if (strncasecmp(comment+2, "xkas", 4)) comment[1]=' ';
-					comment[0]=' ';
+					comment[0] = ' ';
 				}
 				comment = strqchr(comment, ';');
 			}
@@ -673,5 +681,7 @@ void reseteverything()
 	specifiedasarver=false;
 	errored = false;
 	checksum = true;
+	
+	lastspecialline = -1;
 #undef free
 }

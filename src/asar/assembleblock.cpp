@@ -133,6 +133,7 @@ int getnum(const char * str);
 void assemblefile(const char * filename, bool toplevel);
 extern const char * thisfilename;
 extern int thisline;
+extern int lastspecialline;
 
 const char * createuserfunc(const char * name, const char * arguments, const char * content);
 
@@ -871,7 +872,7 @@ void assembleblock(const char * block)
 	{
 		if (pass==2) warn(dequote(par));
 	}
-	else if (is0("@asar") || is1("@asar"))
+	else if (is0("asar") || is1("asar"))
 	{
 		if (!asarverallowed) error(0, "This command may only be used at the start of a file.");
 		if (!par) return;
@@ -912,7 +913,7 @@ void assembleblock(const char * block)
 		}
 		specifiedasarver = true;
 	}
-	else if (is0("@xkas"))
+	else if (is0("xkas"))
 	{
 		if (!asarverallowed) error(0, "This command may only be used at the start of a file.");
 		if (incsrcdepth != 1 && !emulatexkas) error(0, "This command may only be used in the root file.");
@@ -922,7 +923,7 @@ void assembleblock(const char * block)
 		checksum=false;
 		sublabels[0]=":xkasdefault:";
 	}
-	else if (is0("@include") || is1("@includefrom"))
+	else if (is0("include") || is1("includefrom"))
 	{
 		if (!asarverallowed) error(0, "This command may only be used at the start of a file.");
 		if (istoplevel)
@@ -930,14 +931,6 @@ void assembleblock(const char * block)
 			if (par) fatalerror(S"This file may not be used as the main file. The main file is \""+S par+"\".");
 			else fatalerror("This file may not be used as the main file.");
 		}
-	}
-	else if (is0("@"))
-	{
-		// Stand-alone @, just ignore this
-	}
-	else if (numwords > 0 && word[0][0] == '@')
-	{
-		warn0(S"unrecognized special command - your version of Asar might be outdated.");
 	}
 	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
 	{
@@ -1714,7 +1707,17 @@ void assembleblock(const char * block)
 		//else error(0, "Can't use fastrom in this mapper.");
 	}
 	else if (is0("{") || is0("}")) {}
-	else error(1, "Unknown command.");
+	else
+	{
+		if (thisline == lastspecialline)
+		{
+			warn0(S"unrecognized special command - your version of Asar might be outdated.");
+		}
+		else
+		{
+			error(1, "Unknown command.");
+		}
+	}
 }
 
 bool assemblemapper(char** word, int numwords)
