@@ -34,7 +34,8 @@
 				}
 		</script>
 		<h1>Asar</h1>
-        <p>A multi-architecture SNES assembler by <i>Alcaro</i>, based on <b>xkas v0.06</b> by <i>byuu</i>.</p>
+        <p>A multi-architecture SNES assembler by <i>Alcaro</i>, based on <b>xkas v0.06</b> by <i>byuu</i>.<br />
+		This manual was written by <i>RPG Hacker</i>, so if you find something that is wrong or weird, make sure to blame me instead of Alcaro.</p>
 		<hr />
 		<p id="contents"><h3>Table of Contents</h3>
 		<ul>
@@ -56,8 +57,20 @@
 					<li><a href="#comments">Comments</a></li>
 					<li><a href="#brackets">Brackets</a></li>
 					<li><a href="#multiline">Multi-Line Operators</a></li>
+					<li><a href="#singleline">Single-Line Operator</a></li>
 				</ul>
 			</li>
+			<li>
+				<a href="#labels">Labels</a>
+				<ul>
+					<li><a href="#main-labels">Main Labels</a></li>
+					<li><a href="#sub-labels">Sub Labels</a></li>
+					<li><a href="#plus-minus-labels">+/- Labels</a></li>
+					<li><a href="#macro-labels">Macro Labels</a></li>
+				</ul>
+			</li>
+			<li><a href="#defines">Defines</a></li>
+			<li><a href="#macros">Macros</a></li>
 		</ul>
 		</p>
 		<hr />
@@ -77,12 +90,41 @@
 				<td></td>
 			</tr>
 			<tr>
+				<td><code class="powershell">--version</code></td>
+				<td>Input</td>
+				<td>Displays Asar version information.</td>
+				<td><pre><code class="powershell">asar.exe --version C:/homebrew/my_game/main.asm</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="powershell">-v</code><br /><code class="powershell">--verbose</code></td>
+				<td>Input</td>
+				<td>Enables verbose mode.</td>
+				<td><pre><code class="powershell">asar.exe -v C:/homebrew/my_game/main.asm</code></pre>
+				<pre><code class="powershell">asar.exe --verbose C:/homebrew/my_game/main.asm</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="powershell">--no-title-check</code></td>
+				<td>Input</td>
+				<td>Disables input ROM title and checksum verification when using Asar to apply a patch to an existing ROM file. Note that irresponsible use of this option will likely corrupt your ROM.</td>
+				<td><pre><code class="powershell">asar.exe --no-title-check C:/homebrew/my_game/main.asm</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="powershell">--pause-mode=&lt;mode&gt;</code></td>
+				<td>Input</td>
+				<td>Sets Asar's pause mode, specifying when Asar should pause the application before exit, where <code class="powershell">&lt;mode&gt;</code> can be one of the following:<br/>
+					<code class="powershell">never</code>: Don't pause the application.<br/>
+					<code class="powershell">on-error</code>: Pause the application if an error was thrown.<br/>
+					<code class="powershell">on-warning</code>: Pause the application if an error or a warning was thrown.<br/>
+					<code class="powershell">always</code>: Always pause the application.</td>
+				<td><pre><code class="powershell">asar.exe --pause-mode=always C:/homebrew/my_game/main.asm</code></pre></td>
+			</tr>
+			<tr>
 				<td><code class="powershell">-I&lt;path&gt;</code><br /><code class="powershell">--include&nbsp;&lt;path&gt;</code></td>
 				<td>Input</td>
 				<td>Adds an include search path for file-based commands to Asar. Normally, commands like incsrc, incbin etc. look for files relative to the ASM file that is currently being compiled. If those files aren't found, an error is thrown, unless you specify include search paths, in which case Asar will look for the file in each respective directory before throwing an error. For example, imagine you compiled the file
 				<pre><code class="powershell">C:/homebrew/my_game.asm</code></pre>
 				with Asar, adding the include search path
-				<pre><code class="powershell">-I"C:/homebrew/binary data"</code></pre>
+				<pre><code class="powershell">-I&quot;C:/homebrew/binary data&quot;</code></pre>
 				and the ASM file included the line:
 				<pre><code class="mips">incbin data/player_gfx.bin</code></pre>
 				Asar would now look for a file:
@@ -104,6 +146,12 @@
 	C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre>
 	<pre><code class="powershell">asar.exe --define debug=1
 	C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre></td>
+			</tr>
+			<tr>
+				<td>&nbsp;</td>
+				<td>&nbsp;</td>
+				<td>&nbsp;</td>
+				<td>&nbsp;</td>
 			</tr>
 			<tr>
 				<td><code class="powershell">asm_file</code></td>
@@ -1314,6 +1362,55 @@ MOV A,$00</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <p id="mappers"><h3>Mapping Modes</h3>
+		Asar supports a number of different mapping modes. They control the address translation used by Asar during compilation (aka where in the output file Asar writes to). Historically, SNES cartridges used a number of different mappers to address data in ROM. Those mappers can be supported by using the respective mapping mode in Asar. It's possible, but not recommended, to use different mapping modes on the same ROM. Detailed explanations on each mapping mode are beyond the scope of this manual, so please check the SNES Dev Manual or other specialized resources for that.<br/><br/>
+		<table>
+			<tr>
+				<th style="width:150px">Command</th>
+				<th>Details</th>
+			</tr>
+			<tr>
+				<td><code class="mips">lorom</code></td>
+				<td>Switch to LoROM mapping mode.</td>
+			</tr>
+			<tr>
+				<td><code class="mips">hirom</code></td>
+				<td>Switch to HiROM mapping mode.</td>
+			</tr>
+			<tr>
+				<td><code class="mips">exlorom</code></td>
+				<td>Switch to ExLoROM mapping mode.</td>
+			</tr>
+			<tr>
+				<td><code class="mips">exhirom</code></td>
+				<td>Switch to ExHiROM mapping mode.</td>
+			</tr>
+			<tr>
+				<td><code class="mips">sa1rom&nbsp;[bank_1,bank_2,bank_3,bank_4]</code></td>
+				<td>Switch to hybrid SA-1 mapping mode. To tell which banks are mapped in (maximum is 7) use the optional argument, like so:
+				<pre><code class="mips">sa1rom 0,1,4,6</code></pre>
+				The default is 0,1,2,3.</td>
+			</tr>
+			<tr>
+				<td><code class="mips">fullsa1rom</code></td>
+				<td>Switch to full SA-1 mapping mode.</td>
+			</tr>
+			<tr>
+				<td><code class="mips">sfxrom</code></td>
+				<td>Switch to Super FX mapping mode.</td>
+			</tr>
+			<tr>
+				<td><code class="mips">norom</code></td>
+				<td>Disable Asar's address translation; the SNES address is equal to the PC address. Can be combined with <code class="mips">base</code> and macros to implement your own address translation.</td>
+			</tr>
+		</table><br/>
+		When no mapping mode is specified, Asar tries to determine the mapping mode from the output ROM. If that isn't possible, Asar defaults to lorom.
+		<pre><code class="mips">lorom
+org $008000
+db $FF		; Will write to PC address 0x000000
+
+hirom
+org $008000
+db $FF		; Will write to PC address 0x008000</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <p id="behavior"><h3>Behavior Flags</h3>
@@ -1341,7 +1438,7 @@ do_something()</code></pre>
 		<pre><code class="mips">; This patch uses features from Asar 1.40, so it makes sense to require it as a minimum.
 @asar 1.40
 
-if readfile1("data.bin", 0) == 1
+if readfile1(&quot;data.bin&quot;, 0) == 1
 	; Do something
 else
 	; Do something else
@@ -1358,7 +1455,7 @@ db 1+(6/3)*5	; db 11</code></pre>
 		<pre><code class="mips">math round on
 ; 1.75 is immediately truncated to 1, resulting in (3/4)+1
 ; 3/4 would result in 0.75, which is immediately truncated to 0, resulting in 0+1
-; Thus leading to the final result of "db 1"
+; Thus leading to the final result of &quot;db 1&quot;
 db (3/4)+1.75
 
 ; !some_number contains 0 after this line
@@ -1367,7 +1464,7 @@ db (3/4)+1.75
 math round off
 ; As expected will result in 0.75+1.75, which will result in 2.5
 ; 2.5 is truncated to 2
-; Thus leading to the final result of "db 2"
+; Thus leading to the final result of &quot;db 2&quot;
 db (3/4)+1.75
 
 ; !some_number contains 0.75 after this line
@@ -1375,11 +1472,11 @@ db (3/4)+1.75
 <a href="#contents">Return to top</a></p>
 		<hr />
         <p id="formatting"><h3>Code Formatting</h3>
-		<h4 id="comments">Comments</h3>
+		<h4 id="comments">Comments</h4>
 		You can use ; to add comments to your code, making it easier to read and understand for other people. Everything from the ; to the end of the line is silently ignored by Asar.
 		<pre><code class="mips">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
 		An exception from this rule are lines starting with <code class="mips">;@</code>, which are assembled normally. The purpose of this is to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they will be assembled. If you don't care about backwards-compatibility, you can also just use <code class="mips">@</code>, which will make your patch only assemble with Asar and fail with xkas. Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#behavior">Behavior Flags</a> for details on xkas compatibility.
-		<h4 id="brackets">Brackets</h3>
+		<h4 id="brackets">Brackets</h4>
         Brackets, { and }, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's compltely up to you whether, how and in what quantity you want to use them.<br />
 		<pre><code class="mips">	lda $00
 	beq .is_zero
@@ -1391,88 +1488,205 @@ db (3/4)+1.75
 
 .is_zero
 	rts</code></pre>
-		<h4 id="multiline">Multi-Line Operators</h3>
+		<h4 id="multiline">Multi-Line Operators</h4>
 		The <code class="mips">,</code> and the <code class="mips">\</code> operator are formatting operators which make it possible to split commands in Asar into multiple lines. Both are put at the end of a line and work very similarly with only one key difference. During execution, Asar will concatenate subsequent lines to lines ending with either operator and treat them as a single line. When using the comma operator, the comma itself will actually remain a part of the concatenated string, whereas when using the backslash operator, the backslash itself will be removed from the concatenated string. When using the backslash operator, please note that all whitespace following it is ignored, whereas all whitespace preceeding it is preserved. This is by design, since some commands in Asar require spaces to work, whereas other commands (like math commands) only work without spaces.
 		<pre><code class="mips">%some_macro(!arg1, !arg2, !arg3,
 	!arg4, !arg5, !arg6)
-; This will be treated as "%some_macro(!arg1, !arg2, !arg3, !arg4, !arg5, !arg6)"
+; This will be treated as &quot;%some_macro(!arg1, !arg2, !arg3, !arg4, !arg5, !arg6)&quot;
 
 lda \
 	$7F0000
-; This will be treated as "lda $7F0000"
+; This will be treated as &quot;lda $7F0000&quot;
 
 function f(x) = ((x*x)+1000)\
 	/256
-; This will treated as "function f(x) = ((x*x)+1000)/256"</code></pre>
-		<br /><a href="#contents">Return to top</a></p>
+; This will be treated as &quot;function f(x) = ((x*x)+1000)/256&quot;</code></pre>
+
+        <h4 id="singleline">Single-Line Operator</h4>
+        Contrary to the multi-line operators, the single-line operator <code class="mips">:</code> is a formatting operator which makes it possible to treat a single line of code as multiple lines. It requires a space before and after usage to differentiate it from the : used with certain commands. When used between different commands, Asar interprets it similarly to a new line and treats each command as being on a separate line. This can be used to link multiple commands together into functional blocks and make the code more readable.
+        <pre><code class="mips">lda #$00 : sta $00
+		
+; Treated as:
+lda #00
+sta $00</code></pre>
+		<a href="#contents">Return to top</a></p>
 		<hr />
-        <b>Labels / Sublabels / +/- Labels:</b><br>
-        A label is used to represent a position in code, and allows one to code
-        without having to constantly update branches and jumps/calls. A label
-        should be able to be used in any opcode, but was specifically added to
-        be used with branches, jumps, and calls. When used with branches, they're automatically converted to offsets. Labels can contain A-Za-z0-9_.
-        They must end with :<br>
-        A sublabel is used to declare labels within labels that will share its
-        address space only, and can contain the same characters as a label, but
-        must start with a period. A sublabel must not, but can, end with a :.
-        Here's an example:<br>
-        <hr>
-        proc1:<br>
-        &nbsp;&nbsp;nop<br>
-        .l1<br>
-        &nbsp;&nbsp;bra .l1<br>
-        proc2:<br>
-        &nbsp;&nbsp;nop<br>
-        .l1<br>
-        &nbsp;&nbsp;bra .l1<br>
-        ;The two opcodes below will branch back and forth forever.<br>
-        &nbsp;&nbsp;- bra +<br>
-        &nbsp;&nbsp;+ bra -<br>
-        <hr>
-        Sublabels allow you to reuse redundantly named labels such as loop,
-        end,
-        etc. without causing duplicate label conflicts. A new sublabel group is
-        started immediately after a label is declared automatically. A +/-
-        label
-        can be up to 3 levels deep, e.g. +, ++, +++, -, --, ---. They overwrite
-        their pc offsets immediately after being redefined. Useful for very
-        short
-        loops, when even something like .loop would become redundant in a long
-        routine.<br>
-		Asar will optimize label access from 24bit addressing to 16bit if possible.<br>
-        Lastly, there are labels specifically for macros. They are identical to
-        real labels, and begin with a ?<br>
-        Example: ?label:<br>
-        Do not use these outside of macros!!
-        <br>
-        <br>
-        <b>Defines:</b><br>
-        Asar uses a pretty powerful define system, which does quite a bit more
-        than a typical define. To start, they are prefixed with !<br>
-        Syntax to declare a define is as follows, both are identical:<br>
-        !x = *<br>
-        !y equ *<br>
-        You must have a space on both side of the separator, e.g. ' = ', or
-        ' equ '. !x=* will not work.
-        A define can be anything, a label, another define, a math formula, it
-        can include the formatting for the opcode or not, etc.
-        Here are some examples:<br>
-        !x = $00<br>
-        lda !x ;lda $00<br>
-        lda #!x ;lda #$00<br>
-        !x equ [$00],y<br>
-        lda !x ;lda [$00],y<br>
-        !y = $12<br>
-        !x = !y$34<br>
-        lda !x ;lda $1234<br>
-        !phr = "pha : phx : phy"<br>
-        !phr<br>
-        If you need to use spaces within your define, then you
-        must use quotes around the right hand side of the operand, as shown
-        above
-        with !phr.<br>
-        <br>
-        <b>Macros:</b><br>
+		<p id="labels"><h3>Labels</h3>
+		Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets. Asar will optimize label access from 24-bit addressing to 16-bit if possible.
+		<h4 id="main-labels">Main Labels</h4>
+        Main labels are the top-most level of labels supported by Asar. They're global and thus can be directly acessed from anywhere. They can contain any of the following characters<br />
+		<code class="mips">a-z A-Z 0-9 _</code><br />
+		and their declaration must end with a <code class="mips">:</code> .
+		<pre><code class="mips">org $008000
+		
+Main:
+	%do_frame()
+	jmp Main	; Equal to jmp $8000</code></pre>
+		<h4 id="sub-labels">Sub Labels</h4>
+        Sub labels are the second-most level of labels supported by Asar. They're local to the last main label declared and can contain the same characters as main labels, but must start with a period. Sub labels are declared in the same way as main levels, except they are prefixed with a <code class="mips">.</code> and the colon after them is optional.
+        <pre><code class="mips">Proc1:
+	nop
+.Sub
+	bra .Sub
+	
+Proc2:
+	nop
+.Sub:	; The colon is optional
+	bra .Sub</code></pre>
+        Sub labels allow you to reuse redundantly named labels such as Loop, End, etc. without causing label redefinition errors. A new sub label group is automatically started after a main label is declared. Internally, sub labels are converted to <code class="mips">MainLabel_SubLabel</code>, which can be used to access them from anywhere.
+		<pre><code class="mips">Main1:
+	; ...
+.Sub1:
+	; ...
+.Sub2:
+	; ...
+	
+Main2:
+	; ...
+.Sub1:
+	; ...
+.Sub2:
+	; ...
+	
+Table:
+	dl Main1_Sub1
+	dl Main1_Sub2
+	dl Main2_Sub1
+	dl Main2_Sub2</code></pre>
+		<h4 id="plus-minus-labels">+/- Labels</h4>
+		+/- labels are a special type of labels that are different from both main labels and sub labels in that they don't refer to a specific location in code, but rather to a location relative from where they are used. When used inside opcodes, <code class="mips">+</code> always refers to the next + label and <code class="mips">-</code> always refers to the previous - label. You can also chain an arbitrary number of + or an arbitrary number of - to create unique +/- labels that don't overwrite labels with a different number of +/-, for example <code class="mips">+++</code> or <code class="mips">-----</code>.
+		<pre><code class="mips">	ldx.b #4
+		
+--			; A
+	lda $10,x
+	beq +		; Branches to &quot;C&quot;
+		
+	ldy.b #8
+	
+-			; B
+	%do_something()
+	
+	dey
+	bne -		; Branches to &quot;B&quot;
+	
++			; C
+	dex
+	bpl --		; Branches to &quot;A&quot;</code></pre>
+		+/- labels are useful in a number of situations. For example: inside a long routine with multiple short loops, where even a sub label like <code class="mips">.Loop</code> would get repetitive. +/- labels aren't bound to any scope, which means they can technically be used across different scopes. Just like sub labels, +/- labels are converted to main labels internally. Unlike sub labels, they can not be referenced from code directly since their names depend on where in the code they're used, making it impractical to directly refer to them. This is by design. They can, however, be accessed via the Asar DLL API, using the <code class="cpp">asar_getalllabels()</code> and the <code class="cpp">asar_getlabelval()</code> functions. The naming format used for them is<br/>
+		<code class="mips">:pos_x_y</code><br/>
+		for + labels and<br/>
+		<code class="mips">:neg_x_y</code><br/>
+		for - labels, where<br/>
+		x = number of chained +/-<br/>
+		and<br/>
+		y = instance of this label within all +/- labels of the same name (starting from 0 for + labels and from 1 for - labels).
+		<pre><code class="mips">lorom
+org $008000
+
+---			; :neg_3_1
+-			; :neg_1_1
+	bra -
+--			; :neg_2_1
+-			; :neg_1_2
+	bra ---
+	bra --
+	bra -
+	
+	bra ++
+	bra +
+	bra +++
+	
+++			; :pos_2_0
++			; :pos_1_0
+	bra ++
+++			; :pos_2_1
++++			; :pos_3_0</code></pre>
+		<h4 id="macro-labels">Macro Labels</h4>
+        Macro labels are special variations of the labels mentioned in the previous sections. Functionally, they behave the same as the other labels with the exception of being local to the macro they're used in. This means they can't be referenced from outside the respective macro. Macro labels are created by prefixing any of the other label types with a <code class="mips">?</code> .
+		<pre><code class="mips">macro do_something()
+	?MacroMainLabel:
+	?.MacroSubLabel
+	?-
+		; All of these are fine!
+		dl ?MacroMainLabel
+		dl ?.MacroSubLabel
+		dl ?-
+		dl ?+
+	?+
+endmacro
+
+%do_something()
+
+; ERROR! ?MacroMainLabel is undefined, because we're not inside %do_something() anymore.
+dl ?MacroMainLabel</code></pre>
+		<a href="#contents">Return to top</a></p>
+		<hr />
+		<p id="defines"><h3>Defines</h3>
+        Asar supports a define system that functions similarly to defines in other programming languages, such as C++. Defines are identifiers that you can assign any kind of text to and use in other places as substitues for that text. During compilation, Asar replaces each define it encounters with the respective text assigned to it. Defines are prefixed with a <code class="mips">!</code> and declared as follows:<br>
+        <pre><code class="mips">!x = *</code></pre>
+        where x is a unique identifier that can contain any of the following characters:<br />
+		<code class="mips">a-z A-Z 0-9 _</code></br >
+		The space on both sides of the = is mandatory, which means that <code class="mips">!x=*</code> will not work. Since defines are really just placeholders for text, they can contain anything - labels, math formulas, even other defines.
+        <pre><code class="mips">!x = $00
+		
+lda !x		; Treated as &quot;lda $00&quot;
+lda #!x		; Treated as &quot;lda #$00&quot;
+lda [!x],y	; Treated as &quot;lda [$00],y&quot;
+
+!y = $12
+!x = !y$34
+		
+lda !x		; Treated as &quot;lda $1234&quot;
+		
+!phr = &quot;pha : phx : phy&quot;
+		
+!phr		; Treaded as &quot;pha : phx : phy&quot;</code></pre>
+		To assign text containing whitespace to a define, you must delimit it with two <code class="mips">&quot;</code> as shown above with !phr. Besides the regular define operator <code class="mips">=</code>, Asar also supports a number of additional define operators with slightly different functionality.<br /><br />
+		<table>
+			<tr>
+				<th style="width:150px">Operator</th>
+				<th>Functionality</th>
+				<th>Example</th>
+			</tr>
+			<tr>
+				<td><code class="mips">=</code></td>
+				<td>The standard define operator. Directly assigns text to a define.</td>
+				<td><pre><code class="mips">!define = 10
+!anotherdefine = !define+1
+; !define now contains &quot;10&quot; and !anotherdefine now contains &quot;!define+1&quot;</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="mips">+=</code></td>
+				<td>Appends text to the current value of a define. </td>
+				<td><pre><code class="mips">!define = 10
+!define += 1
+; !define now contains &quot;101&quot;</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="mips">:=</code></td>
+				<td>Equal to the standard <code class="mips">=</code>, but resolves all defines in the text to assign before actually assigning it. This makes recursive defines possible.</td>
+				<td><pre><code class="mips">!define = 10
+!define := !define+1
+; !define now contains &quot;10+1&quot;</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="mips">#=</code></td>
+				<td>Evalutes the text as though it was a math expression, calculates its result and assigns it to the define. The math is done in-place on the same line the operator is used on and is affected by <a href="#math-pri">all of Asar's math settings</a> (such as prioritization rules and rouding behavior).</td>
+				<td><pre><code class="mips">!define = 10
+!anotherdefine #= !define+1
+; !anotherdefine now contains &quot;11&quot;</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="mips">?=</code></td>
+				<td>Equal to the standard <code class="mips">=</code>, but only assigns text to a define that doesn't exist yet, otherwise does nothing.</td>
+				<td><pre><code class="mips">!define ?= 10
+!define ?= 1
+; !define now contains &quot;10&quot;</code></pre></td>
+			</tr>
+		<table><br />
+		<a href="#contents">Return to top</a></p>
+		<hr />
+        <p id="macros"><h3>Macros</h3>
         Macros can be nested (macros with macros) up to 512 levels deep, the
         limitation is there only to prevent macro a calling macro b, and vice
         versa, resulting in a dead-lock of the assembler. incsrc, below, has
@@ -1497,8 +1711,9 @@ function f(x) = ((x*x)+1000)\
         within your code, use %macroname(arg1, ...).
         This accepts quotes, as well.<br>
         This example would be valid: %writestr(3, "Hello", "pha : plb")
-        <br>
-        <br>
+        <br/>
+		<a href="#contents">Return to top</a></p>
+		<hr />
         <b>Opcode size specifications:</b>
         You can specify the size of an opcode with .b, .w, and .l<br>
         This is needed with decimal, e.g. lda #0.. is that lda #$00, or
@@ -1509,17 +1724,6 @@ function f(x) = ((x*x)+1000)\
         you
         don't like not having these, but there isn't an easy workaround,
         I'm afraid.<br>
-        <br>
-        <b>: Separator</b><br>
-        The : is used to allow multiple opcodes on the same line. It requires
-        a space before and after usage, to differentiate it from the : used
-        to end labels.<br>
-        Example: lda #$00 : sta $00<br>
-        This is useful for making each line define an action, rather than just
-        an opcode. Very useful when combined with { } to indicate a structural
-        flow of assembly code, rather than a straight descending list. But
-        you're
-        free to code however you like.<br>
         <br>
         <b># psuedo-opcodes:</b><br>
         For convenience, I have added psuedo-opcodes to commonly used opcodes,
@@ -1551,9 +1755,8 @@ function f(x) = ((x*x)+1000)\
         - : Subtraction<br>
         * : Multiplication<br>
         / : Division<br>
-        &lt;&lt; : Left-shift ( x&lt;<y formula="" x="x" *="" 2^y="" )=""><br>
-        &gt;&gt; : Right-shift ( x &gt;&gt; y formula: x = x /
-        2^y )<br>
+        &lt;&lt; : Left-shift ( x &lt;&lt; y formula: x = x * 2^y )<br>
+        &gt;&gt; : Right-shift ( x &gt;&gt; y formula: x = x / 2^y )<br>
         &amp; : Bitwise AND<br>
         | : Bitwise OR<br>
         ^ : Bitwise XOR (Note: Not exponentials)<br>
@@ -1564,13 +1767,6 @@ function f(x) = ((x*x)+1000)\
         mov a,label2-label1+2<br>
         <br>
         <u><b>Additional Commands:</b></u><br>
-        <br>
-        <b>hirom:</b><br>
-        Use hirom addressing.<br>
-        <br>
-        <b>lorom:</b><br>
-        Use lorom addressing.<br>
-        <br>
         <b>rep:</b><br>
         Repeat the following command x times. Works with almost all commands supported by Asar and even macro calls.<br>
         Example:<br/>

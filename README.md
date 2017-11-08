@@ -13,10 +13,6 @@ New features:
 - + and - labels can be infinite depth. This means that "+++++" is a valid label name.
 - + and - labels no longer piggyback on sublabels; you can go to them across other labels (and you
   can call a label .__br_pos1_0 if you want).
-- Asar attempts to guess whether the ROM is lorom or hirom, instead of always assuming hirom. If the
-  patch is being applied to a nonexistent file, Asar assumes lorom unless otherwise specified.
-- If you add a colon after a sublabel (for example .Loop: ), Asar will drop the colon instead of
-  silently creating an inaccessible label.
 - The base command now accepts base off, which makes it act like the code is at the current location
   again.
 - Parentheses are allowed at all places where math is expected.
@@ -39,44 +35,11 @@ New features:
   argument. If you only pass a single argument, a default of 5 decimal places are printed.
   Note that, like everything else, double() is affected by your "math round" setting, so unless
   you set math round to off, double() will behave just like dec().
-- Besides the regular define operator "=", Asar also supports a number of additional define
-  operators with varying functionality. Here is a run-down of all define operators supported:
-   Operator:         | Description:                           | Example:
-  -------------------------------------------------------------------------------------------------
-   =                 | Your regular define operator. Sets the | !define = 10
-                     | contents of a define to whatever is to | !anotherdefine = !define+1
-                     | right of it.                           | ; !anotherdefine now contains "!define+1"
-  -------------------------------------------------------------------------------------------------
-  +=                 | Appends whatever is to the right of it | !define = 10
-                     | to the contents of a define.           | !define += 1
-                     |                                        | ; !define now contains "101"
-  -------------------------------------------------------------------------------------------------
-  :=                 | Equal to regular "=", but resolves     | !define = 10
-                     | whatever is to the right of it before  | !define := !define+1
-                     | setting the contents of a define.      | ; !define now contains "10+1"
-                     | This makes recursive defines possible. |
-  -------------------------------------------------------------------------------------------------
-  #=                 | Does math with whatever is to the      | !define = 10
-                     | right of it and then sets the contents | !anotherdefine #= !define+1
-                     | of a define to the result of the       | ; !anotherdefine now contains "11"
-                     | calculation. The math is done in-place |
-                     | on the same line the operator is used  |
-                     | on.                                    |
-  -------------------------------------------------------------------------------------------------
-  ?=                 | Sets the contents of a define just     | !define ?= 10
-                     | like the regular "=" operator, but     | !define ?= 1
-                     | only when no define of that name       | ; !define now contains "10"
-                     | exists yet.                            |
-  -------------------------------------------------------------------------------------------------
 
 (Potentially) xkas incompatible bugfixes and changes:
 If any of these dissatisfies you, put ;@xkas at the top of your patch and Asar will enter maximum
  xkas compatibility mode and fix all of these I have observed in practice. Most Asar-only features
  will still work, but they'll throw warnings everywhere.
-- Any comment starting with ;@ will be assembled by Asar. This is so you can detect xkas vs Asar
-  without ugly hacks. Recommended usage is !Assembler = xkas : ;@!Assembler = Asar.
-- Asar does not support these opcodes: DEA (synonym of DEC A), INA (synonym of INC A), TAD (TCD),
-  TDA (TDC), TAS (TCS), TSA (TSC) and SWA (XBA).
 - Various operations that give undesirable behaviour in all circumstances (for example inaccessible
   labels) will print errors in Asar. (A bunch of crashes have been removed as well, but that will
   obviously not break old xkas codes.)
@@ -146,14 +109,6 @@ New commands:
   xkas' assume db, but that command has a very weird syntax, and since no other part of assume is
   planned for Asar, I prefer syntax that makes sense over backwards compatibility with a grand total
   of zero patches.)
-- norom: Like hirom and lorom, this one determines which SNES address corresponds to which PC
-  address. In norom, the SNES address is equal to the PC address. It's highly recommended to use the
-  base command and a macro implementing a mapper with this one.
-- sa1rom: Implements the SA-1 mapper. To tell which banks are mapped in, use sa1rom 0,1,4,6 (maximum
-  is 7); the default is 0,1,2,3.
-- sfxrom: Tells Asar to use the SuperFX mapper.
-- exlorom: Implements the ExLoROM mapper.
-- exhirom: Implements the ExHiROM mapper.
 - @include, @includefrom: Tells that an asm file may not be assembled directly, but must be included
   from another file. @includefrom tells which file it's supposed to be included from, though it
   doesn't verify that it really is included from this file. It's just a sanity check.

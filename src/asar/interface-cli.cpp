@@ -143,41 +143,53 @@ int main(int argc, char * argv[])
 		if (!strncasecmp(myname, "xkas", strlen("xkas"))) errloc=stdout;
 		//if (dot) *dot='.';
 		libcon_init(argc, argv,
-			"[options] patch [ROM]\n"
-			"options can be zero or more of the following:\n"
-			" -nocheck (disable verifying ROM title; note that it )\n"
-			" -pause={no, err, warn, yes}\n"
-			" -verbose\n"
-			" -v or -version\n"
-			" -werror\n"
+#if defined(_WIN32)
+			"asar.exe [options] asm_file [rom_file]\n"
+#else
+			"asar [options] asm_file [rom_file]\n"
+#endif
+			"Supported options:\n"
+			" --version         Display version information\n"
+			" -v, --verbose     Enable verbose mode\n"
+			" --no-title-check  Disable verifying ROM title (note that irresponsible use will likely corrupt your ROM)\n"
+			" --pause-mode=<never/on-error/on-warning/always>\n"
+			"                   Specify when Asar should pause the application (never, on error, on warning or always)\n"
+			" -werror           Treat warnings as errors\n"
 			);
 		bool ignoreerrors=false;
 		string par;
 		bool verbose=libcon_interactive;
+		bool printed_version=false;
 		while ((par=libcon_option()))
 		{
 			if (par=="-werror") werror=true;
-			else if (par=="-nocheck") ignoreerrors=true;
-			else if (par=="-verbose") verbose=true;
-			else if (par=="-v" || par=="-version")
+			else if (par=="--no-title-check") ignoreerrors=true;
+			else if (par == "-v" || par=="--verbose") verbose=true;
+			else if (par=="--version")
 			{
-				puts(version);
-				return 0;
+				if (!printed_version)
+				{
+					puts(version);
+					printed_version = true;
+					// RPG Hacker: ...why?!?
+					// Keep finding these useless exit cases in all kinds of applications.
+					//return 0;
+				}
 			}
-			else if (par=="-pause" || !strncmp(par, "-pause=", strlen("-pause=")))
+			else if (!strncmp(par, "--pause-mode=", strlen("--pause-mode=")))
 			{
-				if (par=="-pause") pause=pause_yes;
-				else if (par=="-pause=no") pause=pause_no;
-				else if (par=="-pause=err") pause=pause_err;
-				else if (par=="-pause=warn") pause=pause_warn;
-				else if (par=="-pause=yes") pause=pause_yes;
+				if (par=="--pause-mode=never") pause=pause_no;
+				else if (par=="--pause-mode=on-error") pause=pause_err;
+				else if (par=="--pause-mode=on-warning") pause=pause_warn;
+				else if (par=="--pause-mode=always") pause=pause_yes;
 				else libcon_badusage();
 			}
 			else libcon_badusage();
 		}
-		if (verbose)
+		if (verbose && !printed_version)
 		{
 			puts(version);
+			printed_version = true;
 		}
 		string asmname=libcon_require_filename("Enter patch name:");
 		string romname=libcon_optional_filename("Enter ROM name:", NULL);
@@ -244,7 +256,7 @@ int main(int argc, char * argv[])
 				else
 				{
 					puts(S"Error: The ROM title appears to be \""+title+"\", which looks like garbage. "
-								"If this is the ROM title, add -nocheck to the command line options. If the ROM title is something else, use snespurify on your ROM.");
+								"If this is the ROM title, add --no-title-check to the command line options. If the ROM title is something else, use snespurify on your ROM.");
 					pause(err);
 					return 1;
 				}
