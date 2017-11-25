@@ -25,6 +25,15 @@ Bug fixes:
   Asar, not that that's particularly useful anymore in this day and age.
 - Changed format of existing command line arguments for consistency.
 
+Hopefully comming soon TM:
+- undef/import (zetaPrime)
+- include directories (via command line or TXT file)
+- set defines via command line or TXT file
+- defined() function (like C's ifdef/ifndef)
+- customizable warning settings, like Clang or MSVC
+- Some kind of include guard ("pragma once")
+- stackable namespaces
+
 
 
 v1.50 (by RPG Hacker):

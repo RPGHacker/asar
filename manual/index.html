@@ -67,6 +67,7 @@
 					<li><a href="#sub-labels">Sub Labels</a></li>
 					<li><a href="#plus-minus-labels">+/- Labels</a></li>
 					<li><a href="#macro-labels">Macro Labels</a></li>
+					<li><a href="#namespaces">Namespaces</a></li>
 				</ul>
 			</li>
 			<li><a href="#defines">Defines</a></li>
@@ -126,7 +127,7 @@
 				with Asar, adding the include search path
 				<pre><code class="powershell">-I&quot;C:/homebrew/binary data&quot;</code></pre>
 				and the ASM file included the line:
-				<pre><code class="mips">incbin data/player_gfx.bin</code></pre>
+				<pre><code class="65c816_asar">incbin data/player_gfx.bin</code></pre>
 				Asar would now look for a file:
 				<pre><code class="powershell">C:/homebrew/data/player_gfx.bin</code></pre>
 				If this file didn't exist, it would then look for a file:
@@ -175,7 +176,7 @@
 		</p>
 		<hr />
         <p id="archs"><h3>Architectures</h3>
-		Asar supports a number of different target architectures for code compilation. They can be activated via the command <code class="mips">arch &lt;name&gt;</code>. Going into detail on any of the supported architectures is beyond the scope of this manual. For that, it's recommended to check the SNES Dev Manual or other specialized resources. Asar tries as much as possible to always stick to the known conventions and specifications of each respective architecture.
+		Asar supports a number of different target architectures for code compilation. They can be activated via the command <code class="65c816_asar">arch &lt;name&gt;</code>. Going into detail on any of the supported architectures is beyond the scope of this manual. For that, it's recommended to check the SNES Dev Manual or other specialized resources. Asar tries as much as possible to always stick to the known conventions and specifications of each respective architecture.
 		<br /><br />
 		<table>
 			<tr>
@@ -186,11 +187,11 @@
 			</tr>
 			<tr>
 				<td>65c816</td>
-				<td><code class="mips">arch&nbsp;65816</code></td>
+				<td><code class="65c816_asar">arch&nbsp;65816</code></td>
 				<td>
 					<a href="javascript:void(0);" onclick="toggle_visibility('65816-opcodes');" id="65816-opcodes-toggle">[+] Expand</a>
 					<div id="65816-opcodes" style="display:none;">
-						<code class="mips">ADC #$00
+						<code class="65c816_asar">ADC #$00
 ADC #$0000
 ADC $00
 ADC $00,s
@@ -467,11 +468,11 @@ XCE</code>
 			</tr>
 			<tr>
 				<td>SPC700</td>
-				<td><code class="mips">arch&nbsp;spc700</code></td>
+				<td><code class="65c816_asar">arch&nbsp;spc700</code></td>
 				<td>
 					<a href="javascript:void(0);" onclick="toggle_visibility('spc700-opcodes');" id="spc700-opcodes-toggle">[+] Expand</a>
 					<div id="spc700-opcodes" style="display:none;">
-						<code class="mips">ADC $00,#$00
+						<code class="65c816_asar">ADC $00,#$00
 ADC $00,$00
 ADC (X),(Y)
 ADC A,#$00
@@ -733,17 +734,17 @@ XCN A</code>
 			</tr>
 			<tr>
 				<td>SPC700</td>
-				<td><code class="mips">arch&nbsp;spc700-inline</code></td>
+				<td><code class="65c816_asar">arch&nbsp;spc700-inline</code></td>
 				<td></td>
 				<td>Same as above, but implements the standard upload system (16bit length, then location, with a terminator at the end) automatically.</td>
 			</tr>
 			<tr>
 				<td>Super FX</td>
-				<td><code class="mips">arch&nbsp;superfx</code></td>
+				<td><code class="65c816_asar">arch&nbsp;superfx</code></td>
 				<td>
 					<a href="javascript:void(0);" onclick="toggle_visibility('superfx-opcodes');" id="superfx-opcodes-toggle">[+] Expand</a>
 					<div id="superfx-opcodes" style="display:none;">
-						<code class="mips">ADC #0
+						<code class="65c816_asar">ADC #0
 ADC #0
 ADC #1
 ADC #2
@@ -1353,12 +1354,12 @@ XOR R15</code>
 			</tr>
 		</table>
 		<br />
-		All of Asar's features should be compatible with all of the supported target architectures, but it's not recommended to mix labels between different architectures as that will lead to undefined behavior. Opcodes in Asar are case-insensitive, which means that <code class="mips">LDA</code> and <code class="mips">lda</code> will be treated equally.
-		<pre><code class="mips">arch 65816
-LDA $00
+		All of Asar's features should be compatible with all of the supported target architectures, but it's not recommended to mix labels between different architectures as that will lead to undefined behavior. Opcodes in Asar are case-insensitive, which means that <code class="65c816_asar">LDA</code> and <code class="65c816_asar">lda</code> will be treated equally.
+		<pre><code class="65c816_asar">arch 65816
+lda $00
 
 arch spc700
-MOV A,$00</code></pre>
+mov a,$00</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <p id="mappers"><h3>Mapping Modes</h3>
@@ -1369,42 +1370,42 @@ MOV A,$00</code></pre>
 				<th>Details</th>
 			</tr>
 			<tr>
-				<td><code class="mips">lorom</code></td>
+				<td><code class="65c816_asar">lorom</code></td>
 				<td>Switch to LoROM mapping mode.</td>
 			</tr>
 			<tr>
-				<td><code class="mips">hirom</code></td>
+				<td><code class="65c816_asar">hirom</code></td>
 				<td>Switch to HiROM mapping mode.</td>
 			</tr>
 			<tr>
-				<td><code class="mips">exlorom</code></td>
+				<td><code class="65c816_asar">exlorom</code></td>
 				<td>Switch to ExLoROM mapping mode.</td>
 			</tr>
 			<tr>
-				<td><code class="mips">exhirom</code></td>
+				<td><code class="65c816_asar">exhirom</code></td>
 				<td>Switch to ExHiROM mapping mode.</td>
 			</tr>
 			<tr>
-				<td><code class="mips">sa1rom&nbsp;[bank_1,bank_2,bank_3,bank_4]</code></td>
+				<td><code class="65c816_asar">sa1rom&nbsp;[bank_1,bank_2,bank_3,bank_4]</code></td>
 				<td>Switch to hybrid SA-1 mapping mode. To tell which banks are mapped in (maximum is 7) use the optional argument, like so:
-				<pre><code class="mips">sa1rom 0,1,4,6</code></pre>
+				<pre><code class="65c816_asar">sa1rom 0,1,4,6</code></pre>
 				The default is 0,1,2,3.</td>
 			</tr>
 			<tr>
-				<td><code class="mips">fullsa1rom</code></td>
+				<td><code class="65c816_asar">fullsa1rom</code></td>
 				<td>Switch to full SA-1 mapping mode.</td>
 			</tr>
 			<tr>
-				<td><code class="mips">sfxrom</code></td>
+				<td><code class="65c816_asar">sfxrom</code></td>
 				<td>Switch to Super FX mapping mode.</td>
 			</tr>
 			<tr>
-				<td><code class="mips">norom</code></td>
-				<td>Disable Asar's address translation; the SNES address is equal to the PC address. Can be combined with <code class="mips">base</code> and macros to implement your own address translation.</td>
+				<td><code class="65c816_asar">norom</code></td>
+				<td>Disable Asar's address translation; the SNES address is equal to the PC address. Can be combined with <code class="65c816_asar">base</code> and macros to implement your own address translation.</td>
 			</tr>
 		</table><br/>
 		When no mapping mode is specified, Asar tries to determine the mapping mode from the output ROM. If that isn't possible, Asar defaults to lorom.
-		<pre><code class="mips">lorom
+		<pre><code class="65c816_asar">lorom
 org $008000
 db $FF		; Will write to PC address 0x000000
 
@@ -1416,8 +1417,8 @@ db $FF		; Will write to PC address 0x008000</code></pre>
         <p id="behavior"><h3>Behavior Flags</h3>
 		Behavior flags are certain commands and settings that determine how Asar operates in certain situations.
 		<h4 id="xkas">xkas</h4>
-		The <code class="mips">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="mips">;@</code> to write patchs that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used.
-		<pre><code class="mips">;@xkas
+		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patchs that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used.
+		<pre><code class="65c816_asar">;@xkas
 
 !is_asar=0	
 ;@!is_asar=1
@@ -1434,8 +1435,8 @@ db $FF		; Will write to PC address 0x008000</code></pre>
 
 do_something()</code></pre>
 		<h4 id="asar">asar &lt;ver&gt;</h4>
-		The <code class="mips">asar</code> command can be used to specify the minimum Asar version your patch is compatible with. When a user tries to assemble the patch in an older version of Asar, an error will be thrown, stating that the used Asar version is too old. This should be the first command in your patch, otherwise an error will be thrown.
-		<pre><code class="mips">; This patch uses features from Asar 1.40, so it makes sense to require it as a minimum.
+		The <code class="65c816_asar">asar</code> command can be used to specify the minimum Asar version your patch is compatible with. When a user tries to assemble the patch in an older version of Asar, an error will be thrown, stating that the used Asar version is too old. This should be the first command in your patch, otherwise an error will be thrown.
+		<pre><code class="65c816_asar">; This patch uses features from Asar 1.40, so it makes sense to require it as a minimum.
 @asar 1.40
 
 if readfile1(&quot;data.bin&quot;, 0) == 1
@@ -1444,15 +1445,15 @@ else
 	; Do something else
 endif</code></pre>
 		<h4 id="math-pri">math pri &lt;on/off&gt;</h4>
-		The <code class="mips">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always enable this flag.
-		<pre><code class="mips">math pri off
+		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always enable this flag.
+		<pre><code class="65c816_asar">math pri off
 db 1+(6/3)*5	; db 15
 
 math pri on
 db 1+(6/3)*5	; db 11</code></pre>
 		<h4 id="math-round">math round &lt;on/off&gt;</h4>
-		The <code class="mips">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag.
-		<pre><code class="mips">math round on
+		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag.
+		<pre><code class="65c816_asar">math round on
 ; 1.75 is immediately truncated to 1, resulting in (3/4)+1
 ; 3/4 would result in 0.75, which is immediately truncated to 0, resulting in 0+1
 ; Thus leading to the final result of &quot;db 1&quot;
@@ -1474,11 +1475,11 @@ db (3/4)+1.75
         <p id="formatting"><h3>Code Formatting</h3>
 		<h4 id="comments">Comments</h4>
 		You can use ; to add comments to your code, making it easier to read and understand for other people. Everything from the ; to the end of the line is silently ignored by Asar.
-		<pre><code class="mips">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
-		An exception from this rule are lines starting with <code class="mips">;@</code>, which are assembled normally. The purpose of this is to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they will be assembled. If you don't care about backwards-compatibility, you can also just use <code class="mips">@</code>, which will make your patch only assemble with Asar and fail with xkas. Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#behavior">Behavior Flags</a> for details on xkas compatibility.
+		<pre><code class="65c816_asar">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
+		An exception from this rule are lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. The purpose of this is to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they will be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#behavior">Behavior Flags</a> for details on xkas compatibility.
 		<h4 id="brackets">Brackets</h4>
         Brackets, { and }, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's compltely up to you whether, how and in what quantity you want to use them.<br />
-		<pre><code class="mips">	lda $00
+		<pre><code class="65c816_asar">	lda $00
 	beq .is_zero
 	
 .greater_than_zero
@@ -1489,8 +1490,8 @@ db (3/4)+1.75
 .is_zero
 	rts</code></pre>
 		<h4 id="multiline">Multi-Line Operators</h4>
-		The <code class="mips">,</code> and the <code class="mips">\</code> operator are formatting operators which make it possible to split commands in Asar into multiple lines. Both are put at the end of a line and work very similarly with only one key difference. During execution, Asar will concatenate subsequent lines to lines ending with either operator and treat them as a single line. When using the comma operator, the comma itself will actually remain a part of the concatenated string, whereas when using the backslash operator, the backslash itself will be removed from the concatenated string. When using the backslash operator, please note that all whitespace following it is ignored, whereas all whitespace preceeding it is preserved. This is by design, since some commands in Asar require spaces to work, whereas other commands (like math commands) only work without spaces.
-		<pre><code class="mips">%some_macro(!arg1, !arg2, !arg3,
+		The <code class="65c816_asar">,</code> and the <code class="65c816_asar">\</code> operator are formatting operators which make it possible to split commands in Asar into multiple lines. Both are put at the end of a line and work very similarly with only one key difference. During execution, Asar will concatenate subsequent lines to lines ending with either operator and treat them as a single line. When using the comma operator, the comma itself will actually remain a part of the concatenated string, whereas when using the backslash operator, the backslash itself will be removed from the concatenated string. When using the backslash operator, please note that all whitespace following it is ignored, whereas all whitespace preceeding it is preserved. This is by design, since some commands in Asar require spaces to work, whereas other commands (like math commands) only work without spaces.
+		<pre><code class="65c816_asar">%some_macro(!arg1, !arg2, !arg3,
 	!arg4, !arg5, !arg6)
 ; This will be treated as &quot;%some_macro(!arg1, !arg2, !arg3, !arg4, !arg5, !arg6)&quot;
 
@@ -1503,8 +1504,8 @@ function f(x) = ((x*x)+1000)\
 ; This will be treated as &quot;function f(x) = ((x*x)+1000)/256&quot;</code></pre>
 
         <h4 id="singleline">Single-Line Operator</h4>
-        Contrary to the multi-line operators, the single-line operator <code class="mips">:</code> is a formatting operator which makes it possible to treat a single line of code as multiple lines. It requires a space before and after usage to differentiate it from the : used with certain commands. When used between different commands, Asar interprets it similarly to a new line and treats each command as being on a separate line. This can be used to link multiple commands together into functional blocks and make the code more readable.
-        <pre><code class="mips">lda #$00 : sta $00
+        Contrary to the multi-line operators, the single-line operator <code class="65c816_asar">:</code> is a formatting operator which makes it possible to treat a single line of code as multiple lines. It requires a space before and after usage to differentiate it from the : used with certain commands. When used between different commands, Asar interprets it similarly to a new line and treats each command as being on a separate line. This can be used to link multiple commands together into functional blocks and make the code more readable.
+        <pre><code class="65c816_asar">lda #$00 : sta $00
 		
 ; Treated as:
 lda #00
@@ -1515,16 +1516,16 @@ sta $00</code></pre>
 		Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets. Asar will optimize label access from 24-bit addressing to 16-bit if possible.
 		<h4 id="main-labels">Main Labels</h4>
         Main labels are the top-most level of labels supported by Asar. They're global and thus can be directly acessed from anywhere. They can contain any of the following characters<br />
-		<code class="mips">a-z A-Z 0-9 _</code><br />
-		and their declaration must end with a <code class="mips">:</code> .
-		<pre><code class="mips">org $008000
+		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
+		and their declaration must end with a <code class="65c816_asar">:</code> .
+		<pre><code class="65c816_asar">org $008000
 		
 Main:
 	%do_frame()
 	jmp Main	; Equal to jmp $8000</code></pre>
 		<h4 id="sub-labels">Sub Labels</h4>
-        Sub labels are the second-most level of labels supported by Asar. They're local to the last main label declared and can contain the same characters as main labels, but must start with a period. Sub labels are declared in the same way as main levels, except they are prefixed with a <code class="mips">.</code> and the colon after them is optional.
-        <pre><code class="mips">Proc1:
+        Sub labels are the second-most level of labels supported by Asar. They're local to the last main label declared and can contain the same characters as main labels, but must start with a period. Sub labels are declared in the same way as main levels, except they are prefixed with a <code class="65c816_asar">.</code> and the colon after them is optional.
+        <pre><code class="65c816_asar">Proc1:
 	nop
 .Sub
 	bra .Sub
@@ -1533,8 +1534,8 @@ Proc2:
 	nop
 .Sub:	; The colon is optional
 	bra .Sub</code></pre>
-        Sub labels allow you to reuse redundantly named labels such as Loop, End, etc. without causing label redefinition errors. A new sub label group is automatically started after a main label is declared. Internally, sub labels are converted to <code class="mips">MainLabel_SubLabel</code>, which can be used to access them from anywhere.
-		<pre><code class="mips">Main1:
+        Sub labels allow you to reuse redundantly named labels such as Loop, End, etc. without causing label redefinition errors. A new sub label group is automatically started after a main label is declared. Internally, sub labels are converted to <code class="65c816_asar">MainLabel_SubLabel</code>, which can be used to access them from anywhere.
+		<pre><code class="65c816_asar">Main1:
 	; ...
 .Sub1:
 	; ...
@@ -1554,8 +1555,8 @@ Table:
 	dl Main2_Sub1
 	dl Main2_Sub2</code></pre>
 		<h4 id="plus-minus-labels">+/- Labels</h4>
-		+/- labels are a special type of labels that are different from both main labels and sub labels in that they don't refer to a specific location in code, but rather to a location relative from where they are used. When used inside opcodes, <code class="mips">+</code> always refers to the next + label and <code class="mips">-</code> always refers to the previous - label. You can also chain an arbitrary number of + or an arbitrary number of - to create unique +/- labels that don't overwrite labels with a different number of +/-, for example <code class="mips">+++</code> or <code class="mips">-----</code>.
-		<pre><code class="mips">	ldx.b #4
+		+/- labels are a special type of labels that are different from both main labels and sub labels in that they don't refer to a specific location in code, but rather to a location relative from where they are used. When used inside opcodes, <code class="65c816_asar">+</code> always refers to the next + label and <code class="65c816_asar">-</code> always refers to the previous - label. You can also chain an arbitrary number of + or an arbitrary number of - to create unique +/- labels that don't overwrite labels with a different number of +/-, for example <code class="65c816_asar">+++</code> or <code class="65c816_asar">-----</code>.
+		<pre><code class="65c816_asar">	ldx.b #4
 		
 --			; A
 	lda $10,x
@@ -1572,15 +1573,15 @@ Table:
 +			; C
 	dex
 	bpl --		; Branches to &quot;A&quot;</code></pre>
-		+/- labels are useful in a number of situations. For example: inside a long routine with multiple short loops, where even a sub label like <code class="mips">.Loop</code> would get repetitive. +/- labels aren't bound to any scope, which means they can technically be used across different scopes. Just like sub labels, +/- labels are converted to main labels internally. Unlike sub labels, they can not be referenced from code directly since their names depend on where in the code they're used, making it impractical to directly refer to them. This is by design. They can, however, be accessed via the Asar DLL API, using the <code class="cpp">asar_getalllabels()</code> and the <code class="cpp">asar_getlabelval()</code> functions. The naming format used for them is<br/>
-		<code class="mips">:pos_x_y</code><br/>
+		+/- labels are useful in a number of situations. For example: inside a long routine with multiple short loops, where even a sub label like <code class="65c816_asar">.Loop</code> would get repetitive. +/- labels aren't bound to any scope, which means they can technically be used across different scopes. Just like sub labels, +/- labels are converted to main labels internally. Unlike sub labels, they can not be referenced from code directly since their names depend on where in the code they're used, making it impractical to directly refer to them. This is by design. They can, however, be accessed via the Asar DLL API, using the <code class="cpp">asar_getalllabels()</code> and the <code class="cpp">asar_getlabelval()</code> functions. The naming format used for them is<br/>
+		<code class="65c816_asar">:pos_x_y</code><br/>
 		for + labels and<br/>
-		<code class="mips">:neg_x_y</code><br/>
+		<code class="65c816_asar">:neg_x_y</code><br/>
 		for - labels, where<br/>
 		x = number of chained +/-<br/>
 		and<br/>
 		y = instance of this label within all +/- labels of the same name (starting from 0 for + labels and from 1 for - labels).
-		<pre><code class="mips">lorom
+		<pre><code class="65c816_asar">lorom
 org $008000
 
 ---			; :neg_3_1
@@ -1602,8 +1603,8 @@ org $008000
 ++			; :pos_2_1
 +++			; :pos_3_0</code></pre>
 		<h4 id="macro-labels">Macro Labels</h4>
-        Macro labels are special variations of the labels mentioned in the previous sections. Functionally, they behave the same as the other labels with the exception of being local to the macro they're used in. This means they can't be referenced from outside the respective macro. Macro labels are created by prefixing any of the other label types with a <code class="mips">?</code> .
-		<pre><code class="mips">macro do_something()
+        Macro labels are special variations of the labels mentioned in the previous sections. Functionally, they behave the same as the other labels with the exception of being local to the macro they're used in. This means they can't be referenced from outside the respective macro. Macro labels are created by prefixing any of the other label types with a <code class="65c816_asar">?</code> .
+		<pre><code class="65c816_asar">macro do_something()
 	?MacroMainLabel:
 	?.MacroSubLabel
 	?-
@@ -1619,15 +1620,60 @@ endmacro
 
 ; ERROR! ?MacroMainLabel is undefined, because we're not inside %do_something() anymore.
 dl ?MacroMainLabel</code></pre>
+
+        <h4 id="namespaces">Namespaces</h4>
+        Namespaces are a feature which makes it easier to avoid name conflicts between different labels without having to give them long or cryptic names. They work similarly to C++ namespaces and accomplish this by automatically adding a prefix to all labels declared or accessed within them. They can be stacked if desired. When you try to access a label from within a namespace and Asar doesn't find it in there, it automatically looks in the upper namespaces (up to the global namespace). Use<br/>
+		<code class="65c816_asar">namespace &lt;identifier&gt;</code><br/>
+		to enter a namspace, where &lt;identifier&gt; can contain any of the following characters:<br/>		
+		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
+		Use<br/>
+		<code class="65c816_asar">namespace off</code><br/>
+		to leave the current namespace.
+		<pre><code class="65c816_asar">; All of the below is valid
+		
+Main:                           ; Main
+Main2:                          ; Main2
+		
+namespace Deep_
+
+    Main:                       ; Deep_Main
+	
+    namespace Deeper_
+	
+        Main:                   ; Deep_Deeper_Main
+        Main3:                  ; Deep_Deeper_Main3
+		
+        namespace Deepest_
+			
+            Main:               ; Deep_Deeper_Deepest_Main
+			
+            dl Main             ; Deep_Deeper_Deepest_Main
+            dl Main2            ; Main2
+            dl Main3            ; Deep_Deeper_Main3
+			
+        namespace off		
+			
+        dl Main                 ; Deep_Deeper_Main
+		
+    namespace off	
+			
+    dl Main                     ; Deep_Main
+	
+namespace off
+			
+dl Main                         ; Main
+dl Deep_Main                    ; Deep_Main
+dl Deep_Deeper_Main             ; Deep_Deeper_Main
+dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
 		<p id="defines"><h3>Defines</h3>
-        Asar supports a define system that functions similarly to defines in other programming languages, such as C++. Defines are identifiers that you can assign any kind of text to and use in other places as substitues for that text. During compilation, Asar replaces each define it encounters with the respective text assigned to it. Defines are prefixed with a <code class="mips">!</code> and declared as follows:<br>
-        <pre><code class="mips">!x = *</code></pre>
-        where x is a unique identifier that can contain any of the following characters:<br />
-		<code class="mips">a-z A-Z 0-9 _</code></br >
-		The space on both sides of the = is mandatory, which means that <code class="mips">!x=*</code> will not work. Since defines are really just placeholders for text, they can contain anything - labels, math formulas, even other defines.
-        <pre><code class="mips">!x = $00
+        Asar supports a define system that functions similarly to defines in other programming languages, such as C++. Defines are identifiers that you can assign any kind of text to and use in other places as substitues for that text. During compilation, Asar replaces each define it encounters with the respective text assigned to it. Defines are prefixed with a <code class="65c816_asar">!</code> and declared as follows:<br>
+        <pre><code class="65c816_asar">!&lt;identifier&gt; = *</code></pre>
+        where &lt;identifier&gt; is a unique identifier that can contain any of the following characters:<br />
+		<code class="65c816_asar">a-z A-Z 0-9 _</code></br >
+		The space on both sides of the = is mandatory, which means that <code class="65c816_asar">!&lt;identifier&gt;=*</code> will not work. Since defines are really just placeholders for text, they can contain anything - labels, math formulas, even other defines.
+        <pre><code class="65c816_asar">!x = $00
 		
 lda !x		; Treated as &quot;lda $00&quot;
 lda #!x		; Treated as &quot;lda #$00&quot;
@@ -1640,8 +1686,8 @@ lda !x		; Treated as &quot;lda $1234&quot;
 		
 !phr = &quot;pha : phx : phy&quot;
 		
-!phr		; Treaded as &quot;pha : phx : phy&quot;</code></pre>
-		To assign text containing whitespace to a define, you must delimit it with two <code class="mips">&quot;</code> as shown above with !phr. Besides the regular define operator <code class="mips">=</code>, Asar also supports a number of additional define operators with slightly different functionality.<br /><br />
+!phr		; Treated as &quot;pha : phx : phy&quot;</code></pre>
+		To assign text containing whitespace to a define, you must delimit it with two <code class="65c816_asar">&quot;</code> as shown above with !phr. Besides the regular define operator <code class="65c816_asar">=</code>, Asar also supports a number of additional define operators with slightly different functionality.<br /><br />
 		<table>
 			<tr>
 				<th style="width:150px">Operator</th>
@@ -1649,44 +1695,68 @@ lda !x		; Treated as &quot;lda $1234&quot;
 				<th>Example</th>
 			</tr>
 			<tr>
-				<td><code class="mips">=</code></td>
+				<td><code class="65c816_asar">=</code></td>
 				<td>The standard define operator. Directly assigns text to a define.</td>
-				<td><pre><code class="mips">!define = 10
+				<td><pre><code class="65c816_asar">!define = 10
 !anotherdefine = !define+1
 ; !define now contains &quot;10&quot; and !anotherdefine now contains &quot;!define+1&quot;</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="mips">+=</code></td>
+				<td><code class="65c816_asar">+=</code></td>
 				<td>Appends text to the current value of a define. </td>
-				<td><pre><code class="mips">!define = 10
+				<td><pre><code class="65c816_asar">!define = 10
 !define += 1
 ; !define now contains &quot;101&quot;</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="mips">:=</code></td>
-				<td>Equal to the standard <code class="mips">=</code>, but resolves all defines in the text to assign before actually assigning it. This makes recursive defines possible.</td>
-				<td><pre><code class="mips">!define = 10
+				<td><code class="65c816_asar">:=</code></td>
+				<td>Equal to the standard <code class="65c816_asar">=</code>, but resolves all defines in the text to assign before actually assigning it. This makes recursive defines possible.</td>
+				<td><pre><code class="65c816_asar">!define = 10
 !define := !define+1
 ; !define now contains &quot;10+1&quot;</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="mips">#=</code></td>
+				<td><code class="65c816_asar">#=</code></td>
 				<td>Evalutes the text as though it was a math expression, calculates its result and assigns it to the define. The math is done in-place on the same line the operator is used on and is affected by <a href="#math-pri">all of Asar's math settings</a> (such as prioritization rules and rouding behavior).</td>
-				<td><pre><code class="mips">!define = 10
+				<td><pre><code class="65c816_asar">!define = 10
 !anotherdefine #= !define+1
 ; !anotherdefine now contains &quot;11&quot;</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="mips">?=</code></td>
-				<td>Equal to the standard <code class="mips">=</code>, but only assigns text to a define that doesn't exist yet, otherwise does nothing.</td>
-				<td><pre><code class="mips">!define ?= 10
+				<td><code class="65c816_asar">?=</code></td>
+				<td>Equal to the standard <code class="65c816_asar">=</code>, but only assigns text to a define that doesn't exist yet, otherwise does nothing.</td>
+				<td><pre><code class="65c816_asar">!define ?= 10
 !define ?= 1
 ; !define now contains &quot;10&quot;</code></pre></td>
 			</tr>
 		<table><br />
+		Similarly to C's ifdef and undef, Asar allows you to check for a define's existence using the <code class="65c816_asar">defined(&quot;&lt;identifier&gt;&quot;)</code> function and to delete a define using the <code class="65c816_asar">undef &lt;identifier&gt;</code> command. Make sure to leave the <code class="65c816_asar">!</code> out of the identifier when using these functions, as Asar would otherwise try to resolve the defines.
+		<pre><code class="65c816_asar">!define = "hello"
+		
+if defined("define")
+	print "This will be printed!"
+endif
+
+undef define
+		
+if defined("define")
+	print "This won't be printed!"
+endif</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <p id="macros"><h3>Macros</h3>
+		Macros are a mechanism for recording a sequence of commands that can be used in other places. The main purpose of this is to include commonly used code in multiple places without actually having to rewrite or copy that code every time. Instead you can move it into a macro and write it only once. Macros, in concept, work similarly to defines in that they are a text-replace mechanism, but they have a few key differences:
+		<ul>
+			<li>Macros only record a sequence of commands rather than any kind of text.</li>
+			<li>A macro call is itself considered a command and thus needs to go on its on line (or separated via the : operator). This means that unlike a define, a macro can't just be used whereever.</li>
+			<li>Macros can include parameters, which are identifiers that are replaced by a text value whenever the respective macro is called. For simplicity, you could consider parameters a macro-specific version of defines.</li>
+		</ul>
+		Use the following syntax to define a macro:
+		<pre><code class="65c816_asar">macro &lt;macro_name&gt;([&lt;argument1_name&gt;[, &lt;argument2_name&gt;...]])
+	[&lt;command1&gt;]
+	[&lt;command2&gt;...]
+endmacro</code></pre>	
+		
         Macros can be nested (macros with macros) up to 512 levels deep, the
         limitation is there only to prevent macro a calling macro b, and vice
         versa, resulting in a dead-lock of the assembler. incsrc, below, has
@@ -1755,12 +1825,14 @@ lda !x		; Treated as &quot;lda $1234&quot;
         - : Subtraction<br>
         * : Multiplication<br>
         / : Division<br>
+        % : Modulo (uses fmod() function)<br>
         &lt;&lt; : Left-shift ( x &lt;&lt; y formula: x = x * 2^y )<br>
         &gt;&gt; : Right-shift ( x &gt;&gt; y formula: x = x / 2^y )<br>
         &amp; : Bitwise AND<br>
         | : Bitwise OR<br>
         ^ : Bitwise XOR (Note: Not exponentials)<br>
         ~ : Bitwise NOT<br>
+        ** : Power (uses pow() function)<br>
         <br>
         <br>
         Math also works with labels. Example:<br>
@@ -1828,19 +1900,6 @@ lda !x		; Treated as &quot;lda $1234&quot;
             <b>skip:</b><br>
             Skip ahead x bytes.<br>
             Example: skip 5 ;skips ahead 5 bytes in the file.<br>
-            <br>
-            <b>namespace:</b><br>
-            namespaces can be used to declare labels with the same name, useful to
-            prefix all labels with a certain extension, e.g. for a library.<br>
-            Example:<br>
-            <hr>
-            namespace "lf1_" ;set namespace to "lf1_"<br>
-            main: ;this will become "lf1_main" when referenced with namespaces off<br>
-            namespace off ;turn namespace functionality off<br>
-            main: ;no conflicts with identical labels due to namespaces<br>
-            jsr lf1_main ;call our library function<br>
-            <hr>
-            Somewhat useful, I suppose...<br>
             <br>
             <b>print:</b><br>
             print allows you to print text to the console window, useful for
