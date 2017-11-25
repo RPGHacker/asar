@@ -30,6 +30,7 @@ Hopefully comming soon TM:
 - include directories (via command line or TXT file)
 - set defines via command line or TXT file
 - defined() function (like C's ifdef/ifndef)
+- Asar DLL: possibility to compile ASM from memory buffer
 - customizable warning settings, like Clang or MSVC
 - Some kind of include guard ("pragma once")
 - stackable namespaces
