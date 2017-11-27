@@ -36,6 +36,7 @@
 		<h1>Asar</h1>
         <p>A multi-architecture SNES assembler by <i>Alcaro</i>, based on <b>xkas v0.06</b> by <i>byuu</i>.<br />
 		This manual was written by <i>RPG Hacker</i>, so if you find something that is wrong or weird, make sure to blame me instead of Alcaro.</p>
+		<p>As a general rule, the manual uses {} to denote required parameters and [] to denote optional parameters. Everything else refers to keywords/names.</p>
 		<hr />
 		<p id="contents"><h3>Table of Contents</h3>
 		<ul>
@@ -46,9 +47,9 @@
 				<a href="#behavior">Behavior Flags</a>
 				<ul>
 					<li><a href="#xkas">xkas</a></li>
-					<li><a href="#asar">asar &lt;ver&gt;</a></li>
-					<li><a href="#math-pri">math pri &lt;on/off&gt;</a></li>
-					<li><a href="#math-round">math round &lt;on/off&gt;</a></li>
+					<li><a href="#asar">asar {ver}</a></li>
+					<li><a href="#math-pri">math pri {on/off}</a></li>
+					<li><a href="#math-round">math round {on/off}</a></li>
 				</ul>
 			</li>
 			<li>
@@ -72,11 +73,17 @@
 			</li>
 			<li><a href="#defines">Defines</a></li>
 			<li><a href="#macros">Macros</a></li>
+			<li>
+				<a href="#functions">Functions</a>
+				<ul>
+					<li><a href="#built-ins">Built-in Functions</a></li>
+				</ul>
+			</li>
 		</ul>
 		</p>
 		<hr />
         <p id="usage"><h3>Usage</h3>
-        <pre><code class="powershell">	asar.exe [options] asm_file [rom_file]</code></pre>
+        <pre><code class="powershell">	asar.exe [options] {asm_file} [rom_file]</code></pre>
 		<table>
 			<tr>
 				<th style="width:150px">Argument</th>
@@ -85,7 +92,7 @@
 				<th>Examples</th>
 			</tr>
 			<tr>
-				<td><code class="powershell">options</code></td>
+				<td><code class="powershell">[options]</code></td>
 				<td></td>
 				<td>List of optional arguments. The following options are supported:</td>
 				<td></td>
@@ -110,9 +117,9 @@
 				<td><pre><code class="powershell">asar.exe --no-title-check C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="powershell">--pause-mode=&lt;mode&gt;</code></td>
+				<td><code class="powershell">--pause-mode={mode}</code></td>
 				<td>Input</td>
-				<td>Sets Asar's pause mode, specifying when Asar should pause the application before exit, where <code class="powershell">&lt;mode&gt;</code> can be one of the following:<br/>
+				<td>Sets Asar's pause mode, specifying when Asar should pause the application before exit, where <code class="powershell">{mode}</code> can be one of the following:<br/>
 					<code class="powershell">never</code>: Don't pause the application.<br/>
 					<code class="powershell">on-error</code>: Pause the application if an error was thrown.<br/>
 					<code class="powershell">on-warning</code>: Pause the application if an error or a warning was thrown.<br/>
@@ -120,14 +127,14 @@
 				<td><pre><code class="powershell">asar.exe --pause-mode=always C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="powershell">-I&lt;path&gt;</code><br /><code class="powershell">--include&nbsp;&lt;path&gt;</code></td>
+				<td><code class="powershell">-I{path}</code><br /><code class="powershell">--include&nbsp;{path}</code></td>
 				<td>Input</td>
 				<td>Adds an include search path for file-based commands to Asar. Normally, commands like incsrc, incbin etc. look for files relative to the ASM file that is currently being compiled. If those files aren't found, an error is thrown, unless you specify include search paths, in which case Asar will look for the file in each respective directory before throwing an error. For example, imagine you compiled the file
 				<pre><code class="powershell">C:/homebrew/my_game.asm</code></pre>
 				with Asar, adding the include search path
 				<pre><code class="powershell">-I&quot;C:/homebrew/binary data&quot;</code></pre>
 				and the ASM file included the line:
-				<pre><code class="65c816_asar">incbin data/player_gfx.bin</code></pre>
+				<pre><code class="65c816_asar">incbin "data/player_gfx.bin"</code></pre>
 				Asar would now look for a file:
 				<pre><code class="powershell">C:/homebrew/data/player_gfx.bin</code></pre>
 				If this file didn't exist, it would then look for a file:
@@ -140,7 +147,7 @@
 	C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="powershell">-D&lt;name&gt;=&lt;value&gt;</code><br /><code class="powershell">--define&nbsp;&lt;name&gt;=&lt;value&gt;</code></td>
+				<td><code class="powershell">-D{identifier}={value}</code><br /><code class="powershell">--define&nbsp;{identifier}={value}</code></td>
 				<td>Input</td>
 				<td>Adds a define to Asar. See section <a href="#defines">Defines</a> for details.</td>
 				<td><pre><code class="powershell">asar.exe -Ddebug=1 -Dskip_title_screen=0
@@ -155,13 +162,13 @@
 				<td>&nbsp;</td>
 			</tr>
 			<tr>
-				<td><code class="powershell">asm_file</code></td>
+				<td><code class="powershell">{asm_file}</code></td>
 				<td>Input</td>
 				<td>Path to the ASM source file.</td>
 				<td><pre><code class="powershell">asar.exe C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="powershell">rom_file</code></td>
+				<td><code class="powershell">[rom_file]</code></td>
 				<td>Input, output</td>
 				<td>Path to the ROM file that is modified by Asar. If this file doesn't exist yet, Asar creates a new ROM file instead. When omitted, Asar checks if asm_file_name.sfc or asm_file_name.smc exists and uses the one it finds. When zero or two ROMs with that filename are found, Asar defaults to the .sfc extension. As a convention, Asar always treats .smc files as headered and .sfc files as unheadered ROMs. This means that headered .sfc files or unheadered .smc files cannot be used with Asar unless their extension is changed. This is by design and meant to encourage compliance with the convention.</td>
 				<td><pre><code class="powershell">asar.exe C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre>
@@ -176,7 +183,7 @@
 		</p>
 		<hr />
         <p id="archs"><h3>Architectures</h3>
-		Asar supports a number of different target architectures for code compilation. They can be activated via the command <code class="65c816_asar">arch &lt;name&gt;</code>. Going into detail on any of the supported architectures is beyond the scope of this manual. For that, it's recommended to check the SNES Dev Manual or other specialized resources. Asar tries as much as possible to always stick to the known conventions and specifications of each respective architecture.
+		Asar supports a number of different target architectures for code compilation. They can be activated via the command <code class="65c816_asar">arch {name}</code>. Going into detail on any of the supported architectures is beyond the scope of this manual. For that, it's recommended to check the SNES Dev Manual or other specialized resources. Asar tries as much as possible to always stick to the known conventions and specifications of each respective architecture (with a few notable exceptions that are hopefully all covered somewhere in this manual).
 		<br /><br />
 		<table>
 			<tr>
@@ -1434,7 +1441,7 @@ db $FF		; Will write to PC address 0x008000</code></pre>
 ;@endif
 
 do_something()</code></pre>
-		<h4 id="asar">asar &lt;ver&gt;</h4>
+		<h4 id="asar">asar {ver}</h4>
 		The <code class="65c816_asar">asar</code> command can be used to specify the minimum Asar version your patch is compatible with. When a user tries to assemble the patch in an older version of Asar, an error will be thrown, stating that the used Asar version is too old. This should be the first command in your patch, otherwise an error will be thrown.
 		<pre><code class="65c816_asar">; This patch uses features from Asar 1.40, so it makes sense to require it as a minimum.
 @asar 1.40
@@ -1444,14 +1451,14 @@ if readfile1(&quot;data.bin&quot;, 0) == 1
 else
 	; Do something else
 endif</code></pre>
-		<h4 id="math-pri">math pri &lt;on/off&gt;</h4>
+		<h4 id="math-pri">math pri {on/off}</h4>
 		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always enable this flag.
 		<pre><code class="65c816_asar">math pri off
 db 1+(6/3)*5	; db 15
 
 math pri on
 db 1+(6/3)*5	; db 11</code></pre>
-		<h4 id="math-round">math round &lt;on/off&gt;</h4>
+		<h4 id="math-round">math round {on/off}</h4>
 		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag.
 		<pre><code class="65c816_asar">math round on
 ; 1.75 is immediately truncated to 1, resulting in (3/4)+1
@@ -1499,9 +1506,9 @@ lda \
 	$7F0000
 ; This will be treated as &quot;lda $7F0000&quot;
 
-function f(x) = ((x*x)+1000)\
+function func(param) = ((param*param)+1000)\
 	/256
-; This will be treated as &quot;function f(x) = ((x*x)+1000)/256&quot;</code></pre>
+; This will be treated as &quot;function func(param) = ((param*param)+1000)/256&quot;</code></pre>
 
         <h4 id="singleline">Single-Line Operator</h4>
         Contrary to the multi-line operators, the single-line operator <code class="65c816_asar">:</code> is a formatting operator which makes it possible to treat a single line of code as multiple lines. It requires a space before and after usage to differentiate it from the : used with certain commands. When used between different commands, Asar interprets it similarly to a new line and treats each command as being on a separate line. This can be used to link multiple commands together into functional blocks and make the code more readable.
@@ -1623,8 +1630,8 @@ dl ?MacroMainLabel</code></pre>
 
         <h4 id="namespaces">Namespaces</h4>
         Namespaces are a feature which makes it easier to avoid name conflicts between different labels without having to give them long or cryptic names. They work similarly to C++ namespaces and accomplish this by automatically adding a prefix to all labels declared or accessed within them. They can be stacked if desired. When you try to access a label from within a namespace and Asar doesn't find it in there, it automatically looks in the upper namespaces (up to the global namespace). Use<br/>
-		<code class="65c816_asar">namespace &lt;identifier&gt;</code><br/>
-		to enter a namspace, where &lt;identifier&gt; can contain any of the following characters:<br/>		
+		<code class="65c816_asar">namespace {identifier}</code><br/>
+		to enter a namspace, where {identifier} can contain any of the following characters:<br/>		
 		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
 		Use<br/>
 		<code class="65c816_asar">namespace off</code><br/>
@@ -1669,10 +1676,12 @@ dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main</code></pre>
 		<hr />
 		<p id="defines"><h3>Defines</h3>
         Asar supports a define system that functions similarly to defines in other programming languages, such as C++. Defines are identifiers that you can assign any kind of text to and use in other places as substitues for that text. During compilation, Asar replaces each define it encounters with the respective text assigned to it. Defines are prefixed with a <code class="65c816_asar">!</code> and declared as follows:<br>
-        <pre><code class="65c816_asar">!&lt;identifier&gt; = *</code></pre>
-        where &lt;identifier&gt; is a unique identifier that can contain any of the following characters:<br />
+        <pre><code class="65c816_asar">!{identifier} = {value}</code></pre>
+		or		
+        <pre><code class="65c816_asar">!{identifier} = "{value}"</code></pre>
+        where {identifier} is a unique identifier that can contain any of the following characters:<br />
 		<code class="65c816_asar">a-z A-Z 0-9 _</code></br >
-		The space on both sides of the = is mandatory, which means that <code class="65c816_asar">!&lt;identifier&gt;=*</code> will not work. Since defines are really just placeholders for text, they can contain anything - labels, math formulas, even other defines.
+		The space on both sides of the = is mandatory, which means that <code class="65c816_asar">!{identifier}={value}</code> will not work. Since defines are really just placeholders for text, they can contain anything - labels, math formulas, even other defines.
         <pre><code class="65c816_asar">!x = $00
 		
 lda !x		; Treated as &quot;lda $00&quot;
@@ -1730,7 +1739,7 @@ lda !x		; Treated as &quot;lda $1234&quot;
 ; !define now contains &quot;10&quot;</code></pre></td>
 			</tr>
 		<table><br />
-		Similarly to C's ifdef and undef, Asar allows you to check for a define's existence using the <code class="65c816_asar">defined(&quot;&lt;identifier&gt;&quot;)</code> function and to delete a define using the <code class="65c816_asar">undef &lt;identifier&gt;</code> command. Make sure to leave the <code class="65c816_asar">!</code> out of the identifier when using these functions, as Asar would otherwise try to resolve the defines.
+		Similarly to C's ifdef and undef, Asar allows you to check for a define's existence using the <code class="65c816_asar">defined(&quot;{identifier}&quot;)</code> function and to delete a define using the <code class="65c816_asar">undef {identifier}</code> command. Make sure to leave the <code class="65c816_asar">!</code> out of the identifier when using these functions, as Asar would otherwise try to resolve the defines.
 		<pre><code class="65c816_asar">!define = "hello"
 		
 if defined("define")
@@ -1745,43 +1754,46 @@ endif</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <p id="macros"><h3>Macros</h3>
-		Macros are a mechanism for recording a sequence of commands that can be used in other places. The main purpose of this is to include commonly used code in multiple places without actually having to rewrite or copy that code every time. Instead you can move it into a macro and write it only once. Macros, in concept, work similarly to defines in that they are a text-replace mechanism, but they have a few key differences:
+		Macros are a mechanism for recording a sequence of commands that can be used in other places. The main purpose of this is to include commonly used code in multiple places without actually having to rewrite or copy that code every time. Instead you can move it into a macro and write it only once. Macros, in concept, work similarly to defines in that they are a text-replacement mechanism, but they have a few key differences:
 		<ul>
 			<li>Macros only record a sequence of commands rather than any kind of text.</li>
-			<li>A macro call is itself considered a command and thus needs to go on its on line (or separated via the : operator). This means that unlike a define, a macro can't just be used whereever.</li>
+			<li>A macro call is itself considered a command and thus needs to go on its on line (or separated via the <a href="#singleline">single-line operator</a> ). This means that unlike a define, a macro can't just be used whereever.</li>
 			<li>Macros can include parameters, which are identifiers that are replaced by a text value whenever the respective macro is called. For simplicity, you could consider parameters a macro-specific version of defines.</li>
 		</ul>
 		Use the following syntax to define a macro:
-		<pre><code class="65c816_asar">macro &lt;macro_name&gt;([&lt;argument1_name&gt;[, &lt;argument2_name&gt;...]])
-	[&lt;command1&gt;]
-	[&lt;command2&gt;...]
-endmacro</code></pre>	
-		
-        Macros can be nested (macros with macros) up to 512 levels deep, the
-        limitation is there only to prevent macro a calling macro b, and vice
-        versa, resulting in a dead-lock of the assembler. incsrc, below, has
-        the
-        same 512 level deep limit, for exactly the same reason. Syntax of a
-        macro
-        is:<br>
-        <hr>
-        macro name(arg1, arg2, ...)<br>
-        ?loop:<br>
-        lda &lt;arg1&gt;<br>
-        sta.l $&lt;arg2&gt;<br>
-        bra ?loop<br>
-        endmacro<br>
-        <hr>
-        Things to note: The first and last line from the above example must be
-        on their own lines, you cannot use the : command to concatenate these
-        commands. You can use as many arguments as you like. Yes, infinite
-        arguments, if you like. Or none at all. To use the argument within the
-        macro, simply use &lt;&gt; around the argument name. To use the
-        macro
-        within your code, use %macroname(arg1, ...).
-        This accepts quotes, as well.<br>
-        This example would be valid: %writestr(3, "Hello", "pha : plb")
-        <br/>
+		<pre><code class="65c816_asar">macro {identifier}([parameter1_identifier[, parameter2_identifier...]])
+	[command1]
+	[command2...]
+endmacro</code></pre>
+        where all the identifiers can contain any of the following characters:<br />
+		<code class="65c816_asar">a-z A-Z 0-9 _</code></br >		
+        Use the syntax <code class="65c816_asar">&lt;parameter_identifier&gt;</code> to expand a parameter inside a macro. This works just like placing a <code class="65c816_asar">!define_identifier</code> anyhwere else in the code. Macros can be recursive (macros calling themselves) and/or nested up to 512 levels deep. This limit only serves the purpose of preventing infinite recursion. The first and last line of the macro definition need to go on their own lines (the <a href="#singleline">single-line operator</a> is not supported here). To call a macro that has already been defined, use the syntax
+		<pre><code class="65c816_asar">%{identifier}([parameter1[, parameter2...]])</code></pre>
+		where each individual parameter may be wrapped in double quotes (which is required for parameters that contain any whitespace).
+		<pre><code class="65c816_asar">macro mov(target, source)
+	lda &lt;source&gt;
+	sta &lt;target&gt;
+endmacro
+
+macro swap(first, second)
+	%mov($00, &lt;first&gt;)
+	%mov(&lt;first&gt;, &lt;second&gt;)
+	%mov(&lt;second&gt;, $00)
+endmacro
+
+macro use_x_safely(code)
+	phx
+	&lt;code&gt;
+	plx
+endmacro
+
+%swap($01, $02)
+%use_x_safely("ldx $10 : stx $11 : ldx #10 : stx $12")
+</code></pre>
+		<a href="#contents">Return to top</a></p>
+		<hr />
+        <p id="functions"><h3>Functions</h3>		
+		<h4 id="built-ins">Built-in Functions</h4>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <b>Opcode size specifications:</b>

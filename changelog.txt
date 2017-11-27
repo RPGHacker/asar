@@ -34,6 +34,7 @@ Hopefully comming soon TM:
 - customizable warning settings, like Clang or MSVC
 - Some kind of include guard ("pragma once")
 - stackable namespaces
+- readfile() function to read arbitrary size of bytes into a memory buffer
 
 
 

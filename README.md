@@ -3,16 +3,12 @@
 This document assumes the reader is familiar with xkas. If this is not the case, please read xkas.html first.
 
 New features:
-- If you're in a namespace and a label isn't found, Asar looks in the global namespace.
 - This technically isn't a change, but Label = Address is now a well defined operation. While it
   exists in xkas6, the only ways to find it are by inspecting the output of export.label, by
   inspecting the source code, and by mistake (I've seen it done thrice, leading to odd bugs in
   most cases). The differences to normal labels are that it does not clear sublabels, they're
   always in the global namespace, and they don't use the current code pointer.
 - Sublabels can now be multiple levels deep; ..Loop is a valid label name.
-- + and - labels can be infinite depth. This means that "+++++" is a valid label name.
-- + and - labels no longer piggyback on sublabels; you can go to them across other labels (and you
-  can call a label .__br_pos1_0 if you want).
 - The base command now accepts base off, which makes it act like the code is at the current location
   again.
 - Parentheses are allowed at all places where math is expected.
