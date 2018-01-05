@@ -1510,7 +1510,23 @@ void assembleblock(const char * block)
 #endif
 		}
 		if (emulatexkas) name=dequote(par);
-		else name=S dir(thisfilename)+dequote(par);
+		else
+		{
+			const char* path = dequote(par);
+#ifdef _WIN32
+			if( (isalpha(path[0]) && (':' == path[1]) && (('\\' == path[2]) || ('/' == path[2])))	/* drive letter + root */
+			 || ('\\' == path[0]) || ('/' == path[0]))	/* root */
+#else
+			if('/' == path[0])	/* root */
+#endif
+			{
+				name=S path;
+			}
+			else
+			{
+				name=S dir(thisfilename)+path;
+			}
+		}
 		assemblefile(name, false);
 	}
 	else if (is1("incbin") || is3("incbin"))
@@ -1549,7 +1565,23 @@ void assembleblock(const char * block)
 #endif
 		}
 		if (emulatexkas) name=dequote(par);
-		else name=S dir(thisfilename)+dequote(par);
+		else
+		{
+			const char* path = dequote(par);
+#ifdef _WIN32
+			if( (isalpha(path[0]) && (':' == path[1]) && (('\\' == path[2]) || ('/' == path[2])))	/* drive letter + root */
+			 || ('\\' == path[0]) || ('/' == path[0]))	/* root */
+#else
+			if('/' == path[0])	/* root */
+#endif
+			{
+				name=S path;
+			}
+			else
+			{
+				name=S dir(thisfilename)+path;
+			}
+		}
 		char * data;//I couldn't find a way to get this into an autoptr
 		if (!readfile(name, &data, &len)) error(0, "File not found");
 		autoptr<char*> datacopy=data;
