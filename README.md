@@ -11,7 +11,6 @@ New features:
 - Sublabels can now be multiple levels deep; ..Loop is a valid label name.
 - The base command now accepts base off, which makes it act like the code is at the current location
   again.
-- Parentheses are allowed at all places where math is expected.
 - incbin can now include parts of a file. Syntax: incbin "File name.bin":start-end, where start and
   end are hexadecimal numbers without $. Note that math is not allowed. An ending position of 0 will
   include the rest of the file.
@@ -80,18 +79,9 @@ New commands:
   an autoclean, or everything will be leaked; Asar can't solve circular dependencies, and won't even
   try.
 - pushpc/pullpc: In case you want to put code at one place instead of two.
-- function: Defines a function. For details, see below.
 - if/elseif/else/endif: For conditional compilation. See section "Conditionals" below for details.
 - while: For repeated compilation of the same code. See section "Loops" below for details.
 - assert: Accepts an if-like condition; if the condition is false, it prints an error message.
-- math: Changes how the math parser works. It takes two arguments: First, it wants a setting name
-  (valid settings are "pri" and "round"), then it wants "on" or "off" depending on whether you want
-  it on or off. pri tells it to apply prioritization rules (exponentiation comes before
-  multiplication/division, which comes before addition/subtraction, and so on). round tells whether
-  Asar should round the intermidate values down to the closest integer after each operation, like
-  xkas does. Because some Asar users are used to the (rather strange) behaviour of xkas,
-  prioritizing is left-to-right by default, and rounding is on. Parentheses are allowed no matter
-  what these settings are.
 - warn: Controls a few warning-related settings. Its syntax is similar to math, but the only valid
   flag is "xkas" (warns about a few things that Asar does differently from xkas). Note that you
   should turn off xkas emulation mode with this on; some changes throw warnings and errors in native
@@ -132,67 +122,6 @@ The syntax and functionality are very similar to if conditionals, except you use
   simplicity and compatibility, so they always need to end on an endif. Note that else and elseif
   statements are not allowed in combination with a while loop, though. When using while loops, be
   careful not to cause an infinite loop, as Asar won't make any effort to detect those.
-
-Functions:
-Functions are what they sound like: They take zero or more arguments, and return another value. They
-  can be used anywhere where other math is allowed, and they're defined with the keyword function.
-Example:
-function f(x) = x*x
-db f(9);same as db 81 (db $51 in hex)
-The = is needed. I find it to look much nicer than without it.
-There are also a few predefined functions:
-read1, read2, read3, read4 - Reads a few bytes from the ROM at the indicated SNES location. They
-  read one, two, three, or four bytes, respectively. They're mainly intended to allow hijacking a
-  patch that moves around (read3 is best suited for this), or verifying that a needed patch is
-  installed (assert and read1 is probably the best combination for this, though if may also be
-  useful). If you give it a second argument, it'll return that instead of throwing an error if the
-  address is invalid.
-readfile1, readfile2, readfile3, readfile4 - Same as above, except bytes are read from another file.
-  Pass the filename of the file to read as the first argument (wrapped in double quotes) and the
-  offset into that file as the second argument. Can also be passed a third argument which is returned
-  as a default value if reading fails.
-  Usage example:
-    readfile1("mydatafile.bin", 512)
-canread1 through 4, canread - Returns 1 if read1 through 4 from the specified address will succeed;
-  canread takes a second argument telling how many bytes you need to read.
-canreadfile1 through 4, canreadfile - Same as above, but for external files. Pass the filename
-  as the first argument (wrapped in double quotes), the offset into the file as the second
-  argument and the number of bytes to read as the third argument (in the case of canreadfile).
-sqrt, sin, cos, tan, asin, acos, atan, arcsin, arccos, arctan, log, log10, log2 - Some random
-  functions. I'm pretty sure they're totally useless in an assembler, but I felt that just four
-  functions is a bit too little. (They're older than canread#.)
-snestopc, pctosnes - Manually convert an address from PC to SNES format or vice versa.
-  Both functions are dependent on the ROM's current mapping mode, so use them with caution.
-max, min, clamp - max() and min() return the maximum or minimum of two values, whereas
-  clamp is passed three arguments and assures that the first argument is >= the second argument
-  and <= the third argument.
-  Examples:
-    clamp(5, 0, 10)   =>  5
-	clamp(15, 0, 10)  =>  10
-	clamp(-5, 0, 10)  =>  0
-safediv - Performs division with first and second argument, except if second argument is zero, in
-  which case it returns the third argument. Useful to prevent "division by zero" errors.
-  Example:
-    safediv(10, 0, 1)  =>  1
-select - Functions very similar to if/else conditionals, except it can be used insied functions
-  and calculations. The first argument passed to it as treated as a statement. If this argument
-  resolves to anything non-zero, the second argument passed to select is returned. If the statement
-  resolves to zero, the third argument passed to select is returned. Please note that unlike
-  blocks in if/else conditionals, function arguments in Asar are always evaluated before a function
-  is called. In other words: if you do select(1, 1/1, 1/0), Asar will throw a "division by zero"
-  error, even though the function would return 1/1 and disregard the 1/0. In this particular case,
-  it's recommended to simply use the safediv() function in place of a regular division.
-not - Returns 1 if passed a 0 and 0 in any other case.
-equal, notequal, less, lessequal, greater, greaterequal - Rather self-explanatory, return 1 if the
-  respective comparison is true and 0 otherwise. Primarily intended for being passed as statement
-  to the select() function.
-and, or, nand, nor, xor - Also self-explanatory, return 1 if the respective logical operation is
-  true and 0 otherwise. Primarily intended for being passed as statement to the select() function.
-round - Rounds the first argument to the number of decimal places specified by the second argument.
-  Pass 0 as the second argument to round to the nearest integer.
-All built-in functions can be overridden by user-defined functions if you want. Prepending an
-  underscore (for example _read3()) leads to the same function; this is so you can override read3
-  with a function that calls _read3.
 
 Known bugs:
 - JML.w and JSL.w aren't rejected; they're treated as JML.l and JSL.l. This is since Asar has a much

@@ -35,6 +35,11 @@ Hopefully comming soon TM:
 - Some kind of include guard ("pragma once")
 - stackable namespaces
 - readfile() function to read arbitrary size of bytes into a memory buffer
+- document sizeof/objectsize functions
+- Compile ASM from memory buffer (DLL API)
+- "pragma once" include guard
+- Bake Asar version directly into Asar DLL via resource file
+- Make readfile/canreadfile functions not fail when using the optional parameter and the file doesn't exist
 
 
 

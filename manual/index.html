@@ -61,6 +61,7 @@
 					<li><a href="#singleline">Single-Line Operator</a></li>
 				</ul>
 			</li>
+			<li><a href="#math">Math</a></li>
 			<li>
 				<a href="#labels">Labels</a>
 				<ul>
@@ -1424,7 +1425,7 @@ db $FF		; Will write to PC address 0x008000</code></pre>
         <p id="behavior"><h3>Behavior Flags</h3>
 		Behavior flags are certain commands and settings that determine how Asar operates in certain situations.
 		<h4 id="xkas">xkas</h4>
-		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patchs that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used.
+		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patches that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used.
 		<pre><code class="65c816_asar">;@xkas
 
 !is_asar=0	
@@ -1518,7 +1519,44 @@ function func(param) = ((param*param)+1000)\
 lda #00
 sta $00</code></pre>
 		<a href="#contents">Return to top</a></p>
-		<hr />
+		<hr />		
+		<p id="math"><h3>Math</h3>
+		Math is supported in all opcodes, functions and labels. By default, Asar uses left-to-right math for backwards-compatibility with xkas which means that it ignores operator precedence.
+		<pre><code class="65c816_asar">lda #6*2+5	; the same as &quot;lda #17&quot;
+lda #5+6*2	; the same as &quot;lda #22&quot;</code></pre>
+		This behavior can be changed by using the command <code class="65c816_asar">math pri on</code>, which makes Asar apply conventional prioritization rules in all math statements. (See <a href="#math-pri">math pri {on/off}</a>)
+		<pre><code class="65c816_asar">math pri on
+		
+lda #6*2+5	; the same as &quot;lda #17&quot;
+lda #5+6*2	; the same as &quot;lda #17&quot;</code></pre>
+		In both modes, Asar supports parentheses for explicit control over the order of operations.
+		<pre><code class="65c816_asar">math pri on
+		
+lda #5+6*2	; the same as &quot;lda #17&quot;
+lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
+		Math statements in Asar support the following operators:<br/><br/>
+		
+		<code>+  : Addition
+-  : Subtraction
+*  : Multiplication
+/  : Division
+%  : Modulo (the remainder of a division, fmod() in C)
+&lt;&lt; : Left-shift ( x &lt;&lt; y formula: x = x * 2^y )
+&gt;&gt; : Right-shift ( x &gt;&gt; y formula: x = x / 2^y )
+&amp;  : Bitwise AND
+|  : Bitwise OR
+^  : Bitwise XOR (Note: not exponentials)
+~  : Bitwise NOT
+** : Exponentials (2**4 = 2*2*2*2 = pow(2, 4) in C)</code><br/><br/>
+		
+		Note that whitespace is not supported inside math statements, but the <a href="#multiline">multi-line operator \</a> can be used to split them into multiple lines. Using math in labels can be useful when you want to apply an offset to the label:
+		<pre><code class="65c816_asar">lda .Data+3	; Will load $03 into A
+		
+.Data
+	db $00,$01,$02
+	db $03,$02,$03</code></pre>
+		<a href="#contents">Return to top</a></p>
+		<hr />		
 		<p id="labels"><h3>Labels</h3>
 		Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets. Asar will optimize label access from 24-bit addressing to 16-bit if possible.
 		<h4 id="main-labels">Main Labels</h4>
@@ -1792,8 +1830,184 @@ endmacro
 </code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
-        <p id="functions"><h3>Functions</h3>		
+        <p id="functions"><h3>Functions</h3>
+		Functions in Asar can be considered the math equivalent of macros. They are a convenient way of wrapping commonly used math statements, can include parameters and can be called in all places where math is supported. Use the following syntax to define a function:
+		<pre><code class="65c816_asar">function {identifier}([parameter1_identifier[, parameter2_identifier...]]) = {some_math_statement}</code></pre>
+        where all the identifiers can contain any of the following characters<br />
+		<code class="65c816_asar">a-z A-Z 0-9 _</code></br >		
+        and where {some_math_statement} can be any <a href="#math">math statement</a> supported by Asar (including the use of other functions). Use a parameter's name to expand it inside a function.
+		<pre><code class="65c816_asar">function kilobytes_to_bytes(kb) = kb*1024
+function megabytes_to_kilobytes(mb) = mb*1024
+function megabytes_to_bytes(mb) = kilobytes_to_bytes(megabytes_to_kilobytes(mb))
+
+; Will print "4 MB = 4194304 bytes."
+print "4 MB = ",dec(megabytes_to_bytes(x))," bytes."
+
+
+function data_index_to_offset(index) = index*2
+
+lda .Data+data_index_to_offset(2)	; Will load $0002 into A
+
+.Data
+	dw $0000
+	dw $0001
+	dw $0002
+</code></pre>
+		Function definitions must be on a single line and can't include whitespace in their math statements, except when using the <a href="#multiline">multi line operator \</a>, which can be used to split long function definitions into multiple lines.
 		<h4 id="built-ins">Built-in Functions</h4>
+		Aside from user-defined functions mentioned above, Asar also supports a number of built-in functions. Some built-in functions take string parameters, which must be wrapped in double quotes.<br/><br/>
+		<table>
+			<tr>
+				<th style="width:150px">Function</th>
+				<th>Details</th>
+				<th>Example</th>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">read1(pos[, default])
+read2(pos[, default])
+read3(pos[, default])
+read4(pos[, default])</code></td>
+				<td>Read one/two/three/four byte(s) from the output ROM at SNES location pos. Mainly intended for detecting the presence of certain hijacks/patches in a ROM. Throws an error when given an invalid address, unless the optional parameter default is provided in which case it is returned.</td>
+				<td><pre><code class="65c816_asar">if read1($00FFD5) == $23
+	!is_sa1_rom = 1
+else
+	!is_sa1_rom = 0
+endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">readfile1(filename, pos[, default])
+readfile2(filename, pos[, default])
+readfile3(filename, pos[, default])
+readfile4(filename, pos[, default])</code></td>
+				<td>Read one/two/three/four byte(s) from file filename at position pos, where filename is a string parameter containing a path to a file relative to the current file being assembled. Throws an error when the referenced file doesn't exist or the given position is out-of-bounds, unless the optional parameter default is provided in which case it is returned.</td>
+				<td><pre><code class="65c816_asar">!readresult = readfile4("datafile.bin", 0, $FFFFFFFF)
+				
+if !readresult != $FFFFFFFF
+	print "Read $",hex(!readresult)," from datafile.bin."
+endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">canread1(pos)
+canread2(pos)
+canread3(pos)
+canread4(pos)
+canread(pos, num)</code></td>
+				<td>Returns 1 if reading one/two/three/four/num bytes from the output ROM at SNES location pos would succeed and 0 otherwise.</td>
+				<td><pre><code class="65c816_asar">if canread1($00FFD5) == 1
+	print "Detected ROM type: $",hex(read1($00FFD5))
+else
+	error "Failed to detect ROM type!"
+endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">canreadfile1(filename, pos)
+canreadfile2(filename, pos)
+canreadfile3(filename, pos)
+canreadfile4(filename, pos)
+canreadfile(filename, pos, num)</code></td>
+				<td>Returns 1 if reading one/two/three/four/num bytes from file filename at position pos would succeed and 0 otherwise, where filename is a string parameter containing a path to a file relative to the current file being assembled.</td>
+				<td><pre><code class="65c816_asar">if canreadfile4("datafile.bin", 512) == 1
+	print "Read $",hex(readfile4("datafile.bin", 512))," from datafile.bin at position 512."
+else
+	error "datafile.bin either doesn't exist or is too small."
+endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">sqrt(x)</code></td>
+				<td>Computes the square root of x.</td>
+				<td></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">sin(x)
+cos(x)
+tan(x)
+asin(x)
+acos(x)
+atan(x)
+arcsin(x)
+arccos(x)
+arctan(x)</code></td>
+				<td>Various trigonometric functions. Units are in radians.</td>
+				<td></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">log(x)
+log2(x)
+log10(x)</code></td>
+				<td>Logarithmic functions (base-e, base-2 and base-10 respectively).</td>
+				<td></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">snestopc(address)
+pctosnes(address)</code></td>
+				<td>Functions for converting between SNES and PC addresses. Affected by the current <a href="#mappers">mapping mode</a>.</td>
+				<td><pre><code class="65c816_asar">print "SNES address $018000 in the current mapping mode is equivalent to PC address 0x",dec(snestopc($018000))</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">min(a, b)
+max(a, b)</code></td>
+				<td>Return the minimum/maximum of two numbers.</td>
+				<td><pre><code class="65c816_asar">!start_index #= max(!current_index-1, 0)</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">clamp(value, minimum, maximum)</code></td>
+				<td>Makes sure that value stays within the bounds set by minimum and maximum. Equal to <code class="65c816_asar">min(max(value, minimum), maximum)</code>.</td>
+				<td><pre><code class="65c816_asar">!used_amount #= clamp(!used_percentage, 0.0, 1.0)*!total_amount</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">safediv(a, b, exception)</code></td>
+				<td>Returns <code>a/b</code> unless b is 0 in which case exception is returned. Intended for avoiding division by zero errors in functions.</td>
+				<td><pre><code class="65c816_asar">!single_sprite_memory = safediv(!total_sprite_memory, !max_num_sprites, 0)</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">select(statement, true, false)</code></td>
+				<td>Returns false if statement is 0 and true otherwise. Can be considered an if/else conditional that is usable within functions.<br/>
+					NOTE: Asar always evaluates all parameters of a function before calling it, so if, for example, you pass an expression that divides by zero to select() as true, Asar will throw a division by zero error even if statement evalutes to 0 and thus false would be returned. To work around this, you can use the <code>safediv()</code> function in place of a regular division.</td>
+				<td><pre><code class="65c816_asar">function sprite_size() = select(!extra_bytes_enabled, 16+4, 16)</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">not(value)</code></td>
+				<td>Returns 1 if value is 0 and 0 in any other case. Useful for negating statements in the <code class="65c816_asar">select()</code> function.</td>
+				<td><pre><code class="65c816_asar">function required_sprite_memory(num_sprites) = not(!sprites_disabled)*sprite_size()*num_sprites</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">equal(value, comparand)
+notequal(value, comparand)
+less(value, comparand)
+lessequal(value, comparand)
+greater(value, comparand)
+greaterequal(value, comparand)</code></td>
+				<td>Comparison functions. Return 1 if the respective comparison is true and 0 otherwise. Useful as statements in the <code class="65c816_asar">select()</code> function.</td>
+				<td><pre><code class="65c816_asar">function abs(num) = select(less(num, 0), num*-1, num)</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">and(a, b)
+or(a, b)
+nand(a, b)
+nor(a, b)
+xor(a, b)</code></td>
+				<td>Perform the respective logical operation with a and b. Useful for chaining statements in the <code class="65c816_asar">select()</code> function.</td>
+				<td><pre><code class="65c816_asar">function total_sprite_extra_bytes(num_sprites) = select(and(not(!sprites_disabled), !extra_bytes_enabled), 4, 0)*num_sprites</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">round(number, precision)</code></td>
+				<td>Rounds number to precision decimal places. Pass 0 as precision to round to the nearest integer.</td>
+				<td><pre><code class="65c816_asar">if round(!distance, 2) == 0.0
+	error "Distance is zero or almost zero. Please choose a bigger value for distance as small values will cause problems."
+endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">defined(identifier)</code></td>
+				<td>Takes an identifier as a string parameter and returns 1 if a define with that identifier exists, 0 otherwise.<br/>
+					NOTE: Don't include the <code>!</code> in the identifier as Asar will otherwise try to expand it as a define before calling the function.</td>
+				<td><pre><code class="65c816_asar">if defined("include_guard") == 0
+	!include_guard = 1	
+	; ...	
+endif</code></pre></td>
+			</tr>
+		</table><br/>
+		All built-in functions can be overridden by user-defined functions. Prepending an underscore (for example: <code class="65c816_asar">_read1()</code>) leads to the original function, which can be used to make an overridden function call its original function.
+		<pre><code class="65c816_asar">function read1(x) = _read1(x+$010000)</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <b>Opcode size specifications:</b>
@@ -1814,42 +2028,7 @@ endmacro
         asl #4, which will print the equivalent of asl : asl : asl : asl to the
         file, the same goes for the other opcodes.<br>
         <br>
-        <b>Math:</b><br>
-        Math is supported in all opcodes, and all functions, however, it has
-        one major variation from traditional math. It does not resolve math
-        in order if symbols, it instead resolves from left to right, and also
-        does not use parinthesis to denote order. An example:<br>
-        <i>Standard Math:</i><br>
-        &nbsp;&nbsp;&nbsp;mov a,5+6*2 ;=17<br>
-        <i>Left-to-right Math:</i><br>
-        &nbsp;&nbsp;&nbsp;mov a,6*2+5 ;=17<br>
-        &nbsp;&nbsp;&nbsp;mov a,5+6*2 ;=22<br>
-        I do apologize for this limitation, it was just far easier and faster
-        to implement left-to-right math, and for an assembler, I haven't really
-        come across anything that could not be represented in left-to-right
-        math.
-        To use left-to-right math, just reorder your multiplication and
-        division
-        to the start, and use addition and subtraction at the end. The math
-        system
-        supports the following commands:<br>
-        + : Addition<br>
-        - : Subtraction<br>
-        * : Multiplication<br>
-        / : Division<br>
-        % : Modulo (uses fmod() function)<br>
-        &lt;&lt; : Left-shift ( x &lt;&lt; y formula: x = x * 2^y )<br>
-        &gt;&gt; : Right-shift ( x &gt;&gt; y formula: x = x / 2^y )<br>
-        &amp; : Bitwise AND<br>
-        | : Bitwise OR<br>
-        ^ : Bitwise XOR (Note: Not exponentials)<br>
-        ~ : Bitwise NOT<br>
-        ** : Power (uses pow() function)<br>
-        <br>
-        <br>
-        Math also works with labels. Example:<br>
-        mov a,label2-label1+2<br>
-        <br>
+        
         <u><b>Additional Commands:</b></u><br>
         <b>rep:</b><br>
         Repeat the following command x times. Works with almost all commands supported by Asar and even macro calls.<br>
