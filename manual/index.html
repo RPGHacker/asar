@@ -54,10 +54,10 @@
 				<a href="#compatibility">Compatibility Settings</a>
 				<ul>
 					<li><a href="#xkas">xkas</a></li>
-					<li><a href="#asar">asar {ver}</a></li>
-					<li><a href="#warn-xkas">warn xkas {on/off}</a></li>
-					<li><a href="#math-pri">math pri {on/off}</a></li>
-					<li><a href="#math-round">math round {on/off}</a></li>
+					<li><a href="#asar">asar</a></li>
+					<li><a href="#warn-xkas">warn xkas</a></li>
+					<li><a href="#math-pri">math pri</a></li>
+					<li><a href="#math-round">math round</a></li>
 				</ul>
 			</li>
 			<li>
@@ -104,6 +104,28 @@
 				<ul>
 					<li><a href="#if-else">if/elseif/else/endif</a></li>
 					<li><a href="#while">while</a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="#binary-data">Binary Data</a>
+				<ul>
+					<li><a href="#tables">Tables</a></li>
+					<li><a href="#fill">fillbyte/fill</a></li>
+					<li><a href="#pad">padbyte/pad</a></li>
+					<li><a href="#incbin">incbin</a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="#freespace">Freespace</a>
+				<ul>
+					<li><a href="#stub">stub</a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="#includes">Includes</a>
+				<ul>
+					<li><a href="#incsrc">incsrc</a></li>
+					<li><a href="#includefrom">include/includefrom</a></li>
 				</ul>
 			</li>
 			<li>
@@ -175,7 +197,7 @@
 				<pre><code class="powershell">C:/homebrew/data/player_gfx.bin</code></pre>
 				If this file didn't exist, it would then look for a file:
 				<pre><code class="powershell">C:/homebrew/binary data/data/player_gfx.bin</code></pre>
-				If this file didn't exist, Asar would throw an error, otherwise Asar would include it.
+				If this file didn't exist, Asar would throw an error, otherwise Asar would include it. See section <a href="#includes">Includes</a> for details on Asar's handling of file names.
 				</td>
 				<td><pre><code class="powershell">asar.exe -IC:/homebrew/my_game/includes -IC:/homebrew/shared
 	C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre>
@@ -1503,8 +1525,9 @@ db $FF		; Will write to PC address 0x008000</code></pre>
 ;@endif
 
 do_something()</code></pre>
-		<h4 id="asar">asar {ver}</h4>
-		The <code class="65c816_asar">asar</code> command can be used to specify the minimum Asar version your patch is compatible with. When a user tries to assemble the patch in an older version of Asar, an error will be thrown, stating that the used Asar version is too old. This should be the first command in your patch, otherwise an error will be thrown.
+		<h4 id="asar">asar</h4>
+		<pre><code class="65c816_asar">asar {ver}</code></pre>
+		The <code class="65c816_asar">asar</code> command can be used to specify the minimum Asar version your patch is compatible with. The <code>ver</code> parameter specifies the minimum required Asar version. When a user tries to assemble the patch in an older version of Asar, an error will be thrown, stating that the used Asar version is too old. This should be the first command in your patch, otherwise an error will be thrown.
 		<pre><code class="65c816_asar">; This patch uses features from Asar 1.40, so it makes sense to require it as a minimum.
 @asar 1.40
 
@@ -1513,16 +1536,19 @@ if readfile1(&quot;data.bin&quot;, 0) == 1
 else
 	; Do something else
 endif</code></pre>
-		<h4 id="warn-xkas">warn xkas {on/off}</h4>
-		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>on</code> to enable these warnings and <code>off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
-		<h4 id="math-pri">math pri {on/off}</h4>
+		<h4 id="warn-xkas">warn xkas</h4>
+		<pre><code class="65c816_asar">warn xkas {on/off}</code></pre>
+		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>warn xkas on</code> to enable these warnings and <code>warn xkas off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
+		<h4 id="math-pri">math pri</h4>
+		<pre><code class="65c816_asar">math pri {on/off}</code></pre>
 		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always enable this flag.
 		<pre><code class="65c816_asar">math pri off
 db 1+(6/3)*5	; db 15
 
 math pri on
 db 1+(6/3)*5	; db 11</code></pre>
-		<h4 id="math-round">math round {on/off}</h4>
+		<h4 id="math-round">math round</h4>
+		<pre><code class="65c816_asar">math round {on/off}</code></pre>
 		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag.
 		<pre><code class="65c816_asar">math round on
 ; 1.75 is immediately truncated to 1, resulting in (3/4)+1
@@ -1549,7 +1575,7 @@ db (3/4)+1.75
 		<pre><code class="65c816_asar">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
 		An exception from this rule are lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. The purpose of this is to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they will be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#compatibility">Compatibility Settings</a> for details on xkas compatibility.
 		<h4 id="brackets">Brackets</h4>
-        Brackets, { and }, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's compltely up to you whether, how and in what quantity you want to use them.<br />
+        Brackets, { and }, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's entirely up to the coder whether, how and in what quantity brackets are used.<br />
 		<pre><code class="65c816_asar">	lda $00
 	beq .IsZero
 	
@@ -1664,7 +1690,7 @@ bra Main</code></pre>
 		Math is supported in all opcodes, functions and labels. By default, Asar uses left-to-right math for backwards-compatibility with xkas which means that it ignores operator precedence.
 		<pre><code class="65c816_asar">lda #6*2+5	; the same as &quot;lda #17&quot;
 lda #5+6*2	; the same as &quot;lda #22&quot;</code></pre>
-		This behavior can be changed by using the command <code class="65c816_asar">math pri on</code>, which makes Asar apply conventional prioritization rules in all math statements. (See <a href="#math-pri">math pri {on/off}</a>)
+		This behavior can be changed by using the command <code class="65c816_asar">math pri on</code>, which makes Asar apply conventional prioritization rules in all math statements. (See <a href="#math-pri">math pri</a>)
 		<pre><code class="65c816_asar">math pri on
 		
 lda #6*2+5	; the same as &quot;lda #17&quot;
@@ -1698,19 +1724,19 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />		
 		<p id="labels"><h3>Labels</h3>
-		Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets. Asar will optimize label access from 24-bit addressing to 16-bit if possible.
+		Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets.
 		<h4 id="main-labels">Main Labels</h4>
-        Main labels are the top-most level of labels supported by Asar. They're global and thus can be directly acessed from anywhere. They can contain any of the following characters<br />
-		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
-		and their declaration must end with a <code class="65c816_asar">:</code> .
+		<pre><code class="65c816_asar">{identifier}:</code></pre>
+        Main labels are the top-most level of labels supported by Asar. They're global and thus can be directly acessed from anywhere. Their identifier can contain any of the following characters<br />
+		<code class="65c816_asar">a-z A-Z 0-9 _</code>
 		<pre><code class="65c816_asar">org $008000
 		
 Main:
 	%do_frame()
 	jmp Main	; Equal to jmp $8000</code></pre>
-		An alternate form of defining main labels is by directly assigning a value to them. A common use-case for this is to make a label point to an existing address inside a ROM.
-		<pre><code class="65c816_asar">RomStart = $008000</code></pre>
-		Note that defining a main label this way does not start a new <a href="#sub-labels">sub label</a> group.
+		An alternate form of defining main labels is by directly assigning a value to them. A common use-case for this is to make a label point to an existing address inside a ROM. Syntax:
+		<pre><code class="65c816_asar">{identifier} = {snes_address}</code></pre>
+		where <code>snes_address</code> can be a number or any math statement evaluating to an SNES address. Note that defining a main label this way does not start a new <a href="#sub-labels">sub label</a> group.
 		<pre><code class="65c816_asar">Main:
 ; ...
 
@@ -1722,9 +1748,10 @@ SomewhereInRom = $04CA40
 Table:
 	dl Main_Sub                 ; Okay!
 	dl SomewhereInRom_Sub       ; Error, label not found</code></pre>
-		Asar includes a label optimizer which attempts to improve performance by shortening opcodes accessing labels whenever possible. See section <a href="#program-counter">Program Counter</a> for details.
+		Asar includes a label optimizer which attempts to optimize performance by shortening opcodes accessing labels from 24-bit to 16-bit whenever possible. See section <a href="#program-counter">Program Counter</a> for details.
 		<h4 id="sub-labels">Sub Labels</h4>
-        Sub labels are the second-most level of labels supported by Asar. They're local to the last main label declared and can contain the same characters as main labels, but must start with a period. Sub labels are declared in the same way as main levels, except they are prefixed with a <code class="65c816_asar">.</code> and the colon after them is optional.
+		<pre><code class="65c816_asar">.{identifier}[:]</code></pre>
+        Sub labels are the second-most level of labels supported by Asar. They're local to the last main label declared and their identifiers can contain the same characters as main labels.
         <pre><code class="65c816_asar">Proc1:
 	nop
 .Sub
@@ -1732,7 +1759,7 @@ Table:
 	
 Proc2:
 	nop
-.Sub:	; The colon is optional
+.Sub:	; Note that the colon is optional
 	bra .Sub</code></pre>
         Sub labels allow you to reuse redundantly named labels such as Loop, End, etc. without causing label redefinition errors. A new sub label group is automatically started after a main label is declared. Internally, sub labels are converted to <code class="65c816_asar">MainLabel_SubLabel</code>, which can be used to access them from anywhere.
 		<pre><code class="65c816_asar">Main1:
@@ -1767,7 +1794,9 @@ Table:
 Table:
 	dl Main1_Sub_Deeper_TheEnd</code></pre>
 		<h4 id="plus-minus-labels">+/- Labels</h4>
-		+/- labels are a special type of labels that are different from both main labels and sub labels in that they don't refer to a specific location in code, but rather to a location relative from where they are used. When used inside opcodes, <code class="65c816_asar">+</code> always refers to the next + label and <code class="65c816_asar">-</code> always refers to the previous - label. You can also chain an arbitrary number of + or an arbitrary number of - to create unique +/- labels that don't overwrite labels with a different number of +/-, for example <code class="65c816_asar">+++</code> or <code class="65c816_asar">-----</code>.
+		<pre><code class="65c816_asar">+[+...]</code></pre>
+		<pre><code class="65c816_asar">-[-...]</code></pre>
+		+/- labels are a special type of labels that are different from both main labels and sub labels in that they don't refer to a specific location in code, but rather to a location relative from where they are used. When used inside opcodes etc., <code class="65c816_asar">+</code> always refers to the next + label and <code class="65c816_asar">-</code> always refers to the previous - label. You can also chain an arbitrary number of + or an arbitrary number of - to create unique +/- labels that don't overwrite labels with a different number of +/-, for example <code class="65c816_asar">+++</code> or <code class="65c816_asar">-----</code>.
 		<pre><code class="65c816_asar">	ldx.b #4
 		
 --			; A
@@ -1815,6 +1844,11 @@ org $008000
 ++			; :pos_2_1
 +++			; :pos_3_0</code></pre>
 		<h4 id="macro-labels">Macro Labels</h4>
+		<pre><code class="65c816_asar">?{identifier}:</code></pre>
+		<pre><code class="65c816_asar">?{identifier} = {snes_address}</code></pre>
+		<pre><code class="65c816_asar">?.{identifier}[:]</code></pre>
+		<pre><code class="65c816_asar">?+[+...]</code></pre>
+		<pre><code class="65c816_asar">?-[-...]</code></pre>
         Macro labels are special variations of the labels mentioned in the previous sections. Functionally, they behave the same as the other labels with the exception of being local to the macro they're used in. This means they can't be referenced from outside the respective macro. Macro labels are created by prefixing any of the other label types with a <code class="65c816_asar">?</code> .
 		<pre><code class="65c816_asar">macro do_something()
 	?MacroMainLabel:
@@ -1835,11 +1869,11 @@ dl ?MacroMainLabel</code></pre>
 
         <h4 id="namespaces">Namespaces</h4>
         Namespaces are a feature which makes it easier to avoid name conflicts between different labels without having to give them long or cryptic names. They work similarly to C++ namespaces and accomplish this by automatically adding a prefix to all labels declared or accessed within them. They can be stacked if desired. When you try to access a label from within a namespace and Asar doesn't find it in there, it automatically looks in the upper namespaces (up to the global namespace). Use<br/>
-		<code class="65c816_asar">namespace {identifier}</code><br/>
-		to enter a namspace, where {identifier} can contain any of the following characters:<br/>		
+		<pre><code class="65c816_asar">namespace {identifier}</code></pre>
+		to enter a namspace, where <code>identifier</code> can contain any of the following characters:<br/>		
 		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
-		Use<br/>
-		<code class="65c816_asar">namespace off</code><br/>
+		Use
+		<pre><code class="65c816_asar">namespace off</code></pre>
 		to leave the current namespace.
 		<pre><code class="65c816_asar">; All of the below is valid
 		
@@ -1882,11 +1916,10 @@ dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main</code></pre>
 		<p id="defines"><h3>Defines</h3>
         Asar supports a define system that functions similarly to defines in other programming languages, such as C++. Defines are identifiers that you can assign any kind of text to and use in other places as substitues for that text. During compilation, Asar replaces each define it encounters with the respective text assigned to it. Defines are prefixed with a <code class="65c816_asar">!</code> and declared as follows:<br>
         <pre><code class="65c816_asar">!{identifier} = {value}</code></pre>
-		or		
         <pre><code class="65c816_asar">!{identifier} = "{value}"</code></pre>
-        where {identifier} is a unique identifier that can contain any of the following characters:<br />
+        where <code>identifier</code> is a unique identifier that can contain any of the following characters:<br />
 		<code class="65c816_asar">a-z A-Z 0-9 _</code></br >
-		The space on both sides of the = is mandatory, which means that <code class="65c816_asar">!{identifier}={value}</code> will not work. Since defines are really just placeholders for text, they can contain anything - labels, math formulas, even other defines.
+		The space on both sides of the = is required, which means that <code class="65c816_asar">!identifier=value</code> will not work. Since defines are really just placeholders for text, they can contain anything - labels, math formulas, even other defines.
         <pre><code class="65c816_asar">!x = $00
 		
 lda !x		; Treated as &quot;lda $00&quot;
@@ -2046,7 +2079,7 @@ endif</code></pre></td>
 readfile2(filename, pos[, default])
 readfile3(filename, pos[, default])
 readfile4(filename, pos[, default])</code></td>
-				<td>Read one/two/three/four byte(s) from file filename at position pos, where filename is a string parameter containing a path to a file relative to the current file being assembled. Throws an error when the referenced file doesn't exist or the given position is out-of-bounds, unless the optional parameter default is provided in which case it is returned.</td>
+				<td>Read one/two/three/four byte(s) from file filename at position pos (see section <a href="#includes">Includes</a> for details on Asar's handling of file names). Throws an error when the referenced file doesn't exist or the given position is out-of-bounds, unless the optional parameter default is provided in which case it is returned.</td>
 				<td><pre><code class="65c816_asar">!readresult = readfile4("datafile.bin", 0, $FFFFFFFF)
 				
 if !readresult != $FFFFFFFF
@@ -2072,7 +2105,7 @@ canreadfile2(filename, pos)
 canreadfile3(filename, pos)
 canreadfile4(filename, pos)
 canreadfile(filename, pos, num)</code></td>
-				<td>Returns 1 if reading one/two/three/four/num bytes from file filename at position pos would succeed and 0 otherwise, where filename is a string parameter containing a path to a file relative to the current file being assembled.</td>
+				<td>Returns 1 if reading one/two/three/four/num bytes from file filename at position pos would succeed and 0 otherwise (see section <a href="#includes">Includes</a> for details on Asar's handling of file names).</td>
 				<td><pre><code class="65c816_asar">if canreadfile4("datafile.bin", 512) == 1
 	print "Read $",hex(readfile4("datafile.bin", 512))," from datafile.bin at position 512."
 else
@@ -2263,11 +2296,128 @@ endif</code></pre>
 		Note that for technical reasons, while loops end on an endif, just like if conditionals, but unlike the latter they do not support elseif or else branches. Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the compiler, as Asar won't attempt to detect those.<br/><br/>
 		<a href="#contents">Return to top</a></p>
 		<hr />
+        <p id="binary-data"><h3>Binary Data</h3>
+		Asar supports a number of commands which allow you to insert binary data directly into the ROM.
+		<h4 id="tables">Tables</h4>
+		<pre><code class="65c816_asar">db {value}[,value...]</code></pre>
+		<pre><code class="65c816_asar">dw {value}[,value...]</code></pre>
+		<pre><code class="65c816_asar">dl {value}[,value...]</code></pre>
+		<pre><code class="65c816_asar">dd {value}[,value...]</code></pre>
+		Table commands let you insert a number or a list of numbers directly into the ROM as raw bytes. Use db for 8-bit numbers, dw for 16-bit numbers, dl for 24-bit numbers and dd for 32-bit numbers respectively, where <code>value</code> can be a number literal, a math statement, a label or an ASCII string delimited by double quotes. When using dw, dl or dd, each number is converted to little-endian. Big numbers are truncated to smaller integers as needed.		
+		<pre><code class="65c816_asar">org $0189AB
+Label:
+
+; This will write the following data to the ROM:
+; $01  $03  $07  $AB  $41 $42 $43
+db $01,$0203,$04050607,Label,"ABC"
+; This will write the following data to the ROM:
+; $01 $00  $03 $02  $07 $06  $AB $89  $41 $00 $42 $00 $43 $00
+dw $01,$0203,$04050607,Label,"ABC"
+; $01 $00 $00  $03 $02 $00  $07 $06 $05  $AB $89 $01  $41 $00 $00 $42 $00 $00 $43 $00 $00
+dl $01,$0203,$04050607,Label,"ABC"
+; $01 $00 $00 $00  $03 $02 $00 $00  $07 $06 $05 $04  $AB $89 $01 $00  $41 $00 $00 $00 $42 $00 $00 $00 $43 $00 $00 $00
+dd $01,$0203,$04050607,Label,"ABC"</code></pre>
+		By default, each character in an ASCII string used in in a table maps onto the respective ASCII value. This mapping can be customized via the table command:
+		<pre><code class="65c816_asar">table {filename}[,ltr/rtl]</code></pre>
+		Where <code>filename</code> specifies the path to a table file (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and ltr/rtl specifies whether that file is in left-to-right or right-to left format (default: left-to-right).<br />
+		Format of left-to-right table files:
+		<pre><code">{character}={hex_value}
+[character=hex_value...]</code></pre>
+		Format of right-to-left table files:
+		<pre><code">{hex_value}={character}
+[hex_value=character...]</code></pre>
+		where <code>character</code> represents an ASCII character and <code>hex_value</code> represents a hexadecimal number literal (without the <code>$</code> prefix) to map to that ASCII character. Note that the table command initializes the mapping to garbage, so when using it, it's recommended to provide mappings for all ASCII characters.<br />
+		To reset the current table mapping to a direct ASCII mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push the current table mapping to the stack, whereas the <code>pulltable</code> command lets you restore the mapping from the stack.
+		<pre><code class="65c816_asar">; Contents of table1.txt:
+;A=1A
+;B=1B
+;C=1C
+
+; Contents of table2.txt:
+;1D=A
+;1E=B
+;1F=C
+
+; This writes $41 $42 $43
+db "ABC"
+
+table "table1.txt",ltr
+
+; This writes $1A $1B $1C
+db "ABC"
+
+pushtable
+table "table2.txt",rtl
+
+; This writes $1D $1E $1F
+db "ABC"
+
+pulltable
+
+; This writes $1A $1B $1C
+db "ABC"
+
+cleartable
+
+; This writes $41 $42 $43
+db "ABC"</code></pre>
+		<h4 id="fill">fillbyte/fill</h4>
+		<pre><code class="65c816_asar">fillbyte {byte}</code></pre>
+		<pre><code class="65c816_asar">fill {num}</code></pre>
+		The fillbyte and fill commands let you write a specific byte value to the ROM multiple times. The <code>byte</code> parameter of fillbyte specifies which value to write, wheres fill writes that value to the output ROM <code>num</code> times.
+		<pre><code class="65c816_asar">fillbyte $FF
+; This writes $FF $FF $FF $FF $FF $FF $FF $FF
+fill 8</code></pre>
+		<h4 id="pad">padbyte/pad</h4>
+		<pre><code class="65c816_asar">padbyte {byte}</code></pre>
+		<pre><code class="65c816_asar">pad {snes_address}</code></pre>
+		The padbyte and pad commands let you write a specific byte value to the ROM until the pc reaches a certain SNES address. The <code>byte</code> parameter of padbyte specifies which value to write, wheres pad writes that value to the output ROM until the pc reaches <code>snes_address</code>.
+		<pre><code class="65c816_asar">org $008000
+padbyte $FF
+; This writes $FF $FF $FF $FF
+pad $008004</code></pre>
+		<h4 id="incbin">incbin</h4>
+		<pre><code class="65c816_asar">incbin {filename}[:range_start-range_end][ -> label_identifier_or_sness_address]</code></pre>
+		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are hexadecimal number literals (without the <code>$</code> prefix) which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file).
+		<pre><code class="65c816_asar">; datafile.bin contains the following bytes:
+; $00 $01 $02 $03 $04 $05 $06 $07 $08 $09 $0A $0B $0C $0D $0E $0F
+
+; This writes $00 $01 $02 $03 $04 $05 $06 $07 $08 $09 $0A $0B $0C $0D $0E $0F
+incbin "datafile.bin"
+
+; This writes $09 $0A $0B $0C $0D $0E
+incbin "datafile.bin":9-F</code></pre>
+		When <code>label_name_or_sness_address</code> is specified, the contents of the file are written to another location in the ROM. When set to a label identifier, this code behaves identically to
+		<pre><code class="65c816_asar">pushpc
+freedata align
+
+{label_identifier}:
+incbin {filename}
+
+pullpc</code></pre>
+		with the exception that incbin gains special permission to cross bank borders. In this case, the size limit of the included file is 65536 bytes due to how <a href="#freespace">freespace</a> works. For files with a size of 32767 or lower, no alignment is enforced. When <code>label_name_or_sness_address</code> is set to an SNES address, the code behaves identically to		
+		<pre><code class="65c816_asar">pushpc
+
+org {snes_addres}
+incbin {filename}
+
+pullpc</code></pre>
+		In this case there is no hard limitation on the size of your file.<br /><br />
+		<a href="#contents">Return to top</a></p>
+		<hr />
+        <p id="includes"><h3>Includes</h3>
+		<h4 id="incsrc">incsrc</h4>
+		<h4 id="includefrom">include/includefrom</h4>
+		<a href="#contents">Return to top</a></p>
+		<hr />
+        <p id="freespace"><h3>Freespace</h3>
+		<a href="#contents">Return to top</a></p>
+		<hr />
         <p id="text-output"><h3>Text Output</h3>
 		Text output functions allow you to communicate certain information, states, warnings, errors etc. to end users of your code.
 		<h4 id="print">print</h4>
 		The print command lets you output general-purpose text to the user. Most commonly this is used to inform the user about certain states or to output debug information. Usage:
-		<pre><code class="65c816_asar">print {text_or_function}[,{text_or_function}...]</code></pre>
+		<pre><code class="65c816_asar">print {text_or_function}[,text_or_function...]</code></pre>
 		where <code>text_or_function</code> can be either a string delimited by double quotes or one of the print-specific functions below:<br/><br/>
 		<table>
 			<tr>
@@ -2307,15 +2457,15 @@ endif</code></pre>
 		</table><br/>
 		<h4 id="warn">warn</h4>
 		The warn command lets you output a warning message to the user. Usage:
-		<pre><code class="65c816_asar">warn [{custom_warning_text}]</code></pre>
-		where <code>custom_warning_text</code> can be a custom warning text delimited by double quotes. A warning does not cause compilation to fail, so it can be used to inform the user about potential dangers.
+		<pre><code class="65c816_asar">warn [custom_warning_text]</code></pre>
+		where <code>custom_warning_text</code> can be a custom warning text delimited by double quotes. A warning does not cause compilation to fail, so it can be used to inform the user about potential dangers. Warning messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
 		<pre><code class="65c816_asar">if read1($00FFD5) == $23
 	warn "SA-1 compatibility of this patch is untested, use with caution!"
 endif</code></pre>
 		<h4 id="error">error</h4>
 		The error command lets you output an error message to the user. Usage:
-		<pre><code class="65c816_asar">error [{custom_error_text}]</code></pre>
-		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states.
+		<pre><code class="65c816_asar">error [custom_error_text]</code></pre>
+		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states. Error messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
 		<pre><code class="65c816_asar">if read1($00FFD5) == $23
 	error "This patch is not SA-1 compatible!"
 endif</code></pre>
@@ -2323,10 +2473,10 @@ endif</code></pre>
 		An assert can be considered a short version of the code
 		<pre><code class="65c816_asar">if {condition}
 else
-	error [{custom_error_text}]
+	error [custom_error_text]
 endif</code></pre>
 		and is used via the syntax
-		<pre><code class="65c816_asar">assert {condition}[,{custom_error_text}]</code></pre>
+		<pre><code class="65c816_asar">assert {condition}[,custom_error_text]</code></pre>
 		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
 		<pre><code class="65c816_asar">assert read1($00FFD5) != $23,"This patch is not SA-1 compatible!"</code></pre>
 		<a href="#contents">Return to top</a></p>
@@ -2339,57 +2489,6 @@ endif</code></pre>
 		rep 5 : nop ;write nop 5 times<br/>
 		rep 2 : do_something() ; Calls do_something() macro twice
         <br>
-        <b>fill / fillbyte:</b><br>
-        fillbyte will allow you to select the byte used by fill, and fill can
-        be
-        used to fill x number of bytes with the fillbyte. Example:<br>
-        fillbyte $ff : fill 16<br>
-        This will write 16 $ff's to the file, and will increment the pc counter
-        automatically.<br>
-        <br>
-        <b>pad / padbyte:</b><br>
-        This is identical to fill / fillbyte, except that pad takes an offset
-        instead of a number of bytes to write. It will continue writing bytes
-        until the offset is reached. Example:<br>
-        org $8000 : padbyte $ff : pad $8010<br>
-        This will write 16 $ff's to the file, and will increment the pc counter
-        automatically.<br>
-        <br>
-        <b>db / dw / dl / dd:</b><br>
-        These are used to write binary data to the file.<br>
-        </li>
-        <li>db - 8-bit byte write mode<br></li>
-        <li>dw - 16-bit word write mode<br></li>
-        <li>dl - 24-bit long write mode<br></li>
-        <li>dd - 32-bit dword write mode<br></li>
-            Multiple arguments can be passed to these commands by means of a comma.
-            Example:<br>
-            db $01,$02,$03,$04<br>
-            dw $0001,$0002,$0003,$0004<br>
-            This command also accepts labels and text as arguments, example:<br>
-            dw label : db "This is a test",$00<br>
-            Text is written using the ascii table by default, however, there
-            is table support, see below.<br>
-            <br>
-            <b>table / cleartable:</b><br>
-            cleartable will reset the ascii lookup-table to the ascii character
-            map.<br>
-            table filename will load in a file, which contains a character map,
-            and format it using left-to-right mode.<br>
-            table filename,ltr will load the file in left-to-right mode.<br>
-            table filename,rtl will load the file in right-to-left mode.<br>
-            left-to-right mode table example:<br>
-            A=00<br>
-            B=01<br>
-            C=02<br>
-            ...<br>
-            right-to-left mode table example:<br>
-            00=A<br>
-            01=B<br>
-            02=C<br>
-            ...<br>
-            Use whichever you prefer.<br>
-            <br>
             <b>incsrc:</b><br>
             Assemble included file. There is a 512-deep recursion limit. (e.g.
             incsrc
@@ -2405,10 +2504,6 @@ endif</code></pre>
 			incsrc, incbin and similar commands will look for the referenced files in the folder the current file is in (if you're in a macro, it's
 			relative to the macro, not the caller). By using include search paths (see section <a href="#usage">Usage</a> for details), you can influence Asar's behavior for when a file isn't found in that location.
             <br><br>
-			<b>incbin:</b><br>
-			The incbin command will let you insert a binary file into the output
-			binary image. Usage:<br>
-			incbin filename.bin<br>
     </body>
 </html>
 

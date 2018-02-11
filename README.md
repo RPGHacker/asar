@@ -2,19 +2,6 @@
 
 This document assumes the reader is familiar with xkas. If this is not the case, please read xkas.html first.
 
-New features:
-- The base command now accepts base off, which makes it act like the code is at the current location
-  again.
-- incbin can now include parts of a file. Syntax: incbin "File name.bin":start-end, where start and
-  end are hexadecimal numbers without $. Note that math is not allowed. An ending position of 0 will
-  include the rest of the file.
-- You can now put "-> Labelname" after an incbin, which is equivalent to pushpc : freedata align :
-  Labelname: incbin file.bin : pullpc with special permission to cross bank borders. (If the file or
-  file part is 32767 bytes or smaller, alignment isn't enforced. Size limit is 65536 bytes due to
-  limits in the RATS tag format.)
-- You can also use "incbin file.bin -> $123456" to if you want to include something larger than
-  65536 bytes.
-
 (Potentially) xkas incompatible bugfixes and changes:
 If any of these dissatisfies you, put ;@xkas at the top of your patch and Asar will enter maximum
  xkas compatibility mode and fix all of these I have observed in practice. Most Asar-only features
@@ -25,8 +12,6 @@ If any of these dissatisfies you, put ;@xkas at the top of your patch and Asar w
 - Asar prefers uppercase hex over lowercase in print pc. This may confuse crappy tools, but I don't
   think any tools we use around here act like that.
 - Asar initializes tables to garbage if you use table, while xkas initializes it to all 00.
-- Asar prints errors and warnings to stderr instead of stdout. However, to keep compatibility with
-  old tools, Asar will send the errors to stdout if it's renamed to xkas.exe.
 
 New commands:
 - freespace/freecode/freedata: Automatic freespace finders, including automatic RATS tags. freespace
@@ -62,16 +47,6 @@ New commands:
   freecode statement and therefore can't be autocleaned directly. Note that your main code will need
   an autoclean, or everything will be leaked; Asar can't solve circular dependencies, and won't even
   try.
-- pushpc/pullpc: In case you want to put code at one place instead of two.
-- bank: Makes the label optimizer act like you're in another bank. This is not the same as base;
-  bank $FF : LDA Label,x : Label: db $01,$02,$03,$04 will use 24-bit addressing for the LDA
-  (assuming the current base address isn't in bank $FF). To make it assume you're never in the same
-  bank, use bank noassume. bank auto will make it act like it's back in the current (base) bank. The
-  purpose of this command is long codes that assume the data bank register is not the same as the
-  code bank register. Note that you can't point it to freespaced areas. (Yes, this is the same as
-  xkas' assume db, but that command has a very weird syntax, and since no other part of assume is
-  planned for Asar, I prefer syntax that makes sense over backwards compatibility with a grand total
-  of zero patches.)
 - @include, @includefrom: Tells that an asm file may not be assembled directly, but must be included
   from another file. @includefrom tells which file it's supposed to be included from, though it
   doesn't verify that it really is included from this file. It's just a sanity check.
