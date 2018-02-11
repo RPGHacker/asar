@@ -3,12 +3,6 @@
 This document assumes the reader is familiar with xkas. If this is not the case, please read xkas.html first.
 
 New features:
-- This technically isn't a change, but Label = Address is now a well defined operation. While it
-  exists in xkas6, the only ways to find it are by inspecting the output of export.label, by
-  inspecting the source code, and by mistake (I've seen it done thrice, leading to odd bugs in
-  most cases). The differences to normal labels are that it does not clear sublabels, they're
-  always in the global namespace, and they don't use the current code pointer.
-- Sublabels can now be multiple levels deep; ..Loop is a valid label name.
 - The base command now accepts base off, which makes it act like the code is at the current location
   again.
 - incbin can now include parts of a file. Syntax: incbin "File name.bin":start-end, where start and
@@ -20,16 +14,6 @@ New features:
   limits in the RATS tag format.)
 - You can also use "incbin file.bin -> $123456" to if you want to include something larger than
   65536 bytes.
-- print can now accept freespaceuse, which counts all data handed out by freespace, freecode,
-  freedata, and external incbin. That's everything print bytes is used for anyways, and pushpc makes
-  print bytes completely confused, so here's an accurate counter.
-- print can now accept dec(math) and hex(math), which prints the contents in base 10 or 16 (no zero
-  padding). The contents may be any piece of math, including labels. Additionally, print accepts
-  double(num) and double(num, precision) in case you want to print a double variable with its
-  fractional part. You can specify the number of decimal places to print (0 to 100) as the second
-  argument. If you only pass a single argument, a default of 5 decimal places are printed.
-  Note that, like everything else, double() is affected by your "math round" setting, so unless
-  you set math round to off, double() will behave just like dec().
 
 (Potentially) xkas incompatible bugfixes and changes:
 If any of these dissatisfies you, put ;@xkas at the top of your patch and Asar will enter maximum
@@ -79,13 +63,6 @@ New commands:
   an autoclean, or everything will be leaked; Asar can't solve circular dependencies, and won't even
   try.
 - pushpc/pullpc: In case you want to put code at one place instead of two.
-- if/elseif/else/endif: For conditional compilation. See section "Conditionals" below for details.
-- while: For repeated compilation of the same code. See section "Loops" below for details.
-- assert: Accepts an if-like condition; if the condition is false, it prints an error message.
-- warn: Controls a few warning-related settings. Its syntax is similar to math, but the only valid
-  flag is "xkas" (warns about a few things that Asar does differently from xkas). Note that you
-  should turn off xkas emulation mode with this on; some changes throw warnings and errors in native
-  mode even with this one off, so I didn't make this one do anything to those.
 - bank: Makes the label optimizer act like you're in another bank. This is not the same as base;
   bank $FF : LDA Label,x : Label: db $01,$02,$03,$04 will use 24-bit addressing for the LDA
   (assuming the current base address isn't in bank $FF). To make it assume you're never in the same
@@ -101,27 +78,6 @@ New commands:
 - struct/endstruct: used to define a struct, which are basically just a convenient and easier-to-read way
   of accessing tables. The code for this was written by p4plus2 and I really can't explain it well, so
   just take a look at src/tests/structs.asm for usage examples.
-
-Conditionals:
-Conditionals allow a piece of code to only be assembled under certain circumstances. The syntax of a
-  condition is either "42" (evaluates to true if the value is 1 or higher), "42 > 24" (the middle
-  argument can be any of <, >, <=, >=, != and ==), or any number of the before with " && " or
-  " || " in between (you can only use one of those two in the same condition). Evaluation is lazy;
-  "0 && ###" and "1 || ###" will not throw errors.
-The commands that accept conditionals are if, elseif, else, and endif (and assert, but that one
-  doesn't skip any code). The behaviour should be obvious.
-You generally want a couple of readN or user-changeable defines in a condition, but if 0 is a way to
-  comment out large blocks of code at once.
-  
-Loops:
-The syntax and functionality are very similar to if conditionals, except you use "while" instead
-  of "if" and the condition is evaluated repeatedly until it becomes < 1 instead of just once.
-  The code block inside the while loop is assembled as many times as the condition remains >= 1.
-  This can be used to generate big data tables without having to rely on macro recursion.
-  Internally, while loops are implemented as a variation of if conditionals for reasons of
-  simplicity and compatibility, so they always need to end on an endif. Note that else and elseif
-  statements are not allowed in combination with a while loop, though. When using while loops, be
-  careful not to cause an infinite loop, as Asar won't make any effort to detect those.
 
 Known bugs:
 - JML.w and JSL.w aren't rejected; they're treated as JML.l and JSL.l. This is since Asar has a much

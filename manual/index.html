@@ -36,18 +36,26 @@
 		<h1>Asar</h1>
         <p>A multi-architecture SNES assembler by <i>Alcaro</i>, based on <b>xkas v0.06</b> by <i>byuu</i>.<br />
 		This manual was written by <i>RPG Hacker</i>, so if you find something that is wrong or weird, make sure to blame me instead of Alcaro.</p>
-		<p>As a general rule, the manual uses {} to denote required parameters and [] to denote optional parameters. Everything else refers to keywords/names.</p>
+		<p>As a general rule, the manual uses <code>{}</code> to denote required parameters and <code>[]</code> to denote optional parameters (where optional parameters ending in <code>...</code> mean &quot;zero or more&quot; of that parameter). Everything else refers to keywords/names.</p>
 		<hr />
 		<p id="contents"><h3>Table of Contents</h3>
 		<ul>
 			<li><a href="#usage">Usage</a></li>
-			<li><a href="#archs">Architectures</a></li>
+			<li>
+				<a href="#archs">Architectures</a>
+				<ul>
+					<li><a href="#number-literals">Number Literals</a></li>
+					<li><a href="#opcode-length">Opcode Length Specification</a></li>
+					<li><a href="#pseudo-opcodes">Pseudo Opcodes</a></li>
+				</ul>
+			</li>
 			<li><a href="#mappers">Mapping Modes</a></li>
 			<li>
-				<a href="#behavior">Behavior Flags</a>
+				<a href="#compatibility">Compatibility Settings</a>
 				<ul>
 					<li><a href="#xkas">xkas</a></li>
 					<li><a href="#asar">asar {ver}</a></li>
+					<li><a href="#warn-xkas">warn xkas {on/off}</a></li>
 					<li><a href="#math-pri">math pri {on/off}</a></li>
 					<li><a href="#math-round">math round {on/off}</a></li>
 				</ul>
@@ -59,6 +67,17 @@
 					<li><a href="#brackets">Brackets</a></li>
 					<li><a href="#multiline">Multi-Line Operators</a></li>
 					<li><a href="#singleline">Single-Line Operator</a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="#program-counter">Program Counter</a>
+				<ul>
+					<li><a href="#org">org</a></li>
+					<li><a href="#base">base</a></li>
+					<li><a href="#skip">skip</a></li>
+					<li><a href="#warnpc">warnpc</a></li>
+					<li><a href="#bank">bank</a></li>
+					<li><a href="#pushpc">pushpc/pullpc</a></li>
 				</ul>
 			</li>
 			<li><a href="#math">Math</a></li>
@@ -78,6 +97,22 @@
 				<a href="#functions">Functions</a>
 				<ul>
 					<li><a href="#built-ins">Built-in Functions</a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="#conditionals">Conditional Compilation</a>
+				<ul>
+					<li><a href="#if-else">if/elseif/else/endif</a></li>
+					<li><a href="#while">while</a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="#text-output">Text Output</a>
+				<ul>
+					<li><a href="#print">print</a></li>
+					<li><a href="#warn">warn</a></li>
+					<li><a href="#error">error</a></li>
+					<li><a href="#assert">assert</a></li>
 				</ul>
 			</li>
 		</ul>
@@ -1368,6 +1403,32 @@ lda $00
 
 arch spc700
 mov a,$00</code></pre>
+		<h4 id="number-literals">Number Literals</h4>
+		Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use <code>$</code> as a prefix, binary literals use <code>%</code> as a prefix. Decimal literals can be positive or negative.
+		<pre><code class="65c816_asar">lda $00
+clc
+adc #-10
+and #%01111111</code></pre>
+		<h4 id="opcode-length">Opcode Length Specification</h4>
+		By appending <code>.b</code>, <code>.w</code> or <code>.l</code> to an opcode, you can specify that opcode's length. This is recommended in cases where the length could be ambiguous.
+		<pre><code class="65c816_asar">lda #0		; Could be either lda #$00 or lda #$0000
+lda.b #0	; Always lda #$00
+lda.w #0	; Always lda #$0000</code></pre>
+		When no length is specified, Asar tries to guess the length based on the operand. Note that Asar does not use the standard <code>&lt;&gt;</code> for length specifications to avoid ambiguity with other uses of these symbols (such as in macros or math statements).
+		<h4 id="pseudo-opcodes">Pseudo Opcodes</h4>
+		Pseudo opcodes are a convenience method of repeatedly using opcodes that don't take an operand. Instead of using the opcode multiple times, the following syntax can be used:
+		<pre><code class="65c816_asar">{opcode} #{num}</code></pre>
+		This assembles <code>opcode</code> <code>num</code> times in succession. This means that
+		<pre><code class="65c816_asar">nop #3
+		
+inx #2</code></pre>
+		is the same as
+		<pre><code class="65c816_asar">nop
+nop
+nop
+
+inx
+inx</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <p id="mappers"><h3>Mapping Modes</h3>
@@ -1422,8 +1483,8 @@ org $008000
 db $FF		; Will write to PC address 0x008000</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
-        <p id="behavior"><h3>Behavior Flags</h3>
-		Behavior flags are certain commands and settings that determine how Asar operates in certain situations.
+        <p id="compatibility"><h3>Compatibility Settings</h3>
+		Compatibility settings determine how Asar operates in certain situations. They can be changed via a number of commands.
 		<h4 id="xkas">xkas</h4>
 		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patches that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used.
 		<pre><code class="65c816_asar">;@xkas
@@ -1452,6 +1513,8 @@ if readfile1(&quot;data.bin&quot;, 0) == 1
 else
 	; Do something else
 endif</code></pre>
+		<h4 id="warn-xkas">warn xkas {on/off}</h4>
+		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>on</code> to enable these warnings and <code>off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
 		<h4 id="math-pri">math pri {on/off}</h4>
 		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always enable this flag.
 		<pre><code class="65c816_asar">math pri off
@@ -1484,18 +1547,18 @@ db (3/4)+1.75
 		<h4 id="comments">Comments</h4>
 		You can use ; to add comments to your code, making it easier to read and understand for other people. Everything from the ; to the end of the line is silently ignored by Asar.
 		<pre><code class="65c816_asar">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
-		An exception from this rule are lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. The purpose of this is to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they will be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#behavior">Behavior Flags</a> for details on xkas compatibility.
+		An exception from this rule are lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. The purpose of this is to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they will be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#compatibility">Compatibility Settings</a> for details on xkas compatibility.
 		<h4 id="brackets">Brackets</h4>
         Brackets, { and }, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's compltely up to you whether, how and in what quantity you want to use them.<br />
 		<pre><code class="65c816_asar">	lda $00
-	beq .is_zero
+	beq .IsZero
 	
-.greater_than_zero
+.GreaterThanZero
 	{
 		dec $00
 	}
 
-.is_zero
+.IsZero
 	rts</code></pre>
 		<h4 id="multiline">Multi-Line Operators</h4>
 		The <code class="65c816_asar">,</code> and the <code class="65c816_asar">\</code> operator are formatting operators which make it possible to split commands in Asar into multiple lines. Both are put at the end of a line and work very similarly with only one key difference. During execution, Asar will concatenate subsequent lines to lines ending with either operator and treat them as a single line. When using the comma operator, the comma itself will actually remain a part of the concatenated string, whereas when using the backslash operator, the backslash itself will be removed from the concatenated string. When using the backslash operator, please note that all whitespace following it is ignored, whereas all whitespace preceeding it is preserved. This is by design, since some commands in Asar require spaces to work, whereas other commands (like math commands) only work without spaces.
@@ -1519,7 +1582,84 @@ function func(param) = ((param*param)+1000)\
 lda #00
 sta $00</code></pre>
 		<a href="#contents">Return to top</a></p>
-		<hr />		
+		<hr />
+		<p id="program-counter"><h3>Program Counter</h3>
+		The program counter (short: pc) refers to the position in the ROM at which Asar currently writes assembled code and/or data. It advances automatically whenever Asar writes to the ROM and is affected by the current <a href="#mappers">mapping mode</a>, as well as a number of special commands. Note that all commands affecting the pc that take an address expect an SNES address and thus are also affected by the current mapping mode.
+        <h4 id="org">org</h4>
+		<pre><code class="65c816_asar">org {snes_address}</code></pre>
+		The org command directly sets the pc to <code>snes_address</code>. Most commonly used inside patches to specify which code to hijack or which data to overwrite.		
+		<pre><code class="65c816_asar">org $008000
+MainEntryPoint:
+	; ...</code></pre>
+        <h4 id="base">base</h4>
+		<pre><code class="65c816_asar">base {snes_address/off}</code></pre>
+		The base command makes Asar act as though the pc was currently set to <code>snes_address</code> without actually setting it; <code>base off</code> deactivates this behavior. This can be useful for writing code that you plan to execute from another location (such as RAM).		
+		<pre><code class="65c816_asar">org $008000
+MainEntryPoint:
+	; Some code which copies SomeRamRoutine to $7E0000 goes here
+	; ...
+	jsl $7E0000
+	; ...
+
+SomeRamRoutine:
+base $7E0000
+	; ...
+base off
+	rtl</code></pre>
+        <h4 id="skip">skip</h4>
+		<pre><code class="65c816_asar">skip {num_bytes}</code></pre>
+		The skip command moves the pc by <code>num_bytes</code> bytes. By specifying a negative value, the pc can be moved backwards.
+		<pre><code class="65c816_asar">org $008000
+skip 5
+; pc is now at $008005
+skip -1
+; pc is now at $008004</code></pre>
+        <h4 id="warnpc">warnpc</h4>
+		<pre><code class="65c816_asar">warnpc {snes_address}</code></pre>
+		The warnpc command checks if the current pc is <code>&gt; snes_address</code>. If that's the case, it throws an error. This is useful for detecting overflow errors.
+		<pre><code class="65c816_asar">org $008000
+incbin datafile.bin
+warnpc $008100		; Throws an error if datafile.bin is larger than $100 bytes.</code></pre>
+        <h4 id="bank">bank</h4>
+		<pre><code class="65c816_asar">bank {data_bank/noassume/auto}</code></pre>
+		The bank command makes Asar's label optimizer act as though the current data bank was set to <code>data_bank</code>. Consider the following example:		
+		<pre><code class="65c816_asar">bank $FF
+		
+lda Table,x
+
+Table:
+	db $01,$02,$03,$04</code></pre>
+		Asar will always assemble the <code class="65c816_asar">lda Table,x</code> with 24-bit addressing, unless the current pc (or <a href="#base">base address</a>) is inside bank <code>$FF</code> itself. This is intended for code that uses a data bank register different from the code bank register. You can use <code>bank noassume</code> to make Asar act as though the data bank was always in a different bank. Using <code>bank auto</code> restores the default behavior of assuming that the data bank register and the code bank register are the same. Note that the bank command can't point to freespace areas.		
+		<pre><code class="65c816_asar">org $008000
+phb
+lda #$FF
+pha
+plb
+
+bank $FF
+; ...
+bank auto
+
+plb</code></pre>
+        <h4 id="pushpc">pushpc/pullpc</h4>
+		The pushpc command pushes the current pc to the stack, the pullpc command restores the pc by pulling its value from the stack. This can be useful for inserting code in another location and then continuing at the original location.
+		<pre><code class="65c816_asar">org $008000
+		
+Main:
+	jsl CodeInAnotherBank
+
+pushpc
+org $018000
+
+CodeInAnotherBank:
+	; ...
+	rtl
+	
+pullpc
+
+bra Main</code></pre>
+		<a href="#contents">Return to top</a></p>
+		<hr />
 		<p id="math"><h3>Math</h3>
 		Math is supported in all opcodes, functions and labels. By default, Asar uses left-to-right math for backwards-compatibility with xkas which means that it ignores operator precedence.
 		<pre><code class="65c816_asar">lda #6*2+5	; the same as &quot;lda #17&quot;
@@ -1568,6 +1708,21 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 Main:
 	%do_frame()
 	jmp Main	; Equal to jmp $8000</code></pre>
+		An alternate form of defining main labels is by directly assigning a value to them. A common use-case for this is to make a label point to an existing address inside a ROM.
+		<pre><code class="65c816_asar">RomStart = $008000</code></pre>
+		Note that defining a main label this way does not start a new <a href="#sub-labels">sub label</a> group.
+		<pre><code class="65c816_asar">Main:
+; ...
+
+SomewhereInRom = $04CA40
+
+.Sub:
+; ...
+
+Table:
+	dl Main_Sub                 ; Okay!
+	dl SomewhereInRom_Sub       ; Error, label not found</code></pre>
+		Asar includes a label optimizer which attempts to improve performance by shortening opcodes accessing labels whenever possible. See section <a href="#program-counter">Program Counter</a> for details.
 		<h4 id="sub-labels">Sub Labels</h4>
         Sub labels are the second-most level of labels supported by Asar. They're local to the last main label declared and can contain the same characters as main labels, but must start with a period. Sub labels are declared in the same way as main levels, except they are prefixed with a <code class="65c816_asar">.</code> and the colon after them is optional.
         <pre><code class="65c816_asar">Proc1:
@@ -1599,6 +1754,18 @@ Table:
 	dl Main1_Sub2
 	dl Main2_Sub1
 	dl Main2_Sub2</code></pre>
+		Sub labels can themselves contain sub labels to an arbitrary depth by prepending additional dots.
+		<pre><code class="65c816_asar">Main1:
+; ...
+.Sub:
+; ...
+..Deeper:
+; ...
+...TheEnd:
+; ...
+
+Table:
+	dl Main1_Sub_Deeper_TheEnd</code></pre>
 		<h4 id="plus-minus-labels">+/- Labels</h4>
 		+/- labels are a special type of labels that are different from both main labels and sub labels in that they don't refer to a specific location in code, but rather to a location relative from where they are used. When used inside opcodes, <code class="65c816_asar">+</code> always refers to the next + label and <code class="65c816_asar">-</code> always refers to the previous - label. You can also chain an arbitrary number of + or an arbitrary number of - to create unique +/- labels that don't overwrite labels with a different number of +/-, for example <code class="65c816_asar">+++</code> or <code class="65c816_asar">-----</code>.
 		<pre><code class="65c816_asar">	ldx.b #4
@@ -1835,7 +2002,7 @@ endmacro
 		<pre><code class="65c816_asar">function {identifier}([parameter1_identifier[, parameter2_identifier...]]) = {some_math_statement}</code></pre>
         where all the identifiers can contain any of the following characters<br />
 		<code class="65c816_asar">a-z A-Z 0-9 _</code></br >		
-        and where {some_math_statement} can be any <a href="#math">math statement</a> supported by Asar (including the use of other functions). Use a parameter's name to expand it inside a function.
+        and where <code>some_math_statement</code> can be any <a href="#math">math statement</a> supported by Asar (including the use of other functions). Use a parameter's name to expand it inside a function.
 		<pre><code class="65c816_asar">function kilobytes_to_bytes(kb) = kb*1024
 function megabytes_to_kilobytes(mb) = mb*1024
 function megabytes_to_bytes(mb) = kilobytes_to_bytes(megabytes_to_kilobytes(mb))
@@ -2010,24 +2177,160 @@ endif</code></pre></td>
 		<pre><code class="65c816_asar">function read1(x) = _read1(x+$010000)</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
-        <b>Opcode size specifications:</b>
-        You can specify the size of an opcode with .b, .w, and .l<br>
-        This is needed with decimal, e.g. lda #0.. is that lda #$00, or
-        lda #$0000? You would have to use lda.b #0, or lda.w #0.<br>
-        I do not use the standard ! &lt; &gt; as size specifiers,
-        namely because I
-        already use these for defines, shifts, and macro arguments. Sorry if
-        you
-        don't like not having these, but there isn't an easy workaround,
-        I'm afraid.<br>
-        <br>
-        <b># psuedo-opcodes:</b><br>
-        For convenience, I have added psuedo-opcodes to commonly used opcodes,
-        such as nop, asl, lsr, inc, inx, iny, dec, dex, dey, etc. You can
-        specify
-        asl #4, which will print the equivalent of asl : asl : asl : asl to the
-        file, the same goes for the other opcodes.<br>
-        <br>
+        <p id="conditionals"><h3>Conditional Compilation</h3>
+		Conditional compilation allows you to only compile specific sections of code when certain conditions are met. This can be used in a number of ways, but is most commonly used in conjunction with defines to make code easily customizable and/or provide some simple configuration options to end users.
+		<h4 id="if-else">if/elseif/else/endif</h4>
+		The most basic form of conditionals are if conditionals. They are given a math statement and only compile their enclosed code if that statement evaluates to a value greater than 0.
+		<pre><code class="65c816_asar">if {condition}
+	{codeblock}
+endif</code></pre>
+		To construct condition statements, you can also make use of a number of comparison operators specific to conditionals. They return 1 if their respective comparison is true and 0 otherwise.<br/><br/>
+		<table>
+			<tr>
+				<th style="width:150px">Operator</th>
+				<th>Details</th>
+			</tr>
+			<tr>
+				<td><code>a == b</code></td>
+				<td>Returns 1 if <code>a</code> is equal to <code>b</code></td>
+			</tr>
+			<tr>
+				<td><code>a != b</code></td>
+				<td>Returns 1 if <code>a</code> is not equal to <code>b</code></td>
+			</tr>
+			<tr>
+				<td><code>a &gt; b</code></td>
+				<td>Returns 1 if <code>a</code> is greater than <code>b</code></td>
+			</tr>
+			<tr>
+				<td><code>a &lt; b</code></td>
+				<td>Returns 1 if <code>a</code> is less than <code>b</code></td>
+			</tr>
+			<tr>
+				<td><code>a &gt;= b</code></td>
+				<td>Returns 1 if <code>a</code> is greater than or equal to <code>b</code></td>
+			</tr>
+			<tr>
+				<td><code>a &lt;= b</code></td>
+				<td>Returns 1 if <code>a</code> is less than or equal to <code>b</code></td>
+			</tr>
+		</table><br/>
+		You can use logical operators to chain multiple conditions.<br/><br/>
+		<table>
+			<tr>
+				<th style="width:150px">Operator</th>
+				<th>Details</th>
+			</tr>
+			<tr>
+				<td><code>a || b</code></td>
+				<td>Returns 1 if at least one of <code>a</code> and <code>b</code> evaluates to 1</td>
+			</tr>
+			<tr>
+				<td><code>a && b</code></td>
+				<td>Returns 1 if both of <code>a</code> and <code>b</code> evaluate to 1</td>
+			</tr>
+		</table><br/>
+		Evaluation is lazy which means that the compiler will stop evaluating a condition as soon as the result can be determined (for example, in the condition <code>0 && my_function()</code>, my_function() will never be called). Note that only one kind of logical operator can be used in a single condition, but conditionals themselves can be nested to an arbitrary depth, which can be used as a workaround here. Optionally, if conditionals can contain an arbitrary number of elseif branches as well as a single else branch. The compiler checks the if and all elseif branches in succession until a single condition evaluates to <code>&gt; 0</code> - if none does, the code inside the else branch is compiled.
+		<pre><code class="65c816_asar">!mode = 0	; Supported modes: 0, 1, 2, 3
+!verbose = 0	; Set to 1 to enable verbose mode
+
+if !mode == 0
+	; ...
+elseif !mode == 1
+	; ...
+elseif !mode == 2
+	; ...
+elseif !mode == 3
+	if !verbose != 0
+		print "Oh boy, so you're going with mode 3 today!"
+	endif
+	; ...
+else
+	error "Unsupported mode! Please choose 0, 1, 2 or 3!"
+endif</code></pre>
+		<h4 id="while">while</h4>
+		A special variation of if conditionals are while loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to <code>&lt;= 0</code>. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.
+		<pre><code class="65c816_asar">!counter = 0
+		
+while !counter < $10
+	db (!counter<<8)|$00,(!counter<<8)|$01,(!counter<<8)|$02,(!counter<<8)|$03
+	db (!counter<<8)|$04,(!counter<<8)|$05,(!counter<<8)|$06,(!counter<<8)|$07
+	db (!counter<<8)|$08,(!counter<<8)|$09,(!counter<<8)|$0A,(!counter<<8)|$0B
+	db (!counter<<8)|$0C,(!counter<<8)|$0D,(!counter<<8)|$0E,(!counter<<8)|$0F
+			
+	!counter #= !counter+1
+endif</code></pre>
+		Note that for technical reasons, while loops end on an endif, just like if conditionals, but unlike the latter they do not support elseif or else branches. Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the compiler, as Asar won't attempt to detect those.<br/><br/>
+		<a href="#contents">Return to top</a></p>
+		<hr />
+        <p id="text-output"><h3>Text Output</h3>
+		Text output functions allow you to communicate certain information, states, warnings, errors etc. to end users of your code.
+		<h4 id="print">print</h4>
+		The print command lets you output general-purpose text to the user. Most commonly this is used to inform the user about certain states or to output debug information. Usage:
+		<pre><code class="65c816_asar">print {text_or_function}[,{text_or_function}...]</code></pre>
+		where <code>text_or_function</code> can be either a string delimited by double quotes or one of the print-specific functions below:<br/><br/>
+		<table>
+			<tr>
+				<th style="width:150px">Function</th>
+				<th>Details</th>
+			</tr>
+			<tr>
+				<td><code>dec(x)</code></td>
+				<td>Prints x as a decimal (base-10) integer, where x can be any math statement.</td>
+			</tr>
+			<tr>
+				<td><code>hex(x)</code></td>
+				<td>Prints x as a hexadecimal (base-16) integer, where x can be any math statement.</td>
+			</tr>
+			<tr>
+				<td><code>double(x{, precision])</code></td>
+				<td>Prints x as a decimal number with precision decimal places (default: 5), where x can be any math statement. Affected by the <a href="#math-round">math round</a> setting.</td>
+			</tr>
+			<tr>
+				<td><code>pc</code></td>
+				<td>Prints the current PC.</td>
+			</tr>
+			<tr>
+				<td><code>freespaceuse</code></td>
+				<td>Prints the total number of bytes used by commands that acquire freespace (such as freespace, freecode, freedata etc.).<br/>
+				You can use the command
+				<pre><code class="65c816_asar">reset freespaceuse</code></pre>
+				to reset this value.</td>
+			</tr>
+			<tr>
+				<td><code>bytes</code></td>
+				<td>Prints the total number of bytes written to the output ROM.<br/>
+				You can use the command
+				<pre><code class="65c816_asar">reset bytes</code></pre>
+				to reset this value.</td>
+			</tr>
+		</table><br/>
+		<h4 id="warn">warn</h4>
+		The warn command lets you output a warning message to the user. Usage:
+		<pre><code class="65c816_asar">warn [{custom_warning_text}]</code></pre>
+		where <code>custom_warning_text</code> can be a custom warning text delimited by double quotes. A warning does not cause compilation to fail, so it can be used to inform the user about potential dangers.
+		<pre><code class="65c816_asar">if read1($00FFD5) == $23
+	warn "SA-1 compatibility of this patch is untested, use with caution!"
+endif</code></pre>
+		<h4 id="error">error</h4>
+		The error command lets you output an error message to the user. Usage:
+		<pre><code class="65c816_asar">error [{custom_error_text}]</code></pre>
+		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states.
+		<pre><code class="65c816_asar">if read1($00FFD5) == $23
+	error "This patch is not SA-1 compatible!"
+endif</code></pre>
+		<h4 id="assert">assert</h4>
+		An assert can be considered a short version of the code
+		<pre><code class="65c816_asar">if {condition}
+else
+	error [{custom_error_text}]
+endif</code></pre>
+		and is used via the syntax
+		<pre><code class="65c816_asar">assert {condition}[,{custom_error_text}]</code></pre>
+		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
+		<pre><code class="65c816_asar">assert read1($00FFD5) != $23,"This patch is not SA-1 compatible!"</code></pre>
+		<a href="#contents">Return to top</a></p>
+		<hr />
         
         <u><b>Additional Commands:</b></u><br>
         <b>rep:</b><br>
@@ -2058,8 +2361,7 @@ endif</code></pre></td>
         <li>db - 8-bit byte write mode<br></li>
         <li>dw - 16-bit word write mode<br></li>
         <li>dl - 24-bit long write mode<br></li>
-        <li>
-            dd - 32-bit dword write mode<br>
+        <li>dd - 32-bit dword write mode<br></li>
             Multiple arguments can be passed to these commands by means of a comma.
             Example:<br>
             db $01,$02,$03,$04<br>
@@ -2088,29 +2390,6 @@ endif</code></pre></td>
             ...<br>
             Use whichever you prefer.<br>
             <br>
-            <b>skip:</b><br>
-            Skip ahead x bytes.<br>
-            Example: skip 5 ;skips ahead 5 bytes in the file.<br>
-            <br>
-            <b>print:</b><br>
-            print allows you to print text to the console window, useful for
-            debugging.<br>
-            Example: "main is at pc : ",pc<br>
-            That will print "main is at pc : xxxxxx", where x is the PC location.
-            It accepts infinite arguments, comma separated, all should be strings,
-            there are a few special commands, however. They are:<br>
-            pc - print current pc location<br>
-            bytes - print # of bytes written to the file, use to determine the size
-            of routines, for size optimizations and so forth.<br>
-            I wanted to add cycles, but unfortunately, it's too unreliable. The
-            cycle
-            count will change depending on the p register, if branches are taken,
-            if writing to the dp has the d with an even value, etc. Too many
-            variables
-            to be viable, sorry.<br>
-            You can use: reset bytes to reset that counter.
-            <br>
-            <br>
             <b>incsrc:</b><br>
             Assemble included file. There is a 512-deep recursion limit. (e.g.
             incsrc
@@ -2130,38 +2409,6 @@ endif</code></pre></td>
 			The incbin command will let you insert a binary file into the output
 			binary image. Usage:<br>
 			incbin filename.bin<br>
-			<br>
-            <b>org:</b><br>
-            org is used to set the file position. It will update pc, as well. You
-            can
-            seek forward and backward into a file.<br>
-            <br>
-            <b>warnpc:</b><br>
-            warnpc takes an address, it will compare the current
-            pc
-            to the address you specified, if the current address is &gt; the
-            address
-            specified, it will throw an error. Useful if you want your code to
-            be between x and y, and data to be between y and z. You can make sure
-            your code isn't so large that it exceeds y this way.<br>
-            <br>
-            <b>base:</b><br>
-            base is used to set the pc position without affecting the file
-            location.<br>
-            Example: org $c00000 : base $7f8000 : ... : base off<br>
-            This is useful for assembling code at $c00000, that you plan to execute
-            in RAM, at $7f80000. You can turn the base address translation off at
-            any time, as seen above. Note that I've never actually seen code run in
-            RAM before, and I don't even know if it would be possible to execute
-            code
-            in RAM or not, but the function is here either way...<br>
-            <br>
-            <u><b>Opcodes:</b></u><br>
-            I pretty much followed the accepted standards for opcodes, this isn't
-            the SPC-700, where there are 40 variations between programmers for
-            nearly
-            every single opcode. You shouldn't have any trouble here.
-        </li>
     </body>
 </html>
 
