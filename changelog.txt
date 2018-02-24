@@ -40,6 +40,9 @@ Hopefully comming soon TM:
 - "pragma once" include guard
 - Bake Asar version directly into Asar DLL via resource file
 - Make readfile/canreadfile functions not fail when using the optional parameter and the file doesn't exist
+- filesize() function
+- readfile() functions that read into a memory buffer
+- better freespace alternative which doesn't require an autoclean
 
 
 
