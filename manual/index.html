@@ -47,6 +47,7 @@
 					<li><a href="#number-literals">Number Literals</a></li>
 					<li><a href="#opcode-length">Opcode Length Specification</a></li>
 					<li><a href="#pseudo-opcodes">Pseudo Opcodes</a></li>
+					<li><a href="#rep">rep</a></li>
 				</ul>
 			</li>
 			<li><a href="#mappers">Mapping Modes</a></li>
@@ -88,6 +89,7 @@
 					<li><a href="#sub-labels">Sub Labels</a></li>
 					<li><a href="#plus-minus-labels">+/- Labels</a></li>
 					<li><a href="#macro-labels">Macro Labels</a></li>
+					<li><a href="#structs">Structs</a></li>
 					<li><a href="#namespaces">Namespaces</a></li>
 				</ul>
 			</li>
@@ -1453,6 +1455,18 @@ nop
 
 inx
 inx</code></pre>
+		<h4 id="rep">rep</h4>
+		<pre><code class="65c816_asar">rep {num} : {code}</code></pre>
+		The rep command lets you compile any bit of code <code>num</code> times. It functions similarly to <a href="#pseudo-opcodes">pseudo opcodes</a>, but without being limited to certain opcodes only. Instead, you can repeat almost any bit of code supported by Asar, even macro calls. Note that in xkas compatibility mode, <code>rep 0</code> will compile the following code once, whereas <code>rep -1</code> (or any number <code>&lt; 0</code>) won't compile the following code at all. This is to keep compatibility with old patches, which occasionally used the rep command as a replacement for conditionals. Also note that stacking multiple rep commands is not supported (only the most recent rep will take effect).
+		<pre><code class="65c816_asar">macro writeval(val)
+	db &lt;val&gt;
+endmacro
+		
+macro memset(val, num)
+	rep &lt;num&gt; : %writeval(&lt;val&gt;)
+endmacro
+
+rep 16 : %memset($00, 16)</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <p id="mappers"><h3>Mapping Modes</h3>
@@ -1868,7 +1882,95 @@ endmacro
 
 ; ERROR! ?MacroMainLabel is undefined, because we're not inside %do_something() anymore.
 dl ?MacroMainLabel</code></pre>
+		<h4 id="structs">Structs</h4>
+		Structs are an advanced form of labels with the purpose of making access into structured data blocks easier. The general syntax is as follows		
+		<pre><code class="65c816_asar">struct {identifier} {snes_address}
+	[label...]
+endstruct [align num]</code></pre>
+		where <code>identifier</code> can contain any of the following characters:<br/>		
+		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
+		The <code>snes_address</code> parameter can be any number literal or math statement evaluating to an SNES address. This address marks the start of the struct. The <code>label</code> parameter should be any number of labels, ideally coupled with skip commands. These labels become offsets into the struct. Internally, the struct command will do something similar to this
+		<pre><code class="65c816_asar">pushpc
+base snes_address</code></pre>
+		whereas the endstruct command will do something similar to this
+		<pre><code class="65c816_asar">base off
+pullpc</code></pre>
+		Take a look at the simple example below:
+		<pre><code class="65c816_asar">struct ObjectList $7E0100
+	.Type: skip 1
+	.PosX: skip 2
+	.PosY: skip 2
+	.SizeX: skip 1
+	.SizeY: skip 1
+endstruct</code></pre>
+		This defines a struct called <code>ObjectList</code> at location <code>$7E0100</code> with a size of <code>7</code> (the sum of all skip commands). You can access into this struct like so:
+		<pre><code class="65c816_asar">lda ObjectList.PosY</code></pre>
+		This is equal to:		
+		<pre><code class="65c816_asar">lda $7E0103		; $7E0100+1+2</code></pre>
+		The final address is calculated by taking the start of the struct (<code>$7E0100</code>) and adding to that all the skips preceding the <code>.PosY</code> label (<code>1</code> and <code>2</code>). Aside from accessing structs directly, it's also possible to access them as arrays. A simple example:
+		<pre><code class="65c816_asar">lda ObjectList[2].PosY</code></pre>
+		The final address in this case is calculated by the equation:<br/>
+		<code>struct_start + (array_index * struct_size) + label_offset</code><br/>
+		So in this case, our final address is <code>$7E0100 + (2 * 7) + (1 + 2) = $7E0111</code>. When using structs this way, the optional <code>align</code> parameter becomes relevant. This parameter controls the struct's alignment. Simply put, when setting a struct's alignment, Asar makes sure that its size is always a multiple of that alignment, increasing the size as necessary to make it a multiple. Let's take another look at the example above with an added alignment:
+		<pre><code class="65c816_asar">struct ObjectList $7E0100
+	.Type: skip 1
+	.PosX: skip 2
+	.PosY: skip 2
+	.SizeX: skip 1
+	.SizeY: skip 1
+endstruct align 16</code></pre>
+		With an alignment of 16 enforced, this struct's size becomes 16 (the first multiple of 16 that 7 bytes fit into). So when accessing the struct like this		
+		<pre><code class="65c816_asar">lda ObjectList[2].PosY</code></pre>
+		the final address becomes <code>$7E0100 + (2 * 16) + (1 + 2) = $7E0123</code>. If we add some data into the struct
+		<pre><code class="65c816_asar">struct ObjectList $7E0100
+	.Type: skip 1
+	.PosX: skip 2
+	.PosY: skip 2
+	.SizeX: skip 1
+	.SizeY: skip 1
+	.Properties: skip 10
+endstruct align 16</code></pre>
+		its original size becomes 17. Since a final size of 16 would now be too small to contain the entire struct, the alignment instead makes the struct's final size become 32 (the first multiple of 16 that 17 bytes fit into), so in our example of
+		<pre><code class="65c816_asar">lda ObjectList[2].PosY</code></pre>
+		we now end up with a final address of <code>$7E0100 + (2 * 32) + (1 + 2) = $7E0143</code>.<br/><br/>
+		Another feature that is unique to structs is the possibility of extending previously defined structs with new data. The general syntax for this is as follows:
+		<pre><code class="65c816_asar">struct {extension_identifier} extends {parent_identifier}
+	[label...]
+endstruct [align num]</code></pre>
+		This adds the struct <code>extension_identifier</code> at the end of the previously defined struct <code>parent_identifier</code>. Consider the following example:
+		<pre><code class="65c816_asar">struct ObjectList $7E0100
+	.Type: skip 1
+	.PosX: skip 2
+	.PosY: skip 2
+	.SizeX: skip 1
+	.SizeY: skip 1
+endstruct
 
+struct Properties extends ObjectList
+	.Palette: skip 1
+	.TileNumber: skip 2
+	.FlipX: skip 1
+	.FlipY: skip 1
+endstruct</code></pre>
+		The struct <code>ObjectList</code> now contains a child struct <code>Properties</code> which can be accessed like so:
+		<pre><code class="65c816_asar">lda ObjectList.Properties.FlipX</code></pre>
+		Since extension structs are added at the end of their parent structs, the offset of <code>.FlipX</code> in this example is calculated as<br/>
+		<code>parent_struct_start_address + parent_struct_size + extension_struct_label_offset</code>,<br/>
+		in other words, our final address is <code>$7E0100 + 7 + (1 + 2) = $7E0109</code>. Note that extending a struct also changes its size, so in this example, the final size of the <code>ObjectList</code> struct becomes 12. Extended structs can also be accessed as arrays. This works on the parent struct, as well as the extension struct.
+		<pre><code class="65c816_asar">lda ObjectList[2].Properties.FlipX</code></pre>
+		<pre><code class="65c816_asar">lda ObjectList.Properties[2].FlipX</code></pre>
+		In the first example, our final address is calculated as<br/>
+		<code>parent_struct_start_address + (combined_struct_size * array_index) + parent_struct_size + extension_struct_label_offset</code>,<br/>
+		whereas in the second example, it's calculated as<br/>
+		<code>parent_struct_start_address + parent_struct_size + (extension_struct_size * array_index) + extension_struct_label_offset</code>,<br/>
+		so we end up with final addresses of <code>$7E0100 + (12 * 2) + 7 + (1 + 2) = $7E0122</code> and <code>$7E0100 + 7 + (5 * 2) + (1 + 2) = $7E0114</code>.<br/><br/>
+		A few further things to note when using structs in Asar:
+		<ul>
+			<li>It's possible to extend a single struct with multiple extension structs. However, this can be counter-intuitive. The size of the extended struct becomes the size of the parent struct plus the size of its largest extension struct, rather than the size of the parent struct plus the sizes of each of its extension structs. This also means that when accessing those extension structs, they all start at the same offset relative to the parent struct. This can be confusing and is often not what's actually intended, so for code clarity, it's recommended to only extend structs with at most a single other struct.</li>
+			<li>It's possible to enforce alignments when using extension structs. However, this will only determine the alignment of the parent struct and/or the extension struct(s), depending on where it's specified. It won't determine the alignment of the combined struct. This can be confusing and is usually not what is intended. There currently is no universal workaround for this, so when a certain alignment is required for a struct, it's recommended to not use extension structs with it.</li>
+			<li>It's not possible to access both, a parent struct and its extension struct, as arrays simultanously.</li>
+			<li>An extension struct can't be extended itself.</li>
+		</ul>
         <h4 id="namespaces">Namespaces</h4>
         Namespaces are a feature which makes it easier to avoid name conflicts between different labels without having to give them long or cryptic names. They work similarly to C++ namespaces and accomplish this by automatically adding a prefix to all labels declared or accessed within them. They can be stacked if desired. When you try to access a label from within a namespace and Asar doesn't find it in there, it automatically looks in the upper namespaces (up to the global namespace). Use<br/>
 		<pre><code class="65c816_asar">namespace {identifier}</code></pre>
@@ -2370,6 +2472,7 @@ db "ABC"</code></pre>
 		<pre><code class="65c816_asar">fillbyte $FF
 ; This writes $FF $FF $FF $FF $FF $FF $FF $FF
 fill 8</code></pre>
+		It's also possible to write 16-bit, 24-bit or 32-bit values with the fill command by using <code>fillword</code>, <code>filllong</code> or <code>filldword</code> instead of fillbyte. Note that the <code>num</code> parameter of fill still specifies the number of bytes to write in those cases. Values might get truncated as needed to exactly reach the specified number of bytes to write.
 		<h4 id="pad">padbyte/pad</h4>
 		<pre><code class="65c816_asar">padbyte {byte}</code></pre>
 		<pre><code class="65c816_asar">pad {snes_address}</code></pre>
@@ -2378,6 +2481,7 @@ fill 8</code></pre>
 padbyte $FF
 ; This writes $FF $FF $FF $FF
 pad $008004</code></pre>
+		It's also possible to write 16-bit, 24-bit or 32-bit values with the pad command by using <code>padword</code>, <code>padlong</code> or <code>paddword</code> instead of padbyte. Note that the <code>snes_address</code> parameter of pad still specifies the end offset of the write in those cases. Values might get truncated as needed to exactly reach the specified end offset.
 		<h4 id="incbin">incbin</h4>
 		<pre><code class="65c816_asar">incbin {filename}[:range_start-range_end][ -> label_identifier_or_sness_address]</code></pre>
 		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are hexadecimal number literals (without the <code>$</code> prefix) which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file).
@@ -2535,7 +2639,7 @@ MyNewCode:
 			</li>
 			<li>
 				<b>When used with just an address:</b><br/>
-				The <code>snes_address</code> parameter must be any label, number literal or math statement resolving to an SNES address pointing to inside a freespace area. When the patch is applied and the autoclean is encountered, Asar checks whether that address points to the expanded area of the ROM (banks $10+). If it does, Asar checks whether it points to an area protected by a RATS tag (including the RATS tag itself). If it does, Asar cleans up that area and removes the RATS tag.
+				The <code>snes_address</code> parameter must be any label, number literal or math statement evaluating to an SNES address pointing to inside a freespace area. When the patch is applied and the autoclean is encountered, Asar checks whether that address points to the expanded area of the ROM (banks $10+). If it does, Asar checks whether it points to an area protected by a RATS tag (including the RATS tag itself). If it does, Asar cleans up that area and removes the RATS tag.
 			</li>
 		</ul>
 		When using autoclean with a jml, jsl or dl, Asar will also assemble the respective line of code at the current pc. For simplicity, you can treat the autoclean command like a modifier in those cases. A few more things to note when using the autoclean command:
@@ -2663,14 +2767,6 @@ endif</code></pre>
 		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
 		<pre><code class="65c816_asar">assert read1($00FFD5) != $23,"This patch is not SA-1 compatible!"</code></pre>
 		<a href="#contents">Return to top</a></p>
-		<hr />
-        
-        <u><b>Additional Commands:</b></u><br>
-        <b>rep:</b><br>
-        Repeat the following command x times. Works with almost all commands supported by Asar and even macro calls.<br>
-        Example:<br/>
-		rep 5 : nop ;write nop 5 times<br/>
-		rep 2 : do_something() ; Calls do_something() macro twice
     </body>
 </html>
 
