@@ -635,6 +635,7 @@ const char ** arguments;
 int numargs;
 };
 extern lightweight_map<string, macrodata*> macros;
+extern lightweight_map<string, snes_struct> structs;
 
 #define cfree(x) free((void*)x)
 static void clearmacro(const string & key, macrodata* & macro)
@@ -662,6 +663,7 @@ void reseteverything()
 	string str;
 	labels.clear();
 	defines.clear();
+	structs.clear();
 
 	macros.traverse(clearmacro);
 	macros.clear();
