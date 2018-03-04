@@ -36,7 +36,9 @@ inline int snestopc(int addr)
 	if (addr<0 || addr>0xFFFFFF) return -1;//not 24bit
 	if (mapper==lorom)
 	{
-		if ((addr&0xF00000)==0x700000 ||//wram, sram
+		// randomdude999: The low pages ($0000-$7FFF) of banks 70-7D are used
+		// for SRAM, the high pages are available for ROM data though
+		if ((addr&0xFE0000)==0x7E0000 ||//wram
 			(addr&0x408000)==0x000000)//area that shouldn't be used in lorom
 				return -1;
 		addr=((addr&0x7F0000)>>1|(addr&0x7FFF));
