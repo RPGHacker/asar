@@ -1,0 +1,120 @@
+%YAML 1.2
+---
+# A rather bad syntax file for Sublime Text. But hey, atleast it supports goto definition with defines!
+# I can't seem to get commenting to work correctly though
+# also aaaa sublime text syntax files are hard
+name: Asar 65c816 assembly
+file_extensions:
+  - asm
+scope: source.asar
+
+contexts:
+  # The prototype context is prepended to all contexts but those setting
+  # meta_include_prototype: false.
+  prototype:
+    - include: comments
+
+  main:
+    # The main context is the initial starting point of our syntax.
+    # Include other contexts from here (or specify them directly).
+    - include: operators
+    - include: mnemonics
+    - include: macroDeclStart
+    - include: keywords
+    - include: builtinFuncs
+    - include: defineDeclStart
+    - include: numbers
+    - include: macros
+    - include: defines
+    - include: strings
+
+  keywords:
+    - match: '\b(?i:lorom|hirom|exlorom|exhirom|sa1rom|fullsa1rom|sfxrom|norom|macro|endmacro|incbin|incsrc|fillbyte|fillword|filllong|filldword|fill|pad|padbyte|padword|padlong|paddword|table|cleartable|skip|namespace|import|print|org|warnpc|base|on|off|freespaceuse|hex|freespace|freecode|freedata|ram|noram|align|cleaned|static|autoclean|autoclear|prot|pushpc|pullpc|function|if|else|elseif|endif|assert|arch|65816|spc700|spc700-inline|superfx|math|pri|round|warn|xkas|bank|noassume|auto|asar|include|includefrom|error|warn|skip|double|round|pushtable|pulltable|db|dw|dl|dd)\b'
+      scope: keyword.control.asar
+
+  operators:
+    - match: '(\+|\-|\*|/)'
+      scope: keyword.operator.arithmetic.asar
+    - match: '(=|?=|+=|:=|#=)'
+      scope: keyword.operator.assignment.asar
+    - match: '(<<|>>|\||&|~|\^)'
+      scope: keyword.operator.bitwise.asar
+    - match: '(==|!=|>=|<=|>|<|&&|\|\|)'
+      scope: keyword.operator.logical.asar
+    - match: '(\(|\)|,|:|->|#|\[|\]|\\)'
+      scope: keyword.operator.asar
+
+  mnemonics:
+    - match: '\b(?i:adc|and|asl|bcc|blt|bcs|bge|beq|bit|bmi|bne|bpl|bra|brk|brl|bvc|bvs|clc|cld|cli|clv|cmp|cop|cpx|cpy|dec|dea|dex|dey|eor|inc|ina|inx|iny|jmp|jml|jsr|jsl|lda|ldx|ldy|lsr|mvn|mvp|nop|ora|pea|pei|per|pha|phb|phd|phk|php|phx|phy|pla|plb|pld|plp|plx|ply|rep|rol|ror|rti|rtl|rts|sbc|sec|sed|sei|sep|sta|stp|stx|sty|stz|tax|tay|tcd|tcs|tdc|trb|tsc|tsb|tsx|txa|txs|txy|tya|tyx|wai|wdm|xba|xce)(\.(?i:b|w|l))?\b'
+      scope: keyword.other.mnemonic.asar
+    - match: '\b(?i:x|y|s)\b'
+      scope: keyword.other.register.asar
+
+  builtinFuncs:
+    - match: '\b(read1|read2|read3|read4|canread1|canread2|canread4|sqrt|sin|cos|tan|asin|acos|atan|arcsin|arccos|arctan|log|log10|log2|_read1|_read2|_read3|_read4|_canread1|_canread2|_canread4|_sqrt|_sin|_cos|_tan|_asin|_acos|_atan|_arcsin|_arccos|_arctan|_log|_log10|_log2|readfile1|_readfile1|readfile2|_readfile2|readfile3|_readfile3|readfile4|_readfile4|canreadfile1|_canreadfile1|canreadfile2|_canreadfile2|canreadfile3|_canreadfile3|canreadfile4|_canreadfile4|canreadfile|_canreadfile|snestopc|_snestopc|pctosnes|_pctosnes|max|_max|min|_min|clamp|_clamp|safediv|_safediv|select|_select|not|_not|equal|_equal|notequal|_notequal|less|_less|lessequal|_lessequal|greater|_greater|greaterequal|_greaterequal|and|_and|or|_or|nand|_nand|nor|_nor|xor|_xor)\b'
+      scope: variable.function.asar
+
+  defines:
+    - match: '![a-zA-Z_0-9]*'
+      scope: variable.other.asar
+
+  macros:
+    - match: '%[a-zA-Z_0-9]*'
+      scope: variable.function.asar
+
+  defineDeclStart:
+    - match: '^\s*!'
+      push: define_name
+
+  define_name:
+    - meta_include_prototype: false
+    - meta_scope: variable.other.asar
+    - match: '[a-zA-Z0-9_]*'
+      scope: entity.name.type.asar
+      pop: true
+
+  macroDeclStart:
+    - match: '^\s*macro %?'
+      scope: keyword.operator.asar
+      push: macro_name
+
+  numbers:
+    - match: '\b[0-9]+\b'
+      scope: constant.numeric.integer.asar
+    - match: '\$[0-9a-fA-F]+\b'
+      scope: constant.numeric.hex.asar
+    - match: '%[01]+\b'
+      scope: constant.numeric.bin.asar
+
+  macro_name:
+    - meta_content_scope: variable.function.asar
+    - match: '%'
+      scope: keyword.control.asar
+    - match: '[a-zA-Z0-9_]*'
+      scope: entity.name.type.asar
+    - match: '\('
+      scope: keyword.operator.asar
+      pop: true
+
+  strings:
+    - match: '"'
+      scope: punctuation.definition.string.begin.asar
+      push: inside_string
+
+  inside_string:
+    - meta_include_prototype: false
+    - meta_scope: string.quoted.double.asar
+    #- match: '\.'
+    #  scope: constant.character.escape.asar
+    - match: '"'
+      scope: punctuation.definition.string.end.asar
+      pop: true
+
+  comments:
+    - match: ';'
+      scope: punctuation.definition.comment.asar
+      push:
+        # This is an anonymous context push for brevity.
+        - meta_scope: comment.line.double-slash.asar
+        - match: $\n?
+          pop: true
