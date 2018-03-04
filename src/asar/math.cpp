@@ -11,6 +11,7 @@ bool math_round=false;
 
 extern bool emulatexkas;
 extern lightweight_map<string, snes_struct> structs;
+extern lightweight_map<string, string> defines;
 
 //int bp(const char * str)
 //{
@@ -366,6 +367,14 @@ static long double canreadfilefunc(const funcparam& fname, const funcparam& offs
 	return 1;
 }
 
+// Checks whether the specified define is defined.
+static long double isdefinedfunc(const funcparam& definename)
+{
+	validateparam(definename, 0, Type_String);
+	// stringvalue is char*, .exists is string
+	return defines.exists(string(definename.value.stringvalue));
+}
+
 // RPG Hacker: What exactly makes this function overly complicated, you ask?
 // Well, it converts a double to a string and then back to a double.
 // It was the quickest reliable solution I could find, though, so there's that.
@@ -621,6 +630,8 @@ static long double getnumcore()
 			func("canreadfile3", 2, canreadfilefunc(params[0], params[1], funcparam(3.0)), false);
 			func("canreadfile4", 2, canreadfilefunc(params[0], params[1], funcparam(4.0)), false);
 			func("canreadfile", 3, canreadfilefunc(params[0], params[1], params[2]), false);
+
+			func("defined", 1, isdefinedfunc(params[0]), false)
 
 			wrappedfunc1("snestopc", params[0], snestopc((int)params[0].value.longdoublevalue), false);
 			wrappedfunc1("pctosnes", params[0], pctosnes((int)params[0].value.longdoublevalue), false);
