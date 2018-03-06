@@ -1,6 +1,7 @@
 #include "asar.h"
 #include "libstr.h"
 #include "libsmw.h"
+#include "assocarr.h"
 #include "autoarray.h"
 
 int arch=arch_65816;
