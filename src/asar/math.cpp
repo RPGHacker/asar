@@ -1,7 +1,7 @@
 //Don't try using this in your own project, it's got a lot of Asar-specific tweaks. Use mathlib.cpp instead.
 #include "std-includes.h"
 #include "autoarray.h"
-#include "scapegoat.hpp"
+#include "assocarr.h"
 #include "libstr.h"
 #include "libsmw.h"
 #include "asar.h"
@@ -10,8 +10,8 @@ bool math_pri=true;
 bool math_round=false;
 
 extern bool emulatexkas;
-extern lightweight_map<string, snes_struct> structs;
-extern lightweight_map<string, string> defines;
+extern assocarr<snes_struct> structs;
+extern assocarr<string> defines;
 
 //int bp(const char * str)
 //{
@@ -399,14 +399,16 @@ static long double overlycomplicatedround(const funcparam& number, const funcpar
 static int struct_size(const char *name)
 {
 	snes_struct structure;
-	if(!structs.find(name, structure)) error("Struct not found.");
+	if(!structs.exists(name)) error("Struct not found.");
+	structure = structs.find(name);
 	return structure.struct_size;
 }
 
 static int object_size(const char *name)
 {
 	snes_struct structure;
-	if(!structs.find(name, structure)) error("Struct not found.");
+	if(!structs.exists(name)) error("Struct not found.");
+	structure = structs.find(name);
 	return structure.object_size;
 }
 

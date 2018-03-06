@@ -1,7 +1,7 @@
 #include "std-includes.h"
 #include "libsmw.h"
 #include "libstr.h"
-#include "scapegoat.hpp"
+#include "assocarr.h"
 #include "autoarray.h"
 #include "asar.h"
 
@@ -124,7 +124,6 @@ string dir(char const *name) {
   return result;
 }
 
-//extern lightweight_map<string, unsigned int> labels;
 extern autoarray<int> poslabels;
 extern autoarray<int> neglabels;
 
@@ -290,8 +289,8 @@ struct sourcefile {
 	int numlines;
 };
 
-lightweight_map<string, sourcefile> filecontents;
-lightweight_map<string, string> defines;
+assocarr<sourcefile> filecontents;
+assocarr<string> defines;
 
 void assembleblock(const char * block);
 
@@ -387,22 +386,22 @@ void resolvedefines(string& out, const char * start)
 				{
 					case null:
 					{
-						defines.insert(defname, val);
+						defines.create(defname) = val;
 						break;
 					}
 					case append:
 					{
-						string oldval;
-						if (!defines.find(defname, oldval)) error<errnull>(0, "Appending to an undefined define");
+						if (!defines.exists(defname)) error<errnull>(0, "Appending to an undefined define");
+						string oldval = defines.find(defname);
 						val=oldval+val;
-						defines.insert(defname, val);
+						defines.create(defname) = val;
 						break;
 					}
 					case expand:
 					{
 						string newval;
 						resolvedefines(newval, val);
-						defines.insert(defname, newval);
+						defines.create(defname) = newval;
 						break;
 					}
 					case domath:
@@ -411,13 +410,12 @@ void resolvedefines(string& out, const char * start)
 						resolvedefines(newval, val);
 						long double num= getnumdouble(newval);
 						if (foundlabel) error<errline>(0, "!Define #= Label is not allowed");
-						defines.insert(defname, ftostr(num));
+						defines.create(defname) = ftostr(num);
 						break;
 					}
 					case setifnotset:
 					{
-						string idontcare;
-						if (!defines.find(defname, idontcare)) defines.insert(defname, val);
+						if (!defines.exists(defname)) defines.create(defname) = val;
 						break;
 					}
 				}
@@ -428,9 +426,11 @@ void resolvedefines(string& out, const char * start)
 				if (!defname) out+="!";
 				else
 				{
-					string thisone;
-					if (!defines.find(defname, thisone)) error<errline>(0, S"Define !"+defname+" not found");
-					else resolvedefines(out, thisone);
+					if (!defines.exists(defname)) error<errline>(0, S"Define !"+defname+" not found");
+					else {
+						string thisone = defines.find(defname);
+						resolvedefines(out, thisone);
+					}
 				}
 			}
 		}
@@ -519,7 +519,7 @@ void assemblefile(const char * filename, bool toplevel)
 	file.contents = NULL;
 	file.numlines = 0;
 	int startif=numif;
-	if (!filecontents.find(filename, file))
+	if (!filecontents.exists(filename))
 	{
 		char * temp=readfile(filename);
 		if (!temp)
@@ -556,7 +556,9 @@ void assemblefile(const char * filename, bool toplevel)
 				file.contents[i+j]=nullstr;
 			}
 		}
-		filecontents.insert(filename, file);
+		filecontents.create(filename) = file;
+	} else { // filecontents.exists(filename)
+		file = filecontents.find(filename);
 	}
 	bool inmacro=false;
 	asarverallowed=true;
@@ -620,7 +622,7 @@ void assemblefile(const char * filename, bool toplevel)
 }
 
 bool checksum=true;
-extern lightweight_map<string, unsigned int> labels;
+extern assocarr<unsigned int> labels;
 extern autoarray<string> sublabels;
 extern autoarray<writtenblockdata> writtenblocks;
 extern string ns;
@@ -634,8 +636,8 @@ const char * fname;
 const char ** arguments;
 int numargs;
 };
-extern lightweight_map<string, macrodata*> macros;
-extern lightweight_map<string, snes_struct> structs;
+extern assocarr<macrodata*> macros;
+extern assocarr<snes_struct> structs;
 
 #define cfree(x) free((void*)x)
 static void clearmacro(const string & key, macrodata* & macro)
@@ -661,15 +663,15 @@ void deinitmathcore();
 void reseteverything()
 {
 	string str;
-	labels.clear();
-	defines.clear();
-	structs.clear();
+	labels.reset();
+	defines.reset();
+	structs.reset();
 
-	macros.traverse(clearmacro);
-	macros.clear();
+	macros.each(clearmacro);
+	macros.reset();
 
-	filecontents.traverse(clearfile);
-	filecontents.clear();
+	filecontents.each(clearfile);
+	filecontents.reset();
 
 	writtenblocks.reset();
 

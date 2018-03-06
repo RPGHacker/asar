@@ -1,7 +1,7 @@
 #include "libstr.h"
 #include "asar.h"
 #include "autoarray.h"
-#include "scapegoat.hpp"
+#include "assocarr.h"
 
 template<typename t> void error(int pass, const char * e_);
 bool confirmname(const char * name);
@@ -16,7 +16,7 @@ const char ** arguments;
 int numargs;
 };
 
-lightweight_map<string, macrodata*> macros;
+assocarr<macrodata*> macros;
 string thisname;
 macrodata * thisone;
 int numlines;
@@ -63,8 +63,7 @@ void startmacro(const char * line_)
 		if (c==',' && isdigit(startpar[i+1])) error<errline>(0, "Broken macro declaration");
 	}
 	if (*startpar==',' || isdigit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') error<errline>(0, "Broken macro declaration");
-	macrodata * ignored;
-	if (macros.find(thisname, ignored)) error<errblock>(0, "Duplicate macro");
+	if (macros.exists(thisname)) error<errblock>(0, "Duplicate macro");
 	thisone=(macrodata*)malloc(sizeof(macrodata));
 	new(thisone) macrodata;
 	if (*startpar)
@@ -101,7 +100,7 @@ void endmacro(bool insert)
 {
 	if (!thisone) return;
 	thisone->numlines=numlines;
-	if (insert) macros.insert(thisname, thisone);
+	if (insert) macros.create(thisname) = thisone;
 	else delete thisone;
 }
 
@@ -119,7 +118,8 @@ void callmacro(const char * data)
 	*startpar=0;
 	startpar++;
 	if (!confirmname(line)) merror("Bad macro name");
-	if (!macros.find(line, thismacro)) merror("Unknown macro");
+	if (!macros.exists(line)) merror("Unknown macro");
+	thismacro = macros.find(line);
 	char * endpar=strqrchr(startpar, ')');
 	if (endpar[1]) merror("Broken macro usage");
 	*endpar=0;
