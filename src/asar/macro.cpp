@@ -107,6 +107,11 @@ void endmacro(bool insert)
 
 #define merror(str) do { if (!macrorecursion) { callerfilename=NULL; callerline=-1; } error<errblock>(0, str); } while(0)
 
+
+extern autoarray<int>* macroposlabels;
+extern autoarray<int>* macroneglabels;
+extern autoarray<string>* macrosublabels;
+
 void callmacro(const char * data)
 {
 	int numcm=reallycalledmacros++;
@@ -129,6 +134,19 @@ void callmacro(const char * data)
 	if (numargs!= thismacro->numargs) merror("Wrong number of arguments to macro");
 	macrorecursion++;
 	int startif=numif;
+
+	autoarray<int>* oldmacroposlabels = macroposlabels;
+	autoarray<int>* oldmacroneglabels = macroneglabels;
+	autoarray<string>* oldmacrosublabels = macrosublabels;
+
+	autoarray<int> newmacroposlabels;
+	autoarray<int> newmacroneglabels;
+	autoarray<string> newmacrosublabels;
+
+	macroposlabels = &newmacroposlabels;
+	macroneglabels = &newmacroneglabels;
+	macrosublabels = &newmacrosublabels;
+
 	for (int i=0;i<thismacro->numlines;i++)
 	{
 		try
@@ -188,6 +206,11 @@ void callmacro(const char * data)
 		}
 		catch(errline&){}
 	}
+
+	macroposlabels = oldmacroposlabels;
+	macroneglabels = oldmacroneglabels;
+	macrosublabels = oldmacrosublabels;
+
 	macrorecursion--;
 	if (repeatnext!=1)
 	{

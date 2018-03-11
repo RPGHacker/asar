@@ -124,10 +124,6 @@ string dir(char const *name) {
   return result;
 }
 
-//extern lightweight_map<string, unsigned int> labels;
-extern autoarray<int> poslabels;
-extern autoarray<int> neglabels;
-
 extern int freespaceextra;
 extern int freespaceid;
 extern int freespacepos[256];
@@ -171,22 +167,24 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 	else return 2;
 }
 
+
+string posneglabelname(const char ** input, bool define);
+
 int getlen(const char * orgstr, bool optimizebankextraction)
 {
 	const char * str=orgstr;
 	freespaced=false;
-	if (str[0]=='+' || str[0]=='-')
+
+	const char* posneglabel = str;
+	string posnegname = posneglabelname(&posneglabel, false);
+
+	if (posnegname.truelen() > 0)
 	{
-		int i;
-		for (i=0;str[i];i++)
-		{
-			if (str[i]!=str[0]) goto notposneglabel;
-		}
+		if (*posneglabel != '\0') goto notposneglabel;
+
 		if (!pass) return 2;
 		unsigned int labelpos=31415926;
-		bool found;
-		if (str[0]=='+') found=labelval(S":pos_"+dec(i)+"_"+dec(poslabels[i]), &labelpos);
-		else             found=labelval(S":neg_"+dec(i)+"_"+dec(neglabels[i]), &labelpos);
+		bool found = labelval(posnegname, &labelpos);
 		return getlenforlabel(snespos, (int)labelpos, found);
 	}
 notposneglabel:
@@ -621,7 +619,6 @@ void assemblefile(const char * filename, bool toplevel)
 
 bool checksum=true;
 extern lightweight_map<string, unsigned int> labels;
-extern autoarray<string> sublabels;
 extern autoarray<writtenblockdata> writtenblocks;
 extern string ns;
 

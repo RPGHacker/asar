@@ -726,24 +726,23 @@ static long double getnum()
 	return sanitize(getnumcore());
 }
 
-extern autoarray<int> poslabels;
-extern autoarray<int> neglabels;
+
+string posneglabelname(const char ** input, bool define);
 
 static long double eval(int depth)
 {
-	if (str[0]=='+' || str[0]=='-')
+	const char* posneglabel = str;
+	string posnegname = posneglabelname(&posneglabel, false);
+
+	if (posnegname.truelen() > 0)
 	{
-		int i;
-		char top=str[0];
-		for (i=0;str[i] && str[i]!=')';i++)
-		{
-			if (str[i]!=top) goto notposneglabel;
-		}
-		str+=i;
+		if (*posneglabel != '\0' && *posneglabel != ')') goto notposneglabel;
+
+		str = posneglabel;
+
 		foundlabel=true;
-		if (top=='+') forwardlabel=true;
-		if (top=='+') return labelval(S":pos_"+dec(i)+"_"+dec(poslabels[i]))&0xFFFFFF;
-		else          return labelval(S":neg_"+dec(i)+"_"+dec(neglabels[i]))&0xFFFFFF;
+		if (*(posneglabel-1) == '+') forwardlabel=true;
+		return labelval(posnegname) & 0xFFFFFF;
 	}
 notposneglabel:
 	recurseblock rec;

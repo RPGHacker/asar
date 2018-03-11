@@ -1812,8 +1812,8 @@ Table:
 Table:
 	dl Main1_Sub_Deeper_TheEnd</code></pre>
 		<h4 id="plus-minus-labels">+/- Labels</h4>
-		<pre><code class="65c816_asar">+[+...]</code></pre>
-		<pre><code class="65c816_asar">-[-...]</code></pre>
+		<pre><code class="65c816_asar">+[+...][:]</code></pre>
+		<pre><code class="65c816_asar">-[-...][:]</code></pre>
 		+/- labels are a special type of labels that are different from both main labels and sub labels in that they don't refer to a specific location in code, but rather to a location relative from where they are used. When used inside opcodes etc., <code class="65c816_asar">+</code> always refers to the next + label and <code class="65c816_asar">-</code> always refers to the previous - label. You can also chain an arbitrary number of + or an arbitrary number of - to create unique +/- labels that don't overwrite labels with a different number of +/-, for example <code class="65c816_asar">+++</code> or <code class="65c816_asar">-----</code>.
 		<pre><code class="65c816_asar">	ldx.b #4
 		
@@ -1829,17 +1829,17 @@ Table:
 	dey
 	bne -		; Branches to &quot;B&quot;
 	
-+			; C
++:			; C - note that +/- labels can also include an optional colon in their declaration
 	dex
 	bpl --		; Branches to &quot;A&quot;</code></pre>
-		+/- labels are useful in a number of situations. For example: inside a long routine with multiple short loops, where even a sub label like <code class="65c816_asar">.Loop</code> would get repetitive. +/- labels aren't bound to any scope, which means they can technically be used across different scopes. Just like sub labels, +/- labels are converted to main labels internally. Unlike sub labels, they can not be referenced from code directly since their names depend on where in the code they're used, making it impractical to directly refer to them. This is by design. They can, however, be accessed via the Asar DLL API, using the <code class="cpp">asar_getalllabels()</code> and the <code class="cpp">asar_getlabelval()</code> functions. The naming format used for them is<br/>
+		+/- labels are useful in a number of situations. For example: inside a long routine with multiple short loops, where even a sub label like <code class="65c816_asar">.Loop</code> would get repetitive. +/- labels aren't bound to any scope, which means they can technically be used across different scopes. Just like sub labels, +/- labels are converted to main labels internally. Unlike sub labels, they can not be referenced from code directly since their names depend on where in the code they're used, making it impractical to directly refer to them. This is by design. They can, however, be accessed via the Asar DLL API, and their full name may appear in error messages printed by Asar. The naming format used for them is<br/>
 		<code class="65c816_asar">:pos_x_y</code><br/>
 		for + labels and<br/>
 		<code class="65c816_asar">:neg_x_y</code><br/>
 		for - labels, where<br/>
-		x = number of chained +/-<br/>
+		<code>x</code> = number of chained +/-<br/>
 		and<br/>
-		y = instance of this label within all +/- labels of the same name (starting from 0 for + labels and from 1 for - labels).
+		<code>y</code> = instance of this label within all +/- labels of the same name (starting from 0 for + labels and from 1 for - labels).
 		<pre><code class="65c816_asar">lorom
 org $008000
 
@@ -1877,6 +1877,7 @@ org $008000
 		dl ?.MacroSubLabel
 		dl ?-
 		dl ?+
+		dl ?MacroMainLabel_MacroSubLabel
 	?+
 endmacro
 
@@ -1884,6 +1885,9 @@ endmacro
 
 ; ERROR! ?MacroMainLabel is undefined, because we're not inside %do_something() anymore.
 dl ?MacroMainLabel</code></pre>
+		Like all other labels, macro labels are converted to main labels internally and prefixed with an identifier of<br/>
+		<code class="65c816_asar">:macro_x_</code><br/>
+		where <code>x</code> = total macro call instance. They can't be referenced in code directly, except inside their respective macro and using the respective macro label syntax seen above. They can, however, be accessed via the Asar DLL API, and their full name may appear in error messages printed by Asar.
 		<h4 id="structs">Structs</h4>
 		Structs are an advanced form of labels with the purpose of making access into structured data blocks easier. The general syntax is as follows		
 		<pre><code class="65c816_asar">struct {identifier} {snes_address}
