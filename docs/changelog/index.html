@@ -63,6 +63,45 @@
 			<li>Added simple syntax highlighting for Sublime Text.</li>
 			<li>+/- label declarations can also end with an optional <code>:</code> now for consistency.</li>
 			<li>Added macro-local variations for +/- labels and sub labels, which are also prefixed with a <code>?</code>.</li>
+			<li>Added macro main label assignment.
+			<pre><code class="65c816_asar">macro my_macro()
+	?MacroLabel = $008000
+	
+	dl ?MacroLabel	; Valid
+endmacro
+
+%my_macro()
+
+dl ?MacroLabel		; Error!</code></pre></li>
+			<li>Added support for a new type of label declaration: prefixing a label or sub label declaration (including macro labels) with <code>#</code> will create that label without modifying existing label hierarchies. This is mainly intended for hacky incsrc/routine macros as used by GPS, which can break existing label hierarchies when used.
+			<pre><code class="65c816_asar">macro my_new_routine()
+	jsl MyNewRoutine
+			
+	!macro_routine_defined ?= 0
+	
+	if !macro_routine_defined == 0
+		pushpc
+		
+		freecode cleaned
+		
+		#MyNewRoutine:
+			incsrc routines/mynewroutine.asm
+		
+		pullpc
+	
+		!macro_routine_defined = 1
+	endif
+endmacro
+
+Main:
+	%my_new_routine()
+.Sub
+
+	; Both of these are found
+	dl MyNewRoutine
+	dl Main_Sub</code></pre>
+			Note that while it's technically possible to use this feature on sub labels, macro labels and macro sub labels, I don't think there's any reasonable use case for this. In most cases, regular macro labels and regular macro sub labels are recommended for usage inside macros.
+			</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>

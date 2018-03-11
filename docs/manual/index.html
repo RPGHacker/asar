@@ -1744,7 +1744,7 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 		<p id="labels"><h3>Labels</h3>
 		Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets.
 		<h4 id="main-labels">Main Labels</h4>
-		<pre><code class="65c816_asar">{identifier}:</code></pre>
+		<pre><code class="65c816_asar">[#]{identifier}:</code></pre>
         Main labels are the top-most level of labels supported by Asar. They're global and thus can be directly acessed from anywhere. Their identifier can contain any of the following characters<br />
 		<code class="65c816_asar">a-z A-Z 0-9 _</code>
 		<pre><code class="65c816_asar">org $008000
@@ -1766,9 +1766,36 @@ SomewhereInRom = $04CA40
 Table:
 	dl Main_Sub                 ; Okay!
 	dl SomewhereInRom_Sub       ; Error, label not found</code></pre>
+		Prefixing a label definition (except label assignments) with a <code>#</code> will define the label without modifying existing label hierarchies. This can be useful for defining global routines inside call-anywhere macros without having them break existing label hierarchies.
+		<pre><code class="65c816_asar">macro my_new_routine()
+	jsl MyNewRoutine
+			
+	!macro_routine_defined ?= 0
+	
+	if !macro_routine_defined == 0
+		pushpc
+		
+		freecode cleaned
+		
+		#MyNewRoutine:
+			incsrc routines/mynewroutine.asm
+		
+		pullpc
+	
+		!macro_routine_defined = 1
+	endif
+endmacro
+
+Main:
+	%my_new_routine()
+.Sub
+
+	; Both of these are found
+	dl MyNewRoutine
+	dl Main_Sub</code></pre>
 		Asar includes a label optimizer which attempts to optimize performance by shortening opcodes accessing labels from 24-bit to 16-bit whenever possible. See section <a href="#program-counter">Program Counter</a> for details.
 		<h4 id="sub-labels">Sub Labels</h4>
-		<pre><code class="65c816_asar">.{identifier}[:]</code></pre>
+		<pre><code class="65c816_asar">[#].{identifier}[:]</code></pre>
         Sub labels are the second-most level of labels supported by Asar. They're local to the last main label declared and their identifiers can contain the same characters as main labels.
         <pre><code class="65c816_asar">Proc1:
 	nop
@@ -1811,6 +1838,7 @@ Table:
 
 Table:
 	dl Main1_Sub_Deeper_TheEnd</code></pre>
+		Prefixing a sub label definition with a <code>#</code> will define the sub label without modifying existing label hierarchies, but there is probably no practical use for this and it's unintuitive, so it should be avoided.
 		<h4 id="plus-minus-labels">+/- Labels</h4>
 		<pre><code class="65c816_asar">+[+...][:]</code></pre>
 		<pre><code class="65c816_asar">-[-...][:]</code></pre>
@@ -1862,9 +1890,9 @@ org $008000
 ++			; :pos_2_1
 +++			; :pos_3_0</code></pre>
 		<h4 id="macro-labels">Macro Labels</h4>
-		<pre><code class="65c816_asar">?{identifier}:</code></pre>
+		<pre><code class="65c816_asar">[#]?{identifier}:</code></pre>
 		<pre><code class="65c816_asar">?{identifier} = {snes_address}</code></pre>
-		<pre><code class="65c816_asar">?.{identifier}[:]</code></pre>
+		<pre><code class="65c816_asar">[#]?.{identifier}[:]</code></pre>
 		<pre><code class="65c816_asar">?+[+...]</code></pre>
 		<pre><code class="65c816_asar">?-[-...]</code></pre>
         Macro labels are special variations of the labels mentioned in the previous sections. Functionally, they behave the same as the other labels with the exception of being local to the macro they're used in. This means they can't be referenced from outside the respective macro. Macro labels are created by prefixing any of the other label types with a <code class="65c816_asar">?</code> .
@@ -1885,6 +1913,7 @@ endmacro
 
 ; ERROR! ?MacroMainLabel is undefined, because we're not inside %do_something() anymore.
 dl ?MacroMainLabel</code></pre>
+		Prefixing a macro label definition (except for macro label assignments and macro +/- labels) with a <code>#</code> will define the macro label without modifying existing label hierarchies, but there is probably no practical use for this, so it should be avoided.
 		Like all other labels, macro labels are converted to main labels internally and prefixed with an identifier of<br/>
 		<code class="65c816_asar">:macro_x_</code><br/>
 		where <code>x</code> = total macro call instance. They can't be referenced in code directly, except inside their respective macro and using the respective macro label syntax seen above. They can, however, be accessed via the Asar DLL API, and their full name may appear in error messages printed by Asar.
