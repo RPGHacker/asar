@@ -22,6 +22,10 @@ _target_api_ver = 300
 _asar = None
 
 
+class AsarArithmeticError(ArithmeticError):
+    pass
+
+
 class errordata(ctypes.Structure):
     _fields_ = [("fullerrdata", c_char_p),
                 ("rawerrdata", c_char_p),
@@ -35,11 +39,13 @@ class errordata(ctypes.Structure):
         return "<asar error: {!r}>".format(self.fullerrdata.decode())
 
 
+# for internal use only. getalllabels() returns a dict.
 class labeldata(ctypes.Structure):
     _fields_ = [("name", c_char_p),
                 ("location", c_int)]
 
 
+# for internal use only. getalldefines() returns a dict.
 class definedata(ctypes.Structure):
     _fields_ = [("name", c_char_p),
                 ("contents", c_char_p)]
@@ -128,30 +134,38 @@ class _AsarDLL:
         func.restype = restype
 
 
-def init():
+def init(dll_path=None):
     """Load the Asar DLL.
 
     You must call this before calling any other Asar functions. Raises OSError
     if there was something wrong with the DLL (not found, wrong version,
     doesn't have all necessary functions).
+    You can pass a custom DLL path if you want. If you don't, some common names
+    for the asar dll are tried.
     """
     global _asar
     if _asar is not None:
         return
-    if sys.platform == "win32":
-        _asar = _AsarDLL("asar")
+
+    if dll_path is not None:
+        _asar = _AsarDLL(dll_path)
     else:
-        if sys.platform == "darwin":
-            libnames = ["./libasar.dylib", "libasar"]
+        if sys.platform == "win32":
+            _asar = _AsarDLL("asar")
         else:
-            libnames = ["./libasar.so", "libasar"]
-        for x in libnames:
-            try:
-                _asar = _AsarDLL(x)
-            except OSError:
-                continue
+            if sys.platform == "darwin":
+                libnames = ["./libasar.dylib", "libasar"]
+            else:
+                libnames = ["./libasar.so", "libasar"]
+            for x in libnames:
+                try:
+                    _asar = _AsarDLL(x)
+                except OSError:
+                    continue
         if _asar is None:
+            # Nothing in the search path is valid
             raise OSError("Could not find asar DLL")
+
     if not _asar.dll.asar_init():
         _asar = None
         return False
@@ -274,10 +288,10 @@ def math(to_calculate):
     error = ctypes.c_char_p()
     result = _asar.dll.asar_math(to_calculate.encode(), ctypes.byref(error))
     if not bool(error):
-        # Null pointer
+        # Null pointer, means no error
         return result
     else:
-        raise ArithmeticError("Asar: "+error.value.decode())
+        raise AsarArithmeticError(error.value.decode())
 
 
 def getwrittenblocks():
