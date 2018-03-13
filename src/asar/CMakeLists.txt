@@ -87,6 +87,7 @@ list(
 
 # Add resource files and other platform-specific source files
 set(ASAR_RESOURCE_FILES "")
+set(ASAR_LIB_RESOURCE_FILES "")
 
 if(WIN32)
 	# Windos-specific files
@@ -100,6 +101,12 @@ if(WIN32)
 		APPEND ASAR_RESOURCE_FILES		
 	
 		"${CMAKE_CURRENT_SOURCE_DIR}/res/windows/asar.rc"
+	)
+
+	list(
+		APPEND ASAR_LIB_RESOURCE_FILES		
+	
+		"${CMAKE_CURRENT_SOURCE_DIR}/res/windows/asar_lib.rc"
 	)
 elseif(UNIX)
 	# Linux-specific files
@@ -146,6 +153,7 @@ add_library(
 	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.cpp"
 	
 	${ASAR_SHARED_SOURCE_FILES}
+	${ASAR_LIB_RESOURCE_FILES}
 )
 
 set_asar_shared_properties(asar)
