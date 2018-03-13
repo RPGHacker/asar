@@ -78,7 +78,6 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libmisc.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/scapegoat.hpp"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
