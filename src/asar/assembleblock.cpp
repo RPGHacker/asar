@@ -17,6 +17,7 @@ bool emulatexkas;
 bool specifiedasarver = false;
 
 extern int optimizeforbank;
+extern bool ignoretitleerrors;
 
 int old_snespos;
 int old_startpos;
@@ -972,6 +973,17 @@ void assembleblock(const char * block)
 	else if (is1("warn"))
 	{
 		if (pass==2) warn(dequote(par));
+	}
+	else if (is1("expecttitle"))
+	{
+		string expectedtitle = dequote(par);
+		if (strncmp(expectedtitle, (char*)(romdata+snestopc(0x00FFC0)), 21) != 0)
+		{
+			if (!ignoretitleerrors) // title errors shouldn't be ignored
+				error(0, "ROM title is incorrect");
+			else // title errors should be ignored, throw a warning anyways
+				if (pass==0) warn("ROM title is incorrect");
+		}
 	}
 	else if (is0("asar") || is1("asar"))
 	{

@@ -39,6 +39,7 @@ const char * callerfilename=NULL;
 int callerline=-1;
 
 bool errored=false;
+bool ignoretitleerrors=false;
 
 volatile int recursioncount=0;
 

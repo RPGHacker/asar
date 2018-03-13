@@ -46,6 +46,7 @@ struct chartabledata {
 
 extern int pass;
 extern bool foundlabel;
+extern bool ignoretitleerrors;
 
 //extern bool emulate;
 

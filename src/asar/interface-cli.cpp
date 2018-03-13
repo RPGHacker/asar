@@ -156,14 +156,14 @@ int main(int argc, char * argv[])
 			"                   Specify when Asar should pause the application (never, on error, on warning or always)\n"
 			" -werror           Treat warnings as errors\n"
 			);
-		bool ignoreerrors=false;
+		ignoretitleerrors=false;
 		string par;
 		bool verbose=libcon_interactive;
 		bool printed_version=false;
 		while ((par=libcon_option()))
 		{
 			if (par=="-werror") werror=true;
-			else if (par=="--no-title-check") ignoreerrors=true;
+			else if (par=="--no-title-check") ignoretitleerrors=true;
 			else if (par == "-v" || par=="--verbose") verbose=true;
 			else if (par=="--version")
 			{
@@ -227,7 +227,7 @@ int main(int argc, char * argv[])
 			return 1;
 		}
 		//check if the ROM title and checksum looks sane
-		if (romlen>=32768 && !ignoreerrors)
+		if (romlen>=32768 && !ignoretitleerrors)
 		{
 			bool validtitle=setmapper();
 			if (!validtitle)
