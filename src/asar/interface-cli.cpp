@@ -1,5 +1,5 @@
 #include "asar.h"
-#include "scapegoat.hpp"
+#include "assocarr.h"
 #include "libstr.h"
 #include "libcon.h"
 #include "libsmw.h"
@@ -36,8 +36,8 @@ string getdecor();
 
 extern const char * thisfilename;
 
-extern lightweight_map<string, string> defines;//these two are useless for cli, but they may be useful for other stuff
-extern lightweight_map<string, unsigned int> labels;
+extern assocarr<string> defines;//these two are useless for cli, but they may be useful for other stuff
+extern assocarr<unsigned int> labels;
 
 void assemblefile(const char * filename, bool toplevel);
 

@@ -1,7 +1,8 @@
 //Don't try using this in your own project, it's got a lot of Asar-specific tweaks. Use mathlib.cpp instead.
+#include "platform/file-helpers.h"
 #include "std-includes.h"
 #include "autoarray.h"
-#include "scapegoat.hpp"
+#include "assocarr.h"
 #include "libstr.h"
 #include "libsmw.h"
 #include "asar.h"
@@ -10,7 +11,8 @@ bool math_pri=true;
 bool math_round=false;
 
 extern bool emulatexkas;
-extern lightweight_map<string, snes_struct> structs;
+extern assocarr<snes_struct> structs;
+extern assocarr<string> defines;
 
 //int bp(const char * str)
 //{
@@ -90,7 +92,7 @@ extern const char * thisfilename;
 
 // Opens a file, trying to open it from cache first
 
-cachedfile * opencachedfile(string fname)
+cachedfile * opencachedfile(string fname, bool should_error)
 {
 	cachedfile * cachedfilehandle = nullptr;
 	string combinedname = S dir(thisfilename) + fname;
@@ -133,7 +135,7 @@ cachedfile * opencachedfile(string fname)
 		}
 	}
 
-	if (cachedfilehandle == nullptr || cachedfilehandle->filehandle == nullptr)
+	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == nullptr) && should_error)
 	{
 		error("Failed to open file.");
 	}
@@ -322,7 +324,7 @@ static long double readfilefunc(const funcparam& fname, const funcparam& offset,
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
 	if (numbytes <=0 || numbytes > 4) error("Can only read chunks of 1 to 4 bytes.");
-	cachedfile * fhandle = opencachedfile(fname.value.stringvalue);
+	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, true);
 	if (fhandle == nullptr || fhandle->filehandle == nullptr) error("Failed to open file.");
 	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - numbytes) error("File read offset out of bounds.");
 	fseek(fhandle->filehandle, (long)offset.value.longdoublevalue, SEEK_SET);
@@ -341,8 +343,8 @@ static long double readfilefuncs(const funcparam& fname, const funcparam& offset
 	validateparam(offset, 1, Type_Double);
 	validateparam(def, 2, Type_Double);
 	if (numbytes <= 0 || numbytes > 4) error("Can only read chunks of 1 to 4 bytes.");
-	cachedfile * fhandle = opencachedfile(fname.value.stringvalue);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) error("Failed to open file.");
+	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
+	if (fhandle == nullptr || fhandle->filehandle == nullptr) return def.value.longdoublevalue;
 	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - numbytes) return def.value.longdoublevalue;
 	fseek(fhandle->filehandle, (long)offset.value.longdoublevalue, SEEK_SET);
 	unsigned char readdata[4] = { 0, 0, 0, 0 };
@@ -360,10 +362,36 @@ static long double canreadfilefunc(const funcparam& fname, const funcparam& offs
 	validateparam(offset, 1, Type_Double);
 	validateparam(numbytes, 2, Type_Double);
 	if ((long)numbytes.value.longdoublevalue <= 0) error("Number of bytes to check must be > 0.");
-	cachedfile * fhandle = opencachedfile(fname.value.stringvalue);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) error("Failed to open file.");
+	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
+	if (fhandle == nullptr || fhandle->filehandle == nullptr) return 0;
 	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - (long)numbytes.value.longdoublevalue) return 0;
 	return 1;
+}
+
+// returns 0 if the file is OK, 1 if the file doesn't exist, 2 if it couldn't be opened for some other reason
+static long double getfilestatus(const funcparam& fname)
+{
+	validateparam(fname, 0, Type_String);
+	if(!file_exists(S dir(thisfilename) + fname.value.stringvalue)) return 1;
+	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
+	if(fhandle == nullptr || fhandle->filehandle == nullptr) return 2;
+	return 0;
+}
+
+// Returns the size of the specified file.
+static long double filesizefunc(const funcparam& fname)
+{
+	validateparam(fname, 0, Type_String);
+	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
+	if (fhandle == nullptr || fhandle->filehandle == nullptr) return -1;
+	return fhandle->filesize;
+}
+
+// Checks whether the specified define is defined.
+static long double isdefinedfunc(const funcparam& definename)
+{
+	validateparam(definename, 0, Type_String);
+	return defines.exists(definename.value.stringvalue);
 }
 
 // RPG Hacker: What exactly makes this function overly complicated, you ask?
@@ -390,14 +418,16 @@ static long double overlycomplicatedround(const funcparam& number, const funcpar
 static int struct_size(const char *name)
 {
 	snes_struct structure;
-	if(!structs.find(name, structure)) error("Struct not found.");
+	if(!structs.exists(name)) error("Struct not found.");
+	structure = structs.find(name);
 	return structure.struct_size;
 }
 
 static int object_size(const char *name)
 {
 	snes_struct structure;
-	if(!structs.find(name, structure)) error("Struct not found.");
+	if(!structs.exists(name)) error("Struct not found.");
+	structure = structs.find(name);
 	return structure.object_size;
 }
 
@@ -621,6 +651,10 @@ static long double getnumcore()
 			func("canreadfile3", 2, canreadfilefunc(params[0], params[1], funcparam(3.0)), false);
 			func("canreadfile4", 2, canreadfilefunc(params[0], params[1], funcparam(4.0)), false);
 			func("canreadfile", 3, canreadfilefunc(params[0], params[1], params[2]), false);
+			func("filesize", 1, filesizefunc(params[0]), false);
+			func("getfilestatus", 1, getfilestatus(params[0]), false);
+
+			func("defined", 1, isdefinedfunc(params[0]), false);
 
 			wrappedfunc1("snestopc", params[0], snestopc((int)params[0].value.longdoublevalue), false);
 			wrappedfunc1("pctosnes", params[0], pctosnes((int)params[0].value.longdoublevalue), false);

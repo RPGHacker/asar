@@ -2252,6 +2252,26 @@ else
 endif</code></pre></td>
 			</tr>
 			<tr>
+				<td><code class="65c816_asar">filesize(filename)</code></td>
+				<td>Returns the size of file filename (if the file doesn't exist or another error occurred, -1 is returned instead).</td>
+				<td><pre><code class="65c816_asar">!fsize #= filesize("datafile.bin")
+!fpos = 0
+
+assert !fsize >= 0, "datafile.bin doesn't exist or can't be opened".
+				
+while !fpos < !fsize
+	; Do something with datafile.bin here, like calling readfile1("datafile.bin", !fpos)
+	;...
+	
+	!fpos #= !fpos+1
+endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">getfilestatus(filename)</code></td>
+				<td>Checks the status of file filename. Returns 0 if the file exists and can be read from, returns 1 if the file doesn't exist and returns 2 if the file exists, but can't be read from for any other reason (like being read-protected, being locked etc.).</td>
+				<td><pre><code class="65c816_asar">assert getfilestatus("datafile.bin") != 1, "datafile.bin doesn't seem to exist"</code></pre></td>
+			</tr>
+			<tr>
 				<td><code class="65c816_asar">sqrt(x)</code></td>
 				<td>Computes the square root of x.</td>
 				<td></td>
