@@ -210,7 +210,12 @@ assocarr<unsigned int> labels;
 autoarray<int> poslabels;
 autoarray<int> neglabels;
 
+autoarray<int>* macroposlabels;
+autoarray<int>* macroneglabels;
+
 autoarray<string> sublabels;
+autoarray<string>* macrosublabels;
+
 string ns;
 
 //bool fastrom=false;
@@ -240,22 +245,93 @@ bool confirmname(const char * name)
 	return true;
 }
 
+string posneglabelname(const char ** input, bool define)
+{
+	const char* label = *input;
+
+	string output;
+
+	int depth = 0;
+	bool ismacro = false;
+
+	if (label[0] == '?')
+	{
+		ismacro = true;
+		label++;
+	}
+	if (label[0] == '-' || label[0] == '+')
+	{
+		char first = label[0];
+		for (depth = 0; label[0] && label[0] == first; depth++) label++;
+
+		if (!ismacro)
+		{
+			if (first == '+')
+			{
+				*input = label;
+				output = S":pos_" + dec(depth) + "_" + dec(poslabels[depth]);
+				if (define) poslabels[depth]++;
+			}
+			else
+			{
+				*input = label;
+				if (define) neglabels[depth]++;
+				output = S":neg_" + dec(depth) + "_" + dec(neglabels[depth]);
+			}
+		}
+		else
+		{
+			if (macrorecursion == 0 || macroposlabels == nullptr || macroneglabels == nullptr)
+			{
+				if (!macrorecursion) error(0, "Macro label outside of a macro");
+			}
+			else
+			{
+				if (first == '+')
+				{
+					*input = label;
+					output = S":macro_" + dec(calledmacros) + S"_pos_" + dec(depth) + "_" + dec((*macroposlabels)[depth]);
+					if (define) (*macroposlabels)[depth]++;
+				}
+				else
+				{
+					*input = label;
+					if (define) (*macroneglabels)[depth]++;
+					output = S":macro_" + dec(calledmacros) + S"_neg_" + dec(depth) + "_" + dec((*macroneglabels)[depth]);
+				}
+			}
+		}
+	}
+
+	return output;
+}
+
 string labelname(const char ** rawname, bool define=false)
 {
 #define rawname (*rawname)
+	bool ismacro = (rawname[0] == '?');
+
+	if (ismacro)
+	{
+		rawname++;
+	}
+
+	bool issublabel = false;
+
 	string name;
 	int i=-1;
+
+	autoarray<string>* sublabellist = &sublabels;
+	if (ismacro)
+	{
+		sublabellist = macrosublabels;
+	}
+
 	if (isdigit(*rawname)) error(0, "Broken label name");
 	if (*rawname==':')
 	{
 		rawname++;
 		name=":";
-	}
-	else if (*rawname=='?')
-	{
-		if (!macrorecursion) error(0, "Macro label outside of a macro");
-		name=S":macro"+dec(calledmacros)+"_";
-		rawname++;
 	}
 	else if (!in_struct && !in_sub_struct)
 	{
@@ -264,9 +340,18 @@ string labelname(const char ** rawname, bool define=false)
 		if (emulatexkas && i>1) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
 		if (i)
 		{
-			if (!sublabels[i-1]) error(0, "This label has no parent.");
-			name+=S sublabels[i-1]+"_";
+			if (!(*sublabellist)[i-1]) error(0, "This label has no parent.");
+			name+=S(*sublabellist)[i-1]+"_";
+			issublabel = true;
 		}
+	}
+
+	if (ismacro && !issublabel)
+	{
+		// RPG Hacker: Don't add the prefix for sublabels, because they already inherit it from
+		// their parents' names.
+		if (!macrorecursion || macrosublabels == nullptr) error(1, "Macro label outside of a macro");
+		name = S":macro_" + dec(calledmacros) + "_" + name;
 	}
 
 	if(in_sub_struct)
@@ -310,8 +395,8 @@ string labelname(const char ** rawname, bool define=false)
 	}
 	if (define && i>=0)
 	{
-		sublabels.reset(i);
-		sublabels[i]=name;
+		(*sublabellist).reset(i);
+		(*sublabellist)[i]=name;
 	}
 	return name;
 #undef rawname
@@ -519,6 +604,9 @@ void initstuff()
 	sublabels.reset();
 	poslabels.reset();
 	neglabels.reset();
+	macroposlabels = nullptr;
+	macroneglabels = nullptr;
+	macrosublabels = nullptr;
 	cleartable();
 	pushpc.reset();
 	pushpcnum=0;
@@ -565,19 +653,33 @@ void finishpass()
 bool addlabel(const char * label, int pos=-1)
 {
 	if (!label[0] || label[0]==':') return false;//colons are reserved for special labels
-	if (label[0]=='-' || label[0]=='+')
+
+	const char* posneglabel = label;
+	string posnegname = posneglabelname(&posneglabel, true);
+
+	if (posnegname.truelen() > 0)
 	{
-		int i;
-		for (i=0;label[i];i++) if (label[i]!=label[0]) error(0, "Broken label definition.");
-		if (label[0]=='+') setlabel(S":pos_"+dec(i)+"_"+dec(poslabels[i]++), pos);
-		else               setlabel(S":neg_"+dec(i)+"_"+dec(++neglabels[i]), pos);
+		if (*posneglabel != '\0' && *posneglabel != ':') error(0, "Broken label definition.");
+		setlabel(posnegname, pos);
 		return true;
 	}
-	if (label[strlen(label)-1]==':' || label[0]=='.' || label[0]=='?')
+	if (label[strlen(label)-1]==':' || label[0]=='.' || label[0]=='?' || label[0] == '#')
 	{
 		if (!label[1]) return false;
-		bool requirecolon = (label[0] != '.') && (in_struct || in_sub_struct);
-		string name=labelname(&label, label[0]!='?');
+
+		bool define = true;
+
+		if (label[0] == '#')
+		{
+			define = false;
+			label++;
+		}
+
+		// RPG Hacker: Also checking label[1] now, since it might be a macro sublabel.
+		// Also, apparently this here doesn't account for main labels. I guess because
+		// we don't even get here in the first place if they don't include a colon?
+		bool requirecolon = (label[0] != '.' && label[1] != '.') && (in_struct || in_sub_struct);
+		string name=labelname(&label, define);
 		if (label[0]==':') label++;
 		else if (requirecolon) error(0, "Broken label definition");
 		if (label[0]) error(0, "Broken label definition");
@@ -662,7 +764,7 @@ void assembleblock(const char * block)
 	}
 
 	autoptr<char**> wordcopy=word;
-	while (numif==numtrue && word[0] && addlabel(word[0]))
+	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=") != 0) && addlabel(word[0]))
 	{
 		word++;
 		numwords--;
@@ -975,8 +1077,33 @@ void assembleblock(const char * block)
 		}
 		int num=getnum(word[2]);
 		if (foundlabel) error(0, "Setting labels to each other is not valid");
-		if (!confirmname(word[0])) error(0, "Invalid label name");
-		setlabel(word[0], num);
+
+		const char* newlabelname = word[0];
+		bool ismacro = false;
+
+		if (newlabelname[0] == '?')
+		{
+			ismacro = true;
+			newlabelname++;
+		}
+
+		if (ismacro && macrorecursion == 0)
+		{
+			error(0, "Macro label outside of a macro");
+		}
+
+		if (!confirmname(newlabelname)) error(0, "Invalid label name");
+
+		string completename;
+
+		if (ismacro)
+		{
+			completename += S":macro_" + dec(calledmacros) + "_";
+		}
+
+		completename += newlabelname;
+
+		setlabel(completename, num);
 	}
 	else if (is1("org"))
 	{

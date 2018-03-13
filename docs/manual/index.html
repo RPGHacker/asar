@@ -5,8 +5,8 @@
         <title>Asar User Manual</title>
     </head>
     <body>
-        <link rel="stylesheet" href="data/highlight_js/styles/default.css">
-        <script src="data/highlight_js/highlight.pack.js"></script>
+        <link rel="stylesheet" href="../shared/highlight_js/styles/default.css">
+        <script src="../shared/highlight_js/highlight.pack.js"></script>
         <script type="text/javascript">
 				hljs.configure(
 					{
@@ -33,7 +33,9 @@
 					}
 				}
 		</script>
+		
 		<h1>Asar</h1>
+		
         <p>A multi-architecture SNES assembler by <i>Alcaro</i>, based on <b>xkas v0.06</b> by <i>byuu</i>.<br />
 		This manual was written by <i>RPG Hacker</i>, so if you find something that is wrong or weird, make sure to blame me instead of Alcaro.</p>
 		<p>As a general rule, the manual uses <code>{}</code> to denote required parameters and <code>[]</code> to denote optional parameters (where optional parameters ending in <code>...</code> mean &quot;zero or more&quot; of that parameter). Everything else refers to keywords/names.</p>
@@ -1742,7 +1744,7 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 		<p id="labels"><h3>Labels</h3>
 		Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets.
 		<h4 id="main-labels">Main Labels</h4>
-		<pre><code class="65c816_asar">{identifier}:</code></pre>
+		<pre><code class="65c816_asar">[#]{identifier}:</code></pre>
         Main labels are the top-most level of labels supported by Asar. They're global and thus can be directly acessed from anywhere. Their identifier can contain any of the following characters<br />
 		<code class="65c816_asar">a-z A-Z 0-9 _</code>
 		<pre><code class="65c816_asar">org $008000
@@ -1764,9 +1766,36 @@ SomewhereInRom = $04CA40
 Table:
 	dl Main_Sub                 ; Okay!
 	dl SomewhereInRom_Sub       ; Error, label not found</code></pre>
+		Prefixing a label definition (except label assignments) with a <code>#</code> will define the label without modifying existing label hierarchies. This can be useful for defining global routines inside call-anywhere macros without having them break existing label hierarchies.
+		<pre><code class="65c816_asar">macro my_new_routine()
+	jsl MyNewRoutine
+			
+	!macro_routine_defined ?= 0
+	
+	if !macro_routine_defined == 0
+		pushpc
+		
+		freecode cleaned
+		
+		#MyNewRoutine:
+			incsrc routines/mynewroutine.asm
+		
+		pullpc
+	
+		!macro_routine_defined = 1
+	endif
+endmacro
+
+Main:
+	%my_new_routine()
+.Sub
+
+	; Both of these are found
+	dl MyNewRoutine
+	dl Main_Sub</code></pre>
 		Asar includes a label optimizer which attempts to optimize performance by shortening opcodes accessing labels from 24-bit to 16-bit whenever possible. See section <a href="#program-counter">Program Counter</a> for details.
 		<h4 id="sub-labels">Sub Labels</h4>
-		<pre><code class="65c816_asar">.{identifier}[:]</code></pre>
+		<pre><code class="65c816_asar">[#].{identifier}[:]</code></pre>
         Sub labels are the second-most level of labels supported by Asar. They're local to the last main label declared and their identifiers can contain the same characters as main labels.
         <pre><code class="65c816_asar">Proc1:
 	nop
@@ -1809,9 +1838,10 @@ Table:
 
 Table:
 	dl Main1_Sub_Deeper_TheEnd</code></pre>
+		Prefixing a sub label definition with a <code>#</code> will define the sub label without modifying existing label hierarchies, but there is probably no practical use for this and it's unintuitive, so it should be avoided.
 		<h4 id="plus-minus-labels">+/- Labels</h4>
-		<pre><code class="65c816_asar">+[+...]</code></pre>
-		<pre><code class="65c816_asar">-[-...]</code></pre>
+		<pre><code class="65c816_asar">+[+...][:]</code></pre>
+		<pre><code class="65c816_asar">-[-...][:]</code></pre>
 		+/- labels are a special type of labels that are different from both main labels and sub labels in that they don't refer to a specific location in code, but rather to a location relative from where they are used. When used inside opcodes etc., <code class="65c816_asar">+</code> always refers to the next + label and <code class="65c816_asar">-</code> always refers to the previous - label. You can also chain an arbitrary number of + or an arbitrary number of - to create unique +/- labels that don't overwrite labels with a different number of +/-, for example <code class="65c816_asar">+++</code> or <code class="65c816_asar">-----</code>.
 		<pre><code class="65c816_asar">	ldx.b #4
 		
@@ -1827,17 +1857,17 @@ Table:
 	dey
 	bne -		; Branches to &quot;B&quot;
 	
-+			; C
++:			; C - note that +/- labels can also include an optional colon in their declaration
 	dex
 	bpl --		; Branches to &quot;A&quot;</code></pre>
-		+/- labels are useful in a number of situations. For example: inside a long routine with multiple short loops, where even a sub label like <code class="65c816_asar">.Loop</code> would get repetitive. +/- labels aren't bound to any scope, which means they can technically be used across different scopes. Just like sub labels, +/- labels are converted to main labels internally. Unlike sub labels, they can not be referenced from code directly since their names depend on where in the code they're used, making it impractical to directly refer to them. This is by design. They can, however, be accessed via the Asar DLL API, using the <code class="cpp">asar_getalllabels()</code> and the <code class="cpp">asar_getlabelval()</code> functions. The naming format used for them is<br/>
+		+/- labels are useful in a number of situations. For example: inside a long routine with multiple short loops, where even a sub label like <code class="65c816_asar">.Loop</code> would get repetitive. +/- labels aren't bound to any scope, which means they can technically be used across different scopes. Just like sub labels, +/- labels are converted to main labels internally. Unlike sub labels, they can not be referenced from code directly since their names depend on where in the code they're used, making it impractical to directly refer to them. This is by design. They can, however, be accessed via the Asar DLL API, and their full name may appear in error messages printed by Asar. The naming format used for them is<br/>
 		<code class="65c816_asar">:pos_x_y</code><br/>
 		for + labels and<br/>
 		<code class="65c816_asar">:neg_x_y</code><br/>
 		for - labels, where<br/>
-		x = number of chained +/-<br/>
+		<code>x</code> = number of chained +/-<br/>
 		and<br/>
-		y = instance of this label within all +/- labels of the same name (starting from 0 for + labels and from 1 for - labels).
+		<code>y</code> = instance of this label within all +/- labels of the same name (starting from 0 for + labels and from 1 for - labels).
 		<pre><code class="65c816_asar">lorom
 org $008000
 
@@ -1860,9 +1890,9 @@ org $008000
 ++			; :pos_2_1
 +++			; :pos_3_0</code></pre>
 		<h4 id="macro-labels">Macro Labels</h4>
-		<pre><code class="65c816_asar">?{identifier}:</code></pre>
+		<pre><code class="65c816_asar">[#]?{identifier}:</code></pre>
 		<pre><code class="65c816_asar">?{identifier} = {snes_address}</code></pre>
-		<pre><code class="65c816_asar">?.{identifier}[:]</code></pre>
+		<pre><code class="65c816_asar">[#]?.{identifier}[:]</code></pre>
 		<pre><code class="65c816_asar">?+[+...]</code></pre>
 		<pre><code class="65c816_asar">?-[-...]</code></pre>
         Macro labels are special variations of the labels mentioned in the previous sections. Functionally, they behave the same as the other labels with the exception of being local to the macro they're used in. This means they can't be referenced from outside the respective macro. Macro labels are created by prefixing any of the other label types with a <code class="65c816_asar">?</code> .
@@ -1875,6 +1905,7 @@ org $008000
 		dl ?.MacroSubLabel
 		dl ?-
 		dl ?+
+		dl ?MacroMainLabel_MacroSubLabel
 	?+
 endmacro
 
@@ -1882,6 +1913,10 @@ endmacro
 
 ; ERROR! ?MacroMainLabel is undefined, because we're not inside %do_something() anymore.
 dl ?MacroMainLabel</code></pre>
+		Prefixing a macro label definition (except for macro label assignments and macro +/- labels) with a <code>#</code> will define the macro label without modifying existing label hierarchies, but there is probably no practical use for this, so it should be avoided.
+		Like all other labels, macro labels are converted to main labels internally and prefixed with an identifier of<br/>
+		<code class="65c816_asar">:macro_x_</code><br/>
+		where <code>x</code> = total macro call instance. They can't be referenced in code directly, except inside their respective macro and using the respective macro label syntax seen above. They can, however, be accessed via the Asar DLL API, and their full name may appear in error messages printed by Asar.
 		<h4 id="structs">Structs</h4>
 		Structs are an advanced form of labels with the purpose of making access into structured data blocks easier. The general syntax is as follows		
 		<pre><code class="65c816_asar">struct {identifier} {snes_address}
@@ -2215,6 +2250,26 @@ canreadfile(filename, pos, num)</code></td>
 else
 	error "datafile.bin either doesn't exist or is too small."
 endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">filesize(filename)</code></td>
+				<td>Returns the size of file filename (if the file doesn't exist or another error occurred, -1 is returned instead).</td>
+				<td><pre><code class="65c816_asar">!fsize #= filesize("datafile.bin")
+!fpos = 0
+
+assert !fsize >= 0, "datafile.bin doesn't exist or can't be opened".
+				
+while !fpos < !fsize
+	; Do something with datafile.bin here, like calling readfile1("datafile.bin", !fpos)
+	;...
+	
+	!fpos #= !fpos+1
+endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">getfilestatus(filename)</code></td>
+				<td>Checks the status of file filename. Returns 0 if the file exists and can be read from, returns 1 if the file doesn't exist and returns 2 if the file exists, but can't be read from for any other reason (like being read-protected, being locked etc.).</td>
+				<td><pre><code class="65c816_asar">assert getfilestatus("datafile.bin") != 1, "datafile.bin doesn't seem to exist"</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">sqrt(x)</code></td>
@@ -2769,4 +2824,3 @@ endif</code></pre>
 		<a href="#contents">Return to top</a></p>
     </body>
 </html>
-
