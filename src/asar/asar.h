@@ -10,7 +10,7 @@
 #define Asar
 
 #include "autoarray.h"
-#include "scapegoat.hpp"
+#include "assocarr.h"
 #include "libstr.h"
 #include "libsmw.h"
 extern unsigned const char * romdata_r;

@@ -1,5 +1,5 @@
 #include "asar.h"
-#include "scapegoat.hpp"
+#include "assocarr.h"
 #include "libstr.h"
 #include "libsmw.h"
 
@@ -49,13 +49,13 @@ struct labeldata {
 	const char * name;
 	int location;
 };
-extern lightweight_map<string, unsigned int> labels;
+extern assocarr<unsigned int> labels;
 
 struct definedata {
 	const char * name;
 	const char * contents;
 };
-extern lightweight_map<string, string> defines;
+extern assocarr<string> defines;
 
 extern autoarray<writtenblockdata> writtenblocks;
 
@@ -259,7 +259,7 @@ EXPORT const labeldata * asar_getalllabels(int * count)
 {
 	for (int i=0;i<labelsinldata;i++) free((void*)ldata[i].name);
 	labelsinldata=0;
-	labels.traverse(addlabel);
+	labels.each(addlabel);
 	*count=labelsinldata;
 	return ldata;
 }
@@ -275,9 +275,8 @@ EXPORT int asar_getlabelval(const char * name)
 
 EXPORT const char * asar_getdefine(const char * name)
 {
-	static string out;
-	defines.find(name, out);
-	return out;
+	if (!defines.exists(name)) return "";
+	return defines.find(name);
 }
 
 void resolvedefines(string& out, const char * start);
@@ -310,7 +309,7 @@ EXPORT const definedata * asar_getalldefines(int * count)
 		free((void*)ddata[i].contents);
 	}
 	definesinddata=0;
-	defines.traverse(adddef);
+	defines.each(adddef);
 	*count=definesinddata;
 	return ddata;
 }

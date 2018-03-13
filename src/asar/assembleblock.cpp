@@ -1,7 +1,7 @@
 #include "asar.h"
 #include "libstr.h"
 #include "libsmw.h"
-#include "scapegoat.hpp"
+#include "assocarr.h"
 #include "autoarray.h"
 
 int arch=arch_65816;
@@ -27,7 +27,7 @@ string struct_parent;
 bool in_struct = false;
 bool in_sub_struct = false;
 
-lightweight_map<string, snes_struct> structs;
+assocarr<snes_struct> structs;
 
 template<typename t> void error(int neededpass, const char * e_);
 void warn(const char * e);
@@ -206,8 +206,7 @@ int getlenfromchar(char c)
 	return -1;
 }
 
-lightweight_map<string, unsigned int> labels;
-
+assocarr<unsigned int> labels;
 autoarray<int> poslabels;
 autoarray<int> neglabels;
 
@@ -412,8 +411,8 @@ inline bool labelvalcore(const char ** rawname, unsigned int * rval, bool define
 {
 	string name=labelname(rawname, define);
 	unsigned int rval_=0;
-	if (ns && labels.find(S ns+"_"+name, rval_)) {}
-	else if (labels.find(name, rval_)) {}
+	if (ns && labels.exists(S ns+"_"+name)) {rval_ = labels.find(S ns+"_"+name);}
+	else if (labels.exists(name)) {rval_ = labels.find(name);}
 	else
 	{
 		if (shouldthrow && pass) error(1, S"Label "+name+" not found");
@@ -476,21 +475,22 @@ void setlabel(string name, int loc=-1)
 	unsigned int labelpos;
 	if (pass==0)
 	{
-		if (labels.find(name, labelpos))
+		if (labels.exists(name))
 		{
 			movinglabelspossible=true;
 			error(0, S"Label \""+name+"\" redefined");
 		}
-		labels.insert(name, (unsigned int)loc);
+		labels.create(name) = (unsigned int)loc;
 	}
 	else if (pass==1)
 	{
-		labels.insert(name, (unsigned int)loc);
+		labels.create(name) = (unsigned int)loc;
 	}
 	else if (pass==2)
 	{
 		//all label locations are known at this point, add a sanity check
-		if (!labels.find(name, labelpos)) error(2, "Internal error: A label was created on the third pass. Send this patch to Alcaro so he can debug it.");
+		if (!labels.exists(name)) error(2, "Internal error: A label was created on the third pass. Send this patch to Alcaro so he can debug it.");
+		labelpos = labels.find(name);
 		if ((int)labelpos!=loc && !movinglabelspossible) error(2, "Internal error: A label is moving around. Send this patch to Alcaro so he can debug it.");
 	}
 }
@@ -578,8 +578,7 @@ extern bool math_round;
 
 bool warnxkas;
 
-#include "scapegoat.hpp"
-extern lightweight_map<string, string> defines;
+extern assocarr<string> defines;
 
 void initstuff()
 {
@@ -600,7 +599,7 @@ void initstuff()
 	calledmacros=0;
 	macrorecursion=0;
 	repeatnext=1;
-	defines.clear();
+	defines.reset();
 	ns="";
 	sublabels.reset();
 	poslabels.reset();
@@ -637,7 +636,6 @@ void initstuff()
 }
 
 
-//extern lightweight_map<string, string> defines;
 //void nerf(const string& left, string& right){puts(S left+" = "+right);}
 
 void finishpass()
@@ -1128,8 +1126,7 @@ void assembleblock(const char * block)
 		if (numwords > 4) ret_error("Too many struct parameters.");
 		if (!confirmname(word[1])) ret_error("Invalid struct name.");
 
-		snes_struct structure;
-		if (structs.find(word[1], structure) && pass == 0) ret_error("Struct already exists, choose a different name.");
+		if (structs.exists(word[1]) && pass == 0) ret_error("Struct already exists, choose a different name.");
 
 		old_snespos = snespos;
 		old_startpos = startpos;
@@ -1151,7 +1148,8 @@ void assembleblock(const char * block)
 			if (!confirmname(word[3])) ret_error("Invalid parent name.");
 			struct_parent = word[3];
 
-			if (!structs.find(struct_parent, structure)) ret_error("Parent struct does not exist.");
+			if (!structs.exists(struct_parent)) ret_error("Parent struct does not exist.");
+			snes_struct structure = structs.find(struct_parent);
 
 			snespos = structure.base_end;
 			startpos = structure.base_end;
@@ -1180,19 +1178,19 @@ void assembleblock(const char * block)
 
 		if (in_struct)
 		{
-			structs.insert(struct_name, structure);
+			structs.create(struct_name) = structure;
 		}
 		else if (in_sub_struct)
 		{
 			snes_struct parent;
-			structs.find(struct_parent, parent);
+			parent = structs.find(struct_parent);
 
 			if (parent.object_size < parent.struct_size + structure.struct_size) {
 				parent.object_size = parent.struct_size + structure.struct_size;
 			}
 
-			structs.insert(struct_parent + "." + struct_name, structure);
-			structs.insert(struct_parent, parent);
+			structs.create(struct_parent + "." + struct_name) = structure;
+			structs.create(struct_parent) = parent;
 		}
 
 		pop_pc();

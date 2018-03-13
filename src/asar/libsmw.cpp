@@ -221,6 +221,8 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 		{
 			if (romdata[start+i]!=freespacebyte)
 			{
+				// TheBiob: fix freedata align freezing.
+				if ((start & minalign) == 0x7FF8 && i < 8) i = 8;
 				start+=i;
 				if (!i) start++;//this could check for a rats tag instead, but somehow I think this will give better performance.
 				bad=true;
