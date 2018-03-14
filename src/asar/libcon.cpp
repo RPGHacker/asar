@@ -149,6 +149,12 @@ const char * libcon_option()
 	return NULL;
 }
 
+const char * libcon_option_value()
+{
+	if (!libcon_interactive) return getarg(false);
+	return NULL;
+}
+
 const char * libcon_question(const char * desc, const char * defval)
 {
 	if (libcon_interactive) return libcon_optional(desc, defval);

@@ -498,14 +498,19 @@ int main(int argc, char * argv[])
 
 		fclose(err);
 #else
-		char cmd[1024];
-		snprintf(cmd, sizeof(cmd), "%s %s %s", asar_exe_path, azm_name, out_rom_name);
-		for (int i = 0;i < numiter;i++)
 		{
-			printf("Executing:\n > %s\n", cmd);
-			if (!execute_command_line(cmd, log_name))
+			std::string base_path_string = dir(fname);
+			const char* base_path = base_path_string.c_str();
+
+			char cmd[1024];
+			snprintf(cmd, sizeof(cmd), "%s -I\"%s\" %s %s", asar_exe_path, base_path, azm_name, out_rom_name);
+			for (int i = 0;i < numiter;i++)
 			{
-				dief("Failed executing command line:\n    %s\n", cmd);
+				printf("Executing:\n > %s\n", cmd);
+				if (!execute_command_line(cmd, log_name))
+				{
+					dief("Failed executing command line:\n    %s\n", cmd);
+				}
 			}
 		}
 		FILE * err = NULL;

@@ -101,9 +101,9 @@ operator const T*() const
 	return ptr;
 }
 
-void append(const T& item)
+T& append(const T& item)
 {
-	get(count)=item;
+	return (get(count)=item);
 }
 
 void insert(int pos)
