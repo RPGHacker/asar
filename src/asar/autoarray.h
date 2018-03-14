@@ -41,7 +41,7 @@ int bufferlen;
 
 T dummy;
 
-T& getconst(int id)
+const T& getconst(int id) const
 {
 	if (id<0) return dummy;
 	if (id>=count) return dummy;
@@ -86,7 +86,7 @@ T& operator[](int id)
 	return get(id);
 }
 
-T& operator[](int id) const
+const T& operator[](int id) const
 {
 	return getconst(id);
 }

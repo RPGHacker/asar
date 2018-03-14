@@ -6,6 +6,7 @@
 #include "libstr.h"
 #include "libsmw.h"
 #include "asar.h"
+#include "virtualfile.hpp"
 
 bool math_pri=true;
 bool math_round=false;
@@ -75,8 +76,8 @@ const char * createuserfunc(const char * name, const char * arguments, const cha
 
 struct cachedfile {
 	string filename;
-	FILE * filehandle;
-	long filesize;
+	virtual_file_handle filehandle;
+	size_t filesize;
 	bool used;
 };
 
@@ -85,16 +86,23 @@ struct cachedfile {
 static cachedfile cachedfiles[numcachedfiles];
 static int cachedfileindex = 0;
 
-string dir(char const *name);
 const char * safedequote(char * str);
 #define dequote safedequote
 extern const char * thisfilename;
 
 // Opens a file, trying to open it from cache first
 
+extern virtual_filesystem* filesystem;
+
 cachedfile * opencachedfile(string fname, bool should_error)
 {
 	cachedfile * cachedfilehandle = nullptr;
+
+	// RPG Hacker: Only using a combined path here because that should
+	// hopefully result in a unique string for every file, whereas
+	// fname could be a relative path, which isn't guaranteed to be unique.
+	// Note that this does not affect how we open the file - this is
+	// handled by the filesystem and uses our include paths etc.
 	string combinedname = S dir(thisfilename) + fname;
 
 	for (int i = 0; i < numcachedfiles; i++)
@@ -110,8 +118,8 @@ cachedfile * opencachedfile(string fname, bool should_error)
 	{
 		if (cachedfiles[cachedfileindex].used)
 		{
-			fclose(cachedfiles[cachedfileindex].filehandle);
-			cachedfiles[cachedfileindex].filehandle = NULL;
+			filesystem->close_file(cachedfiles[cachedfileindex].filehandle);
+			cachedfiles[cachedfileindex].filehandle = INVALID_VIRTUAL_FILE_HANDLE;
 			cachedfiles[cachedfileindex].used = false;
 		}
 
@@ -122,20 +130,18 @@ cachedfile * opencachedfile(string fname, bool should_error)
 	{
 		if (!cachedfilehandle->used)
 		{
-			cachedfilehandle->filehandle = fopen((const char*)combinedname, "rb");
-			if (cachedfilehandle->filehandle)
+			cachedfilehandle->filehandle = filesystem->open_file(fname, thisfilename);
+			if (cachedfilehandle->filehandle != INVALID_VIRTUAL_FILE_HANDLE)
 			{
 				cachedfilehandle->used = true;
 				cachedfilehandle->filename = combinedname;
-				fseek(cachedfilehandle->filehandle, 0, SEEK_END);
-				cachedfilehandle->filesize = ftell(cachedfilehandle->filehandle);
-				fseek(cachedfilehandle->filehandle, 0, SEEK_SET);
+				cachedfilehandle->filesize = filesystem->get_file_size(cachedfilehandle->filehandle);
 				cachedfileindex++;
 			}
 		}
 	}
 
-	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == nullptr) && should_error)
+	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) && should_error)
 	{
 		error("Failed to open file.");
 	}
@@ -150,10 +156,10 @@ void closecachedfiles()
 	{
 		if (cachedfiles[i].used)
 		{
-			if (cachedfiles[i].filehandle != NULL)
+			if (cachedfiles[i].filehandle != INVALID_VIRTUAL_FILE_HANDLE)
 			{
-				fclose(cachedfiles[i].filehandle);
-				cachedfiles[i].filehandle = NULL;
+				filesystem->close_file(cachedfiles[i].filehandle);
+				cachedfiles[i].filehandle = INVALID_VIRTUAL_FILE_HANDLE;
 			}
 
 			cachedfiles[i].used = false;
@@ -325,11 +331,10 @@ static long double readfilefunc(const funcparam& fname, const funcparam& offset,
 	validateparam(offset, 1, Type_Double);
 	if (numbytes <=0 || numbytes > 4) error("Can only read chunks of 1 to 4 bytes.");
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, true);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) error("Failed to open file.");
-	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - numbytes) error("File read offset out of bounds.");
-	fseek(fhandle->filehandle, (long)offset.value.longdoublevalue, SEEK_SET);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) error("Failed to open file.");
+	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) error("File read offset out of bounds.");
 	unsigned char readdata[4] = { 0, 0, 0, 0 };
-	fread(readdata, 1, (size_t)numbytes, fhandle->filehandle);
+	filesystem->read_file(fhandle->filehandle, readdata, (size_t)offset.value.longdoublevalue, (size_t)numbytes);
 	return
 		 readdata[0]       |
 		(readdata[1] << 8) |
@@ -344,11 +349,10 @@ static long double readfilefuncs(const funcparam& fname, const funcparam& offset
 	validateparam(def, 2, Type_Double);
 	if (numbytes <= 0 || numbytes > 4) error("Can only read chunks of 1 to 4 bytes.");
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) return def.value.longdoublevalue;
-	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - numbytes) return def.value.longdoublevalue;
-	fseek(fhandle->filehandle, (long)offset.value.longdoublevalue, SEEK_SET);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return def.value.longdoublevalue;
+	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) return def.value.longdoublevalue;
 	unsigned char readdata[4] = { 0, 0, 0, 0 };
-	fread(readdata, 1, (size_t)numbytes, fhandle->filehandle);
+	filesystem->read_file(fhandle->filehandle, readdata, (size_t)offset.value.longdoublevalue, (size_t)numbytes);
 	return
 		readdata[0] |
 		(readdata[1] << 8) |
@@ -363,8 +367,8 @@ static long double canreadfilefunc(const funcparam& fname, const funcparam& offs
 	validateparam(numbytes, 2, Type_Double);
 	if ((long)numbytes.value.longdoublevalue <= 0) error("Number of bytes to check must be > 0.");
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) return 0;
-	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - (long)numbytes.value.longdoublevalue) return 0;
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return 0;
+	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes.value.longdoublevalue > fhandle->filesize) return 0;
 	return 1;
 }
 
@@ -372,9 +376,18 @@ static long double canreadfilefunc(const funcparam& fname, const funcparam& offs
 static long double getfilestatus(const funcparam& fname)
 {
 	validateparam(fname, 0, Type_String);
-	if(!file_exists(S dir(thisfilename) + fname.value.stringvalue)) return 1;
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if(fhandle == nullptr || fhandle->filehandle == nullptr) return 2;
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE)
+	{
+		if (filesystem->get_last_error() == vfe_doesnt_exist)
+		{
+			return 1;
+		}
+		else
+		{
+			return 2;
+		}
+	}
 	return 0;
 }
 
@@ -383,7 +396,7 @@ static long double filesizefunc(const funcparam& fname)
 {
 	validateparam(fname, 0, Type_String);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) return -1;
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return -1;
 	return fhandle->filesize;
 }
 

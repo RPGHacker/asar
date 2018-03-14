@@ -3,6 +3,7 @@
 #include "libsmw.h"
 #include "assocarr.h"
 #include "autoarray.h"
+#include "platform/file-helpers.h"
 
 int arch=arch_65816;
 
@@ -231,8 +232,6 @@ extern int macrorecursion;
 extern int incsrcdepth;
 
 extern int repeatnext;
-
-string dir(char const *name);
 
 bool confirmname(const char * name)
 {
@@ -1510,7 +1509,7 @@ void assembleblock(const char * block)
 #endif
 		}
 		if (emulatexkas) name=dequote(par);
-		else name=S dir(thisfilename)+dequote(par);
+		else name=S dequote(par);
 		assemblefile(name, false);
 	}
 	else if (is1("incbin") || is3("incbin"))
@@ -1549,7 +1548,7 @@ void assembleblock(const char * block)
 #endif
 		}
 		if (emulatexkas) name=dequote(par);
-		else name=S dir(thisfilename)+dequote(par);
+		else name=S dequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
 		if (!readfile(name, &data, &len)) error(0, "File not found");
 		autoptr<char*> datacopy=data;
@@ -1624,7 +1623,7 @@ void assembleblock(const char * block)
 		if(0);
 		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
-		string name=S dir(thisfilename)+dequote(par);
+		string name=S dequote(par);
 		autoptr<char*> tablecontents=readfile(name);
 		if (!tablecontents) error(0, "File not found");
 		autoptr<char**> tablelines=split(tablecontents, "\n");

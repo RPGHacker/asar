@@ -211,22 +211,22 @@ lorom
 
 org $008000
 
-db readfile1("../64kb.bin", 0)
-db readfile1("../64kb.bin", 1)
-db readfile1("../filename with spaces.bin", 0)
-dw readfile2("../filename with spaces.bin", 1)
-dl readfile3("../filename with spaces.bin", 3)
-dd readfile4("../filename with spaces.bin", 6)
+db readfile1("data/64kb.bin", 0)
+db readfile1("data/64kb.bin", 1)
+db readfile1("data/filename with spaces.bin", 0)
+dw readfile2("data/filename with spaces.bin", 1)
+dl readfile3("data/filename with spaces.bin", 3)
+dd readfile4("data/filename with spaces.bin", 6)
 
-db readfile1("../filename with spaces.bin", 0, 1000)
-dw readfile2("../filename with spaces.bin", 1, -1000)
-dd readfile4("../filename with spaces.bin", 14, $FFFFFFFF)
+db readfile1("data/filename with spaces.bin", 0, 1000)
+dw readfile2("data/filename with spaces.bin", 1, -1000)
+dd readfile4("data/filename with spaces.bin", 14, $FFFFFFFF)
 
-db canreadfile1("../filename with spaces.bin", 0)
-db canreadfile2("../filename with spaces.bin", 1)
-db canreadfile4("../filename with spaces.bin", 14)
-db canreadfile("../filename with spaces.bin", 0, 16)
-db canreadfile("../filename with spaces.bin", 0, 17)
+db canreadfile1("data/filename with spaces.bin", 0)
+db canreadfile2("data/filename with spaces.bin", 1)
+db canreadfile4("data/filename with spaces.bin", 14)
+db canreadfile("data/filename with spaces.bin", 0, 16)
+db canreadfile("data/filename with spaces.bin", 0, 17)
 
 dl snestopc($008001)
 dl pctosnes($000002)

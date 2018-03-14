@@ -63,6 +63,7 @@ bool asar_init_shared(void)
 	load(apiversion);
 	load(reset);
 	load(patch);
+	load(patch_ex);
 	load(maxromsize);
 	load(geterrors);
 	load(getwarnings);

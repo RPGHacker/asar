@@ -69,6 +69,9 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/macro.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/math.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.cpp"
+
+	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.cpp"
 	
 	# Not required in here, but useful so they're add to your VS solution
 	"${CMAKE_CURRENT_SOURCE_DIR}/asar.h"
@@ -78,7 +81,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libmisc.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/scapegoat.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.hpp"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"

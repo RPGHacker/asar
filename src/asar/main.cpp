@@ -4,6 +4,7 @@
 #include "assocarr.h"
 #include "autoarray.h"
 #include "asar.h"
+#include "virtualfile.hpp"
 
 extern const int asarver_maj=1;
 extern const int asarver_min=6;
@@ -39,6 +40,8 @@ int callerline=-1;
 bool errored=false;
 
 volatile int recursioncount=0;
+
+virtual_filesystem* filesystem = nullptr;
 
 unsigned int labelval(const char ** rawname, bool update);
 unsigned int labelval(char ** rawname, bool update);
@@ -109,19 +112,6 @@ string getdecor()
 		e+=": ";
 	}
 	return e;
-}
-
-//modified from somewhere in nall (license: ISC)
-string dir(char const *name) {
-  string result = name;
-  for(signed i = (int)strlen(result); i >= 0; i--) {
-    if(result[i] == '/' || result[i] == '\\') {
-      result[i + 1] = 0;
-      break;
-    }
-    if(i == 0) result = "";
-  }
-  return result;
 }
 
 extern int freespaceextra;

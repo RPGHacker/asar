@@ -43,6 +43,23 @@ inline int file_exist(const char *filename)
 }
 
 
+//modified from somewhere in nall (license: ISC)
+std::string dir(char const *name)
+{
+	std::string result = name;
+	for (signed i = (int)result.length(); i >= 0; i--)
+	{
+		if (result[(size_t)i] == '/' || result[(size_t)i] == '\\')
+		{
+			result[(size_t)(i + 1)] = 0;
+			break;
+		}
+		if (i == 0) result = "";
+	}
+	return result;
+}
+
+
 inline bool str_ends_with(const char * str, const char * suffix)
 {
 	if (str == NULL || suffix == NULL)
@@ -404,63 +421,81 @@ int main(int argc, char * argv[])
 		fclose(rom);
 		printf("Patching:\n > %s\n", azm_name);
 		FILE * err = fopen(log_name, "wt");
-		if (!asar_patch(azm_name, truerom, (int)max_rom_size, &truelen))
+
 		{
-			printf("asar_patch() failed on file '%s':\n", azm_name);
-			int numerrors;
-			const errordata * errdata = asar_geterrors(&numerrors);
-			for (int i = 0; i < numerrors; ++i)
+			std::string base_path_string = dir(fname);
+			const char* base_path = base_path_string.c_str();
+
+			patchparams asar_path_params;
+			asar_path_params.structsize = (int)sizeof(asar_path_params);
+
+			asar_path_params.patchloc = azm_name;
+			asar_path_params.romdata = truerom;
+			asar_path_params.buflen = (int)max_rom_size;
+			asar_path_params.romlen = &truelen;
+
+			asar_path_params.includepaths = &base_path;
+			asar_path_params.numincludepaths = 1;
+
+			if (!asar_patch_ex(&asar_path_params))
 			{
-				fwrite(errdata[i].fullerrdata, 1, strlen(errdata[i].fullerrdata), err);
-				fwrite("\n", 1, strlen("\n"), err);
+				printf("asar_patch() failed on file '%s':\n", azm_name);
+				int numerrors;
+				const errordata * errdata = asar_geterrors(&numerrors);
+				for (int i = 0; i < numerrors; ++i)
+				{
+					fwrite(errdata[i].fullerrdata, 1, strlen(errdata[i].fullerrdata), err);
+					fwrite("\n", 1, strlen("\n"), err);
+				}
+			}
+			else
+			{
+				// Applying patch via DLL succeeded; print some stuff (mainly to verify most of our functions)
+				mappertype mapper = asar_getmapper();
+
+				printf("Detected mapper: %u\n", (unsigned int)mapper);
+
+				int count = 0;
+				const labeldata * labels = asar_getalllabels(&count);
+
+				if (count > 0)
+				{
+					printf("Found labels:\n");
+
+					for (int i = 0; i < count; ++i)
+					{
+						printf("  %s: %X\n", labels[i].name, (unsigned int)labels[i].location);
+					}
+				}
+
+
+				const definedata * defines = asar_getalldefines(&count);
+
+				if (count > 0)
+				{
+					printf("Found defines:\n");
+
+					for (int i = 0; i < count; ++i)
+					{
+						printf("  %s=%s\n", defines[i].name, defines[i].contents);
+					}
+				}
+
+
+				const writtenblockdata * writtenblocks = asar_getwrittenblocks(&count);
+
+				if (count > 0)
+				{
+					printf("Written blocks:\n");
+
+					for (int i = 0; i < count; ++i)
+					{
+						printf("  %u bytes at %X\n", (unsigned int)writtenblocks[i].numbytes, (unsigned int)writtenblocks[i].pcoffset);
+					}
+				}
 			}
 		}
-		else
-		{
-			// Applying patch via DLL succeeded; print some stuff (mainly to verify most of our functions)
-			mappertype mapper = asar_getmapper();
 
-			printf("Detected mapper: %u\n", (unsigned int)mapper);
-
-			int count = 0;
-			const labeldata * labels = asar_getalllabels(&count);
-
-			if (count > 0)
-			{
-				printf("Found labels:\n");
-
-				for (int i = 0; i < count; ++i)
-				{
-					printf("  %s: %X\n", labels[i].name, (unsigned int)labels[i].location);
-				}
-			}
-
-
-			const definedata * defines = asar_getalldefines(&count);
-
-			if (count > 0)
-			{
-				printf("Found defines:\n");
-
-				for (int i = 0; i < count; ++i)
-				{
-					printf("  %s=%s\n", defines[i].name, defines[i].contents);
-				}
-			}
-
-
-			const writtenblockdata * writtenblocks = asar_getwrittenblocks(&count);
-
-			if (count > 0)
-			{
-				printf("Written blocks:\n");
-
-				for (int i = 0; i < count; ++i)
-				{
-					printf("  %u bytes at %X\n", (unsigned int)writtenblocks[i].numbytes, (unsigned int)writtenblocks[i].pcoffset);
-				}
-			}
-		}
 		fclose(err);
 #else
 		char cmd[1024];

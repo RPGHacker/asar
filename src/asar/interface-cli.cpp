@@ -4,6 +4,7 @@
 #include "libcon.h"
 #include "libsmw.h"
 #include "platform/file-helpers.h"
+#include "virtualfile.hpp"
 
 #ifdef TIMELIMIT
 # if defined(linux)
@@ -30,8 +31,6 @@ extern const char asarver[];
 //extern char romtitle[30];
 //extern bool stdlib;
 
-string dir(char const *name);
-
 string getdecor();
 
 extern const char * thisfilename;
@@ -44,6 +43,8 @@ void assemblefile(const char * filename, bool toplevel);
 extern const char * thisfilename;
 extern int thisline;
 extern const char * thisblock;
+
+extern virtual_filesystem* filesystem;
 
 void print(const char * str)
 {
@@ -265,6 +266,11 @@ int main(int argc, char * argv[])
 		romdata_r=(unsigned char*)malloc((size_t)romlen);
 		romlen_r=romlen;
 		memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
+
+		virtual_filesystem new_filesystem;
+		new_filesystem.initialize(nullptr, 0);
+		filesystem = &new_filesystem;
+
 		for (pass=0;pass<3;pass++)
 		{
 			//pass 1: find which bank all labels are in, for label optimizations
@@ -275,6 +281,11 @@ int main(int argc, char * argv[])
 			assemblefile(asmname, true);
 			finishpass();
 		}
+
+		new_filesystem.destroy();
+		filesystem = nullptr;
+
+
 		if (werror && warned) error<errnull>(pass, "One or more warnings was detected with werror on.");
 		if (checksum) fixchecksum();
 		//if (pcpos>romlen) romlen=pcpos;
