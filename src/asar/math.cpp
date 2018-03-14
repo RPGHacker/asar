@@ -108,6 +108,7 @@ cachedfile * opencachedfile(string fname, bool should_error)
 
 	if (cachedfilehandle == nullptr)
 	{
+
 		if (cachedfiles[cachedfileindex].used)
 		{
 			fclose(cachedfiles[cachedfileindex].filehandle);
@@ -131,6 +132,8 @@ cachedfile * opencachedfile(string fname, bool should_error)
 				cachedfilehandle->filesize = ftell(cachedfilehandle->filehandle);
 				fseek(cachedfilehandle->filehandle, 0, SEEK_SET);
 				cachedfileindex++;
+				// randomdude999: when we run out of cached files, just start overwriting ones from the start
+				if (cachedfileindex >= numcachedfiles) cachedfileindex = 0;
 			}
 		}
 	}
