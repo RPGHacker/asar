@@ -538,6 +538,9 @@ int arch4;
 autoarray<pushable> pushpc;
 int pushpcnum;
 
+autoarray<int> basestack;
+int basestacknum;
+
 unsigned char fillbyte[12];
 unsigned char padbyte[12];
 
@@ -976,13 +979,23 @@ void assembleblock(const char * block)
 	}
 	else if (is1("expecttitle"))
 	{
-		string expectedtitle = dequote(par);
-		if (strncmp(expectedtitle, (char*)(romdata+snestopc(0x00FFC0)), 21) != 0)
+		// in hirom the rom needs to be an entire bank for it to have a title, other modes only need 0x8000 bytes
+		if (romlen < ((mapper==hirom || mapper==exhirom) ? 0x10000 : 0x8000)) // too short
 		{
 			if (!ignoretitleerrors) // title errors shouldn't be ignored
-				error(0, "ROM title is incorrect");
+				error(0, "ROM is too short to have a title");
 			else // title errors should be ignored, throw a warning anyways
-				if (pass==0) warn("ROM title is incorrect");
+				if (pass==0) warn("ROM is too short to have a title");
+		}
+		else {
+			string expectedtitle = dequote(par);
+			if (strncmp(expectedtitle, (char*)(romdata+snestopc(0x00FFC0)), 21) != 0)
+			{
+				if (!ignoretitleerrors) // title errors shouldn't be ignored
+					error(0, "ROM title is incorrect");
+				else // title errors should be ignored, throw a warning anyways
+					if (pass==0) warn("ROM title is incorrect");
+			}
 		}
 	}
 	else if (is0("asar") || is1("asar"))
@@ -1454,6 +1467,18 @@ void assembleblock(const char * block)
 		freespaceid=pushpc[pushpcnum].freeid;
 		freespaceextra=pushpc[pushpcnum].freeex;
 		freespacestart=pushpc[pushpcnum].freest;
+	}
+	else if (is0("pushbase"))
+	{
+		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
+		basestack[basestacknum] = snespos;
+		basestacknum++;
+	}
+	else if (is0("pullbase"))
+	{
+		if (!basestacknum) error(0, "pushbase without matching pullbase");
+		basestacknum--;
+		snespos = basestack[basestacknum];
 	}
 	else if (is1("namespace"))
 	{
