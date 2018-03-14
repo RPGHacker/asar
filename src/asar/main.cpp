@@ -308,6 +308,12 @@ void resolvedefines(string& out, const char * start)
 			while (*here && *here!='"') out+=*here++;
 			out+=*here++;
 		}
+		else if (here[0]=='\\' && here[1]=='!')
+		{
+			// allow using \! to escape !
+			out+="!";
+			here += 2;
+		}
 		else if (*here=='!')
 		{
 			bool first=(here==start || (here>=start+4 && here[-1]==' ' && here[-2]==':' && here[-3]==' '));//check if it's the start of a block
