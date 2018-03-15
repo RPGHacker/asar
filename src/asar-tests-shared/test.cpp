@@ -28,8 +28,8 @@
 #	include "asardll.h"
 #endif
 
-#define die() do { fclose(fopen(fail_name, "wb")); numfailed++; free(expectedrom); free(truerom); printf("Failure!\n\n"); goto next_test; } while(0)
-#define dief(...) do { printf(__VA_ARGS__); die(); } while(0)
+#define die() { fclose(fopen(fail_name, "wb")); numfailed++; free(expectedrom); free(truerom); printf("Failure!\n\n"); continue; }
+#define dief(...) { printf(__VA_ARGS__); die(); }
 
 #define min(a, b) ((a)<(b)?(a):(b))
 
@@ -131,14 +131,32 @@ bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * 
 
 #else
 
-#	error TODO
-
+	bool has_path_seperator = false;
+	if (str_ends_with(directory_name, "/") || str_ends_with(directory_name, "\\"))
+	{
+		has_path_seperator = true;
+	}
 	DIR * dir;
 	dirent * ent;
 	if ((dir = opendir(directory_name)) != NULL) {
-		/* print all the files and directories within directory */
 		while ((ent = readdir(dir)) != NULL) {
-			printf("%s\n", ent->d_name);
+			// Only consider regular files
+			if (ent->d_type == DT_REG)
+			{
+				if (str_ends_with(ent->d_name, ".asm"))
+				{
+					wrapped_file new_file;
+					strncpy(new_file.file_name, ent->d_name, sizeof(new_file.file_path));
+					new_file.file_path[sizeof(new_file.file_path) - 1] = '\0';
+					strcpy(new_file.file_path, directory_name);
+					if (!has_path_seperator)
+					{
+						strcat(new_file.file_path, "/");
+					}
+					strcat(new_file.file_path, ent->d_name);
+					out_array.push_back(new_file);
+				}
+			}
 		}
 		closedir(dir);
 	}
@@ -160,7 +178,7 @@ void delete_file(const char * filename)
 
 #else
 
-#	error TODO
+	remove(filename);
 
 #endif
 }
@@ -236,8 +254,17 @@ bool execute_command_line(char * commandline, const char * log_file)
 	CloseHandle(read_handle);
 
 #else
-
-#	error TODO
+	fflush(stdout);
+	FILE * fp = popen(commandline, "r");
+	FILE * logfilehandle = fopen(log_file, "w+");
+	char buffer[4096];
+	while (!feof(fp))
+	{
+		fread(buffer, 4096, 1, fp);
+		fwrite(buffer, 4096, 1, logfilehandle);
+	}
+	pclose(fp);
+fclose(fp);
 
 #endif
 
@@ -555,9 +582,6 @@ int main(int argc, char * argv[])
 		free(truerom);
 
 		printf("Success!\n\n");
-
-	next_test:
-		continue;
 	}
 
 	free(smwrom);
