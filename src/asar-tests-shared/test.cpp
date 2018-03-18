@@ -537,9 +537,9 @@ int main(int argc, char * argv[])
 					printf("asar_patch() failed on file '%s':\n", azm_name);
 					int numerrors;
 					const errordata * errdata = asar_geterrors(&numerrors);
-					for (int i = 0; i < numerrors; ++i)
+					for (int j = 0; j < numerrors; ++j)
 					{
-						fwrite(errdata[i].fullerrdata, 1, strlen(errdata[i].fullerrdata), err);
+						fwrite(errdata[j].fullerrdata, 1, strlen(errdata[j].fullerrdata), err);
 						fwrite("\n", 1, strlen("\n"), err);
 					}
 				}
