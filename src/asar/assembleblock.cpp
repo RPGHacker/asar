@@ -784,7 +784,31 @@ void assembleblock(const char * block)
 		}
 		return;
 	}
-	if (is("if") || is("elseif") || is("assert") || is("while"))
+	if (is1("undef"))
+	{
+		string def;
+		// RPG Hacker: Not sure if we should allow this?
+		// Currently, the manual states that we should not include the
+		// exclamation mark, and I believe that this is for the better
+		// because I can see this leading to ambiguities or causing
+		// problems. If we add this back in, we should definitely
+		// also added it to the defined() function for consistency, though.
+		// Well, actually I just check and we can't support this in
+		// defined() (the defined is already replaced at that point), so
+		// I think we should not support it here, either.
+		/*if (*par == '!') def = S dequote(par) + 1;
+		else*/ def = S dequote(par);
+
+		if (defines.exists(def))
+		{
+			defines.remove(def);
+		}
+		else
+		{
+			error(0, S"Tried to undefine '" + def + "', which is not the name of a known define.");
+		}
+	}
+	else if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
 		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
 		const char * errmsg=NULL;

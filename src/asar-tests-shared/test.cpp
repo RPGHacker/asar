@@ -557,9 +557,9 @@ int main(int argc, char * argv[])
 					{
 						printf("Found labels:\n");
 
-						for (int i = 0; i < count; ++i)
+						for (int j = 0; j < count; ++j)
 						{
-							printf("  %s: %X\n", labels[i].name, (unsigned int)labels[i].location);
+							printf("  %s: %X\n", labels[j].name, (unsigned int)labels[j].location);
 						}
 					}
 
@@ -570,9 +570,9 @@ int main(int argc, char * argv[])
 					{
 						printf("Found defines:\n");
 
-						for (int i = 0; i < count; ++i)
+						for (int j = 0; j < count; ++j)
 						{
-							printf("  %s=%s\n", defines[i].name, defines[i].contents);
+							printf("  %s=%s\n", defines[j].name, defines[j].contents);
 						}
 					}
 
@@ -583,9 +583,9 @@ int main(int argc, char * argv[])
 					{
 						printf("Written blocks:\n");
 
-						for (int i = 0; i < count; ++i)
+						for (int j = 0; j < count; ++j)
 						{
-							printf("  %u bytes at %X\n", (unsigned int)writtenblocks[i].numbytes, (unsigned int)writtenblocks[i].pcoffset);
+							printf("  %u bytes at %X\n", (unsigned int)writtenblocks[j].numbytes, (unsigned int)writtenblocks[j].pcoffset);
 						}
 					}
 				}
