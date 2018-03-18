@@ -477,12 +477,15 @@ int main(int argc, char * argv[])
 			remaining_read = fread(&next_char, 1, sizeof(next_char), asmfile);
 			if (remaining_read > 0)
 			{
-				if (next_char == '\r' || next_char == '\n')
+				if (next_char != '\r')
 				{
-					next_char = '\n';
-				}
+					if (next_char == '\n')
+					{
+						next_char = '\n';
+					}
 			
-				fwrite(&next_char, 1, sizeof(next_char), azmfile);
+					fwrite(&next_char, 1, sizeof(next_char), azmfile);
+				}
 			}
 		}
 		while (remaining_read > 0);
