@@ -14,6 +14,10 @@ enum virtual_file_type
 class virtual_file
 {
 public:
+	virtual ~virtual_file()
+	{
+	}
+
 	virtual virtual_file_type get_type() = 0;
 
 	virtual void close() = 0;
@@ -28,6 +32,16 @@ public:
 class physical_file : public virtual_file
 {
 public:
+	physical_file()
+		: m_file_handle(nullptr)
+	{		
+	}
+
+	virtual ~physical_file()
+	{
+		close();
+	}
+	
 	virtual virtual_file_type get_type()
 	{
 		return vft_physical_file;

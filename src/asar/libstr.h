@@ -669,19 +669,20 @@ inline int isualpha ( int c )
 			} \
 			return true; \
 		}
-ctype(alnum);
-ctype(alpha);
-ctype(cntrl);
-ctype(digit);
-ctype(graph);
-ctype(lower);
-ctype(print);
-ctype(punct);
-ctype(space);
-ctype(upper);
-ctype(xdigit);
-ctype(ualnum);
-ctype(ualpha);
+		
+ctype(alnum)
+ctype(alpha)
+ctype(cntrl)
+ctype(digit)
+ctype(graph)
+ctype(lower)
+ctype(print)
+ctype(punct)
+ctype(space)
+ctype(upper)
+ctype(xdigit)
+ctype(ualnum)
+ctype(ualpha)
 #undef ctype
 
 inline char * stristr(const char * string, const char * pattern)
