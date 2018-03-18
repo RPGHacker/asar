@@ -391,11 +391,11 @@ EXPORT const definedata * asar_getalldefines(int * count)
 	return ddata;
 }
 
-long double math(const char * mystr, const char ** e);
+double math(const char * mystr, const char ** e);
 extern autoarray<string> sublabels;
 extern string ns;
 
-EXPORT double asar_math(const char * str, const char ** e)//degrading to normal double because long double seems volatile
+EXPORT double asar_math(const char * str, const char ** e)
 {
 	ns="";
 	sublabels.reset();

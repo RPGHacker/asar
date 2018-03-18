@@ -22,7 +22,7 @@ extern char blockreleasedebug[(asarver_beta)?1:-1];
 unsigned const char * romdata_r;
 int romlen_r;
 
-long double math(const char * mystr, const char ** e);
+double math(const char * mystr, const char ** e);
 void initmathcore();
 
 int pass;
@@ -248,10 +248,10 @@ int getnum(const char * str)
 }
 
 // RPG Hacker: Same function as above, but doesn't truncate our number via int conversion
-long double getnumdouble(const char * str)
+double getnumdouble(const char * str)
 {
 	const char * e;
-	long double num = math(str, &e);
+	double num = math(str, &e);
 	if (e)
 	{
 		error<errblock>(1, e);
@@ -397,7 +397,7 @@ void resolvedefines(string& out, const char * start)
 					{
 						string newval;
 						resolvedefines(newval, val);
-						long double num= getnumdouble(newval);
+						double num= getnumdouble(newval);
 						if (foundlabel) error<errline>(0, "!Define #= Label is not allowed");
 						defines.create(defname) = ftostr(num);
 						break;

@@ -24,9 +24,9 @@ extern assocarr<string> defines;
 #define error(str) throw str
 static const char * str;
 
-static long double getnumcore();
-static long double getnum();
-static long double eval(int depth);
+static double getnumcore();
+static double getnum();
+static double eval(int depth);
 
 bool confirmname(const char * name);
 
@@ -181,7 +181,7 @@ struct funcparam {
 	funcparamtype type;
 	union valueunion {
 		const char * stringvalue;
-		long double longdoublevalue;
+		double longdoublevalue;
 
 		valueunion() {}
 		~valueunion() {}
@@ -199,7 +199,7 @@ struct funcparam {
 		value.stringvalue = in;
 	}
 
-	funcparam(long double in)
+	funcparam(double in)
 	{
 		type = Type_Double;
 		value.longdoublevalue = in;
@@ -220,7 +220,7 @@ int snestopc_pick(int addr);
 		error("Wrong type for argument " #paramindex ", expected " #expectedtype ".");   \
 	}
 
-static long double validaddr(const funcparam& in, const funcparam& len)
+static double validaddr(const funcparam& in, const funcparam& len)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(len, 1, Type_Double);
@@ -229,7 +229,7 @@ static long double validaddr(const funcparam& in, const funcparam& len)
 	else return 1;
 }
 
-static long double read1(const funcparam& in)
+static double read1(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
@@ -239,7 +239,7 @@ static long double read1(const funcparam& in)
 			 romdata_r[addr  ]     ;
 }
 
-static long double read2(const funcparam& in)
+static double read2(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
@@ -250,7 +250,7 @@ static long double read2(const funcparam& in)
 			(romdata_r[addr+1]<< 8);
 }
 
-static long double read3(const funcparam& in)
+static double read3(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
@@ -262,7 +262,7 @@ static long double read3(const funcparam& in)
 			(romdata_r[addr+2]<<16);
 }
 
-static long double read4(const funcparam& in)
+static double read4(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
@@ -275,7 +275,7 @@ static long double read4(const funcparam& in)
 			(romdata_r[addr+3]<<24);
 }
 
-static long double read1s(const funcparam& in, const funcparam& def)
+static double read1s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
@@ -286,7 +286,7 @@ static long double read1s(const funcparam& in, const funcparam& def)
 			 romdata_r[addr  ]     ;
 }
 
-static long double read2s(const funcparam& in, const funcparam& def)
+static double read2s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
@@ -298,7 +298,7 @@ static long double read2s(const funcparam& in, const funcparam& def)
 			(romdata_r[addr+1]<< 8);
 }
 
-static long double read3s(const funcparam& in, const funcparam& def)
+static double read3s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
@@ -311,7 +311,7 @@ static long double read3s(const funcparam& in, const funcparam& def)
 			(romdata_r[addr+2]<<16);
 }
 
-static long double read4s(const funcparam& in, const funcparam& def)
+static double read4s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
@@ -325,7 +325,7 @@ static long double read4s(const funcparam& in, const funcparam& def)
 			(romdata_r[addr+3]<<24);
 }
 
-static long double readfilefunc(const funcparam& fname, const funcparam& offset, long numbytes)
+static double readfilefunc(const funcparam& fname, const funcparam& offset, long numbytes)
 {
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
@@ -342,7 +342,7 @@ static long double readfilefunc(const funcparam& fname, const funcparam& offset,
 		(readdata[3] << 24);
 }
 
-static long double readfilefuncs(const funcparam& fname, const funcparam& offset, const funcparam& def, long numbytes)
+static double readfilefuncs(const funcparam& fname, const funcparam& offset, const funcparam& def, long numbytes)
 {
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
@@ -360,7 +360,7 @@ static long double readfilefuncs(const funcparam& fname, const funcparam& offset
 		(readdata[3] << 24);
 }
 
-static long double canreadfilefunc(const funcparam& fname, const funcparam& offset, const funcparam& numbytes)
+static double canreadfilefunc(const funcparam& fname, const funcparam& offset, const funcparam& numbytes)
 {
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
@@ -373,7 +373,7 @@ static long double canreadfilefunc(const funcparam& fname, const funcparam& offs
 }
 
 // returns 0 if the file is OK, 1 if the file doesn't exist, 2 if it couldn't be opened for some other reason
-static long double getfilestatus(const funcparam& fname)
+static double getfilestatus(const funcparam& fname)
 {
 	validateparam(fname, 0, Type_String);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
@@ -392,7 +392,7 @@ static long double getfilestatus(const funcparam& fname)
 }
 
 // Returns the size of the specified file.
-static long double filesizefunc(const funcparam& fname)
+static double filesizefunc(const funcparam& fname)
 {
 	validateparam(fname, 0, Type_String);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
@@ -401,7 +401,7 @@ static long double filesizefunc(const funcparam& fname)
 }
 
 // Checks whether the specified define is defined.
-static long double isdefinedfunc(const funcparam& definename)
+static double isdefinedfunc(const funcparam& definename)
 {
 	validateparam(definename, 0, Type_String);
 	return defines.exists(definename.value.stringvalue);
@@ -410,7 +410,7 @@ static long double isdefinedfunc(const funcparam& definename)
 // RPG Hacker: What exactly makes this function overly complicated, you ask?
 // Well, it converts a double to a string and then back to a double.
 // It was the quickest reliable solution I could find, though, so there's that.
-static long double overlycomplicatedround(const funcparam& number, const funcparam& decimalplaces)
+static double overlycomplicatedround(const funcparam& number, const funcparam& decimalplaces)
 {
 	validateparam(number, 0, Type_Double);
 	validateparam(decimalplaces, 1, Type_Double);
@@ -450,12 +450,12 @@ extern chartabledata table;
 // RPG Hacker: Kind of a hack, but whatever, it's the simplest solution
 static char errorstringbuffer[256];
 
-static long double getnumcore()
+static double getnumcore()
 {
 	if (*str=='(')
 	{
 		str++;
-		long double rval=eval(0);
+		double rval=eval(0);
 		if (*str!=')') error("Mismatched parentheses.");
 		str++;
 		return rval;
@@ -558,7 +558,7 @@ static long double getnumcore()
 					error("Malformed function call.");
 				}
 			}
-			long double rval;
+			double rval;
 			for (int i=0;i<numuserfunc;i++)
 			{
 				if ((int)strlen(userfunc[i].name)==len && !strncmp(start, userfunc[i].name, (size_t)len))
@@ -754,17 +754,17 @@ static long double getnumcore()
 	error("Invalid number.");
 }
 
-static long double sanitize(long double val)
+static double sanitize(double val)
 {
 	if (val!=val) error("NaN encountered.");
 	if (math_round) return (int)val;
 	return val;
 }
 
-static long double getnum()
+static double getnum()
 {
 	while (*str==' ') str++;
-#define prefix(name, func) if (!strncasecmp(str, name, strlen(name))) { str+=strlen(name); long double val=getnum(); return sanitize(func); }
+#define prefix(name, func) if (!strncasecmp(str, name, strlen(name))) { str+=strlen(name); double val=getnum(); return sanitize(func); }
 	prefix("-", -val);
 	prefix("~", ~(int)val);
 	prefix("+", val);
@@ -776,7 +776,7 @@ static long double getnum()
 
 string posneglabelname(const char ** input, bool define);
 
-static long double eval(int depth)
+static double eval(int depth)
 {
 	const char* posneglabel = str;
 	string posnegname = posneglabelname(&posneglabel, false);
@@ -793,8 +793,8 @@ static long double eval(int depth)
 	}
 notposneglabel:
 	recurseblock rec;
-	long double left=getnum();
-	long double right;
+	double left=getnum();
+	double right;
 	while (*str==' ') str++;
 	while (*str && *str != ')' && *str != ','&& *str != ']')
 	{
@@ -838,7 +838,7 @@ notposneglabel:
 }
 
 //static autoptr<char*> freeme;
-long double math(const char * s, const char ** e)
+double math(const char * s, const char ** e)
 {
 	//free(freeme);
 	//freeme=NULL;
@@ -847,7 +847,7 @@ long double math(const char * s, const char ** e)
 	try
 	{
 		str=s;
-		long double rval=eval(0);
+		double rval=eval(0);
 		if (*str)
 		{
 			if (*str==',') error("Invalid input.");

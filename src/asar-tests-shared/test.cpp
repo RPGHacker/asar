@@ -28,8 +28,8 @@
 #	include "asardll.h"
 #endif
 
-#define die() do { fclose(fopen(fail_name, "wb")); numfailed++; free(expectedrom); free(truerom); printf("Failure!\n\n"); goto next_test; } while(0)
-#define dief(...) do { printf(__VA_ARGS__); die(); } while(0)
+#define die() { fclose(fopen(fail_name, "wb")); numfailed++; free(expectedrom); free(truerom); printf("\nFailure!\n\n\n"); continue; }
+#define dief(...) { printf(__VA_ARGS__); die(); }
 
 #define min(a, b) ((a)<(b)?(a):(b))
 
@@ -109,14 +109,15 @@ bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * 
 				if (str_ends_with(fd.cFileName, ".asm"))
 				{
 					wrapped_file new_file;
-					strncpy(new_file.file_name, fd.cFileName, sizeof(new_file.file_path));
-					new_file.file_path[sizeof(new_file.file_path) - 1] = '\0';
-					strcpy(new_file.file_path, directory_name);
+					strncpy(new_file.file_name, fd.cFileName, sizeof(new_file.file_name));
+					new_file.file_name[sizeof(new_file.file_name) - 1] = '\0';
+					strncpy(new_file.file_path, directory_name, sizeof(new_file.file_path));
 					if (!has_path_seperator)
 					{
-						strcat(new_file.file_path, "/");
+						strncat(new_file.file_path, "/", sizeof(new_file.file_path));
 					}
-					strcat(new_file.file_path, fd.cFileName);
+					strncat(new_file.file_path, fd.cFileName, sizeof(new_file.file_path));
+					new_file.file_path[sizeof(new_file.file_path) - 1] = '\0';
 					out_array.push_back(new_file);
 				}
 			}
@@ -131,14 +132,33 @@ bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * 
 
 #else
 
-#	error TODO
-
+	bool has_path_seperator = false;
+	if (str_ends_with(directory_name, "/") || str_ends_with(directory_name, "\\"))
+	{
+		has_path_seperator = true;
+	}
 	DIR * dir;
 	dirent * ent;
 	if ((dir = opendir(directory_name)) != NULL) {
-		/* print all the files and directories within directory */
 		while ((ent = readdir(dir)) != NULL) {
-			printf("%s\n", ent->d_name);
+			// Only consider regular files
+			if (ent->d_type == DT_REG)
+			{
+				if (str_ends_with(ent->d_name, ".asm"))
+				{
+					wrapped_file new_file;
+					strncpy(new_file.file_name, ent->d_name, sizeof(new_file.file_name));
+					new_file.file_name[sizeof(new_file.file_name) - 1] = '\0';
+					strncpy(new_file.file_path, directory_name, sizeof(new_file.file_path));
+					if (!has_path_seperator)
+					{
+						strncat(new_file.file_path, "/", sizeof(new_file.file_path));
+					}
+					strncat(new_file.file_path, ent->d_name, sizeof(new_file.file_path));
+					new_file.file_path[sizeof(new_file.file_path) - 1] = '\0';
+					out_array.push_back(new_file);
+				}
+			}
 		}
 		closedir(dir);
 	}
@@ -160,7 +180,7 @@ void delete_file(const char * filename)
 
 #else
 
-#	error TODO
+	remove(filename);
 
 #endif
 }
@@ -237,7 +257,26 @@ bool execute_command_line(char * commandline, const char * log_file)
 
 #else
 
-#	error TODO
+	fflush(stdout);
+	
+	FILE * fp = popen(commandline, "r");
+	FILE * logfilehandle = fopen(log_file, "wt+");
+	
+	char buffer[4096];
+	char* last_line = nullptr;
+	
+	do
+	{
+		last_line = fgets(buffer, sizeof(buffer), fp);
+		if (last_line != nullptr)
+		{
+			fputs(last_line, logfilehandle);
+		}
+	}
+	while (last_line != nullptr);
+	
+	pclose(fp);
+	fclose(logfilehandle);
 
 #endif
 
@@ -353,7 +392,7 @@ int main(int argc, char * argv[])
 		memset(truerom, 0, max_rom_size);
 		char line[256];
 		if (!file_exist(fname)) dief("Error: '%s' doesn't exist!\n", fname);
-		FILE * asmfile = fopen(fname, "rt");
+		FILE * asmfile = fopen(fname, "rb");
 		int pos = 0;
 		int len = 0;
 		FILE * rom = fopen(out_rom_name, "wb");
@@ -363,9 +402,45 @@ int main(int argc, char * argv[])
 		bool shouldfail = false;
 		while (true)
 		{
-			fgets(line, 250, asmfile);
-			if (line[0] != ';' || line[1] != '@') break;
-			*strchr(line, '\n') = 0;
+			long int line_start_pos = ftell(asmfile);
+			
+			// RPG Hacker: Not doing this in text mode so that it works fine on both
+			// Linux and Windows.
+			// First we read all characters until we hit a \n or \r.
+			size_t current_line_length = 0;
+			size_t just_read = 0;
+			char last_read = '\0';
+			do
+			{
+				just_read = fread(&line[current_line_length], 1, 1, asmfile);
+				last_read = line[current_line_length];
+				if (last_read != '\r')
+				{
+					current_line_length += just_read;
+				}
+			}
+			while (just_read != 0 && current_line_length < sizeof(line)-1
+				&& last_read != '\n' && last_read != '\0');
+				
+			// Next we skip all following \n and \r (since they might be part of the
+			// same multi-byte new line sequence).
+			char next_char = '\0';
+			just_read = fread(&next_char, 1, 1, asmfile);
+			
+			if (just_read != 0 && next_char != '\r')
+			{			
+				// Seek back one byte, because we've actually read past the new line now.
+				fseek(asmfile, -1, SEEK_CUR);
+			}
+				
+			line[current_line_length-1] = '\0';
+			
+			if (line[0] != ';' || line[1] != '@')
+			{				
+				fseek(asmfile, line_start_pos, SEEK_SET);
+				break;
+			}
+			
 			std::vector<std::string> words = tokenize_string(line + 2, " ");
 			for (size_t i = 0; i < words.size(); ++i)
 			{
@@ -392,20 +467,30 @@ int main(int argc, char * argv[])
 				if (pos > len) len = pos;
 			}
 		}
-
-		//this is rather hacky and fragile, but it works. it's not like anyone's gonna use this thing
-		char * asmdata = (char*)malloc(65536);
-		memset(asmdata, 0, 65536);
-		char * asmdata_ptr_backup = asmdata;
-		strcpy(asmdata, line);
-		char * asmdataend = strchr(asmdata, '\0');
-		asmdataend[fread(asmdataend, 1, 65536, asmfile)] = '\0';
-		FILE * azmfile = fopen(azm_name, "wt");
-		while (asmdata[0] == '\n') asmdata++;
-		fwrite(asmdata, 1, strlen(asmdata), azmfile);
+		
+		FILE * azmfile = fopen(azm_name, "wt");		
+		
+		size_t remaining_read = 0;
+		do
+		{
+			char next_char = '\0';
+			remaining_read = fread(&next_char, 1, sizeof(next_char), asmfile);
+			if (remaining_read > 0)
+			{
+				if (next_char != '\r')
+				{
+					if (next_char == '\n')
+					{
+						next_char = '\n';
+					}
+			
+					fwrite(&next_char, 1, sizeof(next_char), azmfile);
+				}
+			}
+		}
+		while (remaining_read > 0);
+		
 		fclose(azmfile);
-
-		free(asmdata_ptr_backup);
 
 		fclose(asmfile);
 		fclose(rom);
@@ -437,60 +522,71 @@ int main(int argc, char * argv[])
 			asar_path_params.includepaths = &base_path;
 			asar_path_params.numincludepaths = 1;
 
-			if (!asar_patch_ex(&asar_path_params))
-			{
-				printf("asar_patch() failed on file '%s':\n", azm_name);
-				int numerrors;
-				const errordata * errdata = asar_geterrors(&numerrors);
-				for (int i = 0; i < numerrors; ++i)
+
+			for (int i = 0;i < numiter;i++)
+			{			
+				printf("\n");
+				
+				if (numiter > 1)
 				{
-					fwrite(errdata[i].fullerrdata, 1, strlen(errdata[i].fullerrdata), err);
-					fwrite("\n", 1, strlen("\n"), err);
+					printf("Iteration %d of %d\n\n", i+1, numiter);
 				}
-			}
-			else
-			{
-				// Applying patch via DLL succeeded; print some stuff (mainly to verify most of our functions)
-				mappertype mapper = asar_getmapper();
-
-				printf("Detected mapper: %u\n", (unsigned int)mapper);
-
-				int count = 0;
-				const labeldata * labels = asar_getalllabels(&count);
-
-				if (count > 0)
+				
+				if (!asar_patch_ex(&asar_path_params))
 				{
-					printf("Found labels:\n");
-
-					for (int i = 0; i < count; ++i)
+					printf("asar_patch() failed on file '%s':\n", azm_name);
+					int numerrors;
+					const errordata * errdata = asar_geterrors(&numerrors);
+					for (int j = 0; j < numerrors; ++j)
 					{
-						printf("  %s: %X\n", labels[i].name, (unsigned int)labels[i].location);
+						fwrite(errdata[j].fullerrdata, 1, strlen(errdata[j].fullerrdata), err);
+						fwrite("\n", 1, strlen("\n"), err);
 					}
 				}
-
-
-				const definedata * defines = asar_getalldefines(&count);
-
-				if (count > 0)
+				else
 				{
-					printf("Found defines:\n");
+					// Applying patch via DLL succeeded; print some stuff (mainly to verify most of our functions)
+					mappertype mapper = asar_getmapper();
 
-					for (int i = 0; i < count; ++i)
+					printf("Detected mapper: %u\n", (unsigned int)mapper);
+
+					int count = 0;
+					const labeldata * labels = asar_getalllabels(&count);
+
+					if (count > 0)
 					{
-						printf("  %s=%s\n", defines[i].name, defines[i].contents);
+						printf("Found labels:\n");
+
+						for (int i = 0; i < count; ++i)
+						{
+							printf("  %s: %X\n", labels[i].name, (unsigned int)labels[i].location);
+						}
 					}
-				}
 
 
-				const writtenblockdata * writtenblocks = asar_getwrittenblocks(&count);
+					const definedata * defines = asar_getalldefines(&count);
 
-				if (count > 0)
-				{
-					printf("Written blocks:\n");
-
-					for (int i = 0; i < count; ++i)
+					if (count > 0)
 					{
-						printf("  %u bytes at %X\n", (unsigned int)writtenblocks[i].numbytes, (unsigned int)writtenblocks[i].pcoffset);
+						printf("Found defines:\n");
+
+						for (int i = 0; i < count; ++i)
+						{
+							printf("  %s=%s\n", defines[i].name, defines[i].contents);
+						}
+					}
+
+
+					const writtenblockdata * writtenblocks = asar_getwrittenblocks(&count);
+
+					if (count > 0)
+					{
+						printf("Written blocks:\n");
+
+						for (int i = 0; i < count; ++i)
+						{
+							printf("  %u bytes at %X\n", (unsigned int)writtenblocks[i].numbytes, (unsigned int)writtenblocks[i].pcoffset);
+						}
 					}
 				}
 			}
@@ -503,7 +599,7 @@ int main(int argc, char * argv[])
 			const char* base_path = base_path_string.c_str();
 
 			char cmd[1024];
-			snprintf(cmd, sizeof(cmd), "%s -I\"%s\" %s %s", asar_exe_path, base_path, azm_name, out_rom_name);
+			snprintf(cmd, sizeof(cmd), "\"%s\" -I\"%s\" \"%s\" \"%s\"", asar_exe_path, base_path, azm_name, out_rom_name);
 			for (int i = 0;i < numiter;i++)
 			{
 				printf("Executing:\n > %s\n", cmd);
@@ -554,10 +650,7 @@ int main(int argc, char * argv[])
 		free(expectedrom);
 		free(truerom);
 
-		printf("Success!\n\n");
-
-	next_test:
-		continue;
+		printf("\nSuccess!\n\n\n");
 	}
 
 	free(smwrom);
