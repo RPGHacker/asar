@@ -14,7 +14,7 @@ db "!a"
 LDA derp,x
 derp:
 
-incbin .\nul
+incbin .\include\dummy.asm
 
 rep -1 : db 0
 rep 0 : db 1
