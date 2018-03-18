@@ -22,5 +22,5 @@ autoclean JML Mymain
 freecode
 prot Derp
 Mymain:
-incbin ../64kb.bin -> Derp
+incbin "data/64kb.bin" -> Derp
 LDA Derp

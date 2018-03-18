@@ -1,2 +1,2 @@
 ;@err
-incsrc incsrcxkas-2.asm
+incsrc "include/incsrcxkas-2.asm"

@@ -4,6 +4,7 @@
 #include "libcon.h"
 #include "libsmw.h"
 #include "platform/file-helpers.h"
+#include "virtualfile.hpp"
 
 #ifdef TIMELIMIT
 # if defined(linux)
@@ -30,8 +31,6 @@ extern const char asarver[];
 //extern char romtitle[30];
 //extern bool stdlib;
 
-string dir(char const *name);
-
 string getdecor();
 
 extern const char * thisfilename;
@@ -44,6 +43,8 @@ void assemblefile(const char * filename, bool toplevel);
 extern const char * thisfilename;
 extern int thisline;
 extern const char * thisblock;
+
+extern virtual_filesystem* filesystem;
 
 void print(const char * str)
 {
@@ -125,12 +126,24 @@ int main(int argc, char * argv[])
 #endif
 #endif
 #define pause(sev) do { if (pause>=pause_##sev) libcon_pause(); } while(0)
+
 	enum {
 		pause_no,
 		pause_err,
 		pause_warn,
 		pause_yes,
 	} pause=pause_no;
+
+	enum cmdlparam
+	{
+		cmdlparam_none,
+
+		cmdlparam_addincludepath,
+		cmdlparam_adddefine,
+
+		cmdlparam_count
+	};
+
 	try
 	{
 		initmathcore();
@@ -143,11 +156,7 @@ int main(int argc, char * argv[])
 		if (!strncasecmp(myname, "xkas", strlen("xkas"))) errloc=stdout;
 		//if (dot) *dot='.';
 		libcon_init(argc, argv,
-#if defined(_WIN32)
-			"asar.exe [options] asm_file [rom_file]\n"
-#else
-			"asar [options] asm_file [rom_file]\n"
-#endif
+			"[options] asm_file [rom_file]\n"
 			"Supported options:\n"
 			" --version         Display version information\n"
 			" -v, --verbose     Enable verbose mode\n"
@@ -160,8 +169,17 @@ int main(int argc, char * argv[])
 		string par;
 		bool verbose=libcon_interactive;
 		bool printed_version=false;
+
+		autoarray<string> includepaths;
+		autoarray<const char*> includepath_cstrs;
+
 		while ((par=libcon_option()))
 		{
+			cmdlparam postprocess_param = cmdlparam_none;
+			const char* postprocess_arg = nullptr;
+
+#define checkstartmatch(arg, stringliteral) (!strncmp(arg, stringliteral, strlen(stringliteral)))
+
 			if (par=="-werror") werror=true;
 			else if (par=="--no-title-check") ignoretitleerrors=true;
 			else if (par == "-v" || par=="--verbose") verbose=true;
@@ -176,7 +194,7 @@ int main(int argc, char * argv[])
 					//return 0;
 				}
 			}
-			else if (!strncmp(par, "--pause-mode=", strlen("--pause-mode=")))
+			else if (checkstartmatch(par, "--pause-mode="))
 			{
 				if (par=="--pause-mode=never") pause=pause_no;
 				else if (par=="--pause-mode=on-error") pause=pause_err;
@@ -184,7 +202,43 @@ int main(int argc, char * argv[])
 				else if (par=="--pause-mode=always") pause=pause_yes;
 				else libcon_badusage();
 			}
+			else if (checkstartmatch(par, "-I"))
+			{
+				postprocess_param = cmdlparam_addincludepath;
+				postprocess_arg = ((const char*)par) + strlen("-I");
+			}
+			else if (checkstartmatch(par, "-D"))
+			{
+				postprocess_param = cmdlparam_adddefine;
+				postprocess_arg = ((const char*)par) + strlen("-D");
+			}
+			else if (par == "--include")
+			{
+				postprocess_arg = libcon_option_value();
+				if (postprocess_arg != nullptr)
+				{
+					postprocess_param = cmdlparam_addincludepath;
+				}
+			}
+			else if (par == "--define")
+			{
+				postprocess_arg = libcon_option_value();
+				if (postprocess_arg != nullptr)
+				{
+					postprocess_param = cmdlparam_adddefine;
+				}
+			}
 			else libcon_badusage();
+
+			if (postprocess_param == cmdlparam_addincludepath)
+			{
+				string& addpath = includepaths.append(postprocess_arg);
+				includepath_cstrs.append((const char*)addpath);
+			}
+			else if (postprocess_param == cmdlparam_adddefine)
+			{
+
+			}
 		}
 		if (verbose && !printed_version)
 		{
@@ -265,6 +319,12 @@ int main(int argc, char * argv[])
 		romdata_r=(unsigned char*)malloc((size_t)romlen);
 		romlen_r=romlen;
 		memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
+
+		int includepath_count = includepath_cstrs.count;
+		virtual_filesystem new_filesystem;
+		new_filesystem.initialize(&includepath_cstrs[0], (size_t)includepath_count);
+		filesystem = &new_filesystem;
+
 		for (pass=0;pass<3;pass++)
 		{
 			//pass 1: find which bank all labels are in, for label optimizations
@@ -275,6 +335,11 @@ int main(int argc, char * argv[])
 			assemblefile(asmname, true);
 			finishpass();
 		}
+
+		new_filesystem.destroy();
+		filesystem = nullptr;
+
+
 		if (werror && warned) error<errnull>(pass, "One or more warnings was detected with werror on.");
 		if (checksum) fixchecksum();
 		//if (pcpos>romlen) romlen=pcpos;

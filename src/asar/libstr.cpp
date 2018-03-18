@@ -1,19 +1,21 @@
 #include "std-includes.h"
 #include "libstr.h"
+#include "virtualfile.hpp"
 
 #define malloc(type, count) (type*)malloc(sizeof(type)*(count))
 #define realloc(val, type, count) (type*)realloc(val, sizeof(type)*(count))
 
+extern virtual_filesystem* filesystem;
+extern const char * thisfilename;
+
 char * readfile(const char * fname)
 {
-	FILE * myfile=fopen(fname, "rt");
-	if (!myfile) return NULL;
-	fseek(myfile, 0, SEEK_END);
-	int datalen=ftell(myfile);
-	fseek(myfile, 0, SEEK_SET);
+	virtual_file_handle myfile = filesystem->open_file(fname, thisfilename);
+	if (myfile == INVALID_VIRTUAL_FILE_HANDLE) return NULL;
+	size_t datalen = filesystem->get_file_size(myfile);
 	char * data=malloc(char, datalen+1);
-	data[fread(data, 1, (size_t)datalen, myfile)]=0;
-	fclose(myfile);
+	data[filesystem->read_file(myfile, data, 0u, datalen)] = 0;
+	filesystem->close_file(myfile);
 	int inpos=0;
 	int outpos=0;
 	while (data[inpos])
@@ -27,14 +29,12 @@ char * readfile(const char * fname)
 
 bool readfile(const char * fname, char ** data, int * len)
 {
-	FILE * myfile=fopen(fname, "rb");
+	virtual_file_handle myfile = filesystem->open_file(fname, thisfilename);
 	if (!myfile) return false;
-	fseek(myfile, 0, SEEK_END);
-	int datalen=ftell(myfile);
-	fseek(myfile, 0, SEEK_SET);
+	size_t datalen = filesystem->get_file_size(myfile);
 	*data=malloc(char, datalen);
-	*len=(int)fread(*data, 1, (size_t)datalen, myfile);
-	fclose(myfile);
+	*len = (int)filesystem->read_file(myfile, *data, 0, datalen);
+	filesystem->close_file(myfile);
 	return true;
 }
 

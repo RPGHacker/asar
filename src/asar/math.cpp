@@ -6,6 +6,7 @@
 #include "libstr.h"
 #include "libsmw.h"
 #include "asar.h"
+#include "virtualfile.hpp"
 
 bool math_pri=true;
 bool math_round=false;
@@ -23,9 +24,9 @@ extern assocarr<string> defines;
 #define error(str) throw str
 static const char * str;
 
-static long double getnumcore();
-static long double getnum();
-static long double eval(int depth);
+static double getnumcore();
+static double getnum();
+static double eval(int depth);
 
 bool confirmname(const char * name);
 
@@ -75,8 +76,8 @@ const char * createuserfunc(const char * name, const char * arguments, const cha
 
 struct cachedfile {
 	string filename;
-	FILE * filehandle;
-	long filesize;
+	virtual_file_handle filehandle;
+	size_t filesize;
 	bool used;
 };
 
@@ -85,16 +86,23 @@ struct cachedfile {
 static cachedfile cachedfiles[numcachedfiles];
 static int cachedfileindex = 0;
 
-string dir(char const *name);
 const char * safedequote(char * str);
 #define dequote safedequote
 extern const char * thisfilename;
 
 // Opens a file, trying to open it from cache first
 
+extern virtual_filesystem* filesystem;
+
 cachedfile * opencachedfile(string fname, bool should_error)
 {
 	cachedfile * cachedfilehandle = nullptr;
+
+	// RPG Hacker: Only using a combined path here because that should
+	// hopefully result in a unique string for every file, whereas
+	// fname could be a relative path, which isn't guaranteed to be unique.
+	// Note that this does not affect how we open the file - this is
+	// handled by the filesystem and uses our include paths etc.
 	string combinedname = S dir(thisfilename) + fname;
 
 	for (int i = 0; i < numcachedfiles; i++)
@@ -111,8 +119,8 @@ cachedfile * opencachedfile(string fname, bool should_error)
 
 		if (cachedfiles[cachedfileindex].used)
 		{
-			fclose(cachedfiles[cachedfileindex].filehandle);
-			cachedfiles[cachedfileindex].filehandle = NULL;
+			filesystem->close_file(cachedfiles[cachedfileindex].filehandle);
+			cachedfiles[cachedfileindex].filehandle = INVALID_VIRTUAL_FILE_HANDLE;
 			cachedfiles[cachedfileindex].used = false;
 		}
 
@@ -123,14 +131,12 @@ cachedfile * opencachedfile(string fname, bool should_error)
 	{
 		if (!cachedfilehandle->used)
 		{
-			cachedfilehandle->filehandle = fopen((const char*)combinedname, "rb");
-			if (cachedfilehandle->filehandle)
+			cachedfilehandle->filehandle = filesystem->open_file(fname, thisfilename);
+			if (cachedfilehandle->filehandle != INVALID_VIRTUAL_FILE_HANDLE)
 			{
 				cachedfilehandle->used = true;
 				cachedfilehandle->filename = combinedname;
-				fseek(cachedfilehandle->filehandle, 0, SEEK_END);
-				cachedfilehandle->filesize = ftell(cachedfilehandle->filehandle);
-				fseek(cachedfilehandle->filehandle, 0, SEEK_SET);
+				cachedfilehandle->filesize = filesystem->get_file_size(cachedfilehandle->filehandle);
 				cachedfileindex++;
 				// randomdude999: when we run out of cached files, just start overwriting ones from the start
 				if (cachedfileindex >= numcachedfiles) cachedfileindex = 0;
@@ -138,7 +144,7 @@ cachedfile * opencachedfile(string fname, bool should_error)
 		}
 	}
 
-	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == nullptr) && should_error)
+	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) && should_error)
 	{
 		error("Failed to open file.");
 	}
@@ -153,10 +159,10 @@ void closecachedfiles()
 	{
 		if (cachedfiles[i].used)
 		{
-			if (cachedfiles[i].filehandle != NULL)
+			if (cachedfiles[i].filehandle != INVALID_VIRTUAL_FILE_HANDLE)
 			{
-				fclose(cachedfiles[i].filehandle);
-				cachedfiles[i].filehandle = NULL;
+				filesystem->close_file(cachedfiles[i].filehandle);
+				cachedfiles[i].filehandle = INVALID_VIRTUAL_FILE_HANDLE;
 			}
 
 			cachedfiles[i].used = false;
@@ -178,7 +184,7 @@ struct funcparam {
 	funcparamtype type;
 	union valueunion {
 		const char * stringvalue;
-		long double longdoublevalue;
+		double longdoublevalue;
 
 		valueunion() {}
 		~valueunion() {}
@@ -196,7 +202,7 @@ struct funcparam {
 		value.stringvalue = in;
 	}
 
-	funcparam(long double in)
+	funcparam(double in)
 	{
 		type = Type_Double;
 		value.longdoublevalue = in;
@@ -217,7 +223,7 @@ int snestopc_pick(int addr);
 		error("Wrong type for argument " #paramindex ", expected " #expectedtype ".");   \
 	}
 
-static long double validaddr(const funcparam& in, const funcparam& len)
+static double validaddr(const funcparam& in, const funcparam& len)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(len, 1, Type_Double);
@@ -226,7 +232,7 @@ static long double validaddr(const funcparam& in, const funcparam& len)
 	else return 1;
 }
 
-static long double read1(const funcparam& in)
+static double read1(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
@@ -236,7 +242,7 @@ static long double read1(const funcparam& in)
 			 romdata_r[addr  ]     ;
 }
 
-static long double read2(const funcparam& in)
+static double read2(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
@@ -247,7 +253,7 @@ static long double read2(const funcparam& in)
 			(romdata_r[addr+1]<< 8);
 }
 
-static long double read3(const funcparam& in)
+static double read3(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
@@ -259,7 +265,7 @@ static long double read3(const funcparam& in)
 			(romdata_r[addr+2]<<16);
 }
 
-static long double read4(const funcparam& in)
+static double read4(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
@@ -272,7 +278,7 @@ static long double read4(const funcparam& in)
 			(romdata_r[addr+3]<<24);
 }
 
-static long double read1s(const funcparam& in, const funcparam& def)
+static double read1s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
@@ -283,7 +289,7 @@ static long double read1s(const funcparam& in, const funcparam& def)
 			 romdata_r[addr  ]     ;
 }
 
-static long double read2s(const funcparam& in, const funcparam& def)
+static double read2s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
@@ -295,7 +301,7 @@ static long double read2s(const funcparam& in, const funcparam& def)
 			(romdata_r[addr+1]<< 8);
 }
 
-static long double read3s(const funcparam& in, const funcparam& def)
+static double read3s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
@@ -308,7 +314,7 @@ static long double read3s(const funcparam& in, const funcparam& def)
 			(romdata_r[addr+2]<<16);
 }
 
-static long double read4s(const funcparam& in, const funcparam& def)
+static double read4s(const funcparam& in, const funcparam& def)
 {
 	validateparam(in, 0, Type_Double);
 	validateparam(def, 1, Type_Double);
@@ -322,17 +328,16 @@ static long double read4s(const funcparam& in, const funcparam& def)
 			(romdata_r[addr+3]<<24);
 }
 
-static long double readfilefunc(const funcparam& fname, const funcparam& offset, long numbytes)
+static double readfilefunc(const funcparam& fname, const funcparam& offset, long numbytes)
 {
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
 	if (numbytes <=0 || numbytes > 4) error("Can only read chunks of 1 to 4 bytes.");
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, true);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) error("Failed to open file.");
-	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - numbytes) error("File read offset out of bounds.");
-	fseek(fhandle->filehandle, (long)offset.value.longdoublevalue, SEEK_SET);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) error("Failed to open file.");
+	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) error("File read offset out of bounds.");
 	unsigned char readdata[4] = { 0, 0, 0, 0 };
-	fread(readdata, 1, (size_t)numbytes, fhandle->filehandle);
+	filesystem->read_file(fhandle->filehandle, readdata, (size_t)offset.value.longdoublevalue, (size_t)numbytes);
 	return
 		 readdata[0]       |
 		(readdata[1] << 8) |
@@ -340,18 +345,17 @@ static long double readfilefunc(const funcparam& fname, const funcparam& offset,
 		(readdata[3] << 24);
 }
 
-static long double readfilefuncs(const funcparam& fname, const funcparam& offset, const funcparam& def, long numbytes)
+static double readfilefuncs(const funcparam& fname, const funcparam& offset, const funcparam& def, long numbytes)
 {
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
 	validateparam(def, 2, Type_Double);
 	if (numbytes <= 0 || numbytes > 4) error("Can only read chunks of 1 to 4 bytes.");
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) return def.value.longdoublevalue;
-	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - numbytes) return def.value.longdoublevalue;
-	fseek(fhandle->filehandle, (long)offset.value.longdoublevalue, SEEK_SET);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return def.value.longdoublevalue;
+	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) return def.value.longdoublevalue;
 	unsigned char readdata[4] = { 0, 0, 0, 0 };
-	fread(readdata, 1, (size_t)numbytes, fhandle->filehandle);
+	filesystem->read_file(fhandle->filehandle, readdata, (size_t)offset.value.longdoublevalue, (size_t)numbytes);
 	return
 		readdata[0] |
 		(readdata[1] << 8) |
@@ -359,39 +363,48 @@ static long double readfilefuncs(const funcparam& fname, const funcparam& offset
 		(readdata[3] << 24);
 }
 
-static long double canreadfilefunc(const funcparam& fname, const funcparam& offset, const funcparam& numbytes)
+static double canreadfilefunc(const funcparam& fname, const funcparam& offset, const funcparam& numbytes)
 {
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
 	validateparam(numbytes, 2, Type_Double);
 	if ((long)numbytes.value.longdoublevalue <= 0) error("Number of bytes to check must be > 0.");
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) return 0;
-	if ((long)offset.value.longdoublevalue < 0 || (long)offset.value.longdoublevalue > fhandle->filesize - (long)numbytes.value.longdoublevalue) return 0;
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return 0;
+	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes.value.longdoublevalue > fhandle->filesize) return 0;
 	return 1;
 }
 
 // returns 0 if the file is OK, 1 if the file doesn't exist, 2 if it couldn't be opened for some other reason
-static long double getfilestatus(const funcparam& fname)
+static double getfilestatus(const funcparam& fname)
 {
 	validateparam(fname, 0, Type_String);
-	if(!file_exists(S dir(thisfilename) + fname.value.stringvalue)) return 1;
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if(fhandle == nullptr || fhandle->filehandle == nullptr) return 2;
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE)
+	{
+		if (filesystem->get_last_error() == vfe_doesnt_exist)
+		{
+			return 1;
+		}
+		else
+		{
+			return 2;
+		}
+	}
 	return 0;
 }
 
 // Returns the size of the specified file.
-static long double filesizefunc(const funcparam& fname)
+static double filesizefunc(const funcparam& fname)
 {
 	validateparam(fname, 0, Type_String);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == nullptr) return -1;
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return -1;
 	return fhandle->filesize;
 }
 
 // Checks whether the specified define is defined.
-static long double isdefinedfunc(const funcparam& definename)
+static double isdefinedfunc(const funcparam& definename)
 {
 	validateparam(definename, 0, Type_String);
 	return defines.exists(definename.value.stringvalue);
@@ -400,7 +413,7 @@ static long double isdefinedfunc(const funcparam& definename)
 // RPG Hacker: What exactly makes this function overly complicated, you ask?
 // Well, it converts a double to a string and then back to a double.
 // It was the quickest reliable solution I could find, though, so there's that.
-static long double overlycomplicatedround(const funcparam& number, const funcparam& decimalplaces)
+static double overlycomplicatedround(const funcparam& number, const funcparam& decimalplaces)
 {
 	validateparam(number, 0, Type_Double);
 	validateparam(decimalplaces, 1, Type_Double);
@@ -440,12 +453,12 @@ extern chartabledata table;
 // RPG Hacker: Kind of a hack, but whatever, it's the simplest solution
 static char errorstringbuffer[256];
 
-static long double getnumcore()
+static double getnumcore()
 {
 	if (*str=='(')
 	{
 		str++;
-		long double rval=eval(0);
+		double rval=eval(0);
 		if (*str!=')') error("Mismatched parentheses.");
 		str++;
 		return rval;
@@ -548,7 +561,7 @@ static long double getnumcore()
 					error("Malformed function call.");
 				}
 			}
-			long double rval;
+			double rval;
 			for (int i=0;i<numuserfunc;i++)
 			{
 				if ((int)strlen(userfunc[i].name)==len && !strncmp(start, userfunc[i].name, (size_t)len))
@@ -744,17 +757,17 @@ static long double getnumcore()
 	error("Invalid number.");
 }
 
-static long double sanitize(long double val)
+static double sanitize(double val)
 {
 	if (val!=val) error("NaN encountered.");
 	if (math_round) return (int)val;
 	return val;
 }
 
-static long double getnum()
+static double getnum()
 {
 	while (*str==' ') str++;
-#define prefix(name, func) if (!strncasecmp(str, name, strlen(name))) { str+=strlen(name); long double val=getnum(); return sanitize(func); }
+#define prefix(name, func) if (!strncasecmp(str, name, strlen(name))) { str+=strlen(name); double val=getnum(); return sanitize(func); }
 	prefix("-", -val);
 	prefix("~", ~(int)val);
 	prefix("+", val);
@@ -766,7 +779,7 @@ static long double getnum()
 
 string posneglabelname(const char ** input, bool define);
 
-static long double eval(int depth)
+static double eval(int depth)
 {
 	const char* posneglabel = str;
 	string posnegname = posneglabelname(&posneglabel, false);
@@ -783,8 +796,8 @@ static long double eval(int depth)
 	}
 notposneglabel:
 	recurseblock rec;
-	long double left=getnum();
-	long double right;
+	double left=getnum();
+	double right;
 	while (*str==' ') str++;
 	while (*str && *str != ')' && *str != ','&& *str != ']')
 	{
@@ -828,7 +841,7 @@ notposneglabel:
 }
 
 //static autoptr<char*> freeme;
-long double math(const char * s, const char ** e)
+double math(const char * s, const char ** e)
 {
 	//free(freeme);
 	//freeme=NULL;
@@ -837,7 +850,7 @@ long double math(const char * s, const char ** e)
 	try
 	{
 		str=s;
-		long double rval=eval(0);
+		double rval=eval(0);
 		if (*str)
 		{
 			if (*str==',') error("Invalid input.");

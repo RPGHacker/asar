@@ -3,6 +3,7 @@
 #include "libsmw.h"
 #include "assocarr.h"
 #include "autoarray.h"
+#include "platform/file-helpers.h"
 
 int arch=arch_65816;
 
@@ -232,8 +233,6 @@ extern int macrorecursion;
 extern int incsrcdepth;
 
 extern int repeatnext;
-
-string dir(char const *name);
 
 bool confirmname(const char * name)
 {
@@ -789,7 +788,31 @@ void assembleblock(const char * block)
 		}
 		return;
 	}
-	if (is("if") || is("elseif") || is("assert") || is("while"))
+	if (is1("undef"))
+	{
+		string def;
+		// RPG Hacker: Not sure if we should allow this?
+		// Currently, the manual states that we should not include the
+		// exclamation mark, and I believe that this is for the better
+		// because I can see this leading to ambiguities or causing
+		// problems. If we add this back in, we should definitely
+		// also added it to the defined() function for consistency, though.
+		// Well, actually I just check and we can't support this in
+		// defined() (the defined is already replaced at that point), so
+		// I think we should not support it here, either.
+		/*if (*par == '!') def = S dequote(par) + 1;
+		else*/ def = S dequote(par);
+
+		if (defines.exists(def))
+		{
+			defines.remove(def);
+		}
+		else
+		{
+			error(0, S"Tried to undefine '" + def + "', which is not the name of a known define.");
+		}
+	}
+	else if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
 		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
 		const char * errmsg=NULL;
@@ -1496,7 +1519,7 @@ void assembleblock(const char * block)
 	}
 	else if (is0("pullbase"))
 	{
-		if (!basestacknum) error(0, "pushbase without matching pullbase");
+		if (!basestacknum) error(0, "pullbase without matching pushbase");
 		basestacknum--;
 		snespos = basestack[basestacknum];
 	}
@@ -1567,7 +1590,7 @@ void assembleblock(const char * block)
 #endif
 		}
 		if (emulatexkas) name=dequote(par);
-		else name=S dir(thisfilename)+dequote(par);
+		else name=S dequote(par);
 		assemblefile(name, false);
 	}
 	else if (is1("incbin") || is3("incbin"))
@@ -1606,7 +1629,7 @@ void assembleblock(const char * block)
 #endif
 		}
 		if (emulatexkas) name=dequote(par);
-		else name=S dir(thisfilename)+dequote(par);
+		else name=S dequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
 		if (!readfile(name, &data, &len)) error(0, "File not found");
 		autoptr<char*> datacopy=data;
@@ -1681,7 +1704,7 @@ void assembleblock(const char * block)
 		if(0);
 		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
-		string name=S dir(thisfilename)+dequote(par);
+		string name=S dequote(par);
 		autoptr<char*> tablecontents=readfile(name);
 		if (!tablecontents) error(0, "File not found");
 		autoptr<char**> tablelines=split(tablecontents, "\n");

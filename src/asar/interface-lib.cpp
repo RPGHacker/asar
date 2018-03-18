@@ -2,6 +2,7 @@
 #include "assocarr.h"
 #include "libstr.h"
 #include "libsmw.h"
+#include "virtualfile.hpp"
 
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -15,8 +16,6 @@ extern bool errored;
 
 extern bool checksum;
 
-string dir(char const *name);
-
 string getdecor();
 
 void assemblefile(const char * filename, bool toplevel);
@@ -26,6 +25,8 @@ extern int thisline;
 extern const char * thisblock;
 extern const char * callerfilename;
 extern int callerline;
+
+extern virtual_filesystem* filesystem;
 
 autoarray<const char *> prints;
 int numprint;
@@ -158,7 +159,7 @@ EXPORT int asar_version()
 EXPORT int asar_apiversion()
 {
 	expectsNewAPI=true;
-	return 300;
+	return 301;
 }
 
 EXPORT bool asar_reset()
@@ -174,24 +175,28 @@ EXPORT void asar_close()
 }
 
 #define maxromsize (16*1024*1024)
-EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int * romlen_)
+void asar_patch_begin(char * romdata_, int buflen, int * romlen_)
 {
-	if (buflen!=maxromsize)
+	if (buflen != maxromsize)
 	{
-		romdata_r=(unsigned char*)malloc(maxromsize);
+		romdata_r = (unsigned char*)malloc(maxromsize);
 		memcpy((char*)romdata_r/*we just allocated this, it's safe to violate its const*/, romdata_, (size_t)*romlen_);
 	}
-	else romdata_r=(unsigned char*)romdata_;
-	romdata=(unsigned char*)malloc(maxromsize);
+	else romdata_r = (unsigned char*)romdata_;
+	romdata = (unsigned char*)malloc(maxromsize);
 	// RPG Hacker: Without this memset, freespace commands can (and probably will) fail.
 	memset((void*)romdata, 0, maxromsize);
 	memcpy((unsigned char*)romdata, romdata_, (size_t)*romlen_);
 	resetdllstuff();
-	romlen=*romlen_;
-	romlen_r=*romlen_;
+	romlen = *romlen_;
+	romlen_r = *romlen_;
+}
+
+void asar_patch_main(const char * patchloc)
+{
 	try
 	{
-		for (pass=0;pass<3;pass++)
+		for (pass = 0;pass < 3;pass++)
 		{
 			initstuff();
 			assemblefile(patchloc, true);
@@ -199,6 +204,10 @@ EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int *
 		}
 	}
 	catch (errfatal&) {}
+}
+
+bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
+{
 	if (checksum) fixchecksum();
 	if (romdata_!=(char*)romdata_r) free((char*)romdata_r);
 	if (buflen<romlen) error<errnull>(pass, "The given buffer is too small to contain the resulting ROM.");
@@ -214,6 +223,74 @@ EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int *
 	memcpy(romdata_, romdata, (size_t)romlen);
 	free((unsigned char*)romdata);
 	return true;
+}
+
+EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int * romlen_)
+{
+	asar_patch_begin(romdata_, buflen, romlen_);
+
+	virtual_filesystem new_filesystem;
+	new_filesystem.initialize(nullptr, 0);
+	filesystem = &new_filesystem;
+	
+	asar_patch_main(patchloc);
+
+	new_filesystem.destroy();
+	filesystem = nullptr;
+
+	return asar_patch_end(romdata_, buflen, romlen_);
+}
+
+struct patchparams_base
+{
+	int structsize;
+};
+
+struct patchparams_v160 : public patchparams_base
+{
+	const char * patchloc;
+	char * romdata;
+	int buflen;
+	int * romlen;
+
+	const char** includepaths;
+	int numincludepaths;
+};
+
+struct patchparams : public patchparams_v160
+{
+
+};
+
+EXPORT bool asar_patch_ex(const patchparams_base* params)
+{
+	if (params == nullptr)
+	{
+		error<errnull>(pass, "params passed to asar_patch_ex() is null.");
+	}
+
+	if (params->structsize != sizeof(patchparams_v160))
+	{
+		error<errnull>(pass, "Size of params passed to asar_patch_ex() is invalid.");
+	}
+
+	patchparams paramscurrent;
+	memset(&paramscurrent, 0, sizeof(paramscurrent));
+	memcpy(&paramscurrent, params, (size_t)params->structsize);
+
+
+	asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
+
+	virtual_filesystem new_filesystem;
+	new_filesystem.initialize(paramscurrent.includepaths, (size_t)paramscurrent.numincludepaths);
+	filesystem = &new_filesystem;
+
+	asar_patch_main(paramscurrent.patchloc);
+
+	new_filesystem.destroy();
+	filesystem = nullptr;
+
+	return asar_patch_end(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
 }
 
 EXPORT int asar_maxromsize()
@@ -314,11 +391,11 @@ EXPORT const definedata * asar_getalldefines(int * count)
 	return ddata;
 }
 
-long double math(const char * mystr, const char ** e);
+double math(const char * mystr, const char ** e);
 extern autoarray<string> sublabels;
 extern string ns;
 
-EXPORT double asar_math(const char * str, const char ** e)//degrading to normal double because long double seems volatile
+EXPORT double asar_math(const char * str, const char ** e)
 {
 	ns="";
 	sublabels.reset();

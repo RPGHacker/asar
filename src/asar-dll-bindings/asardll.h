@@ -3,7 +3,7 @@
 #define asarfunc extern
 #endif
 
-#define expectedapiversion 300
+#define expectedapiversion 301
 
 #include <stdbool.h>
 
@@ -46,6 +46,24 @@ enum mappertype {
 	norom
 };
 
+
+struct patchparams
+{
+	// The size of this struct. Set to (int)sizeof(patchparams).
+	int structsize;
+
+	// Same parameters as asar_patch()
+	const char * patchloc;
+	char * romdata;
+	int buflen;
+	int * romlen;
+
+	// Include paths to use when searching files.
+	const char** includepaths;
+	int numincludepaths;
+};
+
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -81,7 +99,10 @@ asarfunc bool (*asar_reset)(void);
 // be altered by this function; if this is undesirable, set romlen equal to buflen.
 //The return value is whether any errors appeared (false=errors, call asar_geterrors for details).
 // If there is an error, romdata and romlen will be left unchanged.
-asarfunc bool (*asar_patch)(const char * patchloc, char * romdata, int buflen, int * romlen);
+asarfunc bool(*asar_patch)(const char * patchloc, char * romdata, int buflen, int * romlen);
+
+// An extended version of asar_patch() with a future-proof parameter format.
+asarfunc bool(*asar_patch_ex)(const struct patchparams* params);
 
 //Returns the maximum possible size of the output ROM from asar_patch(). Giving this size to buflen
 // guarantees you will not get any buffer too small errors; however, it is safe to give smaller

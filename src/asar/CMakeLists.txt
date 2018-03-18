@@ -3,6 +3,8 @@
 
 cmake_minimum_required(VERSION 3.9.0)
 
+option(ASAR_GEN_EXE "Generate executable" ON)
+option(ASAR_GEN_DLL "Generate shared library" ON)
 
 
 
@@ -46,6 +48,16 @@ macro(set_asar_shared_properties target)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820")
 	else()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
+
+		# Static link for MinGW
+		if(MINGW)
+			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -static")
+		endif()
+
+		# Garbage collection
+		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s -Wl,--gc-sections")
+		set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "-T")
+		set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "-s -Wl,--gc-sections")
 	endif()
 endmacro()
 
@@ -69,6 +81,9 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/macro.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/math.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.cpp"
+
+	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.cpp"
 	
 	# Not required in here, but useful so they're add to your VS solution
 	"${CMAKE_CURRENT_SOURCE_DIR}/asar.h"
@@ -78,7 +93,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libmisc.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/scapegoat.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.hpp"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
@@ -130,16 +145,18 @@ endif()
 
 # Define stand-alone application
 
-add_executable(
-	asar-standalone
-	
-	"${CMAKE_CURRENT_SOURCE_DIR}/interface-cli.cpp"
-	
-	${ASAR_SHARED_SOURCE_FILES}	
-	${ASAR_RESOURCE_FILES}
-)
+if(ASAR_GEN_EXE)
+	add_executable(
+		asar-standalone
 
-set_asar_shared_properties(asar-standalone)
+		"${CMAKE_CURRENT_SOURCE_DIR}/interface-cli.cpp"
+
+		${ASAR_SHARED_SOURCE_FILES}	
+		${ASAR_RESOURCE_FILES}
+		)
+
+	set_asar_shared_properties(asar-standalone)
+endif(ASAR_GEN_EXE)
 
 
 
@@ -147,13 +164,15 @@ set_asar_shared_properties(asar-standalone)
 
 # Define dynamic library
 
-add_library(
-	asar SHARED	
+if(ASAR_GEN_DLL)
+	add_library(
+		asar SHARED	
+		
+		"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.cpp"
+		
+		${ASAR_SHARED_SOURCE_FILES}
+		${ASAR_LIB_RESOURCE_FILES}
+	)
 	
-	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.cpp"
-	
-	${ASAR_SHARED_SOURCE_FILES}
-	${ASAR_LIB_RESOURCE_FILES}
-)
-
-set_asar_shared_properties(asar)
+	set_asar_shared_properties(asar)
+endif(ASAR_GEN_DLL)

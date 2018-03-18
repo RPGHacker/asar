@@ -4,6 +4,7 @@
 #include "assocarr.h"
 #include "autoarray.h"
 #include "asar.h"
+#include "virtualfile.hpp"
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
@@ -23,7 +24,7 @@ extern char blockreleasedebug[(asarver_beta)?1:-1];
 unsigned const char * romdata_r;
 int romlen_r;
 
-long double math(const char * mystr, const char ** e);
+double math(const char * mystr, const char ** e);
 void initmathcore();
 
 int pass;
@@ -42,6 +43,8 @@ bool errored=false;
 bool ignoretitleerrors=false;
 
 volatile int recursioncount=0;
+
+virtual_filesystem* filesystem = nullptr;
 
 unsigned int labelval(const char ** rawname, bool update);
 unsigned int labelval(char ** rawname, bool update);
@@ -112,19 +115,6 @@ string getdecor()
 		e+=": ";
 	}
 	return e;
-}
-
-//modified from somewhere in nall (license: ISC)
-string dir(char const *name) {
-  string result = name;
-  for(signed i = (int)strlen(result); i >= 0; i--) {
-    if(result[i] == '/' || result[i] == '\\') {
-      result[i + 1] = 0;
-      break;
-    }
-    if(i == 0) result = "";
-  }
-  return result;
 }
 
 extern int freespaceextra;
@@ -261,10 +251,10 @@ int getnum(const char * str)
 }
 
 // RPG Hacker: Same function as above, but doesn't truncate our number via int conversion
-long double getnumdouble(const char * str)
+double getnumdouble(const char * str)
 {
 	const char * e;
-	long double num = math(str, &e);
+	double num = math(str, &e);
 	if (e)
 	{
 		error<errblock>(1, e);
@@ -416,7 +406,7 @@ void resolvedefines(string& out, const char * start)
 					{
 						string newval;
 						resolvedefines(newval, val);
-						long double num= getnumdouble(newval);
+						double num= getnumdouble(newval);
 						if (foundlabel) error<errline>(0, "!Define #= Label is not allowed");
 						defines.create(defname) = ftostr(num);
 						break;
