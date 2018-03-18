@@ -1522,6 +1522,12 @@ void assembleblock(const char * block)
 		if (!basestacknum) error(0, "pullbase without matching pushbase");
 		basestacknum--;
 		snespos = basestack[basestacknum];
+		startpos = basestack[basestacknum];
+
+		if (snespos != realstartpos)
+		{
+			optimizeforbank = -1;
+		}
 	}
 	else if (is1("namespace"))
 	{

@@ -11,11 +11,32 @@
 ;@78
 ;@21 61
 ;@5C 78
+;@01 90 02
+;@00 80 00
+;@01 90 02
 
 @asar 1.60
 
 lorom
 org $008000
+
+
+base $029001
+
+BaseTest1:
+	
+pushbase
+
+base off
+
+BaseTest2:
+
+pullbase
+
+BaseTest3:
+	
+base off
+
 
 ; This file should not exist
 if getfilestatus("bogusfilename.lol") == 0
@@ -52,3 +73,8 @@ db defined("testdefine")
 db "!a"
 db "\!a"
 db "\\!a"
+
+dl BaseTest1
+dl BaseTest2
+dl BaseTest3
+

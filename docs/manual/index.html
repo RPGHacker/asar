@@ -81,6 +81,7 @@
 					<li><a href="#warnpc">warnpc</a></li>
 					<li><a href="#bank">bank</a></li>
 					<li><a href="#pushpc">pushpc/pullpc</a></li>
+					<li><a href="#pushbase">pushbase/pullbase</a></li>
 				</ul>
 			</li>
 			<li><a href="#math">Math</a></li>
@@ -1702,6 +1703,33 @@ CodeInAnotherBank:
 pullpc
 
 bra Main</code></pre>
+        <h4 id="pushbase">pushbase/pullbase</h4>
+		The pushbase command pushes the current base to the stack, the pullbase command restores the base by pulling its value from the stack.
+		<pre><code class="65c816_asar">base $7E2000
+		
+InsideRam:
+	jsl OutsideOfRam
+	; ...
+
+pushbase
+pushpc
+base off
+
+freecode
+
+OutsideOfRam:
+	; ...
+	jsl InRamAgain
+	rtl
+
+pullpc
+pullbase
+
+InRamAgain:
+	; ...
+	rtl
+
+base off</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
 		<p id="math"><h3>Math</h3>
