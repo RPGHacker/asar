@@ -415,12 +415,12 @@ inline string dec(int value)
 	return buffer;
 }
 
-inline string ftostr(long double value)
+inline string ftostr(double value)
 {
 	char rval[256];
-	// RPG Hacker: Ridiculously high precision, I know, but we're working with long doubles
-	// here and can afforc it, so no need to waste any precision
-	sprintf(rval, "%.100Lf", value);
+	// RPG Hacker: Ridiculously high precision, I know, but we're working with doubles
+	// here and can afford it, so no need to waste any precision
+	sprintf(rval, "%.100f", value);
 	if (strchr(rval, '.'))//nuke useless zeroes
 	{
 		char * end=strrchr(rval, '\0')-1;
@@ -435,7 +435,7 @@ inline string ftostr(long double value)
 }
 
 // Same as above, but with variable precision
-inline string ftostrvar(long double value, int precision)
+inline string ftostrvar(double value, int precision)
 {
 	int clampedprecision = precision;
 	if (clampedprecision < 0) clampedprecision = 0;
