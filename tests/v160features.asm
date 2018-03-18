@@ -6,6 +6,8 @@
 ;@DD
 ;@01
 ;@00
+;@00
+;@01
 
 @asar 1.60
 
@@ -32,3 +34,11 @@ db readfile1("data/filename with spaces.bin", 20, $DD)
 !testdefine = "poop"
 db defined("testdefine")
 db defined("shouldntexist")
+
+undef "testdefine"
+
+db defined("testdefine")
+
+!testdefine = "oppo"
+
+db defined("testdefine")
