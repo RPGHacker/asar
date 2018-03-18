@@ -2128,6 +2128,7 @@ undef "define"
 if defined("define")
 	print "This won't be printed!"
 endif</code></pre>
+		Note that Asar tries to replace defines wherever possible, even inside strings. In some occasions, this might be undesirable. See section <a href="#tables">Tables</a> for details on how to escape certain characters.<br/>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <p id="macros"><h3>Macros</h3>
@@ -2520,6 +2521,17 @@ cleartable
 
 ; This writes $41 $42 $43
 db "ABC"</code></pre>
+		Note that Asar tries to replace defines wherever possible - even inside strings. Sometimes, this might be undesired. In those cases, you can prefix the <code>!</code> with a <code>\</code> to escape it. The <code>\</code> itself can be escaped with another <code>\</code>.
+		<pre><code class="65c816_asar">!define = "text"
+		
+; This writes "text" to the ROM
+db "!define"
+
+; This writes "!define" to the ROM
+db "\!define"
+
+; This writes "\text" to the ROM
+db "\\!define"</code></pre>
 		<h4 id="fill">fillbyte/fill</h4>
 		<pre><code class="65c816_asar">fillbyte {byte}</code></pre>
 		<pre><code class="65c816_asar">fill {num}</code></pre>

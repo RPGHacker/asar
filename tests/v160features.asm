@@ -8,6 +8,9 @@
 ;@00
 ;@00
 ;@01
+;@78
+;@21 61
+;@5C 78
 
 @asar 1.60
 
@@ -42,3 +45,10 @@ db defined("testdefine")
 !testdefine = "oppo"
 
 db defined("testdefine")
+
+
+!a = "x"
+
+db "!a"
+db "\!a"
+db "\\!a"

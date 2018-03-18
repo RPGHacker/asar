@@ -298,7 +298,13 @@ void resolvedefines(string& out, const char * start)
 			while (*here && *here!='"') out+=*here++;
 			out+=*here++;
 		}
-		else if (here[0]=='\\' && here[1]=='!')
+		else if (here[0] == '\\' && here[1] == '\\')
+		{
+			// allow using \\ as escape sequence
+			out += "\\";
+			here += 2;
+		}
+		else if (here[0] == '\\' && here[1] == '!')
 		{
 			// allow using \! to escape !
 			out+="!";
