@@ -148,7 +148,7 @@ int main(int argc, char * argv[])
 	{
 		initmathcore();
 		string version=S"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
-				dec(asarver_bug)+(asarver_beta?"pre":"")+", by Alcaro";
+				dec(asarver_bug)+(asarver_beta?"pre":"");
 		char * myname=argv[0];
 		if (strrchr(myname, '/')) myname=strrchr(myname, '/')+1;
 		//char * dot=strrchr(myname, '.');

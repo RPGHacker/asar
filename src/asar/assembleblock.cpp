@@ -491,9 +491,9 @@ void setlabel(string name, int loc=-1)
 	else if (pass==2)
 	{
 		//all label locations are known at this point, add a sanity check
-		if (!labels.exists(name)) error(2, "Internal error: A label was created on the third pass. Send this patch to Alcaro so he can debug it.");
+		if (!labels.exists(name)) error(2, "Internal error: A label was created on the third pass. Send this patch to the maintainer so he can debug it.");
 		labelpos = labels.find(name);
-		if ((int)labelpos!=loc && !movinglabelspossible) error(2, "Internal error: A label is moving around. Send this patch to Alcaro so he can debug it.");
+		if ((int)labelpos!=loc && !movinglabelspossible) error(2, "Internal error: A label is moving around. Send this patch to the maintainer so he can debug it.");
 	}
 }
 
