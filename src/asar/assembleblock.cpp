@@ -1002,10 +1002,12 @@ void assembleblock(const char * block)
 	}
 	else if (is1("expecttitle"))
 	{
+		// RPG Hacker: Removed trimming for now - I think requiring an exact match is probably
+		// better here (not sure, though, it's worth discussing)
 		string expected_title = dequote(par);
 		// randomdude999: this also removes leading spaces because itrim gets stuck in an endless
 		// loop when multi is true and one argument is empty
-		expected_title = itrim(expected_title.str, " ", " ", true); // remove trailing spaces
+		//expected_title = itrim(expected_title.str, " ", " ", true); // remove trailing spaces
 		// in hirom the rom needs to be an entire bank for it to have a title, other modes only need 0x8000 bytes
 		if (romlen < ((mapper==hirom || mapper==exhirom) ? 0x10000 : 0x8000)) // too short
 		{
@@ -1030,8 +1032,8 @@ void assembleblock(const char * block)
 				if (c=='\0') c=155;
 				actual_display_title += (char)c;
 			}
-			actual_display_title = itrim(actual_display_title.str, " ", " ", true); // remove trailing spaces
-			actual_title = itrim(actual_title.str, " ", " ", true); // remove trailing spaces
+			//actual_display_title = itrim(actual_display_title.str, " ", " ", true); // remove trailing spaces
+			//actual_title = itrim(actual_title.str, " ", " ", true); // remove trailing spaces
 			if (strncmp(expected_title, actual_title, 21) != 0)
 			{
 				if (!ignoretitleerrors) // title errors shouldn't be ignored
