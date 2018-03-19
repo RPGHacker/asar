@@ -218,7 +218,9 @@ autoarray<int>* macroneglabels;
 autoarray<string> sublabels;
 autoarray<string>* macrosublabels;
 
+// randomdude999: ns is still the string to prefix to all labels, it's calculated whenever namespace_list is changed
 string ns;
+autoarray<string> namespace_list;
 
 //bool fastrom=false;
 
@@ -604,6 +606,7 @@ void initstuff()
 	repeatnext=1;
 	defines.reset();
 	ns="";
+	namespace_list.reset();
 	sublabels.reset();
 	poslabels.reset();
 	neglabels.reset();
@@ -1536,15 +1539,24 @@ void assembleblock(const char * block)
 	{
 		if (par)
 		{
-			if (!stricmp(par, "off")) ns="";
+			if (!stricmp(par, "exit")) namespace_list.remove(namespace_list.count-1);
+			if (!stricmp(par, "off")) namespace_list.reset();
 			else
 			{
 				const char * tmpstr=dequote(par);
 				if (!confirmname(tmpstr)) error(0, "Bad namespace name");
-				ns=tmpstr;
+				namespace_list.append(S tmpstr);
 			}
 		}
-		else ns="";
+		else namespace_list.remove(namespace_list.count-1);
+
+		// recompute ns
+		ns = "";
+		for (int i = 0; i < namespace_list.count; i++)
+		{
+			if (i > 0) ns += S"_";
+			ns += namespace_list[i];
+		}
 	}
 	else if (is1("warnpc"))
 	{

@@ -394,10 +394,12 @@ EXPORT const definedata * asar_getalldefines(int * count)
 double math(const char * mystr, const char ** e);
 extern autoarray<string> sublabels;
 extern string ns;
+extern autoarray<string> namespace_list;
 
 EXPORT double asar_math(const char * str, const char ** e)
 {
 	ns="";
+	namespace_list.reset();
 	sublabels.reset();
 	errored=false;
 	ismath=true;
