@@ -153,7 +153,12 @@ int main(int argc, char * argv[])
 		if (strrchr(myname, '/')) myname=strrchr(myname, '/')+1;
 		//char * dot=strrchr(myname, '.');
 		//if (dot) *dot='\0';
-		if (!strncasecmp(myname, "xkas", strlen("xkas"))) errloc=stdout;
+		if (!strncasecmp(myname, "xkas", strlen("xkas"))) {
+			// can we use warn here?
+			puts("Warning: xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
+			puts("(this was triggered by renaming asar.exe to xkas.exe, which activated a compatibility feature.)");
+			errloc=stdout;
+		}
 		//if (dot) *dot='.';
 		libcon_init(argc, argv,
 			"[options] asm_file [rom_file]\n"

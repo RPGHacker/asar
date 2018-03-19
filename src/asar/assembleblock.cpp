@@ -1092,7 +1092,7 @@ void assembleblock(const char * block)
 		if (!asarverallowed) error(0, "This command may only be used at the start of a file.");
 		if (incsrcdepth != 1 && !emulatexkas) error(0, "This command may only be used in the root file.");
 		if (specifiedasarver) error(0, "Using @xkas and @asar in the same patch is not supported.");
-		warn0("xkas support is being deprecated. Please use an older version of Asar (<=1.50) if you need it.");
+		warn0("xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
 		emulatexkas=true;
 		optimizeforbank=0x100;
 		checksum=false;
@@ -1924,7 +1924,7 @@ void assembleblock(const char * block)
 		else error(0, "Invalid warn command.");
 		if(0);
 		else if (!stricmp(word[1], "xkas")) {
-			warn0("xkas support is being deprecated. Please use an older version of Asar (<=1.50) if you need it.");
+			warn0("xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
 			warnxkas=val;
 		}
 		else error(0, "Invalid warn command.");
