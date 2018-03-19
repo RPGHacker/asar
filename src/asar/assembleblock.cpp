@@ -18,6 +18,7 @@ bool emulatexkas;
 bool specifiedasarver = false;
 
 extern int optimizeforbank;
+extern bool ignoretitleerrors;
 
 int old_snespos;
 int old_startpos;
@@ -536,6 +537,9 @@ int arch4;
 autoarray<pushable> pushpc;
 int pushpcnum;
 
+autoarray<int> basestack;
+int basestacknum;
+
 unsigned char fillbyte[12];
 unsigned char padbyte[12];
 
@@ -995,6 +999,49 @@ void assembleblock(const char * block)
 	else if (is1("warn"))
 	{
 		if (pass==2) warn(dequote(par));
+	}
+	else if (is1("expecttitle"))
+	{
+		// RPG Hacker: Removed trimming for now - I think requiring an exact match is probably
+		// better here (not sure, though, it's worth discussing)
+		string expected_title = dequote(par);
+		// randomdude999: this also removes leading spaces because itrim gets stuck in an endless
+		// loop when multi is true and one argument is empty
+		//expected_title = itrim(expected_title.str, " ", " ", true); // remove trailing spaces
+		// in hirom the rom needs to be an entire bank for it to have a title, other modes only need 0x8000 bytes
+		if (romlen < ((mapper==hirom || mapper==exhirom) ? 0x10000 : 0x8000)) // too short
+		{
+			if (!ignoretitleerrors) // title errors shouldn't be ignored
+				error(0, S"ROM is too short to have a title (expected '" + expected_title + "')");
+			else // title errors should be ignored, throw a warning anyways
+				if (pass==0) warn(S"ROM is too short to have a title (expected '" + expected_title + "')");
+		}
+		else {
+			string actual_title;
+			string actual_display_title;
+			for (int i=0;i<21;i++)
+			{
+				unsigned char c = romdata[snestopc(0x00FFC0+i)];
+				actual_title += (char)c;
+				// the replacements are from interface-cli.cpp
+				if (c==7) c=14;
+				if (c==8) c=27;
+				if (c==9) c=26;
+				if (c=='\r') c=17;
+				if (c=='\n') c=25;
+				if (c=='\0') c=155;
+				actual_display_title += (char)c;
+			}
+			//actual_display_title = itrim(actual_display_title.str, " ", " ", true); // remove trailing spaces
+			//actual_title = itrim(actual_title.str, " ", " ", true); // remove trailing spaces
+			if (strncmp(expected_title, actual_title, 21) != 0)
+			{
+				if (!ignoretitleerrors) // title errors shouldn't be ignored
+					error(0, S"ROM title is incorrect. Expected '" + expected_title + "', got '" + actual_display_title + "'");
+				else // title errors should be ignored, throw a warning anyways
+					if (pass==0) warn(S"ROM title is incorrect. Expected '" + expected_title + "', got '" + actual_display_title + "'");
+			}
+		}
 	}
 	else if (is0("asar") || is1("asar"))
 	{
@@ -1465,6 +1512,24 @@ void assembleblock(const char * block)
 		freespaceid=pushpc[pushpcnum].freeid;
 		freespaceextra=pushpc[pushpcnum].freeex;
 		freespacestart=pushpc[pushpcnum].freest;
+	}
+	else if (is0("pushbase"))
+	{
+		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
+		basestack[basestacknum] = snespos;
+		basestacknum++;
+	}
+	else if (is0("pullbase"))
+	{
+		if (!basestacknum) error(0, "pullbase without matching pushbase");
+		basestacknum--;
+		snespos = basestack[basestacknum];
+		startpos = basestack[basestacknum];
+
+		if (snespos != realstartpos)
+		{
+			optimizeforbank = -1;
+		}
 	}
 	else if (is1("namespace"))
 	{

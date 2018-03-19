@@ -165,7 +165,7 @@ int main(int argc, char * argv[])
 			"                   Specify when Asar should pause the application (never, on error, on warning or always)\n"
 			" -werror           Treat warnings as errors\n"
 			);
-		bool ignoreerrors=false;
+		ignoretitleerrors=false;
 		string par;
 		bool verbose=libcon_interactive;
 		bool printed_version=false;
@@ -181,7 +181,7 @@ int main(int argc, char * argv[])
 #define checkstartmatch(arg, stringliteral) (!strncmp(arg, stringliteral, strlen(stringliteral)))
 
 			if (par=="-werror") werror=true;
-			else if (par=="--no-title-check") ignoreerrors=true;
+			else if (par=="--no-title-check") ignoretitleerrors=true;
 			else if (par == "-v" || par=="--verbose") verbose=true;
 			else if (par=="--version")
 			{
@@ -281,7 +281,7 @@ int main(int argc, char * argv[])
 			return 1;
 		}
 		//check if the ROM title and checksum looks sane
-		if (romlen>=32768 && !ignoreerrors)
+		if (romlen>=32768 && !ignoretitleerrors)
 		{
 			bool validtitle=setmapper();
 			if (!validtitle)
@@ -289,7 +289,7 @@ int main(int argc, char * argv[])
 				string title;
 				for (int i=0;i<21;i++)
 				{
-					unsigned char c=romdata[snestopc(0x00FFC0)];
+					unsigned char c=romdata[snestopc(0x00FFC0+i)];
 					if (c==7) c=14;
 					if (c==8) c=27;//to not generate more hard-to-print characters than needed
 					if (c==9) c=26;//random characters are picked in accordance with the charset Windows-1252, but they should be garbage in all charsets

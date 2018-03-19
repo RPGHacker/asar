@@ -6,6 +6,8 @@
 #include "asar.h"
 #include "virtualfile.hpp"
 
+// randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
+// Couldn't find a way to automate this without shoving the version somewhere in the CMake files
 extern const int asarver_maj=1;
 extern const int asarver_min=6;
 extern const int asarver_bug=0;
@@ -38,6 +40,7 @@ const char * callerfilename=NULL;
 int callerline=-1;
 
 bool errored=false;
+bool ignoretitleerrors=false;
 
 volatile int recursioncount=0;
 
@@ -294,6 +297,18 @@ void resolvedefines(string& out, const char * start)
 			out+=*here++;
 			while (*here && *here!='"') out+=*here++;
 			out+=*here++;
+		}
+		else if (here[0] == '\\' && here[1] == '\\')
+		{
+			// allow using \\ as escape sequence
+			out += "\\";
+			here += 2;
+		}
+		else if (here[0] == '\\' && here[1] == '!')
+		{
+			// allow using \! to escape !
+			out+="!";
+			here += 2;
 		}
 		else if (*here=='!')
 		{

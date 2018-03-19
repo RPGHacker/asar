@@ -61,6 +61,7 @@
 					<li><a href="#warn-xkas">warn xkas</a></li>
 					<li><a href="#math-pri">math pri</a></li>
 					<li><a href="#math-round">math round</a></li>
+					<li><a href="#expecttitle">expecttitle</a></li>
 				</ul>
 			</li>
 			<li>
@@ -81,6 +82,7 @@
 					<li><a href="#warnpc">warnpc</a></li>
 					<li><a href="#bank">bank</a></li>
 					<li><a href="#pushpc">pushpc/pullpc</a></li>
+					<li><a href="#pushbase">pushbase/pullbase</a></li>
 				</ul>
 			</li>
 			<li><a href="#math">Math</a></li>
@@ -1585,6 +1587,18 @@ db (3/4)+1.75
 
 ; !some_number contains 0.75 after this line
 !some_number #= 0.75</code></pre>
+		<h4 id="expecttitle">expecttitle</h4>
+		<pre><code class="65c816_asar">expecttitle &quot;{title}&quot;</code></pre>
+		The expecttitle command verifies that the title stored in the output ROM is identical to <code>title</code>. If it isn't, an error is thrown (unless <code>--no-title-check</code> is passed to the application, in which case only a warning is thrown - see section <a href="#usage">Usage</a> for details). The purpose of this command is to assure that patches are applied to the correct output ROM.
+		<pre><code class="65c816_asar">; This patch is only for a Super Mario World ROM
+expecttitle &quot;SUPER MARIOWORLD     &quot;
+
+; Remove small bonus stars from game
+org $009053
+	nop #3
+	
+org $009068
+	nop #3</code></pre>
 <a href="#contents">Return to top</a></p>
 		<hr />
         <p id="formatting"><h3>Code Formatting</h3>
@@ -1702,6 +1716,33 @@ CodeInAnotherBank:
 pullpc
 
 bra Main</code></pre>
+        <h4 id="pushbase">pushbase/pullbase</h4>
+		The pushbase command pushes the current base to the stack, the pullbase command restores the base by pulling its value from the stack.
+		<pre><code class="65c816_asar">base $7E2000
+		
+InsideRam:
+	jsl OutsideOfRam
+	; ...
+
+pushbase
+pushpc
+base off
+
+freecode
+
+OutsideOfRam:
+	; ...
+	jsl InRamAgain
+	rtl
+
+pullpc
+pullbase
+
+InRamAgain:
+	; ...
+	rtl
+
+base off</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
 		<p id="math"><h3>Math</h3>
@@ -2128,6 +2169,7 @@ undef "define"
 if defined("define")
 	print "This won't be printed!"
 endif</code></pre>
+		Note that Asar tries to replace defines wherever possible, even inside strings. In some occasions, this might be undesirable. See section <a href="#tables">Tables</a> for details on how to escape certain characters.<br/>
 		<a href="#contents">Return to top</a></p>
 		<hr />
         <p id="macros"><h3>Macros</h3>
@@ -2520,6 +2562,17 @@ cleartable
 
 ; This writes $41 $42 $43
 db "ABC"</code></pre>
+		Note that Asar tries to replace defines wherever possible - even inside strings. Sometimes, this might be undesired. In those cases, you can prefix the <code>!</code> with a <code>\</code> to escape it. The <code>\</code> itself can be escaped with another <code>\</code>.
+		<pre><code class="65c816_asar">!define = "text"
+		
+; This writes "text" to the ROM
+db "!define"
+
+; This writes "!define" to the ROM
+db "\!define"
+
+; This writes "\text" to the ROM
+db "\\!define"</code></pre>
 		<h4 id="fill">fillbyte/fill</h4>
 		<pre><code class="65c816_asar">fillbyte {byte}</code></pre>
 		<pre><code class="65c816_asar">fill {num}</code></pre>

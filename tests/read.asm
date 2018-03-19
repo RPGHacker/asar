@@ -3,6 +3,9 @@
 ;@07FDC 49 5F B6 A0
 ;@80000
 ;must be in "patch-to-smw" mode since Asar considers it to read outside the ROM otherwise
+
+expecttitle "SUPER MARIOWORLD     "
+
 org $008000
 db $01
 db read1($008000)+1
