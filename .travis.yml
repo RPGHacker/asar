@@ -3,8 +3,19 @@ install:
   # Download a recent version of CMake
   - wget -O cmake.sh https://cmake.org/files/v3.10/cmake-3.10.0-rc1-Linux-x86_64.sh 
   - sudo sh cmake.sh --skip-license --exclude-subdir --prefix=/usr/local
+  # make links for the newer gcc
+  - ln -s /usr/bin/gcc /usr/local/bin/gcc
+  - ln -s /usr/bin/g++ /usr/local/bin/g++
 script:
   - cd src && mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Debug ..
   - make
+# I have no idea what i'm doing but w/e
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-6
+      - g++-6
 # TODO: actually test
