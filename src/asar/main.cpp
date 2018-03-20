@@ -516,7 +516,10 @@ int incsrcdepth=0;
 void assemblefile(const char * filename, bool toplevel)
 {
 	incsrcdepth++;
-	thisfilename=filename;
+	// randomdude999: this must be done later because otherwise readfile breaks
+	//thisfilename=filename;
+	// also this must be done earlier for the top level file otherwise some other stuff probably breaks (not sure)
+	if (toplevel) thisfilename = filename;
 	thisline=-1;
 	thisblock=NULL;
 	sourcefile file;
@@ -526,6 +529,7 @@ void assemblefile(const char * filename, bool toplevel)
 	if (!filecontents.exists(filename))
 	{
 		char * temp=readfile(filename);
+		thisfilename = filename;
 		if (!temp)
 		{
 			error<errnull>(0, "Couldn't open file");
@@ -600,6 +604,8 @@ void assemblefile(const char * filename, bool toplevel)
 				if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
 					i = whilestatus[numif].startline - 1;
 			}
+			if(stop_assembling_this_file)
+				break;
 		}
 		catch (errline&) {}
 	}
