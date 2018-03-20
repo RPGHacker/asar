@@ -5,8 +5,8 @@ install:
     mkdir src\build
 
     cd src\build
-    
-    cmake -DCMAKE_BUILD_TYPE=Release ..
+
+    cmake --config Release ..
 build:
   verbosity: minimal
 artifacts:
