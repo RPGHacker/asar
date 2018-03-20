@@ -547,6 +547,8 @@ unsigned char padbyte[12];
 
 bool sandbox=false;
 
+bool disable_bank_cross_errors = false;
+
 int getfreespaceid()
 {
 	if (freespaceidnext>125) fatalerror("A patch may not contain more than 125 freespaces.");
@@ -556,6 +558,7 @@ int getfreespaceid()
 void checkbankcross()
 {
 	if (snespos<0 && realsnespos<0 && startpos<0 && realstartpos<0) return;
+	if (disable_bank_cross_errors) return;
 //puts(S hex(snespos)+"^"+hex(startpos)+"&0xFFFF0000 ("+hex((snespos^startpos)&0xFFFF0000)+")");
 //puts(S hex(realsnespos)+"^"+hex(realstartpos)+"&0xFFFF0000 ("+hex((realsnespos^realstartpos)&0xFFFF0000)+")");
 	if ((((    snespos^    startpos)&0x7FFF0000) && (((    snespos-1)^    startpos)&0x7FFF0000)) ||
@@ -639,6 +642,7 @@ void initstuff()
 
 	warnxkas=false;
 	emulatexkas=false;
+	disable_bank_cross_errors = false;
 }
 
 
@@ -1926,6 +1930,9 @@ void assembleblock(const char * block)
 		else if (!stricmp(word[1], "xkas")) {
 			warn0("xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
 			warnxkas=val;
+		}
+		else if (!stricmp(word[1], "bankcross")) {
+			disable_bank_cross_errors = !val;
 		}
 		else error(0, "Invalid warn command.");
 	}
