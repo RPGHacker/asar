@@ -3,7 +3,9 @@ image: Visual Studio 2015
 install:
 - cmd: >-
     mkdir src\build
+
     cd src\build
+    
     cmake -DCMAKE_BUILD_TYPE=Release ..
 build:
   verbosity: minimal
