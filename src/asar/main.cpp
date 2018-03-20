@@ -604,8 +604,6 @@ void assemblefile(const char * filename, bool toplevel)
 				if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
 					i = whilestatus[numif].startline - 1;
 			}
-			if(stop_assembling_this_file)
-				break;
 		}
 		catch (errline&) {}
 	}
