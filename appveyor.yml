@@ -6,10 +6,12 @@ install:
 
     cd src\build
 
-    cmake --config Release ..
+    cmake ..
 build:
   verbosity: minimal
 artifacts:
 - path: src\build\asar\Release\asar-standalone.exe
 - path: src\build\asar\Release\asar.dll
+configuration: Release
+platform: x86
 # TODO: use asar's built-in test suite
