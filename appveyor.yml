@@ -1,0 +1,13 @@
+version: '{build}'
+image: Visual Studio 2015
+install:
+- cmd: >-
+    mkdir src\build
+    cd src\build
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+build:
+  verbosity: minimal
+artifacts:
+- path: src\build\asar\Release\asar-standalone.exe
+- path: src\build\asar\Release\asar.dll
+# TODO: use asar's built-in test suite

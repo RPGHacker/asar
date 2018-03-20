@@ -8,10 +8,9 @@ install:
   - export CC=/usr/bin/gcc-6
   - export CXX=/usr/bin/g++-6
 script:
-  - cd src && mkdir build && cd build
-  - cmake -DCMAKE_BUILD_TYPE=Debug ..
+  - mkdir src/build && cd src/build
+  - cmake -DCMAKE_BUILD_TYPE=Release ..
   - make
-# I have no idea what i'm doing but w/e
 addons:
   apt:
     sources:
@@ -19,4 +18,4 @@ addons:
     packages:
       - gcc-6
       - g++-6
-# TODO: actually test
+# TODO: actually use asar's test suite
