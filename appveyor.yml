@@ -13,5 +13,5 @@ artifacts:
 - path: src\build\asar\Release\asar-standalone.exe
 - path: src\build\asar\Release\asar.dll
 configuration: Release
-platform: x86
+platform: Win32
 # TODO: use asar's built-in test suite
