@@ -18,7 +18,7 @@ __all__ = ["errordata", "writtenblockdata", "mappertype", "version",
            "geterrors", "getwarnings", "getprints", "getalllabels",
            "getlabelval", "getdefine", "getalldefines", "resolvedefines",
            "math", "getwrittenblocks", "getmapper"]
-_target_api_ver = 300
+_target_api_ver = 301
 _asar = None
 
 
@@ -61,6 +61,16 @@ class writtenblockdata(ctypes.Structure):
             self.snesoffset, self.pcoffset, self.numbytes)
 
 
+class patchparams(ctypes.Structure):
+    _fields_ = [("structsize", c_int),
+                ("patchloc", c_char_p),
+                ("romdata", c_char_p),
+                ("buflen", c_int),
+                ("romlen", c_int_ptr),
+                ("includepaths", POINTER(c_char_p)),
+                ("numincludepaths", c_int),
+                ("should_reset", c_bool)]
+
 class mappertype(enum.Enum):
     invalid_mapper = 0
     lorom = 1
@@ -99,6 +109,7 @@ class _AsarDLL:
             self.setup_func("reset", (), ctypes.c_bool)
             self.setup_func("patch", (c_char_p, c_char_p, c_int, c_int_ptr),
                             ctypes.c_bool)
+            self.setup_func("patch_ex", (patchparams), ctypes.c_bool)
             self.setup_func("maxromsize", (), c_int)
             self.setup_func("close", (), None)
             self.setup_func("geterrors", (c_int_ptr,), POINTER(errordata))
@@ -212,16 +223,37 @@ def reset():
     return _asar.dll.asar_reset()
 
 
-def patch(patch_name, rom_data):
+def patch(patch_name, rom_data, includepaths=[], should_reset=True):
     """Applies a patch.
 
     Returns (success, new_rom_data). If success is False you should call
     geterrors() to see what went wrong. rom_data is assumed to be headerless.
+
+    If includepaths is specified, it lists additional include paths for asar to
+    search. Specifying it also means asar_patch_ex is used automatically.
+
+    should_reset specifies whether asar should clear out all defines, labels,
+    etc from the last inserted file. Setting it to False will make Asar act
+    like the currently patched file was directly appended to the previous one.
     """
     romlen = c_int(len(rom_data))
     rom_ptr = ctypes.create_string_buffer(rom_data, maxromsize())
-    result = _asar.dll.asar_patch(patch_name.encode(), rom_ptr, maxromsize(),
-                                  ctypes.byref(romlen))
+    if includepaths or not should_reset:
+        pp = patchparams()
+        pp.structsize = ctypes.sizeof(patchparams)
+        pp.patchloc = patch_name.encode()
+        pp.romdata = rom_data
+        pp.buflen = maxromsize()
+        pp.romlen = ctypes.pointer(romlen)
+        # construct an array type of len(includepaths) elements and initialize
+        # it with elements from includepaths
+        pp.includepaths = (c_char_p*len(includepaths))(*includepaths)
+        pp.numincludepaths = len(includepaths)
+        pp.should_reset = should_reset
+        result = _asar.dll.asar_patch_ex(pp)
+    else:
+        result = _asar.dll.asar_patch(patch_name.encode(), rom_ptr,
+                                      maxromsize(), ctypes.byref(romlen))
     return result, rom_ptr.raw[:romlen.value]
 
 
