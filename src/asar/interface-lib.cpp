@@ -175,7 +175,7 @@ EXPORT void asar_close()
 }
 
 #define maxromsize (16*1024*1024)
-void asar_patch_begin(char * romdata_, int buflen, int * romlen_)
+void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool should_reset)
 {
 	if (buflen != maxromsize)
 	{
@@ -187,7 +187,8 @@ void asar_patch_begin(char * romdata_, int buflen, int * romlen_)
 	// RPG Hacker: Without this memset, freespace commands can (and probably will) fail.
 	memset((void*)romdata, 0, maxromsize);
 	memcpy((unsigned char*)romdata, romdata_, (size_t)*romlen_);
-	resetdllstuff();
+	if (should_reset)
+		resetdllstuff();
 	romlen = *romlen_;
 	romlen_r = *romlen_;
 }
@@ -227,7 +228,7 @@ bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 
 EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int * romlen_)
 {
-	asar_patch_begin(romdata_, buflen, romlen_);
+	asar_patch_begin(romdata_, buflen, romlen_, true);
 
 	virtual_filesystem new_filesystem;
 	new_filesystem.initialize(nullptr, 0);
@@ -255,6 +256,8 @@ struct patchparams_v160 : public patchparams_base
 
 	const char** includepaths;
 	int numincludepaths;
+
+	bool should_reset;
 };
 
 struct patchparams : public patchparams_v160
@@ -279,7 +282,7 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	memcpy(&paramscurrent, params, (size_t)params->structsize);
 
 
-	asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
+	asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen, paramscurrent.should_reset);
 
 	virtual_filesystem new_filesystem;
 	new_filesystem.initialize(paramscurrent.includepaths, (size_t)paramscurrent.numincludepaths);

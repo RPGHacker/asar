@@ -61,6 +61,10 @@ struct patchparams
 	// Include paths to use when searching files.
 	const char** includepaths;
 	int numincludepaths;
+
+	// should everything be reset before patching? Setting it to false will make asar
+	// act like the currently patched file was directly appended to the previous one.
+	bool should_reset;
 };
 
 
