@@ -566,6 +566,7 @@ void assemblefile(const char * filename, bool toplevel)
 		}
 		filecontents.create(filename) = file;
 	} else { // filecontents.exists(filename)
+		thisfilename = filename;
 		file = filecontents.find(filename);
 	}
 	bool inmacro=false;
