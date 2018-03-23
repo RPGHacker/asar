@@ -6,7 +6,7 @@
 #define realloc(val, type, count) (type*)realloc(val, sizeof(type)*(count))
 
 extern virtual_filesystem* filesystem;
-extern const char * thisfilename_real;
+extern string thisfilename_real;
 
 char * readfile(const char * fname)
 {

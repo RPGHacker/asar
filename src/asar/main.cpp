@@ -33,7 +33,7 @@ int pass;
 int optimizeforbank=-1;
 
 const char * thisfilename;
-const char * thisfilename_real;
+string thisfilename_real;
 int thisline;
 int lastspecialline=-1;
 const char * thisblock;
