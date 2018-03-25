@@ -5,7 +5,6 @@
 #include "autoarray.h"
 #include "asar.h"
 #include "virtualfile.hpp"
-#include "platform/file-helpers.h"
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
@@ -33,7 +32,6 @@ int pass;
 int optimizeforbank=-1;
 
 const char * thisfilename;
-string thisfilename_real;
 int thisline;
 int lastspecialline=-1;
 const char * thisblock;
@@ -47,7 +45,6 @@ bool ignoretitleerrors=false;
 volatile int recursioncount=0;
 
 virtual_filesystem* filesystem = nullptr;
-autoarray<string> includepaths;
 
 unsigned int labelval(const char ** rawname, bool update);
 unsigned int labelval(char ** rawname, bool update);
@@ -522,10 +519,7 @@ void assemblefile(const char * filename, bool toplevel)
 	// randomdude999: this must be done later because otherwise readfile breaks
 	//thisfilename=filename;
 	// also this must be done earlier for the top level file otherwise some other stuff probably breaks (not sure)
-	if (toplevel) {
-		thisfilename = filename;
-		thisfilename_real = filename; // this doesn't have any include path shenanigans since it's top level
-	}
+	if (toplevel) thisfilename = filename;
 	thisline=-1;
 	thisblock=NULL;
 	sourcefile file;
@@ -536,7 +530,6 @@ void assemblefile(const char * filename, bool toplevel)
 	{
 		char * temp=readfile(filename);
 		thisfilename = filename;
-		thisfilename_real = get_real_path(filename, thisfilename_real, includepaths);
 		if (!temp)
 		{
 			error<errnull>(0, "Couldn't open file");
@@ -574,7 +567,6 @@ void assemblefile(const char * filename, bool toplevel)
 		filecontents.create(filename) = file;
 	} else { // filecontents.exists(filename)
 		thisfilename = filename;
-		thisfilename_real = get_real_path(filename, thisfilename_real, includepaths);
 		file = filecontents.find(filename);
 	}
 	bool inmacro=false;

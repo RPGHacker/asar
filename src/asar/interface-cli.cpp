@@ -35,8 +35,6 @@ string getdecor();
 
 extern const char * thisfilename;
 
-extern autoarray<string> includepaths;
-
 extern assocarr<string> defines;//these two are useless for cli, but they may be useful for other stuff
 extern assocarr<unsigned int> labels;
 
@@ -178,6 +176,7 @@ int main(int argc, char * argv[])
 		bool verbose=libcon_interactive;
 		bool printed_version=false;
 
+		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;
 
 		while ((par=libcon_option()))

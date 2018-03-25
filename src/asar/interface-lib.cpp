@@ -28,8 +28,6 @@ extern int callerline;
 
 extern virtual_filesystem* filesystem;
 
-extern autoarray<string> includepaths;
-
 autoarray<const char *> prints;
 int numprint;
 
@@ -288,11 +286,6 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 
 	virtual_filesystem new_filesystem;
 	new_filesystem.initialize(paramscurrent.includepaths, (size_t)paramscurrent.numincludepaths);
-	includepaths.reset();
-	for (int i = 0; i < paramscurrent.numincludepaths; i++)
-	{
-		includepaths.append(S paramscurrent.includepaths[i]);
-	}
 	filesystem = &new_filesystem;
 
 	asar_patch_main(paramscurrent.patchloc);

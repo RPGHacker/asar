@@ -6,11 +6,11 @@
 #define realloc(val, type, count) (type*)realloc(val, sizeof(type)*(count))
 
 extern virtual_filesystem* filesystem;
-extern string thisfilename_real;
+extern const char * thisfilename;
 
 char * readfile(const char * fname)
 {
-	virtual_file_handle myfile = filesystem->open_file(fname, thisfilename_real);
+	virtual_file_handle myfile = filesystem->open_file(fname, thisfilename);
 	if (myfile == INVALID_VIRTUAL_FILE_HANDLE) return NULL;
 	size_t datalen = filesystem->get_file_size(myfile);
 	char * data=malloc(char, datalen+1);
@@ -29,7 +29,7 @@ char * readfile(const char * fname)
 
 bool readfile(const char * fname, char ** data, int * len)
 {
-	virtual_file_handle myfile = filesystem->open_file(fname, thisfilename_real);
+	virtual_file_handle myfile = filesystem->open_file(fname, thisfilename);
 	if (!myfile) return false;
 	size_t datalen = filesystem->get_file_size(myfile);
 	*data=malloc(char, datalen);
