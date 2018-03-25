@@ -21,7 +21,7 @@ string thisname;
 macrodata * thisone;
 int numlines;
 
-extern const char * thisfilename;
+extern string thisfilename;
 extern int thisline;
 extern const char * thisblock;
 

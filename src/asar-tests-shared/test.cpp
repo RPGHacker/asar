@@ -533,6 +533,8 @@ int main(int argc, char * argv[])
 			asar_path_params.includepaths = &base_path;
 			asar_path_params.numincludepaths = 1;
 
+			asar_path_params.should_reset = true;
+
 
 			for (int i = 0;i < numiter;i++)
 			{			

@@ -62,6 +62,8 @@
 					<li><a href="#math-pri">math pri</a></li>
 					<li><a href="#math-round">math round</a></li>
 					<li><a href="#expecttitle">expecttitle</a></li>
+					<li><a href="#namespace-nested">namespace nested</a></li>
+					<li><a href="#warn-bankcross">warn bankcross</a></li>
 				</ul>
 			</li>
 			<li>
@@ -1599,6 +1601,21 @@ org $009053
 	
 org $009068
 	nop #3</code></pre>
+		<h4 id="namespace-nested">namespace nested</h4>
+		<pre><code class="65c816_asar">namespace nested {on/off}</code></pre>
+		The <code class="65c816_asar">namespace nested</code> command enables (<code class="65c816_asar">on</code>) or disables (<code class="65c816_asar">off</code>) nested namespaces. The default is <code class="65c816_asar">off</code>. See section <a href="#namespaces">Namespaces</a> for details.<br /><br />
+		<h4 id="warn-bankcross">warn bankcross</h4>
+		<pre><code class="65c816_asar">warn bankcross {on/off}</code></pre>
+		The <code class="65c816_asar">warn bankcross</code> command enables (<code class="65c816_asar">on</code>) or disables (<code class="65c816_asar">off</code>) throwing errors when a bank border is crossed while assembling a file. The default is <code class="65c816_asar">on</code>. Use this with caution as some features may not behave correctly with bank border checking disabled and some places may still check for bank borders, anyways.
+		<pre><code class="65c816_asar">warn bankcross off
+
+org $80FFFF
+
+	db $00,$00
+	
+warn bankcross on
+
+print pc	; Will print 818001 when using LoROM mapper</code></pre>
 <a href="#contents">Return to top</a></p>
 		<hr />
         <p id="formatting"><h3>Code Formatting</h3>
@@ -2048,28 +2065,30 @@ endstruct</code></pre>
 			<li>An extension struct can't be extended itself.</li>
 		</ul>
         <h4 id="namespaces">Namespaces</h4>
-        Namespaces are a feature which makes it easier to avoid name conflicts between different labels without having to give them long or cryptic names. They work similarly to C++ namespaces and accomplish this by automatically adding a prefix to all labels declared or accessed within them. They can be stacked if desired. When you try to access a label from within a namespace and Asar doesn't find it in there, it automatically looks in the upper namespaces (up to the global namespace). Use<br/>
+        Namespaces are a feature which makes it easier to avoid name conflicts between different labels without having to give them long or cryptic names. They work similarly to C++ namespaces and accomplish this by automatically adding a prefix to all labels declared or accessed within them. This prefix consists of an identifier, followed by an underscore <code>_</code> . Namespaces can be stacked if desired by enabling the <a href="#namespace-nested">namespace nested</a> setting. When you try to access a label from within a namespace and Asar doesn't find it in there, it automatically looks in the upper namespaces (up to the global namespace). Use<br/>
 		<pre><code class="65c816_asar">namespace {identifier}</code></pre>
 		to enter a namspace, where <code>identifier</code> can contain any of the following characters:<br/>		
 		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
 		Use
 		<pre><code class="65c816_asar">namespace off</code></pre>
-		to leave the current namespace.
+		to leave the current namespace (or immediately return to the global namespace when nested namespaces are not enabled).
 		<pre><code class="65c816_asar">; All of the below is valid
+		
+namespace nested on
 		
 Main:                           ; Main
 Main2:                          ; Main2
 		
-namespace Deep_
+namespace Deep
 
     Main:                       ; Deep_Main
 	
-    namespace Deeper_
+    namespace Deeper
 	
         Main:                   ; Deep_Deeper_Main
         Main3:                  ; Deep_Deeper_Main3
 		
-        namespace Deepest_
+        namespace Deepest
 			
             Main:               ; Deep_Deeper_Deepest_Main
 			
@@ -2086,11 +2105,39 @@ namespace Deep_
     dl Main                     ; Deep_Main
 	
 namespace off
+
+
+namespace nested off
+
+namespace TheFirst
+
+	Main:                       ; TheFirst_Main
+	
+	dl Main                     ; TheFirst_Main
+	
+namespace TheSecond
+
+	Main:                       ; TheSecond_Main
+	
+	dl Main                     ; TheSecond_Main
+	
+namespace TheThird
+
+	Main:                       ; TheThird_Main
+	
+	dl Main                     ; TheThird_Main
+	
+namespace off
+
 			
 dl Main                         ; Main
 dl Deep_Main                    ; Deep_Main
 dl Deep_Deeper_Main             ; Deep_Deeper_Main
-dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main</code></pre>
+dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main
+
+dl TheFirst_Main                ; TheFirst_Main
+dl TheSecond_Main               ; TheSecond_Main
+dl TheThird_Main                ; TheThird_Main</code></pre>
 		<a href="#contents">Return to top</a></p>
 		<hr />
 		<p id="defines"><h3>Defines</h3>

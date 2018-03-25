@@ -34,7 +34,9 @@ assocarr<snes_struct> structs;
 template<typename t> void error(int neededpass, const char * e_);
 void warn(const char * e);
 
-static bool movinglabelspossible=false;
+static bool movinglabelspossible = false;
+
+bool disable_bank_cross_errors = false;
 
 #define error(p, e) error<errblock>(p, e)
 
@@ -63,10 +65,33 @@ inline void verifysnespos()
 	}
 }
 
+int fixsnespos(int inaddr, int step)
+{
+	// RPG Hacker: No idea how reliable this is.
+	// Might not work with some of the more exotic mappers.
+	return pctosnes(snestopc(inaddr) + step);
+}
+
 inline void step(int num)
 {
-	snespos+=num;
-	realsnespos+=num;
+	if (disable_bank_cross_errors)
+	{
+		snespos = fixsnespos(snespos, num);
+		realsnespos = fixsnespos(realsnespos, num);
+
+		// RPG Hacker: Not adjusting startpos here will eventually throw
+		// an error in checkbankcross() if we set warn bankcross on again.
+		// As far as I can tell, those are pretty much just used for
+		// checking bank crossing, anyways, so it's hopefully save to just
+		// adjust them here.
+		startpos = snespos;
+		realstartpos = realsnespos;
+	}
+	else
+	{
+		snespos += num;
+		realsnespos += num;
+	}
 	bytes+=num;
 }
 
@@ -90,7 +115,6 @@ inline void write1_65816(unsigned int num)
 
 void write1_pick(unsigned int num)
 {
-	//verifysnespos();
 	write1_65816(num);
 }
 
@@ -133,7 +157,7 @@ int getlen(const char * str);
 int getnum(const char * str);
 
 void assemblefile(const char * filename, bool toplevel);
-extern const char * thisfilename;
+extern string thisfilename;
 extern int thisline;
 extern int lastspecialline;
 
@@ -173,9 +197,6 @@ int read1(int insnespos)
 
 int read2(int insnespos)
 {
-	//return
-	//		read1(snespos  )    |
-	//		read1(snespos+1)<< 8;
 	int addr=snestopc(insnespos);
 	if (addr<0 || addr+2>romlen_r) return -1;
 	return
@@ -185,10 +206,6 @@ int read2(int insnespos)
 
 int read3(int insnespos)
 {
-	//return
-	//		read1(snespos  )    |
-	//		read1(snespos+1)<< 8|
-	//		read1(snespos+2)<<16;
 	int addr=snestopc(insnespos);
 	if (addr<0 || addr+3>romlen_r) return -1;
 	return
@@ -218,7 +235,9 @@ autoarray<int>* macroneglabels;
 autoarray<string> sublabels;
 autoarray<string>* macrosublabels;
 
+// randomdude999: ns is still the string to prefix to all labels, it's calculated whenever namespace_list is changed
 string ns;
+autoarray<string> namespace_list;
 
 //bool fastrom=false;
 
@@ -411,11 +430,14 @@ inline bool labelvalcore(const char ** rawname, unsigned int * rval, bool define
 {
 	string name=labelname(rawname, define);
 	unsigned int rval_=0;
-	if (ns && labels.exists(S ns+"_"+name)) {rval_ = labels.find(S ns+"_"+name);}
+	if (ns && labels.exists(S ns+name)) {rval_ = labels.find(S ns+name);}
 	else if (labels.exists(name)) {rval_ = labels.find(name);}
 	else
 	{
-		if (shouldthrow && pass) error(1, S"Label "+name+" not found");
+		if (shouldthrow && pass)
+		{
+			error(1, S"Label " + name + " not found");
+		}
 		if (rval) *rval=(unsigned int)-1;
 		return false;
 	}
@@ -489,9 +511,9 @@ void setlabel(string name, int loc=-1)
 	else if (pass==2)
 	{
 		//all label locations are known at this point, add a sanity check
-		if (!labels.exists(name)) error(2, "Internal error: A label was created on the third pass. Send this patch to Alcaro so he can debug it.");
+		if (!labels.exists(name)) error(2, "Internal error: A label was created on the third pass. Please create an issue on the official GitHub repository and attach a patch which reproduces the error.");
 		labelpos = labels.find(name);
-		if ((int)labelpos!=loc && !movinglabelspossible) error(2, "Internal error: A label is moving around. Send this patch to Alcaro so he can debug it.");
+		if ((int)labelpos!=loc && !movinglabelspossible) error(2, "Internal error: A label is moving around. Please create an issue on the official GitHub repository and attach a patch which reproduces the error.");
 	}
 }
 
@@ -545,6 +567,8 @@ unsigned char padbyte[12];
 
 bool sandbox=false;
 
+bool nested_namespaces = false;
+
 int getfreespaceid()
 {
 	if (freespaceidnext>125) fatalerror("A patch may not contain more than 125 freespaces.");
@@ -554,11 +578,12 @@ int getfreespaceid()
 void checkbankcross()
 {
 	if (snespos<0 && realsnespos<0 && startpos<0 && realstartpos<0) return;
-//puts(S hex(snespos)+"^"+hex(startpos)+"&0xFFFF0000 ("+hex((snespos^startpos)&0xFFFF0000)+")");
-//puts(S hex(realsnespos)+"^"+hex(realstartpos)+"&0xFFFF0000 ("+hex((realsnespos^realstartpos)&0xFFFF0000)+")");
-	if ((((    snespos^    startpos)&0x7FFF0000) && (((    snespos-1)^    startpos)&0x7FFF0000)) ||
-			(((realsnespos^realstartpos)&0x7FFF0000) && (((realsnespos-1)^realstartpos)&0x7FFF0000)))
-				fatalerror("A bank border was crossed somewhere prior to this point.");
+	if (disable_bank_cross_errors) return;
+	if ( (((snespos^    startpos) & 0x7FFF0000) && (((snespos - 1) ^ startpos) & 0x7FFF0000))
+		|| (((realsnespos^realstartpos) & 0x7FFF0000) && (((realsnespos - 1) ^ realstartpos) & 0x7FFF0000)) )
+	{
+		fatalerror("A bank border was crossed somewhere prior to this point.");
+	}
 }
 
 void freespaceend()
@@ -604,6 +629,7 @@ void initstuff()
 	repeatnext=1;
 	defines.reset();
 	ns="";
+	namespace_list.reset();
 	sublabels.reset();
 	poslabels.reset();
 	neglabels.reset();
@@ -636,6 +662,8 @@ void initstuff()
 
 	warnxkas=false;
 	emulatexkas=false;
+	disable_bank_cross_errors = false;
+	nested_namespaces = false;
 }
 
 
@@ -686,7 +714,7 @@ bool addlabel(const char * label, int pos=-1)
 		if (label[0]==':') label++;
 		else if (requirecolon) error(0, "Broken label definition");
 		if (label[0]) error(0, "Broken label definition");
-		if (ns) name=S ns+"_"+name;
+		if (ns) name=S ns+name;
 		setlabel(name, pos);
 		return true;
 	}
@@ -1089,6 +1117,7 @@ void assembleblock(const char * block)
 		if (!asarverallowed) error(0, "This command may only be used at the start of a file.");
 		if (incsrcdepth != 1 && !emulatexkas) error(0, "This command may only be used in the root file.");
 		if (specifiedasarver) error(0, "Using @xkas and @asar in the same patch is not supported.");
+		warn0("xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
 		emulatexkas=true;
 		optimizeforbank=0x100;
 		checksum=false;
@@ -1385,7 +1414,6 @@ void assembleblock(const char * block)
 		if (snespos<0 && mapper==sa1rom) fatalerror(S"No freespace found in the mapped banks (requested size: "+dec(freespacelen[freespaceid])+")");
 		if (snespos<0) fatalerror(S"No freespace found (requested size: "+dec(freespacelen[freespaceid])+")");
 		bytes+=8;
-		//if (fastrom) snespos|=0x800000;
 		freespacestart=snespos;
 		startpos=snespos;
 		realstartpos=snespos;
@@ -1397,7 +1425,6 @@ void assembleblock(const char * block)
 	{
 		if (!confirmqpar(par)) error(0, "Mismatched parentheses");
 		if (!ratsmetastate) error(2, "PROT must be used at the start of a freespace block.");
-		//int here=(((realsnespos&0xFFFFFF)&~0x8000)-8)|0x8000;
 		if (ratsmetastate==ratsmeta_used) step(-5);
 		int num;
 		autoptr<char**> pars=qpsplit(par, ",", &num);
@@ -1439,7 +1466,7 @@ void assembleblock(const char * block)
 			{
 				int orgpos=read3(snespos+1);
 				int ratsloc=freespaceorgpos[targetid];
-				int firstbyte=((!stricmp(par, "JSL"))?0x22:0x5C);
+				int firstbyte = ((!stricmp(par, "JSL")) ? 0x22 : 0x5C);
 				int pcpos=snestopc(snespos);
 				if (/*pass==1 && */pcpos>=0 && pcpos<romlen_r && romdata_r[pcpos]==firstbyte)
 				{
@@ -1531,19 +1558,58 @@ void assembleblock(const char * block)
 			optimizeforbank = -1;
 		}
 	}
-	else if (is1("namespace"))
+	else if (is1("namespace") || is2("namespace"))
 	{
+		bool leave = false;
 		if (par)
 		{
-			if (!stricmp(par, "off")) ns="";
+			if (!stricmp(par, "off"))
+			{
+				if (word[2]) error(0, "Invalid use of namespace command");
+				leave = true;
+			}
+			else if (!stricmp(par, "nested"))
+			{
+				if (!word[2]) error(0, "Invalid use of namespace command");
+				else if (!stricmp(word[2], "on")) nested_namespaces = true;
+				else if (!stricmp(word[2], "off")) nested_namespaces = false;
+			}
 			else
 			{
+				if (word[2]) error(0, "Invalid use of namespace command");
 				const char * tmpstr=dequote(par);
 				if (!confirmname(tmpstr)) error(0, "Bad namespace name");
-				ns=tmpstr;
+				if (!nested_namespaces)
+				{
+					namespace_list.reset();
+				}
+				namespace_list.append(S tmpstr);
 			}
 		}
-		else ns="";
+		else
+		{
+			leave = true;
+		}
+
+		if (leave)
+		{
+			if (nested_namespaces)
+			{
+				namespace_list.remove(namespace_list.count - 1);
+			}
+			else
+			{
+				namespace_list.reset();
+			}
+		}
+
+		// recompute ns
+		ns = "";
+		for (int i = 0; i < namespace_list.count; i++)
+		{
+			ns += namespace_list[i];
+			ns += S"_";
+		}
 	}
 	else if (is1("warnpc"))
 	{
@@ -1910,7 +1976,13 @@ void assembleblock(const char * block)
 		else if (!stricmp(word[2], "off")) val=false;
 		else error(0, "Invalid warn command.");
 		if(0);
-		else if (!stricmp(word[1], "xkas")) warnxkas=val;
+		else if (!stricmp(word[1], "xkas")) {
+			warn0("xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
+			warnxkas=val;
+		}
+		else if (!stricmp(word[1], "bankcross")) {
+			disable_bank_cross_errors = !val;
+		}
 		else error(0, "Invalid warn command.");
 	}
 	else if (is0("fastrom"))
