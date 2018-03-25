@@ -230,7 +230,7 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True):
     geterrors() to see what went wrong. rom_data is assumed to be headerless.
 
     If includepaths is specified, it lists additional include paths for asar to
-    search. Specifying it also means asar_patch_ex is used automatically.
+    search.
 
     should_reset specifies whether asar should clear out all defines, labels,
     etc from the last inserted file. Setting it to False will make Asar act
@@ -238,22 +238,18 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True):
     """
     romlen = c_int(len(rom_data))
     rom_ptr = ctypes.create_string_buffer(rom_data, maxromsize())
-    if includepaths or not should_reset:
-        pp = patchparams()
-        pp.structsize = ctypes.sizeof(patchparams)
-        pp.patchloc = patch_name.encode()
-        pp.romdata = rom_data
-        pp.buflen = maxromsize()
-        pp.romlen = ctypes.pointer(romlen)
-        # construct an array type of len(includepaths) elements and initialize
-        # it with elements from includepaths
-        pp.includepaths = (c_char_p*len(includepaths))(*includepaths)
-        pp.numincludepaths = len(includepaths)
-        pp.should_reset = should_reset
-        result = _asar.dll.asar_patch_ex(pp)
-    else:
-        result = _asar.dll.asar_patch(patch_name.encode(), rom_ptr,
-                                      maxromsize(), ctypes.byref(romlen))
+    pp = patchparams()
+    pp.structsize = ctypes.sizeof(patchparams)
+    pp.patchloc = patch_name.encode()
+    pp.romdata = rom_data
+    pp.buflen = maxromsize()
+    pp.romlen = ctypes.pointer(romlen)
+    # construct an array type of len(includepaths) elements and initialize
+    # it with elements from includepaths
+    pp.includepaths = (c_char_p*len(includepaths))(*includepaths)
+    pp.numincludepaths = len(includepaths)
+    pp.should_reset = should_reset
+    result = _asar.dll.asar_patch_ex(pp)
     return result, rom_ptr.raw[:romlen.value]
 
 
