@@ -459,7 +459,8 @@ void assembleline(const char * fname, int linenum, const char * line)
 {
 	recurseblock rec;
 	bool moreonlinetmp=moreonline;
-	thisfilename=fname;
+	string absolutepath = filesystem->create_absolute_path(thisfilename, fname);
+	thisfilename = absolutepath;
 	thisline=linenum;
 	thisblock=NULL;
 	try
@@ -484,7 +485,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 				try
 				{
 					itrim(blocks[block], " ", " ", true);
-					thisfilename=fname;
+					thisfilename= absolutepath;
 					thisline=linenum;//do not optimize, this one is recursive
 					thisblock = blocks[block];
 					if (thisblock[0] == '@')
@@ -516,16 +517,17 @@ int incsrcdepth=0;
 void assemblefile(const char * filename, bool toplevel)
 {
 	incsrcdepth++;
-	thisfilename=filename;
+	string absolutepath = filesystem->create_absolute_path(thisfilename, filename);
+	thisfilename = absolutepath;
 	thisline=-1;
 	thisblock=NULL;
 	sourcefile file;
 	file.contents = NULL;
 	file.numlines = 0;
 	int startif=numif;
-	if (!filecontents.exists(filename))
+	if (!filecontents.exists(absolutepath))
 	{
-		char * temp=readfile(filename);
+		char * temp=readfile(absolutepath);
 		if (!temp)
 		{
 			error<errnull>(0, "Couldn't open file");
@@ -560,9 +562,9 @@ void assemblefile(const char * filename, bool toplevel)
 				file.contents[i+j]=nullstr;
 			}
 		}
-		filecontents.create(filename) = file;
-	} else { // filecontents.exists(filename)
-		file = filecontents.find(filename);
+		filecontents.create(absolutepath) = file;
+	} else { // filecontents.exists(absolutepath)
+		file = filecontents.find(absolutepath);
 	}
 	bool inmacro=false;
 	asarverallowed=true;
@@ -570,7 +572,7 @@ void assemblefile(const char * filename, bool toplevel)
 	{
 		try
 		{
-			thisfilename=filename;
+			thisfilename= absolutepath;
 			thisline=i;
 			thisblock=NULL;
 			istoplevel=toplevel;
@@ -595,7 +597,7 @@ void assemblefile(const char * filename, bool toplevel)
 				int prevnumif = numif;
 				string connectedline;
 				int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
-				assembleline(filename, i, connectedline);
+				assembleline(absolutepath, i, connectedline);
 				i += skiplines;
 				if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
 					i = whilestatus[numif].startline - 1;

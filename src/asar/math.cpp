@@ -103,7 +103,7 @@ cachedfile * opencachedfile(string fname, bool should_error)
 	// fname could be a relative path, which isn't guaranteed to be unique.
 	// Note that this does not affect how we open the file - this is
 	// handled by the filesystem and uses our include paths etc.
-	string combinedname = S dir(thisfilename) + fname;
+	string combinedname = S filesystem->create_absolute_path(dir(thisfilename), fname);
 
 	for (int i = 0; i < numcachedfiles; i++)
 	{

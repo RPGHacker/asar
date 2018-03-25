@@ -34,12 +34,24 @@ public:
 
 	size_t get_file_size(virtual_file_handle file_handle);
 
+	bool is_path_absolute(const char* path);
+
+	string create_absolute_path(const char* base, const char* target);
+
 	inline virtual_file_error get_last_error()
 	{
 		return m_last_error;
 	}
 
 private:
+	enum virtual_file_type
+	{
+		vft_physical_file,
+		vft_memory_file
+	};
+
+	virtual_file_type get_file_type_from_path(const char* path);
+
 	autoarray<string> m_include_paths;
 	virtual_file_error m_last_error;
 };

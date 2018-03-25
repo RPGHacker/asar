@@ -1,14 +1,6 @@
 #include "virtualfile.hpp"
 #include "platform/file-helpers.h"
 
-enum virtual_file_type
-{
-	vft_physical_file,
-	vft_memory_file,
-
-	vft_num_file_types
-};
-
 
 
 class virtual_file
@@ -17,8 +9,6 @@ public:
 	virtual ~virtual_file()
 	{
 	}
-
-	virtual virtual_file_type get_type() = 0;
 
 	virtual void close() = 0;
 
@@ -41,53 +31,10 @@ public:
 	{
 		close();
 	}
-	
-	virtual virtual_file_type get_type()
-	{
-		return vft_physical_file;
-	}
 
 	virtual_file_error open(const char* path, const char* base_path, const autoarray<string>& include_paths)
 	{
-		string path_to_use = "";
-
-		// First check if path is absolute
-		if (path_is_absolute(path))
-		{
-			if (file_exists(path))
-			{
-				path_to_use = path;
-			}
-		}
-		else
-		{
-			// Now check if path exists relative to the base path
-			string test_path = "";
-
-			if (base_path != nullptr && base_path[0] != '\0')
-			{
-				test_path = create_combined_path(dir(base_path), path);
-			}
-
-			if (test_path != "" && file_exists(test_path))
-			{
-				path_to_use = test_path;
-			}
-			else
-			{
-				// Finally check if path exists relative to any include path
-				for (int i = 0; i < include_paths.count; ++i)
-				{
-					test_path = create_combined_path(include_paths[i], path);
-
-					if (file_exists(test_path))
-					{
-						path_to_use = test_path;
-						break;
-					}
-				}
-			}
-		}
+		string path_to_use = create_final_path(path, base_path, include_paths);
 
 		if (path_to_use != "")
 		{
@@ -129,6 +76,53 @@ public:
 	}
 
 private:
+	friend class virtual_filesystem;
+
+	static string create_final_path(const char* path, const char* base_path, const autoarray<string>& include_paths)
+	{
+		string path_to_use = "";
+
+		// First check if path is absolute
+		if (path_is_absolute(path))
+		{
+			if (file_exists(path))
+			{
+				path_to_use = path;
+			}
+		}
+		else
+		{
+			// Now check if path exists relative to the base path
+			string test_path = "";
+
+			if (base_path != nullptr && base_path[0] != '\0')
+			{
+				test_path = create_combined_path(dir(base_path), path);
+			}
+
+			if (test_path != "" && file_exists(test_path))
+			{
+				path_to_use = test_path;
+			}
+			else
+			{
+				// Finally check if path exists relative to any include path
+				for (int i = 0; i < include_paths.count; ++i)
+				{
+					test_path = create_combined_path(include_paths[i], path);
+
+					if (file_exists(test_path))
+					{
+						path_to_use = test_path;
+						break;
+					}
+				}
+			}
+		}
+
+		return path_to_use;
+	}
+
 	FILE* m_file_handle;
 };
 
@@ -156,36 +150,44 @@ virtual_file_handle virtual_filesystem::open_file(const char* path, const char* 
 {
 	m_last_error = vfe_none;
 
-	// TODO: Add support for in-memory files here later
+	virtual_file_type vft = get_file_type_from_path(path);
 
-	if (true)
+	switch (vft)
 	{
-		physical_file* new_file = new physical_file;
-
-		if (new_file == nullptr)
+		case vft_physical_file:
 		{
+			physical_file* new_file = new physical_file;
+
+			if (new_file == nullptr)
+			{
+				m_last_error = vfe_unknown;
+				return INVALID_VIRTUAL_FILE_HANDLE;
+			}
+
+			virtual_file_error error = new_file->open(path, base_path, m_include_paths);
+
+			if (error != vfe_none)
+			{
+				delete new_file;
+				m_last_error = error;
+				return INVALID_VIRTUAL_FILE_HANDLE;
+			}
+
+			return static_cast<virtual_file_handle>(new_file);
+		}
+
+		case vft_memory_file:
+		{
+			// TODO: Add support for in-memory files here later
 			m_last_error = vfe_unknown;
 			return INVALID_VIRTUAL_FILE_HANDLE;
 		}
 
-		virtual_file_error error = new_file->open(path, base_path, m_include_paths);
-
-		if (error != vfe_none)
-		{
-			delete new_file;
-			m_last_error = error;
+		default:
+			// We should not get here
+			m_last_error = vfe_unknown;
 			return INVALID_VIRTUAL_FILE_HANDLE;
-		}
-
-		return static_cast<virtual_file_handle>(new_file);
 	}
-	else
-	{
-		// ...
-	}
-
-	m_last_error = vfe_unknown;
-	return INVALID_VIRTUAL_FILE_HANDLE;
 }
 
 void virtual_filesystem::close_file(virtual_file_handle file_handle)
@@ -224,4 +226,57 @@ size_t virtual_filesystem::get_file_size(virtual_file_handle file_handle)
 	}
 
 	return 0u;
+}
+
+
+virtual_filesystem::virtual_file_type virtual_filesystem::get_file_type_from_path(const char* path)
+{
+	// RPG Hacker: Nothing else currently supported.
+	// TODO: Memory file support
+	(void)path;	// Silence warning
+	return vft_physical_file;
+}
+
+bool virtual_filesystem::is_path_absolute(const char* path)
+{
+	virtual_file_type vft = get_file_type_from_path(path);
+
+	switch (vft)
+	{
+	case vft_memory_file:
+		return true;
+
+	case vft_physical_file:
+		return path_is_absolute(path);
+
+	default:
+		// We should not get here
+		return true;
+	}
+}
+
+string virtual_filesystem::create_absolute_path(const char* base, const char* target)
+{
+	if (is_path_absolute(target) || base == nullptr || base[0] == '\0')
+	{
+		return target;
+	}
+
+	virtual_file_type base_type = get_file_type_from_path(base);
+
+	switch (base_type)
+	{
+	case vft_physical_file:
+		return physical_file::create_final_path(target, base, m_include_paths);
+
+	case vft_memory_file:
+		{
+			// TODO
+			return "";
+		}
+
+	default:
+		// We should not get here
+		return "";
+	}
 }

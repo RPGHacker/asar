@@ -20,8 +20,10 @@ string create_combined_path(const char* path1, const char* path2)
 {
 	string combined = path1;
 
+	int length = combined.truelen();
+
 	if (combined.len > 0
-		&& combined[combined.len - 1] != '\\' && combined[combined.len - 1] != '/')
+		&& combined[length - 1] != '\\' && combined[length - 1] != '/')
 	{
 		combined += get_native_path_separator();
 	}
