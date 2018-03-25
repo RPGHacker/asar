@@ -107,6 +107,10 @@ Main:
 			<li>You can now escape <code>!</code> by doing <code>\!</code> (useful for preventing Asar to replace defines in certain places).</li>
 			<li>Added support for <code class="65c816_asar">pushbase</code>/<code class="65c816_asar">pullbase</code>.</li>
 			<li>Added <code class="65c816_asar">expecttitle</code> command which makes Asar verify the title of the output ROM (to assure a patch is applied to the correct ROM).</li>
+			<li>Added support for nested namespaces. Enable them via the command:
+				<pre><code class="65c816_asar">namespace nested on</code></pre>
+			</li>
+			<li>Added support for <code class="65c816_asar">warn bankcross off</code> which disables checking for bank crossing. Use with caution; might not work with certain features or outright break some stuff.</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>

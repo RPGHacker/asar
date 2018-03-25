@@ -1,0 +1,21 @@
+language: cpp
+sudo: required
+install:
+  # Download a recent version of CMake
+  - wget -O cmake.sh https://cmake.org/files/v3.10/cmake-3.10.0-rc1-Linux-x86_64.sh 
+  - sudo sh cmake.sh --skip-license --exclude-subdir --prefix=/usr/local
+  # make links for the newer gcc
+  - export CC=/usr/bin/gcc-6
+  - export CXX=/usr/bin/g++-6
+script:
+  - mkdir src/build && cd src/build
+  - cmake -DCMAKE_BUILD_TYPE=Release ..
+  - make
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+    packages:
+      - gcc-6
+      - g++-6
+# TODO: actually use asar's test suite

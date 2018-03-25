@@ -214,17 +214,6 @@ opAFallback:
 			as3("JMP", 0x5C);//all my hate
 			//as3("JSR", 0x22);
 		}
-//		if (is("BRA"))
-//		{
-//puts("");
-//puts(hex8(num)+"-"+hex8(snespos));
-//			int pos=(!foundlabel)?num:num-((snespos&0xFFFFFF)+2);
-//puts(hex8(pos));
-//			write1(0x80);
-//			write1(pos);
-//			if (pass==2 && foundlabel && (pos<-128 || pos>127)) error("Relative branch out of bounds");
-//			return true;
-//		}
 		as_rel1("BRA", 0x80);
 		as_rel1("BCC", 0x90);
 		as_rel1("BCS", 0xB0);

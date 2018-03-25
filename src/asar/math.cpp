@@ -88,7 +88,7 @@ static int cachedfileindex = 0;
 
 const char * safedequote(char * str);
 #define dequote safedequote
-extern const char * thisfilename;
+extern string thisfilename;
 
 // Opens a file, trying to open it from cache first
 

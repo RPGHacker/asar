@@ -31,7 +31,7 @@ int pass;
 
 int optimizeforbank=-1;
 
-const char * thisfilename;
+string thisfilename;
 int thisline;
 int lastspecialline=-1;
 const char * thisblock;
@@ -598,6 +598,7 @@ void assemblefile(const char * filename, bool toplevel)
 				string connectedline;
 				int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
 				assembleline(absolutepath, i, connectedline);
+				thisfilename = absolutepath;
 				i += skiplines;
 				if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
 					i = whilestatus[numif].startline - 1;
@@ -630,7 +631,6 @@ void assemblefile(const char * filename, bool toplevel)
 bool checksum=true;
 extern assocarr<unsigned int> labels;
 extern autoarray<writtenblockdata> writtenblocks;
-extern string ns;
 
 struct macrodata
 {

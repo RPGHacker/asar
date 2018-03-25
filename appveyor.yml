@@ -1,0 +1,17 @@
+version: '{build}'
+image: Visual Studio 2015
+install:
+- cmd: >-
+    mkdir src\build
+
+    cd src\build
+
+    cmake ..
+build:
+  verbosity: minimal
+artifacts:
+- path: src\build\asar\Release\asar-standalone.exe
+- path: src\build\asar\Release\asar.dll
+configuration: Release
+platform: Win32
+# TODO: use asar's built-in test suite
