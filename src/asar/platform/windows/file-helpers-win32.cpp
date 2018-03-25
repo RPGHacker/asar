@@ -5,6 +5,7 @@
 #if defined(_MSC_VER)
 #	pragma warning(push)
 #	pragma warning(disable : 4668)
+#	pragma warning(disable : 4987)
 #endif
 
 #include <windows.h>

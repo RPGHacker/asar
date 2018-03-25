@@ -1,5 +1,4 @@
 #pragma once
-#include <cstdio>
 
 extern const unsigned char * romdata;
 extern int romlen;

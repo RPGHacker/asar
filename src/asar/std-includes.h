@@ -9,6 +9,7 @@
 #	pragma warning(push)
 #	pragma warning(disable : 4514)
 #	pragma warning(disable : 4668)
+#	pragma warning(disable : 4987)
 #endif
 
 #include <new>//placement new
@@ -17,6 +18,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>
+#include <cstdio>
 
 #if defined(_MSC_VER)
 #	pragma warning(pop)

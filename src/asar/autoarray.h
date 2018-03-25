@@ -2,8 +2,6 @@
 
 #include "std-includes.h"
 
-#include <new>
-
 //Note: T must be a pointer type, or stuff will screw up. To make a pointer last longer than this object, assign NULL to it and it won't free the old one.
 template<typename T> class autoptr {
 T ptr;

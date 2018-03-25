@@ -43,9 +43,10 @@ macro(set_asar_shared_properties target)
 		endif()		
 		
 		# These certainly aren't worth a warning, though
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4514")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4710")
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4514") # unreferenced inline function removed
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4710") # function not inlined
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4711") # function selected for automatic inline expansion
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820") # 'bytes' bytes padding added after construct 'member_name'
 	else()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
 

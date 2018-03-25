@@ -1,16 +1,27 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <sys/stat.h>
+
 
 #if defined(_WIN32)
 #	define NOMINMAX
 
 #	if defined(_MSC_VER)
 #		pragma warning(push)
+#		pragma warning(disable : 4365)
+#		pragma warning(disable : 4571)
+#		pragma warning(disable : 4623)
+#		pragma warning(disable : 4625)
+#		pragma warning(disable : 4626)
 #		pragma warning(disable : 4668)
+#		pragma warning(disable : 4711)
+#		pragma warning(disable : 4774)
+#		pragma warning(disable : 4987)
+#		pragma warning(disable : 5026)
+#		pragma warning(disable : 5027)
 #	endif
 
+#	include <stdio.h>
+#	include <string.h>
+#	include <stdlib.h>
+#	include <sys/stat.h>
 #	include <windows.h>
 #	include <vector>
 #	include <string>
