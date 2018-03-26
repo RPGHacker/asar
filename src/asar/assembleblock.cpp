@@ -607,6 +607,12 @@ extern bool math_round;
 bool warnxkas;
 
 extern assocarr<string> defines;
+extern assocarr<string> clidefines;
+
+static void adddefine(const string & key, string & value)
+{
+	if (!defines.exists(key)) defines.create(key) = value;
+}
 
 void initstuff()
 {
@@ -628,6 +634,7 @@ void initstuff()
 	macrorecursion=0;
 	repeatnext=1;
 	defines.reset();
+	clidefines.each(adddefine);
 	ns="";
 	namespace_list.reset();
 	sublabels.reset();

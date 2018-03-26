@@ -283,6 +283,8 @@ struct sourcefile {
 
 assocarr<sourcefile> filecontents;
 assocarr<string> defines;
+// needs to be separate because defines is reset between parsing arguments and patching
+assocarr<string> clidefines;
 
 void assembleblock(const char * block);
 
@@ -662,6 +664,11 @@ static void clearfile(const string & key, sourcefile& filecontent)
 	cfree(filecontent.contents);
 }
 
+static void adddefine(const string & key, string & value)
+{
+	if (!defines.exists(key)) defines.create(key) = value;
+}
+
 void closecachedfiles();
 void deinitmathcore();
 
@@ -670,6 +677,7 @@ void reseteverything()
 	string str;
 	labels.reset();
 	defines.reset();
+	clidefines.each(adddefine);
 	structs.reset();
 
 	macros.each(clearmacro);

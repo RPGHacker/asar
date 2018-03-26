@@ -35,8 +35,8 @@ string getdecor();
 
 extern string thisfilename;
 
-extern assocarr<string> defines;//these two are useless for cli, but they may be useful for other stuff
-extern assocarr<unsigned int> labels;
+extern assocarr<string> clidefines;
+extern assocarr<unsigned int> labels;//this is useless for cli, but it may be useful for other stuff
 
 void assemblefile(const char * filename, bool toplevel);
 
@@ -242,7 +242,20 @@ int main(int argc, char * argv[])
 			}
 			else if (postprocess_param == cmdlparam_adddefine)
 			{
-
+				if (strchr(postprocess_arg, '=') != NULL)
+				{
+					// argument contains value, not only name
+					const char* eq_loc = strchr(postprocess_arg, '=');
+					string name = string(postprocess_arg, eq_loc - postprocess_arg);
+					if (!clidefines.exists(name))
+						clidefines.create(name) = eq_loc + 1;
+				}
+				else
+				{
+					// argument doesn't have a value, only name
+					if (!clidefines.exists(postprocess_arg))
+						clidefines.create(postprocess_arg) = "";
+				}
 			}
 		}
 		if (verbose && !printed_version)
