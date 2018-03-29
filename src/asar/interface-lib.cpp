@@ -28,6 +28,8 @@ extern int callerline;
 
 extern virtual_filesystem* filesystem;
 
+extern assocarr<string> clidefines;
+
 autoarray<const char *> prints;
 int numprint;
 
@@ -258,6 +260,9 @@ struct patchparams_v160 : public patchparams_base
 	int numincludepaths;
 
 	bool should_reset;
+
+	definedata* additional_defines;
+	int definecount;
 };
 
 struct patchparams : public patchparams_v160
@@ -288,6 +293,12 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	new_filesystem.initialize(paramscurrent.includepaths, (size_t)paramscurrent.numincludepaths);
 	filesystem = &new_filesystem;
 
+	clidefines.reset();
+	for (int i = 0; i < paramscurrent.definecount; i++)
+	{
+		clidefines.create(paramscurrent.additional_defines[i].name) = paramscurrent.additional_defines[i].contents;
+	}
+
 	asar_patch_main(paramscurrent.patchloc);
 
 	new_filesystem.destroy();
@@ -301,6 +312,7 @@ EXPORT int asar_maxromsize()
 	return maxromsize;
 }
 
+// randomdude999: this is not exposed in any of the wrappers, why does it even exist?
 extern chartabledata table;
 EXPORT const unsigned int * asar_gettable()
 {
