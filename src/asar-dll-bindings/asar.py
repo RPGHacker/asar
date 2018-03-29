@@ -69,7 +69,10 @@ class patchparams(ctypes.Structure):
                 ("romlen", c_int_ptr),
                 ("includepaths", POINTER(c_char_p)),
                 ("numincludepaths", c_int),
-                ("should_reset", c_bool)]
+                ("should_reset", ctypes.c_bool),
+                ("additional_defines", POINTER(definedata)),
+                ("additional_define_count", c_int)]
+
 
 class mappertype(enum.Enum):
     invalid_mapper = 0
@@ -109,7 +112,7 @@ class _AsarDLL:
             self.setup_func("reset", (), ctypes.c_bool)
             self.setup_func("patch", (c_char_p, c_char_p, c_int, c_int_ptr),
                             ctypes.c_bool)
-            self.setup_func("patch_ex", (patchparams), ctypes.c_bool)
+            self.setup_func("patch_ex", (POINTER(patchparams),), ctypes.c_bool)
             self.setup_func("maxromsize", (), c_int)
             self.setup_func("close", (), None)
             self.setup_func("geterrors", (c_int_ptr,), POINTER(errordata))
@@ -223,7 +226,7 @@ def reset():
     return _asar.dll.asar_reset()
 
 
-def patch(patch_name, rom_data, includepaths=[], should_reset=True):
+def patch(patch_name, rom_data, includepaths=[], should_reset=True, additional_defines={}):
     """Applies a patch.
 
     Returns (success, new_rom_data). If success is False you should call
@@ -235,6 +238,9 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True):
     should_reset specifies whether asar should clear out all defines, labels,
     etc from the last inserted file. Setting it to False will make Asar act
     like the currently patched file was directly appended to the previous one.
+
+    additional_defines specifies extra defines to give to the patch
+    (similar to the -D option).
     """
     romlen = c_int(len(rom_data))
     rom_ptr = ctypes.create_string_buffer(rom_data, maxromsize())
@@ -248,8 +254,14 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True):
     # it with elements from includepaths
     pp.includepaths = (c_char_p*len(includepaths))(*includepaths)
     pp.numincludepaths = len(includepaths)
+    defines = (definedata * len(additional_defines))()
+    for i, (k, v) in enumerate(additional_defines.items()):
+        defines[i].name = k.encode()
+        defines[i].contents = v.encode()
+    pp.additional_defines = defines
+    pp.additional_define_count = len(additional_defines)
     pp.should_reset = should_reset
-    result = _asar.dll.asar_patch_ex(pp)
+    result = _asar.dll.asar_patch_ex(ctypes.byref(pp))
     return result, rom_ptr.raw[:romlen.value]
 
 
@@ -270,7 +282,7 @@ def getwarnings():
 
 def getprints():
     """Get a list of all printed data."""
-    return _getall(_asar.dll.asar_getprints)
+    return [x.decode() for x in _getall(_asar.dll.asar_getprints)]
 
 
 def getalllabels():
