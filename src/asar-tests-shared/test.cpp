@@ -307,7 +307,11 @@ std::vector<std::string> tokenize_string(const char * str, const char * key)
 	while ((pos = s.find(delimiter)) != std::string::npos)
 	{
 		token = s.substr(0, pos);
-		list.push_back(token);
+		// Don't bother adding empty tokens (they're just whitespace)
+		if (token != "")
+		{
+			list.push_back(token);
+		}
 		s.erase(0, pos + delimiter.length());
 	}
 	list.push_back(s);

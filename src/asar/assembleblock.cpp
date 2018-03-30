@@ -1912,16 +1912,15 @@ void assembleblock(const char * block)
 	}
 	else if (is1("pad"))
 	{
-		if (snespos&0xFF000000) error(0, "pad does not make sense in a freespaced code");
+		if (realsnespos&0xFF000000) error(0, "pad does not make sense in a freespaced code");
 		int num=getnum(par);
 		if (num&0xFF000000) error(0, "Out of bounds");
-		if (num>snespos)
+		if (num>realsnespos)
 		{
 			int end=snestopc(num);
-			int start=snestopc(snespos);
+			int start=snestopc(realsnespos);
 			int len=end-start;
-			for (int i=0;i<len;i++) writeromdata_byte(start+i, padbyte[i%12]);
-			snespos=num;
+			for (int i=0;i<len;i++) write1(padbyte[i%12]);
 		}
 	}
 	else if (is1("fillbyte") || is1("fillword") || is1("filllong") || is1("filldword"))
