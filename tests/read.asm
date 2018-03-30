@@ -1,6 +1,5 @@
 ;@+
 ;@00000 01 79 7A 9C 9F 00 42 46 9C 0C 42
-;@07FDC 49 5F B6 A0
 ;@80000
 ;must be in "patch-to-smw" mode since Asar considers it to read outside the ROM otherwise
 
