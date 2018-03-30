@@ -664,6 +664,8 @@ void initstuff()
 	emulatexkas=false;
 	disable_bank_cross_errors = false;
 	nested_namespaces = false;
+
+	thisfilename = "";
 }
 
 
@@ -1705,7 +1707,7 @@ void assembleblock(const char * block)
 		if (emulatexkas) name=dequote(par);
 		else name=S dequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
-		if (!readfile(name, &data, &len)) error(0, "File not found");
+		if (!readfile(name, thisfilename, &data, &len)) error(0, "File not found");
 		autoptr<char*> datacopy=data;
 		if (!end) end=len;
 		if (end<start) error(0, "Negative range in incbin");
@@ -1779,7 +1781,7 @@ void assembleblock(const char * block)
 		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
 		string name=S dequote(par);
-		autoptr<char*> tablecontents=readfile(name);
+		autoptr<char*> tablecontents=readfile(name, thisfilename);
 		if (!tablecontents) error(0, "File not found");
 		autoptr<char**> tablelines=split(tablecontents, "\n");
 		for (int i=0;i<256;i++) table.table[i]=(unsigned int)(((numopcodes+read2(0x00FFDE)+i)*0x26594131)|0x40028020);

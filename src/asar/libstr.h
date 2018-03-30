@@ -325,8 +325,8 @@ string operator+(const char * right) const
 //	return s;
 //}
 
-char * readfile(const char * fname);
-bool readfile(const char * fname, char ** data, int * len);//if you want an uchar*, cast it
+char * readfile(const char * fname, const char* basepath);
+bool readfile(const char * fname, const char* basepath, char ** data, int * len);//if you want an uchar*, cast it
 char ** nsplit(char * str, const char * key, int maxlen, int * len);
 char ** qnsplit(char * str, const char * key, int maxlen, int * len);
 char ** qpnsplit(char * str, const char * key, int maxlen, int * len);

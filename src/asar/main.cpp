@@ -459,7 +459,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 {
 	recurseblock rec;
 	bool moreonlinetmp=moreonline;
-	string absolutepath = filesystem->create_absolute_path(thisfilename, fname);
+	string absolutepath = filesystem->create_absolute_path("", fname);
 	thisfilename = absolutepath;
 	thisline=linenum;
 	thisblock=NULL;
@@ -527,7 +527,7 @@ void assemblefile(const char * filename, bool toplevel)
 	int startif=numif;
 	if (!filecontents.exists(absolutepath))
 	{
-		char * temp=readfile(absolutepath);
+		char * temp=readfile(absolutepath, "");
 		if (!temp)
 		{
 			error<errnull>(0, "Couldn't open file");

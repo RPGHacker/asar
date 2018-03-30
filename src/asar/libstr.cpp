@@ -8,9 +8,9 @@
 extern virtual_filesystem* filesystem;
 extern string thisfilename;
 
-char * readfile(const char * fname)
+char * readfile(const char * fname, const char* basepath)
 {
-	virtual_file_handle myfile = filesystem->open_file(fname, thisfilename);
+	virtual_file_handle myfile = filesystem->open_file(fname, basepath);
 	if (myfile == INVALID_VIRTUAL_FILE_HANDLE) return NULL;
 	size_t datalen = filesystem->get_file_size(myfile);
 	char * data=malloc(char, datalen+1);
@@ -27,9 +27,9 @@ char * readfile(const char * fname)
 	return data;
 }
 
-bool readfile(const char * fname, char ** data, int * len)
+bool readfile(const char * fname, const char* basepath, char ** data, int * len)
 {
-	virtual_file_handle myfile = filesystem->open_file(fname, thisfilename);
+	virtual_file_handle myfile = filesystem->open_file(fname, basepath);
 	if (!myfile) return false;
 	size_t datalen = filesystem->get_file_size(myfile);
 	*data=malloc(char, datalen);
