@@ -2,16 +2,20 @@ version: '{build}'
 image: Visual Studio 2015
 install:
 - cmd: >-
-    mkdir src\build
+    mkdir build
 
-    cd src\build
+    cd build
 
-    cmake ..
-build:
-  verbosity: minimal
+    cmake ..\src
 artifacts:
-- path: src\build\asar\Release\asar-standalone.exe
-- path: src\build\asar\Release\asar.dll
+- path: build\asar\Release\asar-standalone.exe
+- path: build\asar\Release\asar.dll
 configuration: Release
 platform: Win32
-# TODO: use asar's built-in test suite
+test_script:
+  - cmd: >-
+      cd %APPVEYOR_BUILD_FOLDER%
+
+      mkdir tests_tmp
+
+      build\asar-dll-test\Release\asar-dll-test.exe build\asar\Release\asar.dll tests dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp
