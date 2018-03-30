@@ -13,7 +13,7 @@ script:
   - make
   # run test suite
   - cd .. && mkdir tests_tmp
-  - build/asar-dll-test/asar-dll-test build/asar/libasar.so $TRAVIS_BUILD_DIR\tests dummy_rom.sfc $TRAVIS_BUILD_DIR\tests_tmp
+  - build/asar-dll-test/asar-dll-test build/asar/libasar.so $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_tmp
 addons:
   apt:
     sources:
