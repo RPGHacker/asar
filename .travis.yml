@@ -1,4 +1,10 @@
 language: cpp
+compiler:
+  - clang
+  - gcc
+install:
+  # use gcc6 if using gcc
+  - if [ $CC = gcc ]; then export CC=/usr/bin/gcc-6; export CXX=/usr/bin/g++-6; fi
 script:
   - mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Release ../src
