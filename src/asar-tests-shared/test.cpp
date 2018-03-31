@@ -33,6 +33,8 @@
 #	include <dirent.h>
 #	include <vector>
 #	include <string>
+#	include <string.h>
+#	include <sys/stat.h>
 #endif
 
 #if defined(ASAR_TEST_DLL)

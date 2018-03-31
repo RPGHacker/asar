@@ -8,9 +8,12 @@ install:
   - export CC=/usr/bin/gcc-6
   - export CXX=/usr/bin/g++-6
 script:
-  - mkdir src/build && cd src/build
-  - cmake -DCMAKE_BUILD_TYPE=Release ..
+  - mkdir build && cd build
+  - cmake -DCMAKE_BUILD_TYPE=Release ../src
   - make
+  # run test suite
+  - cd .. && mkdir tests_tmp
+  - build/asar-dll-test/asar-dll-test build/asar/libasar.so $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_tmp
 addons:
   apt:
     sources:
@@ -18,4 +21,3 @@ addons:
     packages:
       - gcc-6
       - g++-6
-# TODO: actually use asar's test suite
