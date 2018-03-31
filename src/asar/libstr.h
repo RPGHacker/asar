@@ -615,7 +615,7 @@ inline int strpos(const char * str, char key)
 	if (str<(char*)0+64) return -1;//Someone needs to kill me for this.
 	const char * pos=strchr(str, key);
 	if (!pos) return -1;
-	return pos-str;
+	return (int)(pos-str);
 }
 
 inline int strpos(const char * str, const char * key)
@@ -623,7 +623,7 @@ inline int strpos(const char * str, const char * key)
 	if (str<(char*)0+64) return -1;
 	const char * pos=strstr(str, key);
 	if (!pos) return -1;
-	return pos-str;
+	return (int)(pos-str);
 }
 
 inline string upper(const char * old)

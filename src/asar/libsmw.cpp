@@ -151,7 +151,7 @@ int ratsstart(int snesaddr)
 		if (!strncmp((char*)start+i, "STAR", 4) &&
 				(start[i+4]^start[i+6])==0xFF && (start[i+5]^start[i+7])==0xFF)
 		{
-			if ((start[i+4]|(start[i+5]<<8))>0x10000-i-8-1) return pctosnes(start-romdata+i);
+			if ((start[i+4]|(start[i+5]<<8))>0x10000-i-8-1) return pctosnes((int)(start-romdata+i));
 			return -1;
 		}
 	}
@@ -372,7 +372,7 @@ void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsi
 				{
 					break;
 				}
-				func(pctosnes(metadata-romdata), (char*)metadata, metadata[4], metadata+5);
+				func(pctosnes((int)(metadata-romdata)), (char*)metadata, metadata[4], metadata+5);
 				metadata+=5+metadata[4];
 			}
 			break;

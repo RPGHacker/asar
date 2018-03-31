@@ -49,7 +49,7 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 	{
 		const char * ptr=strstr(thisstring, instr);
 		if (!ptr) return thisstring;
-		string out=S substr(thisstring, ptr-thisstring.str)+outstr+(ptr+strlen(instr));
+		string out=S substr(thisstring, (int)(ptr-thisstring.str))+outstr+(ptr+strlen(instr));
 		thisstring =out;
 		return thisstring;
 	}
@@ -157,7 +157,7 @@ string& string::qreplace(const char * instr, const char * outstr, bool all)
 			{
 				replaced=true;
 				out+=outstr;
-				i+=strlen(instr);
+				i+=(int)strlen(instr);
 				if (!all)
 				{
 					out+=((const char*)thisstring)+i;

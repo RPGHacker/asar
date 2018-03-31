@@ -1868,7 +1868,7 @@ void assembleblock(const char * block)
 
 				if (*pos == ')')
 				{
-					out += ftostrvar(getnumdouble(string(arg1pos, arg1endpos - arg1pos)), 5);
+					out += ftostrvar(getnumdouble(string(arg1pos, (int)(arg1endpos - arg1pos))), 5);
 				}
 				else
 				{
@@ -1879,7 +1879,7 @@ void assembleblock(const char * block)
 					if (*pos == '\0') error(2, "Mismatched parentheses");
 					if (*pos == ',') error(2, "Wrong number of arguments to function double()");
 
-					out += ftostrvar(getnumdouble(string(arg1pos, arg1endpos - arg1pos)), getnum(string(arg2pos, pos - arg2pos)));
+					out += ftostrvar(getnumdouble(string(arg1pos, (int)(arg1endpos - arg1pos))), getnum(string(arg2pos, (int)(pos - arg2pos))));
 				}
 			}
 			else error(2, "Unknown variable.");
