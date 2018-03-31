@@ -601,8 +601,9 @@ inline bool striwcmp(const char *s, const char *p) {
   return (*p != 0);
 }
 
-#ifndef _MSC_VER//I thought this one was FreeBSD-only, and now it suddenly exists in MSVC but not GCC?
-inline char * strdup(const char * str)
+//I thought this one was FreeBSD-only, and now it suddenly exists in MSVC but not GCC?
+#if !defined(_MSC_VER)
+inline char * strdup(const char * str) throw ()
 {
 	char * a=(char*)malloc(sizeof(char)*(strlen(str)+1));
 	strcpy(a, str);
