@@ -145,7 +145,7 @@ const char * libcon_optional_filename(const char * desc, const char * defval)
 
 const char * libcon_option()
 {
-	if (!libcon_interactive && args[1][0]=='-') return getarg(false);
+	if (!libcon_interactive && argsleft && args[1][0]=='-') return getarg(false);
 	return NULL;
 }
 
