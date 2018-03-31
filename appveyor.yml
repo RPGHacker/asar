@@ -6,7 +6,7 @@ install:
 
     cd build-%PLATFORM%
 
-    cmake -G %CMAKE_TARGET% ..\src
+    cmake -G "%CMAKE_TARGET%" ..\src
 environment:
   matrix:
     - CMAKE_TARGET: "Visual Studio 14 2015"
