@@ -1,12 +1,7 @@
 language: cpp
-sudo: required
-install:
-  # Download a recent version of CMake
-  - wget -O cmake.sh https://cmake.org/files/v3.10/cmake-3.10.0-rc1-Linux-x86_64.sh 
-  - sudo sh cmake.sh --skip-license --exclude-subdir --prefix=/usr/local
-  # make links for the newer gcc
-  - export CC=/usr/bin/gcc-6
-  - export CXX=/usr/bin/g++-6
+compiler:
+  - clang
+  - gcc
 script:
   - mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Release ../src
@@ -14,10 +9,3 @@ script:
   # run test suite
   - cd .. && mkdir tests_tmp
   - build/asar-dll-test/asar-dll-test build/asar/libasar.so $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_tmp
-addons:
-  apt:
-    sources:
-      - ubuntu-toolchain-r-test
-    packages:
-      - gcc-6
-      - g++-6
