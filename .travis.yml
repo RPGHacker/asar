@@ -2,21 +2,10 @@ language: cpp
 compiler:
   - clang
   - gcc
-install:
-  # use gcc6 if using gcc
-  # - if [ $CC = gcc ]; then export CC=/usr/bin/gcc-6; export CXX=/usr/bin/g++-6; fi
-  # actually let's try without it
 script:
   - mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Release ../src
-  - make VERBOSE=1
+  - make
   # run test suite
   - cd .. && mkdir tests_tmp
   - build/asar-dll-test/asar-dll-test build/asar/libasar.so $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_tmp
-# addons:
-  # apt:
-    # sources:
-      # - ubuntu-toolchain-r-test
-    # packages:
-      # - gcc-6
-      # - g++-6

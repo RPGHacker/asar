@@ -13,6 +13,8 @@ environment:
       PLATFORM: "Win32"
     - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
       PLATFORM: "x64"
+build:
+  verbosity: minimal
 artifacts:
 - path: build-*\asar\Release\asar-standalone.exe
 - path: build-*\asar\Release\asar.dll
