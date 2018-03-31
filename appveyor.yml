@@ -9,10 +9,10 @@ install:
     cmake -G %CMAKE_TARGET% ..\src
 environment:
   matrix:
-    - CMAKE_TARGET="Visual Studio 14 2015"
-      PLATFORM="Win32"
-    - CMAKE_TARGET="Visual Studio 14 2015 Win64"
-      PLATFORM="x64"
+    - CMAKE_TARGET: "Visual Studio 14 2015"
+      PLATFORM: "Win32"
+    - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
+      PLATFORM: "x64"
 artifacts:
 - path: build-*\asar\Release\asar-standalone.exe
 - path: build-*\asar\Release\asar.dll
