@@ -1,11 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE html>
 <html lang="en">
 	<head>
 		<title>Asar User Manual</title>
-		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<link rel="stylesheet" href="../shared/highlight_js/styles/default.css">
 		<script src="../shared/highlight_js/highlight.pack.js"></script>
-		<script type="text/javascript">
+		<script>
 				hljs.configure(
 					{
 						tabReplace: '    ',
@@ -40,7 +40,7 @@
 		This manual was written by <i>RPG Hacker</i>, so if you find something that is wrong or weird, make sure to blame me instead of Alcaro.</p>
 		<p>As a general rule, the manual uses <code>{}</code> to denote required parameters and <code>[]</code> to denote optional parameters (where optional parameters ending in <code>...</code> mean &quot;zero or more&quot; of that parameter). Everything else refers to keywords/names.</p>
 		<hr />
-		<p id="contents"><h3>Table of Contents</h3>
+		<div id="contents"><h3>Table of Contents</h3>
 		<ul>
 			<li><a href="#usage">Usage</a></li>
 			<li>
@@ -148,9 +148,9 @@
 				</ul>
 			</li>
 		</ul>
-		</p>
+		</div>
 		<hr />
-		<p id="usage"><h3>Usage</h3>
+		<div id="usage"><h3>Usage</h3>
 		<pre><code class="powershell">	asar.exe [options] {asm_file} [rom_file]</code></pre>
 		<table>
 			<tr>
@@ -244,13 +244,13 @@
 				<pre><code class="powershell">asar.exe C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 		</table>
-		<br/ >
+		<br />
 		For convenience, double-clicking the Asar executable will prompt you to enter paths to an ASM file and a ROM file and thus allow you to directly use Asar without passing any command line arguments to it.
-		<br/ ><br/ >
+		<br /><br />
 		<a href="#contents">Return to top</a>
-		</p>
+		</div>
 		<hr />
-		<p id="archs"><h3>Architectures</h3>
+		<div id="archs"><h3>Architectures</h3>
 		Asar supports a number of different target architectures for code compilation. They can be activated via the command <code class="65c816_asar">arch {name}</code>. Going into detail on any of the supported architectures is beyond the scope of this manual. For that, it's recommended to check the SNES Dev Manual or other specialized resources. Asar tries as much as possible to always stick to the known conventions and specifications of each respective architecture (with a few notable exceptions that are hopefully all covered somewhere in this manual).
 		<br /><br />
 		<table>
@@ -1473,9 +1473,9 @@ macro memset(val, num)
 endmacro
 
 rep 16 : %memset($00, 16)</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="mappers"><h3>Mapping Modes</h3>
+		<div id="mappers"><h3>Mapping Modes</h3>
 		Asar supports a number of different mapping modes. They control the address translation used by Asar during compilation (aka where in the output file Asar writes to). Historically, SNES cartridges used a number of different mappers to address data in ROM. Those mappers can be supported by using the respective mapping mode in Asar. It's possible, but not recommended, to use different mapping modes on the same ROM. Detailed explanations on each mapping mode are beyond the scope of this manual, so please check the SNES Dev Manual or other specialized resources for that.<br/><br/>
 		<table>
 			<tr>
@@ -1525,9 +1525,9 @@ db $FF		; Will write to PC address 0x000000
 hirom
 org $008000
 db $FF		; Will write to PC address 0x008000</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="compatibility"><h3>Compatibility Settings</h3>
+		<div id="compatibility"><h3>Compatibility Settings</h3>
 		Compatibility settings determine how Asar operates in certain situations. They can be changed via a number of commands.
 		<h4 id="xkas">xkas</h4>
 		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patches that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used.
@@ -1616,9 +1616,9 @@ org $80FFFF
 warn bankcross on
 
 print pc	; Will print 818001 when using LoROM mapper</code></pre>
-<a href="#contents">Return to top</a></p>
+<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="formatting"><h3>Code Formatting</h3>
+		<div id="formatting"><h3>Code Formatting</h3>
 		<h4 id="comments">Comments</h4>
 		You can use ; to add comments to your code, making it easier to read and understand for other people. Everything from the ; to the end of the line is silently ignored by Asar.
 		<pre><code class="65c816_asar">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
@@ -1656,9 +1656,9 @@ function func(param) = ((param*param)+1000)\
 ; Treated as:
 lda #00
 sta $00</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="program-counter"><h3>Program Counter</h3>
+		<div id="program-counter"><h3>Program Counter</h3>
 		The program counter (short: pc) refers to the position in the ROM at which Asar currently writes assembled code and/or data. It advances automatically whenever Asar writes to the ROM and is affected by the current <a href="#mappers">mapping mode</a>, as well as a number of special commands. Note that all commands affecting the pc that take an address expect an SNES address and thus are also affected by the current mapping mode.
 		<h4 id="org">org</h4>
 		<pre><code class="65c816_asar">org {snes_address}</code></pre>
@@ -1760,9 +1760,9 @@ InRamAgain:
 	rtl
 
 base off</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="math"><h3>Math</h3>
+		<div id="math"><h3>Math</h3>
 		Math is supported in all opcodes, functions and labels. By default, Asar uses left-to-right math for backwards-compatibility with xkas which means that it ignores operator precedence.
 		<pre><code class="65c816_asar">lda #6*2+5	; the same as &quot;lda #17&quot;
 lda #5+6*2	; the same as &quot;lda #22&quot;</code></pre>
@@ -1797,9 +1797,9 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 .Data
 	db $00,$01,$02
 	db $03,$02,$03</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />		
-		<p id="labels"><h3>Labels</h3>
+		<div id="labels"><h3>Labels</h3>
 		Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets.
 		<h4 id="main-labels">Main Labels</h4>
 		<pre><code class="65c816_asar">[#]{identifier}:</code></pre>
@@ -2138,14 +2138,14 @@ dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main
 dl TheFirst_Main                ; TheFirst_Main
 dl TheSecond_Main               ; TheSecond_Main
 dl TheThird_Main                ; TheThird_Main</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="defines"><h3>Defines</h3>
+		<div id="defines"><h3>Defines</h3>
 		Asar supports a define system that functions similarly to defines in other programming languages, such as C++. Defines are identifiers that you can assign any kind of text to and use in other places as substitues for that text. During compilation, Asar replaces each define it encounters with the respective text assigned to it. Defines are prefixed with a <code class="65c816_asar">!</code> and declared as follows:<br>
 		<pre><code class="65c816_asar">!{identifier} = {value}</code></pre>
 		<pre><code class="65c816_asar">!{identifier} = "{value}"</code></pre>
 		where <code>identifier</code> is a unique identifier that can contain any of the following characters:<br />
-		<code class="65c816_asar">a-z A-Z 0-9 _</code></br >
+		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
 		The space on both sides of the = is required, which means that <code class="65c816_asar">!identifier=value</code> will not work. Since defines are really just placeholders for text, they can contain anything - labels, math formulas, even other defines.
 		<pre><code class="65c816_asar">!x = $00
 		
@@ -2203,7 +2203,7 @@ lda !x		; Treated as &quot;lda $1234&quot;
 !define ?= 1
 ; !define now contains &quot;10&quot;</code></pre></td>
 			</tr>
-		<table><br />
+		</table><br />
 		Similarly to C's ifdef and undef, Asar allows you to check for a define's existence using the <code class="65c816_asar">defined(&quot;{identifier}&quot;)</code> function and to delete a define using the <code class="65c816_asar">undef &quot;{identifier}&quot;</code> command. Make sure to leave the <code class="65c816_asar">!</code> out of the identifier when using these functions, as Asar would otherwise try to resolve the defines.
 		<pre><code class="65c816_asar">!define = "hello"
 		
@@ -2217,9 +2217,9 @@ if defined("define")
 	print "This won't be printed!"
 endif</code></pre>
 		Note that Asar tries to replace defines wherever possible, even inside strings. In some occasions, this might be undesirable. See section <a href="#tables">Tables</a> for details on how to escape certain characters.<br/>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="macros"><h3>Macros</h3>
+		<div id="macros"><h3>Macros</h3>
 		Macros are a mechanism for recording a sequence of commands that can be used in other places. The main purpose of this is to include commonly used code in multiple places without actually having to rewrite or copy that code every time. Instead you can move it into a macro and write it only once. Macros, in concept, work similarly to defines in that they are a text-replacement mechanism, but they have a few key differences:
 		<ul>
 			<li>Macros only record a sequence of commands rather than any kind of text.</li>
@@ -2232,7 +2232,7 @@ endif</code></pre>
 	[command2...]
 endmacro</code></pre>
 		where all the identifiers can contain any of the following characters:<br />
-		<code class="65c816_asar">a-z A-Z 0-9 _</code></br >		
+		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />		
 		Use the syntax <code class="65c816_asar">&lt;parameter_identifier&gt;</code> to expand a parameter inside a macro. This works just like placing a <code class="65c816_asar">!define_identifier</code> anyhwere else in the code. Macros can be recursive (macros calling themselves) and/or nested up to 512 levels deep. This limit only serves the purpose of preventing infinite recursion. The first and last line of the macro definition need to go on their own lines (the <a href="#singleline">single-line operator</a> is not supported here). To call a macro that has already been defined, use the syntax
 		<pre><code class="65c816_asar">%{identifier}([parameter1[, parameter2...]])</code></pre>
 		where each individual parameter may be wrapped in double quotes (which is required for parameters that contain any whitespace).
@@ -2256,13 +2256,13 @@ endmacro
 %swap($01, $02)
 %use_x_safely("ldx $10 : stx $11 : ldx #10 : stx $12")
 </code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="functions"><h3>Functions</h3>
+		<div id="functions"><h3>Functions</h3>
 		Functions in Asar can be considered the math equivalent of macros. They are a convenient way of wrapping commonly used math statements, can include parameters and can be called in all places where math is supported. Use the following syntax to define a function:
 		<pre><code class="65c816_asar">function {identifier}([parameter1_identifier[, parameter2_identifier...]]) = {some_math_statement}</code></pre>
 		where all the identifiers can contain any of the following characters<br />
-		<code class="65c816_asar">a-z A-Z 0-9 _</code></br >		
+		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />		
 		and where <code>some_math_statement</code> can be any <a href="#math">math statement</a> supported by Asar (including the use of other functions). Use a parameter's name to expand it inside a function.
 		<pre><code class="65c816_asar">function kilobytes_to_bytes(kb) = kb*1024
 function megabytes_to_kilobytes(mb) = mb*1024
@@ -2348,7 +2348,7 @@ endif</code></pre></td>
 
 assert !fsize >= 0, "datafile.bin doesn't exist or can't be opened".
 				
-while !fpos < !fsize
+while !fpos &lt; !fsize
 	; Do something with datafile.bin here, like calling readfile1("datafile.bin", !fpos)
 	;...
 	
@@ -2456,9 +2456,9 @@ endif</code></pre></td>
 		</table><br/>
 		All built-in functions can be overridden by user-defined functions. Prepending an underscore (for example: <code class="65c816_asar">_read1()</code>) leads to the original function, which can be used to make an overridden function call its original function.
 		<pre><code class="65c816_asar">function read1(x) = _read1(x+$010000)</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="conditionals"><h3>Conditional Compilation</h3>
+		<div id="conditionals"><h3>Conditional Compilation</h3>
 		Conditional compilation allows you to only compile specific sections of code when certain conditions are met. This can be used in a number of ways, but is most commonly used in conjunction with defines to make code easily customizable and/or provide some simple configuration options to end users.
 		<h4 id="if-else">if/elseif/else/endif</h4>
 		The most basic form of conditionals are if conditionals. They are given a math statement and only compile their enclosed code if that statement evaluates to a value greater than 0.
@@ -2533,18 +2533,18 @@ endif</code></pre>
 		A special variation of if conditionals are while loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to <code>&lt;= 0</code>. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.
 		<pre><code class="65c816_asar">!counter = 0
 		
-while !counter < $10
-	db (!counter<<8)|$00,(!counter<<8)|$01,(!counter<<8)|$02,(!counter<<8)|$03
-	db (!counter<<8)|$04,(!counter<<8)|$05,(!counter<<8)|$06,(!counter<<8)|$07
-	db (!counter<<8)|$08,(!counter<<8)|$09,(!counter<<8)|$0A,(!counter<<8)|$0B
-	db (!counter<<8)|$0C,(!counter<<8)|$0D,(!counter<<8)|$0E,(!counter<<8)|$0F
+while !counter &lt; $10
+	db (!counter&lt;&lt;8)|$00,(!counter&lt;&lt;8)|$01,(!counter&lt;&lt;8)|$02,(!counter&lt;&lt;8)|$03
+	db (!counter&lt;&lt;8)|$04,(!counter&lt;&lt;8)|$05,(!counter&lt;&lt;8)|$06,(!counter&lt;&lt;8)|$07
+	db (!counter&lt;&lt;8)|$08,(!counter&lt;&lt;8)|$09,(!counter&lt;&lt;8)|$0A,(!counter&lt;&lt;8)|$0B
+	db (!counter&lt;&lt;8)|$0C,(!counter&lt;&lt;8)|$0D,(!counter&lt;&lt;8)|$0E,(!counter&lt;&lt;8)|$0F
 			
 	!counter #= !counter+1
 endif</code></pre>
 		Note that for technical reasons, while loops end on an endif, just like if conditionals, but unlike the latter they do not support elseif or else branches. Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the compiler, as Asar won't attempt to detect those.<br/><br/>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="binary-data"><h3>Binary Data</h3>
+		<div id="binary-data"><h3>Binary Data</h3>
 		Asar supports a number of commands which allow you to insert binary data directly into the ROM.
 		<h4 id="tables">Tables</h4>
 		<pre><code class="65c816_asar">db {value}[,value...]</code></pre>
@@ -2569,10 +2569,10 @@ dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 		<pre><code class="65c816_asar">table {filename}[,ltr/rtl]</code></pre>
 		Where <code>filename</code> specifies the path to a table file (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and ltr/rtl specifies whether that file is in left-to-right or right-to left format (default: left-to-right).<br />
 		Format of left-to-right table files:
-		<pre><code">{character}={hex_value}
+		<pre><code>{character}={hex_value}
 [character=hex_value...]</code></pre>
 		Format of right-to-left table files:
-		<pre><code">{hex_value}={character}
+		<pre><code>{hex_value}={character}
 [hex_value=character...]</code></pre>
 		where <code>character</code> represents an ASCII character and <code>hex_value</code> represents a hexadecimal number literal (without the <code>$</code> prefix) to map to that ASCII character. Note that the table command initializes the mapping to garbage, so when using it, it's recommended to provide mappings for all ASCII characters.<br />
 		To reset the current table mapping to a direct ASCII mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push the current table mapping to the stack, whereas the <code>pulltable</code> command lets you restore the mapping from the stack.
@@ -2664,9 +2664,9 @@ incbin {filename}
 
 pullpc</code></pre>
 		In this case there is no hard limitation on the size of your file.<br /><br />
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="includes"><h3>Includes</h3>
+		<div id="includes"><h3>Includes</h3>
 		Includes make it possible for your code to reference other files. This can be done for a number of reasons. The most common scenarios are to split code into multiple source files (see <a href="#incsrc">incsrc</a>) or to separate code from data (see <a href="#incbin">incbin</a>). Whenever using a command or function referencing another file, Asar tries to locate that file by applying a set of rules to the file path in a specific order:
 		<ol>
 			<li>
@@ -2720,9 +2720,9 @@ incsrc "shared.asm"
 if !is_sa1_rom
 	; ...
 endif</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="freespace"><h3>Freespace</h3>
+		<div id="freespace"><h3>Freespace</h3>
 		Freespace is a concept that comes into play when extending an existing ROM. To insert new code or data into a ROM, the ROM must contain enough continuous unused space for everything to fit into. Space like that is referred to as freespace. Many tools attempt to find freespace in a ROM by looking for continuous blocks of a certain value (most commonly $00). This method on its own isn't reliable as freespace finders could erroneously detect binary data or code with a certain pattern as freespace. For this reason, the RATS format was invented to protect data inserted into a ROM (see <a href="http://old.smwiki.net/wiki/ROM_Allocation_Tag_System">SMW Wiki</a> for details on the RATS format). When placing RATS tags at the beginning of occupied memory blocks inside a ROM, freespace finders can search for them to know which parts of the ROM not to overwrite. Asar supports a number of commands for working with freespace directly, including freespace finders with automatic RATS tag generation.
 		<h4 id="freecode">freespace/freecode/freedata</h4>
 		<pre><code class="65c816_asar">freespace {ram/noram}[,align][,cleaned][,static][,value]</code></pre>
@@ -2853,9 +2853,9 @@ SomeLargeData:
 	db $00,$01,$02,$03
 	; ...
 	db $FF</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 		<hr />
-		<p id="text-output"><h3>Text Output</h3>
+		<div id="text-output"><h3>Text Output</h3>
 		Text output functions allow you to communicate certain information, states, warnings, errors etc. to end users of your code.
 		<h4 id="print">print</h4>
 		The print command lets you output general-purpose text to the user. Most commonly this is used to inform the user about certain states or to output debug information. Usage:
@@ -2921,6 +2921,6 @@ endif</code></pre>
 		<pre><code class="65c816_asar">assert {condition}[,custom_error_text]</code></pre>
 		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
 		<pre><code class="65c816_asar">assert read1($00FFD5) != $23,"This patch is not SA-1 compatible!"</code></pre>
-		<a href="#contents">Return to top</a></p>
+		<a href="#contents">Return to top</a></div>
 	</body>
 </html>
