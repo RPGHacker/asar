@@ -296,7 +296,12 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	clidefines.reset();
 	for (int i = 0; i < paramscurrent.definecount; i++)
 	{
-		clidefines.create(paramscurrent.additional_defines[i].name) = paramscurrent.additional_defines[i].contents;
+		string name = paramscurrent.additional_defines[i].name;
+		if (clidefines.exists(name)) {
+			error<errnull>(pass, S"Define "+name+" was passed multiple times");
+			return false;
+		}
+		clidefines.create(name) = paramscurrent.additional_defines[i].contents;
 	}
 
 	asar_patch_main(paramscurrent.patchloc);

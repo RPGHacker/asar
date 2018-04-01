@@ -247,14 +247,22 @@ int main(int argc, char * argv[])
 					// argument contains value, not only name
 					const char* eq_loc = strchr(postprocess_arg, '=');
 					string name = string(postprocess_arg, eq_loc - postprocess_arg);
-					if (!clidefines.exists(name))
-						clidefines.create(name) = eq_loc + 1;
+					if (clidefines.exists(name)) {
+						error<errnull>(pass, S"The option " + name + " was passed multiple times on the command line.");
+						pause(err);
+						return 1;
+					}
+					clidefines.create(name) = eq_loc + 1;
 				}
 				else
 				{
 					// argument doesn't have a value, only name
-					if (!clidefines.exists(postprocess_arg))
-						clidefines.create(postprocess_arg) = "";
+					if (clidefines.exists(postprocess_arg)) {
+						error<errnull>(pass, S"The option " + postprocess_arg + " was passed multiple times on the command line.");
+						pause(err);
+						return 1;
+					}
+					clidefines.create(postprocess_arg) = "";
 				}
 			}
 		}
