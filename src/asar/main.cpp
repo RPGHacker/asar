@@ -676,7 +676,66 @@ void parse_std_defines(const char* textfile)
 
 	if (content != nullptr)
 	{
-		// TODO
+		char* pos = content;
+		while (*pos != 0) {
+			string define_name;
+			string define_val;
+
+			while (*pos != '=' && *pos != '\n') {
+				define_name += *pos;
+				pos++;
+			}
+			while (*pos != '\n') {
+				define_val += *pos;
+				pos++;
+			}
+			// clean define_name
+			define_name = define_name.replace("\t", " ", true);
+			define_name = itrim(define_name.str, " ", " ", true);
+			define_name = itrim(define_name.str, "!", "", false); // remove leading ! if present
+			// clean define_val
+			char* defval = define_val.str;
+			string cleaned_defval;
+
+			if (*defval == 0) {
+				// no value
+				if (clidefines.exists(define_name)) warn("Std define overrides some other define");
+				clidefines.create(define_name) = "";
+				continue;
+			}
+
+			while (*defval == ' ' || *defval == '\t') defval++; // skip whitespace in beginning
+			if (*defval == '"') {
+				while (*defval != '"' && *defval != 0)
+					cleaned_defval += *defval++;
+
+				if (*defval == 0) {
+					error<errnull>(pass, "Broken std defines (no closing quote)");
+				}
+				defval++; // skip closing quote
+				while (*defval == ' ' || *defval == '\t') defval++; // skip whitespace
+				if (*defval != 0)
+					error<errnull>(pass, "Broken std defines (something after closing quote)");
+
+				if (clidefines.exists(define_name)) warn("Std define overrides some other define");
+				clidefines.create(define_name) = cleaned_defval;
+				continue;
+			}
+			else
+			{
+				// slightly hacky way to remove trailing whitespace
+				char* defval_end = strchr(defval, '\n'); // slightly hacky way to get end of string or newline
+				if (!defval_end) defval_end = strchr(defval, 0);
+				defval_end--;
+				while (*defval_end == ' ' || *defval_end == '\t') defval_end--;
+				cleaned_defval = string(defval, (defval_end - defval));
+
+				if (clidefines.exists(define_name)) warn("Std define overrides some other define");
+				clidefines.create(define_name) = cleaned_defval;
+				continue;
+			}
+
+		}
 		free(content);
 	}
 }
