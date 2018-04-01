@@ -71,6 +71,14 @@ struct patchparams
 	// A list of additional defines to make available to the patch.
 	struct definedata * additional_defines;
 	int additional_define_count;
+
+	// Path to a text file to parse standard include search paths from.
+	// Set to NULL to not use any standard includes search paths.
+	const char* stdincludesfile;
+
+	// Path to a text file to parse standard defines from.
+	// Set to NULL to not use any standard defines.
+	const char* stddefinesfile;
 };
 
 

@@ -671,6 +671,8 @@ void initstuff()
 	emulatexkas=false;
 	disable_bank_cross_errors = false;
 	nested_namespaces = false;
+
+	thisfilename = "";
 }
 
 
@@ -1712,7 +1714,7 @@ void assembleblock(const char * block)
 		if (emulatexkas) name=dequote(par);
 		else name=S dequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
-		if (!readfile(name, &data, &len)) error(0, "File not found");
+		if (!readfile(name, thisfilename, &data, &len)) error(0, "File not found");
 		autoptr<char*> datacopy=data;
 		if (!end) end=len;
 		if (end<start) error(0, "Negative range in incbin");
@@ -1786,7 +1788,7 @@ void assembleblock(const char * block)
 		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
 		string name=S dequote(par);
-		autoptr<char*> tablecontents=readfile(name);
+		autoptr<char*> tablecontents=readfile(name, thisfilename);
 		if (!tablecontents) error(0, "File not found");
 		autoptr<char**> tablelines=split(tablecontents, "\n");
 		for (int i=0;i<256;i++) table.table[i]=(unsigned int)(((numopcodes+read2(0x00FFDE)+i)*0x26594131)|0x40028020);
@@ -1873,7 +1875,7 @@ void assembleblock(const char * block)
 
 				if (*pos == ')')
 				{
-					out += ftostrvar(getnumdouble(string(arg1pos, arg1endpos - arg1pos)), 5);
+					out += ftostrvar(getnumdouble(string(arg1pos, (int)(arg1endpos - arg1pos))), 5);
 				}
 				else
 				{
@@ -1884,7 +1886,7 @@ void assembleblock(const char * block)
 					if (*pos == '\0') error(2, "Mismatched parentheses");
 					if (*pos == ',') error(2, "Wrong number of arguments to function double()");
 
-					out += ftostrvar(getnumdouble(string(arg1pos, arg1endpos - arg1pos)), getnum(string(arg2pos, pos - arg2pos)));
+					out += ftostrvar(getnumdouble(string(arg1pos, (int)(arg1endpos - arg1pos))), getnum(string(arg2pos, (int)(pos - arg2pos))));
 				}
 			}
 			else error(2, "Unknown variable.");
@@ -1919,16 +1921,15 @@ void assembleblock(const char * block)
 	}
 	else if (is1("pad"))
 	{
-		if (snespos&0xFF000000) error(0, "pad does not make sense in a freespaced code");
+		if (realsnespos&0xFF000000) error(0, "pad does not make sense in a freespaced code");
 		int num=getnum(par);
 		if (num&0xFF000000) error(0, "Out of bounds");
-		if (num>snespos)
+		if (num>realsnespos)
 		{
 			int end=snestopc(num);
-			int start=snestopc(snespos);
+			int start=snestopc(realsnespos);
 			int len=end-start;
-			for (int i=0;i<len;i++) writeromdata_byte(start+i, padbyte[i%12]);
-			snespos=num;
+			for (int i=0;i<len;i++) write1(padbyte[i%12]);
 		}
 	}
 	else if (is1("fillbyte") || is1("fillword") || is1("filllong") || is1("filldword"))

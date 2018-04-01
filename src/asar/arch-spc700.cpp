@@ -71,8 +71,8 @@ static bool bitmatch(const char * opnamein, string& opnameout, const char * str,
 	{
 		bit=atoi(dot+1);
 		if (bit>=8) return false;
-		math=substr(str, dot-str);
-		if (opnameend[-1]=='1') opnameout=substr(opnamein, opnameend-opnamein-1);
+		math=substr(str, (int)(dot-str));
+		if (opnameend[-1]=='1') opnameout=substr(opnamein, (int)(opnameend-opnamein-1));
 		else opnameout=opnamein;
 		return true;
 	}
@@ -80,7 +80,7 @@ static bool bitmatch(const char * opnamein, string& opnameout, const char * str,
 	{
 		math=str;
 		bit=opnameend[-1]-'0';
-		opnameout=substr(opnamein, opnameend-opnamein-1);
+		opnameout=substr(opnamein, (int)(opnameend-opnamein-1));
 		return true;
 	}
 	return false;

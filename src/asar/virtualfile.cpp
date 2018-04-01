@@ -95,7 +95,7 @@ private:
 			// Now check if path exists relative to the base path
 			string test_path = "";
 
-			if (base_path != nullptr && base_path[0] != '\0')
+			if (base_path != nullptr)
 			{
 				test_path = create_combined_path(dir(base_path), path);
 			}

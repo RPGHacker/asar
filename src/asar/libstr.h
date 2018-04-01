@@ -325,8 +325,9 @@ string operator+(const char * right) const
 //	return s;
 //}
 
-char * readfile(const char * fname);
-bool readfile(const char * fname, char ** data, int * len);//if you want an uchar*, cast it
+char * readfile(const char * fname, const char * basepath);
+char * readfilenative(const char * fname);
+bool readfile(const char * fname, const char * basepath, char ** data, int * len);//if you want an uchar*, cast it
 char ** nsplit(char * str, const char * key, int maxlen, int * len);
 char ** qnsplit(char * str, const char * key, int maxlen, int * len);
 char ** qpnsplit(char * str, const char * key, int maxlen, int * len);
@@ -601,8 +602,9 @@ inline bool striwcmp(const char *s, const char *p) {
   return (*p != 0);
 }
 
-#ifndef _MSC_VER//I thought this one was FreeBSD-only, and now it suddenly exists in MSVC but not GCC?
-inline char * strdup(const char * str)
+//I thought this one was FreeBSD-only, and now it suddenly exists in MSVC but not GCC?
+#if !defined(_MSC_VER)
+inline char * strdup(const char * str) throw ()
 {
 	char * a=(char*)malloc(sizeof(char)*(strlen(str)+1));
 	strcpy(a, str);
@@ -615,7 +617,7 @@ inline int strpos(const char * str, char key)
 	if (str<(char*)0+64) return -1;//Someone needs to kill me for this.
 	const char * pos=strchr(str, key);
 	if (!pos) return -1;
-	return pos-str;
+	return (int)(pos-str);
 }
 
 inline int strpos(const char * str, const char * key)
@@ -623,7 +625,7 @@ inline int strpos(const char * str, const char * key)
 	if (str<(char*)0+64) return -1;
 	const char * pos=strstr(str, key);
 	if (!pos) return -1;
-	return pos-str;
+	return (int)(pos-str);
 }
 
 inline string upper(const char * old)

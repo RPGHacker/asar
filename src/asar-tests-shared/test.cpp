@@ -33,6 +33,8 @@
 #	include <dirent.h>
 #	include <vector>
 #	include <string>
+#	include <string.h>
+#	include <sys/stat.h>
 #endif
 
 #if defined(ASAR_TEST_DLL)
@@ -62,7 +64,7 @@ std::string dir(char const *name)
 	{
 		if (result[(size_t)i] == '/' || result[(size_t)i] == '\\')
 		{
-			result[(size_t)(i + 1)] = 0;
+			result.erase((size_t)(i + 1));
 			break;
 		}
 		if (i == 0) result = "";
@@ -307,7 +309,11 @@ std::vector<std::string> tokenize_string(const char * str, const char * key)
 	while ((pos = s.find(delimiter)) != std::string::npos)
 	{
 		token = s.substr(0, pos);
-		list.push_back(token);
+		// Don't bother adding empty tokens (they're just whitespace)
+		if (token != "")
+		{
+			list.push_back(token);
+		}
 		s.erase(0, pos + delimiter.length());
 	}
 	list.push_back(s);
@@ -329,13 +335,51 @@ int main(int argc, char * argv[])
 
 #if defined(ASAR_TEST_DLL)
 	const char * asar_dll_path = argv[1];
+	std::string stdincludespath = dir(asar_dll_path) + "stdincludes.txt";
+	std::string stddefinespath = dir(asar_dll_path) + "stddefines.txt";
 #else
 	const char * asar_exe_path = argv[1];
+	std::string stdincludespath = dir(asar_exe_path) + "stdincludes.txt";
+	std::string stddefinespath = dir(asar_exe_path) + "stddefines.txt";
 #endif
 	const char * test_directory = argv[2];
 	const char * unheadered_rom_file = argv[3];
 	const char * output_directory = argv[4];
 	std::vector<wrapped_file> input_files;
+
+
+	FILE* stdincludesfile = fopen(stdincludespath.c_str(), "wb");
+
+	if (stdincludesfile == nullptr)
+	{
+		printf("Error: Failed to write std includes file at '%s'.\n", stdincludespath.c_str());
+		return 1;
+	}
+	else
+	{
+		std::string stdinclude = " ";
+		stdinclude += test_directory;
+		if (!str_ends_with(stdinclude.c_str(), "/") && !str_ends_with(stdinclude.c_str(), "\\")) stdinclude += "/";
+		stdinclude += "stdinclude \n";
+		fwrite((const void*)stdinclude.c_str(), 1, stdinclude.length(), stdincludesfile);
+		fclose(stdincludesfile);
+	}
+
+
+	FILE* stddefinesfile = fopen(stddefinespath.c_str(), "wb");
+
+	if (stddefinesfile == nullptr)
+	{
+		printf("Error: Failed to write std defines file at '%s'.\n", stddefinespath.c_str());
+		return 1;
+	}
+	else
+	{
+		std::string stddefines = "!stddefined=1\n stddefined2=1\nstddefined3\nstddefined4 = 1 \n";
+		fwrite((const void*)stddefines.c_str(), 1, stddefines.length(), stddefinesfile);
+		fclose(stddefinesfile);
+	}
+
 
 #if defined(ASAR_TEST_DLL)
 	if (!asar_init_with_dll_path(asar_dll_path))
@@ -522,18 +566,21 @@ int main(int argc, char * argv[])
 			std::string base_path_string = dir(fname);
 			const char* base_path = base_path_string.c_str();
 
-			patchparams asar_path_params;
-			asar_path_params.structsize = (int)sizeof(asar_path_params);
+			patchparams asar_patch_params;
+			asar_patch_params.structsize = (int)sizeof(asar_patch_params);
 
-			asar_path_params.patchloc = azm_name;
-			asar_path_params.romdata = truerom;
-			asar_path_params.buflen = (int)max_rom_size;
-			asar_path_params.romlen = &truelen;
+			asar_patch_params.patchloc = azm_name;
+			asar_patch_params.romdata = truerom;
+			asar_patch_params.buflen = (int)max_rom_size;
+			asar_patch_params.romlen = &truelen;
 
-			asar_path_params.includepaths = &base_path;
-			asar_path_params.numincludepaths = 1;
+			asar_patch_params.includepaths = &base_path;
+			asar_patch_params.numincludepaths = 1;
 
-			asar_path_params.should_reset = true;
+			asar_patch_params.should_reset = true;
+
+			asar_patch_params.stdincludesfile = stdincludespath.c_str();
+			asar_patch_params.stddefinesfile = stddefinespath.c_str();
 
 
 			for (int i = 0;i < numiter;i++)
@@ -545,7 +592,7 @@ int main(int argc, char * argv[])
 					printf("Iteration %d of %d\n\n", i+1, numiter);
 				}
 				
-				if (!asar_patch_ex(&asar_path_params))
+				if (!asar_patch_ex(&asar_patch_params))
 				{
 					printf("asar_patch() failed on file '%s':\n", azm_name);
 					int numerrors;

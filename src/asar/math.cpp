@@ -400,7 +400,7 @@ static double filesizefunc(const funcparam& fname)
 	validateparam(fname, 0, Type_String);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
 	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return -1;
-	return fhandle->filesize;
+	return (double)fhandle->filesize;
 }
 
 // Checks whether the specified define is defined.
@@ -489,7 +489,7 @@ static double getnumcore()
 	{
 		const char * start=str;
 		while (isalnum(*str) || *str == '_' || *str == '.') str++;
-		int len=str-start;
+		int len=(int)(str-start);
 		while (*str==' ') str++;
 		if (*str=='(')
 		{
@@ -532,7 +532,7 @@ static double getnumcore()
 						if (*str == '"')
 						{
 							params[numparams].type = Type_String;
-							string tempname(strpos, str - strpos + 1);
+							string tempname(strpos, (int)(str - strpos + 1));
 							stringparams[numstrings] = string(dequote(&tempname[0]));
 							params[numparams++].value.stringvalue = stringparams[numstrings];
 							numstrings++;
@@ -744,7 +744,7 @@ static double getnumcore()
 						error("Invalid array subscript after first scope resolution.");
 						break;
 					}
-					string struct_name = substr(old_start, str - old_start - 1);
+					string struct_name = substr(old_start, (int)(str - old_start - 1));
 					i += (int)(eval(0) * object_size(struct_name));
 				}
 			}

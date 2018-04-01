@@ -99,6 +99,9 @@ bool labelval(const char ** rawname, unsigned int * rval, bool define=false);
 bool labelval(char ** rawname, unsigned int * rval, bool define=false);
 bool labelval(string name, unsigned int * rval, bool define=false);
 
+void parse_std_includes(const char* textfile, autoarray<string>& outarray);
+void parse_std_defines(const char* textfile);
+
 extern volatile int recursioncount;
 class recurseblock {
 public:

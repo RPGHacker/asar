@@ -20,6 +20,8 @@ macro(set_asar_test_shared_properties target)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820") # 'bytes' bytes padding added after construct 'member_name'
 	else()
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
+		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 		target_link_libraries(${target} dl)
 	endif()
 endmacro()

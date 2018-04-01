@@ -111,6 +111,8 @@ Main:
 				<pre><code class="65c816_asar">namespace nested on</code></pre>
 			</li>
 			<li>Added support for <code class="65c816_asar">warn bankcross off</code> which disables checking for bank crossing. Use with caution; might not work with certain features or outright break some stuff.</li>
+			<li>Added a new, simple README.</li>
+			<li>Added support for <code>stdincludes.txt</code> and <code>stddefines.txt</code> - see manual for details.</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
@@ -126,6 +128,7 @@ asar 1.60</code></pre>
 			<li>LoROM banks <code>$70</code> to <code>$7F</code> can be used correctly.</li>
 			<li>Struct definitions are cleared correctly in Asar lib.</li>
 			<li>Fixed a freeze that could occur when using <code class="65c816_asar">freedata align.</code></li>
+			<li>Fixed a bug in <code class="65c816_asar">pad</code> command that made it not update the pc correctly and also made it trigger a bank cross error before actually writing any data into a new bank.</li>
 		</ul>
 
 		<h3>Deprecated features:</h3>
