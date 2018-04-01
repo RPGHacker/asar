@@ -42,7 +42,13 @@
 		<hr />
 		<p id="contents"><h3>Table of Contents</h3>
 		<ul>
-			<li><a href="#usage">Usage</a></li>
+			<li>
+				<a href="#usage">Usage</a>
+				<ul>
+					<li><a href="#standard-includes">Standard Includes</a></li>
+					<li><a href="#standard-defines">Standard Defines</a></li>
+				</ul>
+			</li>
 			<li>
 				<a href="#archs">Architectures</a>
 				<ul>
@@ -246,7 +252,18 @@
 		</table>
 		<br/ >
 		For convenience, double-clicking the Asar executable will prompt you to enter paths to an ASM file and a ROM file and thus allow you to directly use Asar without passing any command line arguments to it.
-		<br/ ><br/ >
+		<h4 id="standard-includes">Standard Includes</h4>
+		Aside from passing include search paths to Asar via the command line, it's possible to also do so via a file called <code>stdincludes.txt</code>. When a file with this name exists next to the Asar executable, Asar automatically opens it and adds every line in it as an include search path (trailing and leading whitespace on a line is ignored, as are lines containing only whitespace). Absolute and relative paths are supported. Relative paths are considered relative to the TXT file. The purpose of this file is to make it easier to distribute standard code libraries for use with Asar by making it possible to just unpack the contents of a ZIP file or similar directly into the Asar directory. Note that include search paths passed in via the command line get priority over paths parsed from this TXT file. See section <a href="#includes">Includes</a> for details on include search paths.<br />
+		All of the examples below are valid:
+		<pre><code>C:/asm/stdlib
+
+    ./debug
+../../my_game/libraries
+		test/</code></pre>
+		<h4 id="standard-defines">Standard Defines</h4>
+		#TODO
+		See section <a href="#defines">Defines</a> for details on defines.
+		<pre><code>#TODO</code></pre>
 		<a href="#contents">Return to top</a>
 		</p>
 		<hr />

@@ -5,6 +5,7 @@
 #include "autoarray.h"
 #include "asar.h"
 #include "virtualfile.hpp"
+#include "platform/file-helpers.h"
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
@@ -527,7 +528,7 @@ void assemblefile(const char * filename, bool toplevel)
 	int startif=numif;
 	if (!filecontents.exists(absolutepath))
 	{
-		char * temp=readfile(absolutepath, "");
+		char * temp= readfile(absolutepath, "");
 		if (!temp)
 		{
 			error<errnull>(0, "Couldn't open file");
@@ -626,6 +627,56 @@ void assemblefile(const char * filename, bool toplevel)
 		error<errnull>(0, "Unclosed if statement");
 	}
 	incsrcdepth--;
+}
+
+void parse_std_includes(const char* textfile, autoarray<string>& outarray)
+{
+	char* content = readfilenative(textfile);
+
+	if (content != nullptr)
+	{
+		char* pos = content;
+		// TODO: Add support for relative paths (relative from the TXT file)
+		while (pos[0] != '\0')
+		{
+			string stdinclude;
+
+			do 
+			{
+				if (pos[0] != '\r' && pos[0] != '\n')
+				{
+					stdinclude += pos[0];
+				}
+				pos++;
+			} while (pos[0] != '\0' && pos[0] != '\n');
+
+			stdinclude = itrim(stdinclude.str, " ", " ", true);
+			stdinclude = itrim(stdinclude.str, "\t", "\t", true);
+
+			if (stdinclude != "")
+			{
+				if (!path_is_absolute(stdinclude))
+				{
+					stdinclude = dir(textfile) + stdinclude;
+				}
+
+				outarray.append(stdinclude);
+			}
+		}
+
+		free(content);
+	}
+}
+
+void parse_std_defines(const char* textfile)
+{
+	char* content = readfilenative(textfile);
+
+	if (content != nullptr)
+	{
+		// TODO
+		free(content);
+	}
 }
 
 bool checksum=true;
