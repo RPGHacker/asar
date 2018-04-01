@@ -685,10 +685,13 @@ void parse_std_defines(const char* textfile)
 				define_name += *pos;
 				pos++;
 			}
-			while (*pos != '\n') {
+			if (*pos != 0 && *pos != '\n') pos++; // skip =
+			while (*pos != 0 && *pos != '\n') {
 				define_val += *pos;
 				pos++;
 			}
+			if (*pos != 0)
+				pos++; // skip \n
 			// clean define_name
 			define_name = define_name.replace("\t", " ", true);
 			define_name = itrim(define_name.str, " ", " ", true);
@@ -714,7 +717,7 @@ void parse_std_defines(const char* textfile)
 				}
 				defval++; // skip closing quote
 				while (*defval == ' ' || *defval == '\t') defval++; // skip whitespace
-				if (*defval != 0)
+				if (*defval != 0 && *defval != '\n')
 					error<errnull>(pass, "Broken std defines (something after closing quote)");
 
 				if (clidefines.exists(define_name)) warn("Std define overrides some other define");
@@ -728,7 +731,7 @@ void parse_std_defines(const char* textfile)
 				if (!defval_end) defval_end = strchr(defval, 0);
 				defval_end--;
 				while (*defval_end == ' ' || *defval_end == '\t') defval_end--;
-				cleaned_defval = string(defval, (defval_end - defval));
+				cleaned_defval = string(defval, (defval_end - defval + 1));
 
 				if (clidefines.exists(define_name)) warn("Std define overrides some other define");
 				clidefines.create(define_name) = cleaned_defval;
