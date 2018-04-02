@@ -2,10 +2,16 @@ language: cpp
 compiler:
   - clang
   - gcc
+os:
+  - linux
+  - osx
 script:
   - mkdir build && cd build
   - cmake -DCMAKE_BUILD_TYPE=Release ../src
   - make
-  # run test suite
-  - cd .. && mkdir tests_tmp
-  - build/asar-dll-test/asar-dll-test build/asar/libasar.so $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_tmp
+  # run dll test suite
+  - cd .. && mkdir tests_dll_tmp
+  - build/asar-dll-test/asar-dll-test build/asar/libasar.so $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
+  # run app test suite
+  - mkdir tests_app_tmp
+  - build/asar-app-test/asar-app-test build/asar/asar-standalone $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp

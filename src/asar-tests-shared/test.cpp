@@ -670,7 +670,8 @@ int main(int argc, char * argv[])
 			const char* base_path = base_path_string.c_str();
 
 			char cmd[1024];
-			snprintf(cmd, sizeof(cmd), "\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = $10,$F0,$E0 \" \"%s\" \"%s\"", asar_exe_path, base_path, azm_name, out_rom_name);
+			// randomdude999: temp workaround: using $ in command line is unsafe on linux, so use dec representation instead (for !cmddefined3)
+			snprintf(cmd, sizeof(cmd), "\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \" \"%s\" \"%s\"", asar_exe_path, base_path, azm_name, out_rom_name);
 			for (int i = 0;i < numiter;i++)
 			{
 				printf("Executing:\n > %s\n", cmd);
@@ -684,18 +685,25 @@ int main(int argc, char * argv[])
 #endif
 		err = fopen(log_name, "rt");
 		fseek(err, 0, SEEK_END);
-		if (ftell(err) && !shouldfail)
+		size_t fsize = (size_t)ftell(err);
+		fseek(err, 0, SEEK_SET);
+		char* buf = (char*)malloc(fsize + 1);
+		fread(buf, 1, fsize + 1, err);
+		bool did_err = (strstr(buf, "error") != nullptr) || (strstr(buf, "Error") != nullptr);
+		if (did_err && !shouldfail)
 		{
-			fseek(err, 0, SEEK_SET);
-			fgets(line, 250, err);
 			fclose(err);
-			dief("%s: Insertion error: %s\n", fname, line);
+			printf("%s: Insertion error: %s\n", fname, buf);
+			free(buf);
+			die();
 		}
-		if (!ftell(err) && shouldfail)
+		if (!did_err && shouldfail)
 		{
 			fclose(err);
+			free(buf);
 			dief("%s: No insertion error\n", fname);
 		}
+		free(buf);
 		fclose(err);
 
 #if !defined(ASAR_TEST_DLL)
