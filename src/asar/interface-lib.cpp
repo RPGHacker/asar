@@ -28,6 +28,8 @@ extern int callerline;
 
 extern virtual_filesystem* filesystem;
 
+extern assocarr<string> clidefines;
+
 autoarray<const char *> prints;
 int numprint;
 
@@ -259,6 +261,9 @@ struct patchparams_v160 : public patchparams_base
 
 	bool should_reset;
 
+	definedata* additional_defines;
+	int definecount;
+
 	const char* stdincludesfile;
 	const char* stddefinesfile;
 };
@@ -296,8 +301,10 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 		includepath_cstrs.append((const char*)newpath);
 	}
 
-	string stdincludespath = paramscurrent.stdincludesfile;
-	parse_std_includes(stdincludespath, includepaths);
+	if (paramscurrent.stdincludesfile != nullptr) {
+		string stdincludespath = paramscurrent.stdincludesfile;
+		parse_std_includes(stdincludespath, includepaths);
+	}
 
 	for (int i = 0; i < includepaths.count; ++i)
 	{
@@ -309,8 +316,21 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
 	filesystem = &new_filesystem;
 
-	string stddefinespath = paramscurrent.stddefinesfile;
-	parse_std_defines(stddefinespath);
+	clidefines.reset();
+	for (int i = 0; i < paramscurrent.definecount; i++)
+	{
+		string name = paramscurrent.additional_defines[i].name;
+		if (clidefines.exists(name)) {
+			error<errnull>(pass, S"Define "+name+" was passed multiple times");
+			return false;
+		}
+		clidefines.create(name) = paramscurrent.additional_defines[i].contents;
+	}
+
+	if (paramscurrent.stddefinesfile != nullptr) {
+		string stddefinespath = paramscurrent.stddefinesfile;
+		parse_std_defines(stddefinespath);
+	}
 
 	asar_patch_main(paramscurrent.patchloc);
 
@@ -325,6 +345,7 @@ EXPORT int asar_maxromsize()
 	return maxromsize;
 }
 
+// randomdude999: this is not exposed in any of the wrappers, why does it even exist?
 extern chartabledata table;
 EXPORT const unsigned int * asar_gettable()
 {

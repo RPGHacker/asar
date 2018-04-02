@@ -64,7 +64,13 @@ struct patchparams
 
 	// should everything be reset before patching? Setting it to false will make asar
 	// act like the currently patched file was directly appended to the previous one.
+	// note that you can't use the previous run's defines - you can use getalldefines()
+	// and additional_defines for that.
 	bool should_reset;
+
+	// A list of additional defines to make available to the patch.
+	struct definedata * additional_defines;
+	int additional_define_count;
 
 	// Path to a text file to parse standard include search paths from.
 	// Set to NULL to not use any standard includes search paths.
@@ -114,7 +120,7 @@ asarfunc bool (*asar_reset)(void);
 asarfunc bool(*asar_patch)(const char * patchloc, char * romdata, int buflen, int * romlen);
 
 // An extended version of asar_patch() with a future-proof parameter format.
-asarfunc bool(*asar_patch_ex)(const struct patchparams* params);
+asarfunc bool(*asar_patch_ex)(const struct patchparams * params);
 
 //Returns the maximum possible size of the output ROM from asar_patch(). Giving this size to buflen
 // guarantees you will not get any buffer too small errors; however, it is safe to give smaller
