@@ -684,18 +684,25 @@ int main(int argc, char * argv[])
 #endif
 		err = fopen(log_name, "rt");
 		fseek(err, 0, SEEK_END);
-		if (ftell(err) && !shouldfail)
+		long fsize = ftell(err);
+		fseek(err, 0, SEEK_SET);
+		char* buf = (char*)malloc((size_t)fsize + 1);
+		fread(buf, 1, fsize + 1, err);
+		bool did_err = strstr(buf, "error:") != nullptr;
+		if (did_err && !shouldfail)
 		{
-			fseek(err, 0, SEEK_SET);
-			fgets(line, 250, err);
 			fclose(err);
-			dief("%s: Insertion error: %s\n", fname, line);
+			printf("%s: Insertion error: %s\n", fname, buf);
+			free(buf);
+			die();
 		}
-		if (!ftell(err) && shouldfail)
+		if (!did_err && shouldfail)
 		{
 			fclose(err);
+			free(buf);
 			dief("%s: No insertion error\n", fname);
 		}
+		free(buf);
 		fclose(err);
 
 #if !defined(ASAR_TEST_DLL)
