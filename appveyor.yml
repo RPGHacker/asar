@@ -29,4 +29,4 @@ test_script:
 
       mkdir tests_tmp_app
 
-      build\asar-dll-test\Release\asar-app-test.exe build\asar\Release\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
+      build\asar-app-test\Release\asar-app-test.exe build\asar\Release\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
