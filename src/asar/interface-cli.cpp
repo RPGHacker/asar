@@ -246,8 +246,14 @@ int main(int argc, char * argv[])
 					// argument contains value, not only name
 					const char* eq_loc = strchr(postprocess_arg, '=');
 					string name = string(postprocess_arg, eq_loc - postprocess_arg);
+					name = name.replace("\t", " ", true);
+					name = itrim(name.str, " ", " ", true);
+					name = itrim(name.str, "!", "", false); // remove leading ! if present
+
+					if (!validatedefinename(name)) error<errnull>(0, S "Invalid define name in command line defines: '" + name + "'.");
+
 					if (clidefines.exists(name)) {
-						error<errnull>(pass, S"The option " + name + " was passed multiple times on the command line.");
+						error<errnull>(pass, S "Command line define '" + name + "' overrides a previous define. Did you specify the same define twice?");
 						pause(err);
 						return 1;
 					}
@@ -256,12 +262,19 @@ int main(int argc, char * argv[])
 				else
 				{
 					// argument doesn't have a value, only name
-					if (clidefines.exists(postprocess_arg)) {
-						error<errnull>(pass, S"The option " + postprocess_arg + " was passed multiple times on the command line.");
+					string name = postprocess_arg;
+					name = name.replace("\t", " ", true);
+					name = itrim(name.str, " ", " ", true);
+					name = itrim(name.str, "!", "", false); // remove leading ! if present
+
+					if (!validatedefinename(name)) error<errnull>(0, S "Invalid define name in command line defines: '" + name + "'.");
+
+					if (clidefines.exists(name)) {
+						error<errnull>(pass, S "Command line define '" + name + "' overrides a previous define. Did you specify the same define twice?");
 						pause(err);
 						return 1;
 					}
-					clidefines.create(postprocess_arg) = "";
+					clidefines.create(name) = "";
 				}
 			}
 		}

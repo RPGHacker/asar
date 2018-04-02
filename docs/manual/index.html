@@ -221,12 +221,12 @@
 	C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="powershell">-D{identifier}={value}</code><br /><code class="powershell">--define&nbsp;{identifier}={value}</code></td>
+				<td><code class="powershell">-D{identifier}[=value]</code><br /><code class="powershell">--define&nbsp;{identifier}[=value]</code></td>
 				<td>Input</td>
-				<td>Adds a define to Asar. See section <a href="#defines">Defines</a> for details.</td>
-				<td><pre><code class="powershell">asar.exe -Ddebug=1 -Dskip_title_screen=0
+				<td>Adds a define to Asar. When no value is provided, the define is set to an empty string. See section <a href="#defines">Defines</a> for details.</td>
+				<td><pre><code class="powershell">asar.exe -Ddebug -Dskip_title_screen=0
 	C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre>
-	<pre><code class="powershell">asar.exe --define debug=1
+	<pre><code class="powershell">asar.exe --define debug=1 --define mytext=" value with whitespace "
 	C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre></td>
 			</tr>
 			<tr>
@@ -261,9 +261,14 @@
 ../../my_game/libraries
 		test/</code></pre>
 		<h4 id="standard-defines">Standard Defines</h4>
-		#TODO
-		See section <a href="#defines">Defines</a> for details on defines.
-		<pre><code>#TODO</code></pre>
+		Aside from passing additional defines to Asar via the command line, it's possible to also do so via a file called <code>stddefines.txt</code>. When a file with this name exists next to the Asar executable, Asar automatically opens it and adds every line in it as an additional define. The syntax is similar to Asar's regular define syntax, with a few notable differences. There are no spaces required around the <code>=</code>, the <code>!</code> of the identifier is optional, whitespace around the identifier is ignored, so is whitespace around the value (unless the value is delimited by double quotes, in which case any whitespace inside is kept in the define), the value itself is optional (when left out, it is set to an emptry string). Lines containing only whitespace are ignored. The purpose of this file is to make it easier to distribute standard code libraries for use with Asar by making it possible to just unpack the contents of a ZIP file or similar directly into the Asar directory. See section <a href="#defines">Defines</a> for details on defines.<br />
+		All of the examples below are valid:
+		<pre><code>!stddefined1=1
+ stddefined2=1
+
+stddefined3
+stddefined4 = 1 
+stddefined5 = " $60,$50,$40 "</code></pre>
 		<a href="#contents">Return to top</a>
 		</div>
 		<hr />

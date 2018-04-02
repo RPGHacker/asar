@@ -319,12 +319,17 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	clidefines.reset();
 	for (int i = 0; i < paramscurrent.definecount; i++)
 	{
-		string name = paramscurrent.additional_defines[i].name;
+		string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
+		name = name.replace("\t", " ", true);
+		name = itrim(name.str, " ", " ", true);
+		name = itrim(name.str, "!", "", false); // remove leading ! if present
+		if (!validatedefinename(name)) error<errnull>(0, S "Invalid define name in asar_patch_ex() additional defines: '" + name + "'.");
 		if (clidefines.exists(name)) {
-			error<errnull>(pass, S"Define "+name+" was passed multiple times");
+			error<errnull>(pass, S "asar_patch_ex() additional define '" + name + "' overrides a previous define. Did you specify the same define twice?");
 			return false;
 		}
-		clidefines.create(name) = paramscurrent.additional_defines[i].contents;
+		string contents = (paramscurrent.additional_defines[i].contents != nullptr ? paramscurrent.additional_defines[i].contents : "");
+		clidefines.create(name) = contents;
 	}
 
 	if (paramscurrent.stddefinesfile != nullptr) {

@@ -69,7 +69,7 @@ struct patchparams
 	bool should_reset;
 
 	// A list of additional defines to make available to the patch.
-	struct definedata * additional_defines;
+	const struct definedata * additional_defines;
 	int additional_define_count;
 
 	// Path to a text file to parse standard include search paths from.

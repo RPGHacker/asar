@@ -644,12 +644,12 @@ inline string lower(const char * old)
 
 inline int isualnum ( int c )
 {
-	return (c=='_' || isalnum(c));
+	return (c >= -1 && c <= 255 && (c=='_' || isalnum(c)));
 }
 
 inline int isualpha ( int c )
 {
-	return (c=='_' || isalpha(c));
+	return (c >= -1 && c <= 255 && (c=='_' || isalpha(c)));
 }
 
 #define ctype(type) \
