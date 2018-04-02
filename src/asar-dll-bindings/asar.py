@@ -71,7 +71,9 @@ class patchparams(ctypes.Structure):
                 ("numincludepaths", c_int),
                 ("should_reset", ctypes.c_bool),
                 ("additional_defines", POINTER(definedata)),
-                ("additional_define_count", c_int)]
+                ("additional_define_count", c_int),
+                ("stdincludesfile", c_char_p),
+                ("stddefinesfile", c_char_p)]
 
 
 class mappertype(enum.Enum):
@@ -226,14 +228,15 @@ def reset():
     return _asar.dll.asar_reset()
 
 
-def patch(patch_name, rom_data, includepaths=[], should_reset=True, additional_defines={}):
+def patch(patch_name, rom_data, includepaths=[], should_reset=True,
+          additional_defines={}, std_include_file=None, std_define_file=None):
     """Applies a patch.
 
     Returns (success, new_rom_data). If success is False you should call
     geterrors() to see what went wrong. rom_data is assumed to be headerless.
 
-    If includepaths is specified, it lists additional include paths for asar to
-    search.
+    If includepaths is specified, it lists additional include paths for asar
+    to search.
 
     should_reset specifies whether asar should clear out all defines, labels,
     etc from the last inserted file. Setting it to False will make Asar act
@@ -241,6 +244,9 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True, additional_d
 
     additional_defines specifies extra defines to give to the patch
     (similar to the -D option).
+
+    std_include_file and std_define_file specify files where to look for extra
+    include paths and defines, respectively.
     """
     romlen = c_int(len(rom_data))
     rom_ptr = ctypes.create_string_buffer(rom_data, maxromsize())
@@ -261,6 +267,8 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True, additional_d
     pp.additional_defines = defines
     pp.additional_define_count = len(additional_defines)
     pp.should_reset = should_reset
+    pp.stdincludesfile = std_include_file.encode() if std_include_file else None
+    pp.stddefinesfile = std_define_file.encode() if std_define_file else None
     result = _asar.dll.asar_patch_ex(ctypes.byref(pp))
     return result, rom_ptr.raw[:romlen.value]
 
