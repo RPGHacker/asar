@@ -582,7 +582,8 @@ int main(int argc, char * argv[])
 			asar_patch_params.stdincludesfile = stdincludespath.c_str();
 			asar_patch_params.stddefinesfile = stddefinespath.c_str();
 
-
+			asar_patch_params.additional_define_count = 0;
+			
 			for (int i = 0;i < numiter;i++)
 			{			
 				printf("\n");
