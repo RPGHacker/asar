@@ -1,13 +1,11 @@
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<!DOCTYPE html>
 <html lang="en">
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <head>
-        <title>Asar Changelog</title>
-    </head>
-    <body>
-        <link rel="stylesheet" href="../shared/highlight_js/styles/default.css">
-        <script src="../shared/highlight_js/highlight.pack.js"></script>
-        <script type="text/javascript">
+	<head>
+		<title>Asar Changelog</title>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<link rel="stylesheet" href="../shared/highlight_js/styles/default.css">
+		<script src="../shared/highlight_js/highlight.pack.js"></script>
+		<script>
 				hljs.configure(
 					{
 						tabReplace: '    ',
@@ -33,12 +31,14 @@
 					}
 				}
 		</script>
+	</head>
+	<body>
 		
 		<h1>Asar Changelog</h1>
 		
 		<hr />
 		
-		<p><h2>v1.60</h2>
+		<div><h2>v1.60</h2>
 		
 		<b>Release:</b> ?
 
@@ -48,7 +48,7 @@
 			<li>boldowa/6646</li>
 			<li>zetaPRIME</li>
 			<li>Horrowind</li>
-			<li>randomdude999 </li>
+			<li>randomdude999</li>
 			<li>TheBiob</li>
 		</ul>
 
@@ -58,8 +58,8 @@
 				<a href="https://github.com/RPGHacker/asar">https://github.com/RPGHacker/asar</a></li>
 			<li>Asar now uses CMake, which should make it easier to build on different platforms and with different compilers.</li>
 			<li>Added a proper manual in HTML format to Asar, rather than just having the xkas manual and a TXT file with all changes.</li>
-			<li>Added Python binding.</li>
-			<li>Added <code class="65c816_asar">defined()</code> function and undef command.</li>
+			<li>Added Python binding for the Asar DLL.</li>
+			<li>Added <code class="65c816_asar">defined()</code> function and <code class="65c816_asar">undef</code> command.</li>
 			<li>Added simple syntax highlighting for Sublime Text.</li>
 			<li>+/- label declarations can also end with an optional <code>:</code> now for consistency.</li>
 			<li>Added macro-local variations for +/- labels and sub labels, which are also prefixed with a <code>?</code>.</li>
@@ -105,6 +105,7 @@ Main:
 			<li>Added support for include search paths.</li>
 			<li>Added asar_patch_ex() function to DLL API, which works like asar_patch(), but takes additional parameters.</li>
 			<li>You can now escape <code>!</code> by doing <code>\!</code> (useful for preventing Asar to replace defines in certain places).</li>
+			<li>You can now escape <code>\</code> by doing <code>\\</code>.</li>
 			<li>Added support for <code class="65c816_asar">pushbase</code>/<code class="65c816_asar">pullbase</code>.</li>
 			<li>Added <code class="65c816_asar">expecttitle</code> command which makes Asar verify the title of the output ROM (to assure a patch is applied to the correct ROM).</li>
 			<li>Added support for nested namespaces. Enable them via the command:
@@ -112,6 +113,7 @@ Main:
 			</li>
 			<li>Added support for <code class="65c816_asar">warn bankcross off</code> which disables checking for bank crossing. Use with caution; might not work with certain features or outright break some stuff.</li>
 			<li>Added a new, simple README.</li>
+			<li>Added a <code class="65c816_asar">filesize()</code> function and a <code class="65c816_asar">getfilestatus()</code> function.</li>
 			<li>Added support for <code>stdincludes.txt</code> and <code>stddefines.txt</code> - see manual for details.</li>
 		</ul>
 
@@ -125,21 +127,24 @@ Main:
 asar 1.60</code></pre>
 			When Asar finds an unknown command on a line starting with <code>;@</code> or <code>@</code>, it only throws a warning instead of an error. You can make use of this fact by using optional features from newer Asar versions and still have your patch assemble in old Asar versions, where those features are ignored (don't know how practicable and useful this really is, but in theory, it should be possible). And of course it can be used for patches that are compatible with both xkas and Asar, not that that's particularly useful anymore in this day and age.</li>
 			<li>Changed format of existing command line arguments for consistency.</li>
-			<li>LoROM banks <code>$70</code> to <code>$7F</code> can be used correctly.</li>
+			<li>LoROM banks <code>$70</code> to <code>$7D</code> can be used correctly.</li>
 			<li>Struct definitions are cleared correctly in Asar lib.</li>
 			<li>Fixed a freeze that could occur when using <code class="65c816_asar">freedata align.</code></li>
 			<li>Fixed a bug in <code class="65c816_asar">pad</code> command that made it not update the pc correctly and also made it trigger a bank cross error before actually writing any data into a new bank.</li>
+			<li>Fixed a rare crash when using the command-line interface in ways you're not supposed to use it.</li>
+			<li>Fixed <code class="65c816_asar">readfile()</code>/<code class="65c816_asar">canreadfile()</code> crashing when reading from more than 16 different files in the same patch.</li>
+			<li>Fixed the ROM title being reported incorrectly</li>
 		</ul>
 
 		<h3>Deprecated features:</h3>
 		<ul>
 			<li>Started the process of deprecating xkas compatibility mode. From now on, using xkas compatibility features will throw warnings. In a future version of Asar, xkas compatibility will be removed entirely.</li>
-		</ul></p>
+		</ul></div>
 
 		
 		<hr />
 
-		<p><h2>v1.50</h2>
+		<div><h2>v1.50</h2>
 		
 		<b>Release:</b> February 28, 2017
 
@@ -170,12 +175,12 @@ asar 1.60</code></pre>
 		<h3>Notes:</h3>
 		<ul>
 			<li>Just like the last version, this version of Asar was built in MSVC rather than g++, but this time I also updated the Asar DLL (which I had overlooked last time). I'm not sure if Windows applications are compatible with DLLs that were built by a different compiler, so if you're planning to use the DLL, this is something to watch out for. If you're planning to use a compiler other than MSVC, I recommend just rebuilding the DLL from source in whatever compiler you're using (or directly including the Asar library code in your project).</li>
-		</ul></p>
+		</ul></div>
 		
 		
 		<hr />
 
-		<p><h2>v1.40</h2>
+		<div><h2>v1.40</h2>
 		
 		<b>Release:</b> October 23, 2016
 
@@ -217,7 +222,7 @@ $FF</code></pre>
 			<li>Asar 1.37 threw &quot;Wrong number of parameters to function&quot; error for function <code class="65c816_asar">canread()</code> when passing 2 arguments to it, because it actually treated it as <code class="65c816_asar">canread1()</code> due to an internal error in string comparison.</li>
 			<li>Using better double -&gt; int conversions in some places - where
 			<pre><code class="65c816_asar">dd $FFFFFFFF</code></pre>
-			would assemble to <code>00 00 00 80</code> (</code>$80000000</code>) in Asar 1.37, it now assembles to <code>FF FF FF FF</code></li>
+			would assemble to <code>00 00 00 80</code> (<code>$80000000</code>) in Asar 1.37, it now assembles to <code>FF FF FF FF</code></li>
 			<li>Defines in <code class="65c816_asar">elseif</code> conditionals now get properly resolved.</li>
 			<li>The <code>#=</code> define operator now doesn't truncate its value when using <code class="65c816_asar">math round off</code>, making it possible to do double-precision math with it.</li>
 			<li>Asar 1.37 detected misplaced elses and endifs, but not misplaced elseifs.</li>
@@ -230,12 +235,12 @@ $FF</code></pre>
 		<h3>Notes:</h3>
 		<ul>
 			<li>This version of Asar was built in MSVC rather than g++, mainly because I already had that installed and use Visual Studo as an IDE, anyways. Functionally, this shouldn't make any difference, unless using Asar in unintended ways, where anything goes. I did build the Linux version in g++ to confirm compatibility, though.</li>
-		</ul></p>
+		</ul></div>
 		
   
 		<hr />
 
-		<p><h2>v1.37</h2>
+		<div><h2>v1.37</h2>
 		
 		<b>Release:</b> April 30, 2016
 
@@ -255,7 +260,7 @@ $FF</code></pre>
 			<li>Super FX short addressing fixed, and added error checking for valid short address. For example, <code class="65c816_asar">lms r0,($00D4)</code> used to output <code>3D A0 D4</code>, which is actually incorrect because short addressing doubles the byte supplied by the instruction to give a range from <code>$0000</code>-<code>$01FE</code> with just one byte (since Super FX reads words). This now outputs <code>3D A0 6A</code> which is correct. Also, asar now throws an error for anything outside <code>$0000</code>-<code>$01FE</code> as well as all odd-numbered addresses for both <code class="65c816_asar">sms</code> and <code class="65c816_asar">lms</code> instructions. (Odd-numbered addresses cannot be accessed using short addressing due to the multiplying by 2.)</li>
 			<li>Super FX and SPC700 labels were broken if used within freespace. This has been fixed by doing what 65816 does: mask the address with <code>0xFFFFFF</code> because freespace addresses use a high byte to indicate that they're freespace.</li>
 			<li>Fixed SA-1 mapping using wrong Super MMC banks range.</li>
-		</ul></p>
+		</ul></div>
 		
   
 		<hr />
@@ -272,31 +277,31 @@ $FF</code></pre>
 		
 			<hr />
 	
-			<p><h2>v1.36</h2>
+			<div><h2>v1.36</h2>
 			
 			<b>Release:</b> December 22, 2013
 	
 			<h3>Contributors:</h3>
 			<ul>
 				<li>Alcaro</li>
-			</ul></p>
+			</ul></div>
 			
 	
 			<hr />
 	
-			<p><h2>v1.35</h2>
+			<div><h2>v1.35</h2>
 			
 			<b>Release:</b> March 13, 2013
 	
 			<h3>Contributors:</h3>
 			<ul>
 				<li>Alcaro</li>
-			</ul></p>
+			</ul></div>
 			
 			
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> December 13, 2012
 	
@@ -319,12 +324,12 @@ $FF</code></pre>
 			<h3>Deprecated features:</h3>
 			<ul>
 				<li>fastrom has been removed. It gives far too many problems relative to its advantages (are there any?). In exchange, freespace searching in lorom is now always fastrom enabled. (The command itself still exists, but it does nothing.</li>
-			</ul></p>
+			</ul></div>
 			
 			
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> November 11, 2012
 	
@@ -353,12 +358,12 @@ $FF</code></pre>
 				<li>Made blockreleasedebug and blockdebugrelease not show up anymore.</li>
 				<li>Files saying @asar can no longer be included from files saying ;@xkas.</li>
 				<li>Locked org $F00000.</li>
-			</ul></p>
+			</ul></div>
 			
 			
 			<hr />
 			
-			<p><h2>v1.33b</h2>
+			<div><h2>v1.33b</h2>
 			
 			<b>Release:</b> October 26, 2012
 	
@@ -376,11 +381,11 @@ $FF</code></pre>
 			<h3>Notes</h3>
 			<ul>
 				<li>Asar now considers OS X a non-Linux Unix-line and recommends -Dlinux.</li>
-			</ul></p>
+			</ul></div>
 			
 			<hr />
 			
-			<p><h2>v1.33</h2>
+			<div><h2>v1.33</h2>
 			
 			<b>Release:</b> October 22, 2012
 	
@@ -407,12 +412,12 @@ $FF</code></pre>
 				<li>Another accuracy improvement in emulation mode.</li>
 				<li>Detonated some more SPC700 inaccuracies and bugs.</li>
 				<li>Made JMP ($1234)+($3412) assemble to JMP abs, not JMP (abs).</li>
-			</ul></p>
+			</ul></div>
 			
 	
 			<hr />
 			
-			<p><h2>v1.32</h2>
+			<div><h2>v1.32</h2>
 			
 			<b>Release:</b> October 8, 2012
 	
@@ -442,12 +447,12 @@ $FF</code></pre>
 				<li>Killed a phantom error on ALS A and a couple of similar constructions.</li>
 				<li>Squished a possible moving labels error.</li>
 				<li>Fixed a bug where the major version of Asar got compared backwards in @asar.</li>
-			</ul></p>
+			</ul></div>
 			
 	
 			<hr />
 			
-			<p><h2>v1.31</h2>
+			<div><h2>v1.31</h2>
 			
 			<b>Release:</b> September 13, 2012
 	
@@ -472,12 +477,12 @@ $FF</code></pre>
 			<h3>Deprecated features:</h3>
 			<ul>
 				<li>Deprecated arch spc700-raw.</li>
-			</ul></p>
+			</ul></div>
 			
 	
 			<hr />
 			
-			<p><h2>v1.30</h2>
+			<div><h2>v1.30</h2>
 			
 			<b>Release:</b> August 24, 2012
 	
@@ -496,7 +501,7 @@ $FF</code></pre>
 				<li>Added print dec($1234) and print hex(1234).</li>
 				<li>Attached test suite in the source zip, in case some other programmers are interested.</li>
 				<li>Added @include and @includefrom, which throws errors if Asar is invoked directly on them.</li>
-				<li>Added a -pause=<action> flag on the command line. Valid actions are "yes", "warn", "err", and "no" (default).</li>
+				<li>Added a -pause=&lt;action&gt; flag on the command line. Valid actions are "yes", "warn", "err", and "no" (default).</li>
 				<li>Added a couple of synonyms to the single-bit SPC700 opcodes.</li>
 				<li>Added underscore-prefixed versions of all builtin functions.</li>
 				<li>Added error-safe readN and canreadN.</li>
@@ -512,12 +517,12 @@ $FF</code></pre>
 				<li>Suppressed a couple of useless errors if labels are redefined.</li>
 				<li>Killed a couple of Invalid endif errors if an if statement is invalid.</li>
 				<li>Repaired nested pushpc/freedata.</li>
-			</ul></p>
+			</ul></div>
 			
 	
 			<hr />
 			
-			<p><h2>v1.29</h2>
+			<div><h2>v1.29</h2>
 			
 			<b>Release:</b> July 19, 2012
 	
@@ -539,12 +544,12 @@ $FF</code></pre>
 				<li>Nuked a bug making tabs not treated as spaces in all contexts.</li>
 				<li>Fixed a bug where Label = 123 checked that there is an org in front.</li>
 				<li>Fixed a bug where the line number was removed if the last code block on a line crossed a bank border.</li>
-			</ul></p>
+			</ul></div>
 			
 	
 			<hr />
 			
-			<p><h2>v1.28</h2>
+			<div><h2>v1.28</h2>
 			
 			<b>Release:</b> ?
 	
@@ -563,12 +568,12 @@ $FF</code></pre>
 				<li>Nuked some double spaces in outputs.</li>
 				<li>Fixed sa1rom mapping breaking on everything except the first megabyte.</li>
 				<li>Fixed a couple of bugs with valid table files being rejected.</li>
-			</ul></p>
+			</ul></div>
 	
 			<hr />
 			
 			
-			<p><h2>v1.27</h2>
+			<div><h2>v1.27</h2>
 			
 			<b>Release:</b> ?
 	
@@ -594,12 +599,12 @@ $FF</code></pre>
 				<li>Added some #errors if no frontend is chosen, and edited some others a bit.</li>
 				<li>Adjusted Linux support a bit. Looks like it bitrotted.</li>
 				<li>Fixed some off-by-one errors in spc700-inline.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.26</h2>
+			<div><h2>v1.26</h2>
 			
 			<b>Release:</b> April 28, 2012 or earlier
 	
@@ -618,12 +623,12 @@ $FF</code></pre>
 				<li>Removed some more files made useless by dropping asar-clr.dll.</li>
 				<li>Fixed a bug where db $12,$34 broke in the spc700 modes.</li>
 				<li>Fixed a bug where an invisible bank border was hit if a base command was used without an org command.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.25</h2>
+			<div><h2>v1.25</h2>
 			
 			<b>Release:</b> ?
 	
@@ -647,12 +652,12 @@ $FF</code></pre>
 				<li>Fixed a buffer underflow Valgrind whined about.</li>
 				<li>Zapped a null pointer bug in the library if a file was not found.</li>
 				<li>Nuked a bug where the library did not clear out previous errors when applying a new patch.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.24</h2>
+			<div><h2>v1.24</h2>
 			
 			<b>Release:</b> ?
 	
@@ -675,12 +680,12 @@ $FF</code></pre>
 				<li>Fixed a bogus error if prot is placed at any of the first eight bytes of a bank.</li>
 				<li>Repaired autoclean, which appears to have broken a few versions ago.</li>
 				<li>Fixed a crash bug if the ROM does not exist and couldn't be created.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.23</h2>
+			<div><h2>v1.23</h2>
 			
 			<b>Release:</b> ?
 	
@@ -692,12 +697,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Fixed around ten broken SPC700 opcodes.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.22</h2>
+			<div><h2>v1.22</h2>
 			
 			<b>Release:</b> ?
 	
@@ -716,12 +721,12 @@ $FF</code></pre>
 			<ul>
 				<li>Fixed an uninitialized value in the macro handling code that may (but usually doesn't) throw errors if a macro has no arguments.</li>
 				<li>Repaired partial incbin if the filename is quoted.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.21</h2>
+			<div><h2>v1.21</h2>
 			
 			<b>Release:</b> ?
 	
@@ -733,12 +738,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Fixed: read1() etc. went missing.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.20b (?)</h2>
+			<div><h2>v1.20b (?)</h2>
 			
 			<b>Release:</b> March 4, 2012
 	
@@ -750,12 +755,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Added freecode static and norom to changes.txt.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.20 (?)</h2>
+			<div><h2>v1.20 (?)</h2>
 			
 			<b>Release:</b> March 4, 2012
 	
@@ -787,12 +792,12 @@ $FF</code></pre>
 				<li>Repaired the ** operator.</li>
 				<li>Calling a function no longer hits a user-defined function starting with the name of called function.</li>
 				<li>Fixed skip command, which previously only edited the base address.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.14 (?)</h2>
+			<div><h2>v1.14 (?)</h2>
 			
 			<b>Release:</b> February 8, 2012
 	
@@ -804,12 +809,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Killed a crash bug.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.13 (?)</h2>
+			<div><h2>v1.13 (?)</h2>
 			
 			<b>Release:</b> February 7, 2012 (?)
 	
@@ -828,12 +833,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Fixed the bug that makes macros look like they're called from themselves if the macro call is broken.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.12 (?)</h2>
+			<div><h2>v1.12 (?)</h2>
 			
 			<b>Release:</b> February 6, 2012 or earlier
 	
@@ -854,12 +859,12 @@ $FF</code></pre>
 			<h3>Deprecated features:</h3>
 			<ul>
 				<li>Removed most of the emulation mode. The only remaining change is that it makes Asar print the errors to stdout instead of stderr, since that quirk isn't fixable by editing the ASM files.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.11 (?)</h2>
+			<div><h2>v1.11 (?)</h2>
 			
 			<b>Release:</b> January 25, 2012 or earlier
 	
@@ -882,12 +887,12 @@ $FF</code></pre>
 				<li>db ($04&lt;&lt;2)|($80&gt;&gt;1) no longer breaks due to unmatched parentheses.</li>
 				<li>Fixed problem with autoclean $123456, where it read a pointer from $123456 instead of removing $123456.</li>
 				<li>Fixed a crash if a freespace block protects itself.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.10 (?)</h2>
+			<div><h2>v1.10 (?)</h2>
 			
 			<b>Release:</b> January 13, 2012
 	
@@ -911,12 +916,12 @@ $FF</code></pre>
 				<li>Adjusted "autoclean at the end of a RATS tag" error a bit.</li>
 				<li>Made Asar not read uninitialized/garbage memory if there's crappy content at the end of a macro.</li>
 				<li>Fixed infinite loop if a freespace of size 32768 is requested.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.09 (?)</h2>
+			<div><h2>v1.09 (?)</h2>
 			
 			<b>Release:</b> January 6, 2012
 	
@@ -941,12 +946,12 @@ $FF</code></pre>
 				<li>Restored documentation of the functions to changes.txt that were forgotten when removing stdlib.asm.</li>
 				<li>Fixed crashes if a macro is called with wrong number of arguments.</li>
 				<li>Fixed silent errors when using LDA Label,y if Label is in another bank. </li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.08 (?)</h2>
+			<div><h2>v1.08 (?)</h2>
 			
 			<b>Release:</b> December 27, 2011
 	
@@ -965,12 +970,12 @@ $FF</code></pre>
 				<li>Restored db 1+'a' support to the math parser.</li>
 				<li>Merged the dupe descriptions for the fastrom command in the documentation.</li>
 				<li>Fixed sublabel support, which the new math engine broke as well.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.07 (?)</h2>
+			<div><h2>v1.07 (?)</h2>
 			
 			<b>Release:</b> December 25, 2011
 	
@@ -991,12 +996,12 @@ $FF</code></pre>
 			<ul>
 				<li>Removed #ifdef ALCAROBOT (sandbox mode) from a few source files.</li>
 				<li>Fixed a few more memory leaks.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.06 (?)</h2>
+			<div><h2>v1.06 (?)</h2>
 			
 			<b>Release:</b> December 25, 2011
 	
@@ -1008,12 +1013,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Sprite Tool compatibility was still broken. Looks like tmpasm.bin is unheadered after all. Repaired again.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.05 (?)</h2>
+			<div><h2>v1.05 (?)</h2>
 			
 			<b>Release:</b> ?
 	
@@ -1030,12 +1035,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Asar no longer crashes if it tries to open a file of less than 512 bytes if it thinks it's headered. This fixes Sprite Tool compatibility. </li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.04 (?)</h2>
+			<div><h2>v1.04 (?)</h2>
 			
 			<b>Release:</b> ?
 	
@@ -1048,12 +1053,12 @@ $FF</code></pre>
 			<ul>
 				<li>$xxFFFF can now safely be overwritten.</li>
 				<li>Removed garbage from some errors.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.03 (?)</h2>
+			<div><h2>v1.03 (?)</h2>
 			
 			<b>Release:</b> ?
 	
@@ -1068,12 +1073,12 @@ $FF</code></pre>
 				<li>Various edits to the library frontends. asar_i_* has been renamed to asar_*, and errors and warnings now tell where they're called from, if found inside a macro.</li>
 				<li>The command line frontend tells where problematic macros are called from.</li>
 				<li>Made license choice explicit.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.02 (?)</h2>
+			<div><h2>v1.02 (?)</h2>
 			
 			<b>Release:</b> ?
 	
@@ -1090,12 +1095,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Fixed a crash bug in asar_i_reset() if the function does not create any custom functions.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.01 (?)</h2>
+			<div><h2>v1.01 (?)</h2>
 			
 			<b>Release:</b> ?
 	
@@ -1107,12 +1112,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Put a few lines back where they should be, to get rid of a crash.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v1.00 (?)</h2>
+			<div><h2>v1.00 (?)</h2>
 			
 			<b>Release:</b> December 2, 2011
 	
@@ -1139,12 +1144,12 @@ $FF</code></pre>
 				<li>Dropped autocolon, since it's useless and never used.</li>
 				<li>The set command has been removed.</li>
 				<li>stdlib.asm has lost its special meaning.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> November 29, 2011
 	
@@ -1173,12 +1178,12 @@ $FF</code></pre>
 			<h3>Deprecated features:</h3>
 			<ul>
 				<li>Removed AsarCLR::Asar::unmanageerrors() from asar-clr.dll. It's an internally used function that shouldn't be exported.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> November 21, 2011
 	
@@ -1191,12 +1196,12 @@ $FF</code></pre>
 			<ul>
 				<li>Fixed a bug that made + and - labels not be treated as labels under some circumstances.</li>
 				<li>Made "relative branch out of bounds" errors disappear again unless they're supposed to exist.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> November 20, 2011
 	
@@ -1211,12 +1216,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Repaired "branch out of bounds" errors.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> November 17, 2011
 	
@@ -1229,12 +1234,12 @@ $FF</code></pre>
 			<ul>
 				<li>Removed more debug code</li>
 				<li>Fixed org Label if the label is in freespace</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> November 17, 2011
 	
@@ -1255,12 +1260,12 @@ $FF</code></pre>
 			<ul>
 				<li>If a relative branch is out of bounds, Asar no longer throws "labels keep moving around" errors.</li>
 				<li>Removed the strange size hex value warnings.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> November 14, 2011
 	
@@ -1273,12 +1278,12 @@ $FF</code></pre>
 			<ul>
 				<li>The autoclean warning for the end of a freespace area has been fixed. Again.</li>
 				<li>The freespace finder no longer skips a RATS tag if it's preceeded by an unprotected 00.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> ?
 	
@@ -1290,12 +1295,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>autoclean no longer complains if it attempts to overwrite something that isn't a valid SNES pointer. </li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> November 13, 2011
 	
@@ -1329,12 +1334,12 @@ $FF</code></pre>
 			<h3>Deprecated features:</h3>
 			<ul>
 				<li>!a equ $1234 is no longer valid.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> November 7, 2011
 	
@@ -1361,12 +1366,12 @@ $FF</code></pre>
 			<h3>Deprecated features:</h3>
 			<ul>
 				<li>set resizable has been removed.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> October 25, 2011
 	
@@ -1384,12 +1389,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>autoclean no longer kills inappropriate data if pointed to an unused area. Operator precendence screwed up stuff.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> ?
 	
@@ -1402,12 +1407,12 @@ $FF</code></pre>
 			<ul>
 				<li>Asar will no longer place rats tags at any part of the unexpanded area, not even if it's a long list of 00s</li>
 				<li>Fixed a bunch of odd bugs with the automatic size finder and label optimizer, including one that treated LDA.l Label,x as LDA.w Label,x</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> October 23, 2011
 	
@@ -1429,12 +1434,12 @@ $FF</code></pre>
 			<h3>Deprecated features:</h3>
 			<ul>
 				<li>Removed the command DIEDIEDIE, a useless command that intentionally froze Asar if it's called from $088000 or later.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> October 23, 2011
 	
@@ -1446,12 +1451,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Fixed relative forward branches in freespace too.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> October 23, 2011
 	
@@ -1472,12 +1477,12 @@ $FF</code></pre>
 				<li>Fixed some uninitialized value errors that created garbage error messages if the patch doesn't exist</li>
 				<li>Putting a label in front of an opcode messed up earlier; this has been fixed</li>
 				<li>freecode forgot setting a few variables, which creates a bunch of errors if it's used</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> October 18, 2011
 	
@@ -1489,12 +1494,12 @@ $FF</code></pre>
 			<h3>Bug fixes:</h3>
 			<ul>
 				<li>Added a missing else statement on the label optimizer disabling flag that made it turn it on, or get values that change in crappy ways, for everything. </li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> October 18, 2011
 	
@@ -1520,12 +1525,12 @@ $FF</code></pre>
 			<h3>Deprecated features:</h3>
 			<ul>
 				<li>rep Label has been blocked. It was never supposed to be allowed.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v&quot;0.30 or 0.40 or something&quot;</h2>
+			<div><h2>v&quot;0.30 or 0.40 or something&quot;</h2>
 			
 			<b>Release:</b> October 11, 2011
 	
@@ -1547,12 +1552,12 @@ $FF</code></pre>
 				<li>Unknown command errors have been made saner. The old method was some sort of debug code.</li>
 				<li>Carriage returns are now ignored on Linux.</li>
 				<li>Assembling blank patches on nonexistent ROMs or ROMs with length zero has been fixed.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> October 9, 2011
 	
@@ -1575,12 +1580,12 @@ $FF</code></pre>
 			<h3>Notes</h3>
 			<ul>
 				<li>The tool has been renamed to Asar. Pronounciation: The first A is short, and the second is long (as in "Bazaar", except without the B). It doesn't matter if the S is pronounced as S or Z.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.??</h2>
+			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> October 8, 2011
 	
@@ -1595,12 +1600,12 @@ $FF</code></pre>
 				<li>Expected ROM title can now be set, see stdlib.asm for details. It defaults to SUPER MARIOWORLD if omitted, and it may not be set outside of stdlib.asm.</li>
 				<li>A 64-bit version has been included.</li>
 				<li>Both autoclean and autoclear works now. They act identically.</li>
-			</ul></p>
+			</ul></div>
 	
 	
 			<hr />
 			
-			<p><h2>v?.?? (Initial Release)</h2>
+			<div><h2>v?.?? (Initial Release)</h2>
 			
 			<b>Release:</b> October 6, 2011
 	
@@ -1620,9 +1625,9 @@ $FF</code></pre>
 			<h3>Notes</h3>
 			<ul>
 				<li>In this original release, the tool was named &quot;a.as&quot;</li>
-			</ul></p>
+			</ul></div>
 		
 		</div>
 
-    </body>
+	</body>
 </html>
