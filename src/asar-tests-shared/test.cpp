@@ -31,6 +31,8 @@
 #	endif
 #else
 #	include <dirent.h>
+#	include <stdio.h>
+#	include <stdlib.h>
 #	include <vector>
 #	include <string>
 #	include <string.h>
