@@ -301,8 +301,10 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 		includepath_cstrs.append((const char*)newpath);
 	}
 
-	string stdincludespath = paramscurrent.stdincludesfile;
-	parse_std_includes(stdincludespath, includepaths);
+	if (paramscurrent.stdincludesfile != nullptr) {
+		string stdincludespath = paramscurrent.stdincludesfile;
+		parse_std_includes(stdincludespath, includepaths);
+	}
 
 	for (int i = 0; i < includepaths.count; ++i)
 	{
@@ -324,8 +326,11 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 		}
 		clidefines.create(name) = paramscurrent.additional_defines[i].contents;
 	}
-	string stddefinespath = paramscurrent.stddefinesfile;
-	parse_std_defines(stddefinespath);
+
+	if (paramscurrent.stddefinesfile != nullptr) {
+		string stddefinespath = paramscurrent.stddefinesfile;
+		parse_std_defines(stddefinespath);
+	}
 
 	asar_patch_main(paramscurrent.patchloc);
 
