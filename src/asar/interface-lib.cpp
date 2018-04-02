@@ -258,6 +258,9 @@ struct patchparams_v160 : public patchparams_base
 	int numincludepaths;
 
 	bool should_reset;
+
+	const char* stdincludesfile;
+	const char* stddefinesfile;
 };
 
 struct patchparams : public patchparams_v160
@@ -284,9 +287,30 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 
 	asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen, paramscurrent.should_reset);
 
+	autoarray<string> includepaths;
+	autoarray<const char*> includepath_cstrs;
+
+	for (int i = 0; i < paramscurrent.numincludepaths; ++i)
+	{
+		string& newpath = includepaths.append(paramscurrent.includepaths[i]);
+		includepath_cstrs.append((const char*)newpath);
+	}
+
+	string stdincludespath = paramscurrent.stdincludesfile;
+	parse_std_includes(stdincludespath, includepaths);
+
+	for (int i = 0; i < includepaths.count; ++i)
+	{
+		includepath_cstrs.append((const char*)includepaths[i]);
+	}
+
+	size_t includepath_count = (size_t)includepath_cstrs.count;
 	virtual_filesystem new_filesystem;
-	new_filesystem.initialize(paramscurrent.includepaths, (size_t)paramscurrent.numincludepaths);
+	new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
 	filesystem = &new_filesystem;
+
+	string stddefinespath = paramscurrent.stddefinesfile;
+	parse_std_defines(stddefinespath);
 
 	asar_patch_main(paramscurrent.patchloc);
 

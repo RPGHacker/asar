@@ -8,7 +8,7 @@
 extern virtual_filesystem* filesystem;
 extern string thisfilename;
 
-char * readfile(const char * fname, const char* basepath)
+char * readfile(const char * fname, const char * basepath)
 {
 	virtual_file_handle myfile = filesystem->open_file(fname, basepath);
 	if (myfile == INVALID_VIRTUAL_FILE_HANDLE) return NULL;
@@ -27,7 +27,30 @@ char * readfile(const char * fname, const char* basepath)
 	return data;
 }
 
-bool readfile(const char * fname, const char* basepath, char ** data, int * len)
+// RPG Hacker: like readfile(), but doesn't use virtual file system
+// and instead read our file directly.
+char * readfilenative(const char * fname)
+{
+	FILE* myfile = fopen(fname, "rb");
+	if (myfile == NULL) return NULL;
+	fseek(myfile, 0, SEEK_END);
+	size_t datalen = (size_t)ftell(myfile);
+	fseek(myfile, 0, SEEK_SET);
+	char * data = malloc(char, datalen + 1);
+	data[fread(data, 1u, datalen, myfile)] = 0;
+	fclose(myfile);
+	int inpos = 0;
+	int outpos = 0;
+	while (data[inpos])
+	{
+		if (data[inpos] != '\r') data[outpos++] = data[inpos];
+		inpos++;
+	}
+	data[outpos] = 0;
+	return data;
+}
+
+bool readfile(const char * fname, const char * basepath, char ** data, int * len)
 {
 	virtual_file_handle myfile = filesystem->open_file(fname, basepath);
 	if (!myfile) return false;

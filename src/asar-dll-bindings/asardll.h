@@ -65,6 +65,14 @@ struct patchparams
 	// should everything be reset before patching? Setting it to false will make asar
 	// act like the currently patched file was directly appended to the previous one.
 	bool should_reset;
+
+	// Path to a text file to parse standard include search paths from.
+	// Set to NULL to not use any standard includes search paths.
+	const char* stdincludesfile;
+
+	// Path to a text file to parse standard defines from.
+	// Set to NULL to not use any standard defines.
+	const char* stddefinesfile;
 };
 
 

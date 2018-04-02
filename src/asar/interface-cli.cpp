@@ -237,8 +237,7 @@ int main(int argc, char * argv[])
 
 			if (postprocess_param == cmdlparam_addincludepath)
 			{
-				string& addpath = includepaths.append(postprocess_arg);
-				includepath_cstrs.append((const char*)addpath);
+				includepaths.append(postprocess_arg);
 			}
 			else if (postprocess_param == cmdlparam_adddefine)
 			{
@@ -325,10 +324,21 @@ int main(int argc, char * argv[])
 		romlen_r=romlen;
 		memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
 
-		int includepath_count = includepath_cstrs.count;
+		string stdincludespath = S dir(argv[0]) + "stdincludes.txt";
+		parse_std_includes(stdincludespath, includepaths);
+
+		for (int i = 0; i < includepaths.count; ++i)
+		{
+			includepath_cstrs.append((const char*)includepaths[i]);
+		}
+
+		size_t includepath_count = (size_t)includepath_cstrs.count;
 		virtual_filesystem new_filesystem;
-		new_filesystem.initialize(&includepath_cstrs[0], (size_t)includepath_count);
+		new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
 		filesystem = &new_filesystem;
+
+		string stddefinespath = S dir(argv[0]) + "stddefines.txt";
+		parse_std_defines(stddefinespath);
 
 		for (pass=0;pass<3;pass++)
 		{
