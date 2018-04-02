@@ -28,6 +28,8 @@ extern int callerline;
 
 extern virtual_filesystem* filesystem;
 
+extern assocarr<string> clidefines;
+
 autoarray<const char *> prints;
 int numprint;
 
@@ -259,6 +261,9 @@ struct patchparams_v160 : public patchparams_base
 
 	bool should_reset;
 
+	definedata* additional_defines;
+	int definecount;
+
 	const char* stdincludesfile;
 	const char* stddefinesfile;
 };
@@ -296,8 +301,10 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 		includepath_cstrs.append((const char*)newpath);
 	}
 
-	string stdincludespath = paramscurrent.stdincludesfile;
-	parse_std_includes(stdincludespath, includepaths);
+	if (paramscurrent.stdincludesfile != nullptr) {
+		string stdincludespath = paramscurrent.stdincludesfile;
+		parse_std_includes(stdincludespath, includepaths);
+	}
 
 	for (int i = 0; i < includepaths.count; ++i)
 	{
@@ -309,8 +316,26 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
 	filesystem = &new_filesystem;
 
-	string stddefinespath = paramscurrent.stddefinesfile;
-	parse_std_defines(stddefinespath);
+	clidefines.reset();
+	for (int i = 0; i < paramscurrent.definecount; i++)
+	{
+		string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
+		name = name.replace("\t", " ", true);
+		name = itrim(name.str, " ", " ", true);
+		name = itrim(name.str, "!", "", false); // remove leading ! if present
+		if (!validatedefinename(name)) error<errnull>(0, S "Invalid define name in asar_patch_ex() additional defines: '" + name + "'.");
+		if (clidefines.exists(name)) {
+			error<errnull>(pass, S "asar_patch_ex() additional define '" + name + "' overrides a previous define. Did you specify the same define twice?");
+			return false;
+		}
+		string contents = (paramscurrent.additional_defines[i].contents != nullptr ? paramscurrent.additional_defines[i].contents : "");
+		clidefines.create(name) = contents;
+	}
+
+	if (paramscurrent.stddefinesfile != nullptr) {
+		string stddefinespath = paramscurrent.stddefinesfile;
+		parse_std_defines(stddefinespath);
+	}
 
 	asar_patch_main(paramscurrent.patchloc);
 
@@ -325,6 +350,7 @@ EXPORT int asar_maxromsize()
 	return maxromsize;
 }
 
+// randomdude999: this is not exposed in any of the wrappers, why does it even exist?
 extern chartabledata table;
 EXPORT const unsigned int * asar_gettable()
 {

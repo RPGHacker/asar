@@ -284,8 +284,21 @@ struct sourcefile {
 
 assocarr<sourcefile> filecontents;
 assocarr<string> defines;
+// needs to be separate because defines is reset between parsing arguments and patching
+assocarr<string> clidefines;
 
 void assembleblock(const char * block);
+
+bool validatedefinename(const char * name)
+{
+	if (!name[0]) return false;
+	for (int i = 0;name[i];i++)
+	{
+		if (!isualnum(name[i])) return false;
+	}
+
+	return true;
+}
 
 void resolvedefines(string& out, const char * start)
 {
@@ -331,13 +344,7 @@ void resolvedefines(string& out, const char * start)
 				}
 				here++;
 				resolvedefines(defname, unprocessedname);
-				bool bad=false;
-				if (!defname[0]) bad=true;
-				for (int i=0;defname[i];i++)
-				{
-					if (!isualnum(defname[i])) bad=true;
-				}
-				if (bad) error<errline>(0, "Invalid define name.");
+				if (!validatedefinename(defname)) error<errline>(0, S "Invalid define name: '" + defname + "'.");
 			}
 			else
 			{
@@ -636,7 +643,7 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 	if (content != nullptr)
 	{
 		char* pos = content;
-		// TODO: Add support for relative paths (relative from the TXT file)
+
 		while (pos[0] != '\0')
 		{
 			string stdinclude;
@@ -674,7 +681,83 @@ void parse_std_defines(const char* textfile)
 
 	if (content != nullptr)
 	{
-		// TODO
+		char* pos = content;
+		while (*pos != 0) {
+			string define_name;
+			string define_val;
+
+			while (*pos != '=' && *pos != '\n') {
+				define_name += *pos;
+				pos++;
+			}
+			if (*pos != 0 && *pos != '\n') pos++; // skip =
+			while (*pos != 0 && *pos != '\n') {
+				define_val += *pos;
+				pos++;
+			}
+			if (*pos != 0)
+				pos++; // skip \n
+			// clean define_name
+			define_name = define_name.replace("\t", " ", true);
+			define_name = itrim(define_name.str, " ", " ", true);
+			define_name = itrim(define_name.str, "!", "", false); // remove leading ! if present
+
+			if (define_name == "")
+			{
+				if (define_val == "")
+				{
+					continue;
+				}
+
+				error<errnull>(pass, "stddefines.txt contains a line with a value, but no identifier");
+			}
+
+			if (!validatedefinename(define_name)) error<errnull>(0, S "Invalid define name in stddefines.txt: '" + define_name + "'.");
+
+			// clean define_val
+			char* defval = define_val.str;
+			string cleaned_defval;
+
+			if (*defval == 0) {
+				// no value
+				if (clidefines.exists(define_name)) error<errnull>(pass, S "Std define '" + define_name + "' overrides a previous define. Did you specify the same define twice?");
+				clidefines.create(define_name) = "";
+				continue;
+			}
+
+			while (*defval == ' ' || *defval == '\t') defval++; // skip whitespace in beginning
+			if (*defval == '"') {
+				defval++; // skip opening quote
+				while (*defval != '"' && *defval != 0)
+					cleaned_defval += *defval++;
+
+				if (*defval == 0) {
+					error<errnull>(pass, "Broken std defines (no closing quote)");
+				}
+				defval++; // skip closing quote
+				while (*defval == ' ' || *defval == '\t') defval++; // skip whitespace
+				if (*defval != 0 && *defval != '\n')
+					error<errnull>(pass, "Broken std defines (something after closing quote)");
+
+				if (clidefines.exists(define_name)) error<errnull>(pass, S "Std define '" + define_name + "' overrides a previous define. Did you specify the same define twice?");
+				clidefines.create(define_name) = cleaned_defval;
+				continue;
+			}
+			else
+			{
+				// slightly hacky way to remove trailing whitespace
+				char* defval_end = strchr(defval, '\n'); // slightly hacky way to get end of string or newline
+				if (!defval_end) defval_end = strchr(defval, 0);
+				defval_end--;
+				while (*defval_end == ' ' || *defval_end == '\t') defval_end--;
+				cleaned_defval = string(defval, (defval_end - defval + 1));
+
+				if (clidefines.exists(define_name)) error<errnull>(pass, S "Std define '" + define_name + "' overrides a previous define. Did you specify the same define twice?");
+				clidefines.create(define_name) = cleaned_defval;
+				continue;
+			}
+
+		}
 		free(content);
 	}
 }
@@ -713,6 +796,11 @@ static void clearfile(const string & key, sourcefile& filecontent)
 	cfree(filecontent.contents);
 }
 
+static void adddefine(const string & key, string & value)
+{
+	if (!defines.exists(key)) defines.create(key) = value;
+}
+
 void closecachedfiles();
 void deinitmathcore();
 
@@ -721,6 +809,7 @@ void reseteverything()
 	string str;
 	labels.reset();
 	defines.reset();
+	clidefines.each(adddefine);
 	structs.reset();
 
 	macros.each(clearmacro);

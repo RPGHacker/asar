@@ -375,7 +375,7 @@ int main(int argc, char * argv[])
 	}
 	else
 	{
-		std::string stddefines = "!stddefined=1\n stddefined2=1\nstddefined3\nstddefined4 = 1 \n";
+		std::string stddefines = "!stddefined=1\n stddefined2=1\n\nstddefined3\nstddefined4 = 1 \nstddefined5 = \" $60,$50,$40 \"\n";
 		fwrite((const void*)stddefines.c_str(), 1, stddefines.length(), stddefinesfile);
 		fclose(stddefinesfile);
 	}
@@ -567,6 +567,8 @@ int main(int argc, char * argv[])
 			const char* base_path = base_path_string.c_str();
 
 			patchparams asar_patch_params;
+			memset(&asar_patch_params, 0, sizeof(asar_patch_params));
+
 			asar_patch_params.structsize = (int)sizeof(asar_patch_params);
 
 			asar_patch_params.patchloc = azm_name;
@@ -582,7 +584,16 @@ int main(int argc, char * argv[])
 			asar_patch_params.stdincludesfile = stdincludespath.c_str();
 			asar_patch_params.stddefinesfile = stddefinespath.c_str();
 
+			const definedata libdefines[] =
+			{
+				{ "cmddefined", nullptr },
+				{ "!cmddefined2", "" },
+				{ " !cmddefined3 ", " $10,$F0,$E0 "}
+			};
 
+			asar_patch_params.additional_defines = libdefines;
+			asar_patch_params.additional_define_count = sizeof(libdefines) / sizeof(libdefines[0]);
+			
 			for (int i = 0;i < numiter;i++)
 			{			
 				printf("\n");
@@ -659,7 +670,7 @@ int main(int argc, char * argv[])
 			const char* base_path = base_path_string.c_str();
 
 			char cmd[1024];
-			snprintf(cmd, sizeof(cmd), "\"%s\" -I\"%s\" \"%s\" \"%s\"", asar_exe_path, base_path, azm_name, out_rom_name);
+			snprintf(cmd, sizeof(cmd), "\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = $10,$F0,$E0 \" \"%s\" \"%s\"", asar_exe_path, base_path, azm_name, out_rom_name);
 			for (int i = 0;i < numiter;i++)
 			{
 				printf("Executing:\n > %s\n", cmd);

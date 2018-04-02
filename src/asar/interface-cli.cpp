@@ -35,8 +35,8 @@ string getdecor();
 
 extern string thisfilename;
 
-extern assocarr<string> defines;//these two are useless for cli, but they may be useful for other stuff
-extern assocarr<unsigned int> labels;
+extern assocarr<string> clidefines;
+extern assocarr<unsigned int> labels;//this is useless for cli, but it may be useful for other stuff
 
 void assemblefile(const char * filename, bool toplevel);
 
@@ -241,7 +241,41 @@ int main(int argc, char * argv[])
 			}
 			else if (postprocess_param == cmdlparam_adddefine)
 			{
+				if (strchr(postprocess_arg, '=') != NULL)
+				{
+					// argument contains value, not only name
+					const char* eq_loc = strchr(postprocess_arg, '=');
+					string name = string(postprocess_arg, eq_loc - postprocess_arg);
+					name = name.replace("\t", " ", true);
+					name = itrim(name.str, " ", " ", true);
+					name = itrim(name.str, "!", "", false); // remove leading ! if present
 
+					if (!validatedefinename(name)) error<errnull>(0, S "Invalid define name in command line defines: '" + name + "'.");
+
+					if (clidefines.exists(name)) {
+						error<errnull>(pass, S "Command line define '" + name + "' overrides a previous define. Did you specify the same define twice?");
+						pause(err);
+						return 1;
+					}
+					clidefines.create(name) = eq_loc + 1;
+				}
+				else
+				{
+					// argument doesn't have a value, only name
+					string name = postprocess_arg;
+					name = name.replace("\t", " ", true);
+					name = itrim(name.str, " ", " ", true);
+					name = itrim(name.str, "!", "", false); // remove leading ! if present
+
+					if (!validatedefinename(name)) error<errnull>(0, S "Invalid define name in command line defines: '" + name + "'.");
+
+					if (clidefines.exists(name)) {
+						error<errnull>(pass, S "Command line define '" + name + "' overrides a previous define. Did you specify the same define twice?");
+						pause(err);
+						return 1;
+					}
+					clidefines.create(name) = "";
+				}
 			}
 		}
 		if (verbose && !printed_version)
