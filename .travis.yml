@@ -11,7 +11,8 @@ script:
   - make
   # run dll test suite
   - cd .. && mkdir tests_dll_tmp
-  - build/asar-dll-test/asar-dll-test build/asar/libasar.so $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
+  - if [ $TRAVIS_OS_NAME == osx ]; then LIBNAME=libasar.dylib; else LIBNAME=libasar.so
+  - build/asar-dll-test/asar-dll-test build/asar/$LIBNAME $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
   # run app test suite
   - mkdir tests_app_tmp
   - build/asar-app-test/asar-app-test build/asar/asar-standalone $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
