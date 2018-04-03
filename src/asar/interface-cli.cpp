@@ -245,7 +245,7 @@ int main(int argc, char * argv[])
 				{
 					// argument contains value, not only name
 					const char* eq_loc = strchr(postprocess_arg, '=');
-					string name = string(postprocess_arg, eq_loc - postprocess_arg);
+					string name = string(postprocess_arg, (int)(eq_loc - postprocess_arg));
 					name = name.replace("\t", " ", true);
 					name = itrim(name.str, " ", " ", true);
 					name = itrim(name.str, "!", "", false); // remove leading ! if present

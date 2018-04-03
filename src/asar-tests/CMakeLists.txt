@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.9.0)
 
-OPTION(ASAR_DLL_TEST "Build asar DLL tests" ON)
-OPTION(ASAR_APP_TEST "Build asar app tests" ON)
+OPTION(ASAR_GEN_EXE_TEST "Build Asar standalone application test suite" ON)
+OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON)
 
 # Shared settings for Asar test applications
 
@@ -29,7 +29,7 @@ endmacro()
 
 set(CXX_EXTENSIONS OFF)
 
-if(ASAR_APP_TEST)
+if(ASAR_GEN_EXE_TEST)
     add_executable(
         asar-app-test
         
@@ -39,7 +39,7 @@ if(ASAR_APP_TEST)
     set_asar_test_shared_properties(asar-app-test)
 endif()
 
-if(ASAR_DLL_TEST)
+if(ASAR_GEN_DLL_TEST)
     add_executable(
         asar-dll-test
         

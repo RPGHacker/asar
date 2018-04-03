@@ -750,7 +750,7 @@ void parse_std_defines(const char* textfile)
 				if (!defval_end) defval_end = strchr(defval, 0);
 				defval_end--;
 				while (*defval_end == ' ' || *defval_end == '\t') defval_end--;
-				cleaned_defval = string(defval, (defval_end - defval + 1));
+				cleaned_defval = string(defval, (int)(defval_end - defval + 1));
 
 				if (clidefines.exists(define_name)) error<errnull>(pass, S "Std define '" + define_name + "' overrides a previous define. Did you specify the same define twice?");
 				clidefines.create(define_name) = cleaned_defval;
