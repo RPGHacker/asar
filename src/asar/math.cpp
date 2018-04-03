@@ -760,7 +760,7 @@ static double getnumcore()
 static double sanitize(double val)
 {
 	if (val!=val) error("NaN encountered.");
-	if (math_round) return (unsigned int)val;
+	if (math_round) return round(val); // why did this use an int cast?
 	return val;
 }
 
