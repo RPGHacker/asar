@@ -5,6 +5,5 @@ option(ASAR_GEN_TEST "Generate tests" ON)
 add_subdirectory(asar)
 
 if(ASAR_GEN_TEST)
-	add_subdirectory(asar-app-test)
-	add_subdirectory(asar-dll-test)
+	add_subdirectory(asar-tests)
 endif(ASAR_GEN_TEST)
