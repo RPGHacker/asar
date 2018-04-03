@@ -5,14 +5,15 @@ compiler:
 os:
   - linux
   - osx
+install: # misc setup that I didn't want to put in script
+  - if [ $TRAVIS_OS_NAME == osx ]; then LIBNAME=libasar.dylib; else LIBNAME=libasar.so; fi
+  - mkdir build tests_dll_tmp tests_app_tmp
 script:
-  - mkdir build && cd build
+  - cd build
   - cmake -DCMAKE_BUILD_TYPE=Release ../src
   - make
+  - cd ..
   # run dll test suite
-  - cd .. && mkdir tests_dll_tmp
-  - if [ $TRAVIS_OS_NAME == osx ]; then LIBNAME=libasar.dylib; else LIBNAME=libasar.so; fi
-  - build/asar-dll-test/asar-dll-test build/asar/$LIBNAME $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
+  - build/asar-tests/asar-dll-test build/asar/$LIBNAME $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
   # run app test suite
-  - mkdir tests_app_tmp
-  - build/asar-app-test/asar-app-test build/asar/asar-standalone $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
+  - build/asar-tests/asar-app-test build/asar/asar-standalone $TRAVIS_BUILD_DIR/tests dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
