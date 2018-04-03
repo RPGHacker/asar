@@ -58,9 +58,14 @@ macro(set_asar_shared_properties target)
 		endif()
 
 		# Garbage collection
-		set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s -Wl,--gc-sections")
+		if(APPLE)
+			set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-dead_strip")
+			set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "-Wl,-dead_strip")
+		else()
+			set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s -Wl,--gc-sections")
+			set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "-s -Wl,--gc-sections")
+		endif()
 		set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "-T")
-		set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "-s -Wl,--gc-sections")
 	endif()
 endmacro()
 
