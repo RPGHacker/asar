@@ -198,14 +198,14 @@ bool asblock_superfx(char** word, int numwords)
 			{
 				ret=true;
 				int len=getlen(par);
-				int num=getnum(par);
+				unsigned int num=getnum(par);
 				if (len==1)
 				{
-					write1((unsigned int)byte); write1((unsigned int)num);
+					write1((unsigned int)byte); write1(num);
 				}
 				else
 				{
-					int pos=num-((snespos&0xFFFFFF)+2);
+					int pos=(int)num-((snespos&0xFFFFFF)+2);
 					write1((unsigned int)byte); write1((unsigned int)pos);
 					if (pass==2 && (pos<-128 || pos>127))
 					{
@@ -228,7 +228,7 @@ bool asblock_superfx(char** word, int numwords)
 				}
 				if (arg[1][0]=='#')
 				{
-					unsigned int num=(unsigned int)getnum(arg[1]+1);
+					unsigned int num=getnum(arg[1]+1);
 					num&=0xFFFF;
 					op("IBT") w(0xA0+reg1) w(num);
 					op("IWT") w(0xF0+reg1) w(num) w(num>>8);
@@ -258,12 +258,12 @@ bool asblock_superfx(char** word, int numwords)
 				{
 					char * endpar=strchr(arg[1], ')');
 					if (!endpar || endpar[1]) return false;
-					int num=getnum(arg[1]);
+					unsigned int num=getnum(arg[1]);
 					op("LM") w(0x3D) w(0xF0+reg1) w(num) w(num>>8);
 
 					if (is("LMS")) {
 						ok();
-						if (check_short_addr(num))
+						if (check_short_addr((int)num))
 						{
 							ok() w(0x3D) w(0xA0+reg1) w(num>>1);
 						}
@@ -280,7 +280,7 @@ bool asblock_superfx(char** word, int numwords)
 				}
 				if (is("LEA"))
 				{
-					int num=getnum(arg[1]);
+					unsigned int num=getnum(arg[1]);
 					ok() w(0xF0+reg1) w(num) w(num>>8);
 				}
 			}
@@ -303,13 +303,13 @@ bool asblock_superfx(char** word, int numwords)
 				{
 					char * endpar=strchr(arg[0], ')');
 					if (!endpar || endpar[1]) return false;
-					int num=getnum(arg[0]);
+					unsigned int num=getnum(arg[0]);
 					op("SM") w(0x3E) w(0xF0+reg2) w(num) w(num>>8);
 
 					if (is("SMS"))
 					{
 						ok();
-						if (check_short_addr(num))
+						if (check_short_addr((int)num))
 						{
 							ok() w(0x3E) w(0xA0+reg2) w(num>>1);
 						}

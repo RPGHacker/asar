@@ -154,7 +154,7 @@ extern bool stdlib;
 extern bool foundlabel;
 extern bool forwardlabel;
 int getlen(const char * str);
-int getnum(const char * str);
+unsigned int getnum(const char * str);
 
 void assemblefile(const char * filename, bool toplevel);
 extern string thisfilename;
@@ -887,13 +887,13 @@ void assembleblock(const char * block)
 				if (nextword[0][0]=='!')
 				{
 					//this part is not mentioned in the manual
-					int val=getnum(nextword[0]+1);
+					unsigned int val=getnum(nextword[0]+1);
 					if (foundlabel) error(1, S"Label in "+lower(word[0])+" command");
 					thiscond=!(val>0);
 				}
 				else
 				{
-					int val=getnum(nextword[0]);
+					unsigned int val=getnum(nextword[0]);
 					if (foundlabel) error(1, S"Label in "+lower(word[0])+" command");
 					thiscond=(val>0);
 				}
@@ -908,9 +908,9 @@ void assembleblock(const char * block)
 			else
 			{
 				if (!nextword[2]) error(0, S"Broken "+lower(word[0])+" command");
-				int par1=getnum(nextword[0]);
+				unsigned int par1=getnum(nextword[0]);
 				if (foundlabel) error(1, S"Label in "+lower(word[0])+" command");
-				int par2=getnum(nextword[2]);
+				unsigned int par2=getnum(nextword[2]);
 				if (foundlabel) error(1, S"Label in "+lower(word[0])+" command");
 				if(0);
 				else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
@@ -1168,11 +1168,11 @@ void assembleblock(const char * block)
 			{
 				const char * math=pars[i];
 				if (math[0]=='#') math++;
-				int num=(pass!=0)?getnum(math):0;
-				if (len == 1) write1((unsigned int)num);
-				if (len == 2) write2((unsigned int)num);
-				if (len == 3) write3((unsigned int)num);
-				if (len == 4) write4((unsigned int)num);
+				unsigned int num=(pass!=0)?getnum(math):0;
+				if (len == 1) write1(num);
+				if (len == 2) write2(num);
+				if (len == 3) write3(num);
+				if (len == 4) write4(num);
 			}
 		}
 	}
@@ -1180,10 +1180,12 @@ void assembleblock(const char * block)
 	{
 		if (word[0][0]=='\'' && word[0][1] && word[0][2]=='\'' && word[0][3]=='\0')
 		{
-			table.table[(unsigned char)word[0][1]]=(unsigned int)getnum(word[2]);
+			table.table[(unsigned char)word[0][1]]=getnum(word[2]);
 			return;
 		}
-		int num=getnum(word[2]);
+		// randomdude999: int cast b/c i'm too lazy to also mess with making setlabel()
+		// unsigned, besides it wouldn't matter anyways.
+		int num=(int)getnum(word[2]);
 		if (foundlabel) error(0, "Setting labels to each other is not valid");
 
 		const char* newlabelname = word[0];
@@ -1216,7 +1218,7 @@ void assembleblock(const char * block)
 	else if (is1("org"))
 	{
 		freespaceend();
-		int num=getnum(par);
+		int num=(int)getnum(par);
 		if (forwardlabel) error(0, "org Label is only valid for labels earlier in the patch");
 		if (num&~0xFFFFFF) error(1, "Address out of bounds");
 		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000) warn0("It would be wise to set the 008000 bit of this address.");
@@ -1245,7 +1247,7 @@ void assembleblock(const char * block)
 
 		if (numwords == 3)
 		{
-			int base = getnum(word[2]);
+			int base = (int)getnum(word[2]);
 			if (base&~0xFFFFFF) ret_error("Address out of bounds.");
 			snespos = base;
 			startpos = base;
@@ -1276,7 +1278,7 @@ void assembleblock(const char * block)
 		if (numwords == 3 && strcasecmp(word[1], "align")) ret_error("Expected align parameter.");
 		if (!in_struct && !in_sub_struct) ret_error("endstruct can only be used in combination with struct.");
 
-		int alignment = numwords == 3 ? getnum(word[2]) : 1;
+		int alignment = numwords == 3 ? (int)getnum(word[2]) : 1;
 		if (alignment < 1) ret_error("Alignment must be >= 1.");
 
 		snes_struct structure;
@@ -1317,7 +1319,7 @@ void assembleblock(const char * block)
 			startpos=realstartpos;
 			return;
 		}
-		int num=getnum(par);
+		int num=(int)getnum(par);
 		if (forwardlabel) error(0, "base Label is not valid");
 		if (num&~0xFFFFFF) error(1, "Address out of bounds");
 		snespos=num;
@@ -1336,7 +1338,7 @@ void assembleblock(const char * block)
 			optimizeforbank=0x100;
 			return;
 		}
-		int num=getnum(par);
+		int num=(int)getnum(par);
 		//if (forwardlabel) error(0, "bank Label is not valid");
 		//if (foundlabel) num>>=16;
 		if (num&~0x0000FF) error(1, "Address out of bounds");
@@ -1516,7 +1518,7 @@ void assembleblock(const char * block)
 			}
 			else error(0, "Broken autoclean command");
 		}
-		else if (pass==0) removerats(getnum(word[1]), 0x00);
+		else if (pass==0) removerats((int)getnum(word[1]), 0x00);
 	}
 	else if (is0("pushpc"))
 	{
@@ -1622,7 +1624,7 @@ void assembleblock(const char * block)
 	}
 	else if (is1("warnpc"))
 	{
-		int maxpos=getnum(par);
+		int maxpos=(int)getnum(par);
 		if (snespos&0xFF000000) error(0, "warnpc used in freespace");
 		if (maxpos&0xFF000000) error(0, "Broken warnpc argument");
 		if (snespos>maxpos) error(0, S"warnpc failed: Current position ("+hex6((unsigned int)snespos)+") is after end position ("+hex6((unsigned int)maxpos)+")");
@@ -1631,7 +1633,7 @@ void assembleblock(const char * block)
 	}
 	else if (is1("rep"))
 	{
-		int rep=getnum(par);
+		int rep=(int)getnum(par);
 		if (foundlabel) error(0, "rep Label is not valid");
 		if (rep<=1)
 		{
@@ -1723,7 +1725,7 @@ void assembleblock(const char * block)
 		{
 			if (!confirmname(word[3]))
 			{
-				int pos=getnum(word[3]);
+				int pos=(int)getnum(word[3]);
 				if (foundlabel) error(0, "Can't use labels here.");
 				int offset=snestopc(pos);
 				if (offset+end-start>0xFFFFFF) error(0, "Can't create ROMs larger than 16MB");
@@ -1763,7 +1765,7 @@ void assembleblock(const char * block)
 	}
 	else if (is1("skip"))//nobody ever uses this, but whatever
 	{
-		int skip=getnum(par);
+		int skip=(int)getnum(par);
 		if (foundlabel) error(0, "skip Label is not valid");
 		step(skip);
 	}
@@ -1861,8 +1863,8 @@ void assembleblock(const char * block)
 			else if (!stricmp(pars[i], "bytes")) out+=dec(bytes);
 			else if (!stricmp(pars[i], "freespaceuse")) out+=dec(freespaceuse);
 			else if (!stricmp(pars[i], "pc")) out+=hex6((unsigned int)(snespos&0xFFFFFF));
-			else if (!strncasecmp(pars[i], "dec(", strlen("dec("))) out+=dec(getnum(pars[i]+strlen("dec")));
-			else if (!strncasecmp(pars[i], "hex(", strlen("hex("))) out+=hex0((unsigned int)getnum(pars[i]+strlen("hex")));
+			else if (!strncasecmp(pars[i], "dec(", strlen("dec("))) out+=dec((int)getnum(pars[i]+strlen("dec")));
+			else if (!strncasecmp(pars[i], "hex(", strlen("hex("))) out+=hex0(getnum(pars[i]+strlen("hex")));
 			else if (!strncasecmp(pars[i], "double(", strlen("double(")))
 			{
 				char * arg1pos = pars[i] + strlen("double(");
@@ -1886,7 +1888,7 @@ void assembleblock(const char * block)
 					if (*pos == '\0') error(2, "Mismatched parentheses");
 					if (*pos == ',') error(2, "Wrong number of arguments to function double()");
 
-					out += ftostrvar(getnumdouble(string(arg1pos, (int)(arg1endpos - arg1pos))), getnum(string(arg2pos, (int)(pos - arg2pos))));
+					out += ftostrvar(getnumdouble(string(arg1pos, (int)(arg1endpos - arg1pos))), (int)getnum(string(arg2pos, (int)(pos - arg2pos))));
 				}
 			}
 			else error(2, "Unknown variable.");
@@ -1908,7 +1910,7 @@ void assembleblock(const char * block)
 		if (is("padword")) len=2;
 		if (is("padlong")) len=3;
 		if (is("paddword")) len=4;
-		unsigned int val=(unsigned int)getnum(par);
+		unsigned int val=getnum(par);
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -1922,7 +1924,7 @@ void assembleblock(const char * block)
 	else if (is1("pad"))
 	{
 		if (realsnespos&0xFF000000) error(0, "pad does not make sense in a freespaced code");
-		int num=getnum(par);
+		int num=(int)getnum(par);
 		if (num&0xFF000000) error(0, "Out of bounds");
 		if (num>realsnespos)
 		{
@@ -1939,7 +1941,7 @@ void assembleblock(const char * block)
 		if (is("fillword")) len=2;
 		if (is("filllong")) len=3;
 		if (is("filldword")) len=4;
-		unsigned int val= (unsigned int)getnum(par);
+		unsigned int val= getnum(par);
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -1952,7 +1954,7 @@ void assembleblock(const char * block)
 	}
 	else if (is1("fill"))
 	{
-		int num=getnum(par);
+		int num=(int)getnum(par);
 		for (int i=0;i<num;i++) write1(fillbyte[i%12]);
 	}
 	else if (is1("arch"))
