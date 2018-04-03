@@ -1,0 +1,56 @@
+cmake_minimum_required(VERSION 3.9.0)
+
+OPTION(ASAR_DLL_TEST "Build asar DLL tests" ON)
+OPTION(ASAR_APP_TEST "Build asar app tests" ON)
+
+# Shared settings for Asar test applications
+
+macro(set_asar_test_shared_properties target)
+    # Maximum warning level
+    if(MSVC)
+        target_compile_definitions(${target} PRIVATE "_CRT_SECURE_NO_WARNINGS")
+        target_compile_options(${target} PRIVATE /Wall)
+        
+        # These certainly aren't worth a warning, though
+        target_compile_options(${target} PRIVATE
+            /wd4514 # unreferenced inline function removed
+            /wd4710 # function not inlined
+            /wd4711 # function selected for automatic inline expansion
+            /wd4820 # 'bytes' bytes padding added after construct 'member_name'
+        )
+    else()
+        target_link_libraries(${target} dl)
+        target_compile_options(${target} PRIVATE -Wall -pedantic)
+        # for some reason this isn't available on MSVC?
+        target_compile_features(${target} PRIVATE c_std_99)
+    endif()
+    target_compile_features(${target} PRIVATE cxx_std_11)
+endmacro()
+
+set(CXX_EXTENSIONS OFF)
+
+if(ASAR_APP_TEST)
+    add_executable(
+        asar-app-test
+        
+        "test.cpp"
+    )
+
+    set_asar_test_shared_properties(asar-app-test)
+endif()
+
+if(ASAR_DLL_TEST)
+    add_executable(
+        asar-dll-test
+        
+        "test.cpp"
+        
+        "../asar-dll-bindings/asardll.c"
+        "../asar-dll-bindings/asardll.h"
+    )
+
+    target_include_directories(asar-dll-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/")
+    target_compile_definitions(asar-dll-test PRIVATE ASAR_TEST_DLL)
+
+    set_asar_test_shared_properties(asar-dll-test)
+endif()
