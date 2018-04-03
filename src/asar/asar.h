@@ -87,7 +87,7 @@ extern int realstartpos;
 extern int bytes;
 
 int getlen(const char * str, bool optimizebankextraction=false);
-int getnum(const char * str);
+unsigned int getnum(const char * str);
 double getnumdouble(const char * str);
 
 int getlenfromchar(char c);

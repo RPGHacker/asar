@@ -89,7 +89,7 @@ static bool bitmatch(const char * opnamein, string& opnameout, const char * str,
 #define isop(test) (!stricmp(op, test))
 static bool assinglebitwithc(const char * op, const char * math, int bits)
 {
-	int num;
+	unsigned int num;
 	if (math[0]=='!')
 	{
 		if(0);
@@ -110,7 +110,7 @@ static bool assinglebitwithc(const char * op, const char * math, int bits)
 		num=getnum(math);
 	}
 	if (num>=0x2000) error(2, "Address out of bounds");
-	write2((unsigned int)((bits<<13)|num));
+	write2((bits<<13)|num);
 	return true;
 }
 #undef isop
@@ -128,7 +128,7 @@ bool asblock_spc700(char** word, int numwords)
 	if(0);
 	else if (arch==arch_spc700_inline && is1("org"))
 	{
-		int num=getnum(par);
+		int num=(int)getnum(par);
 		if (foundlabel) error(0, "org Label is not valid");
 		inline_org(num);
 	}
@@ -139,7 +139,7 @@ bool asblock_spc700(char** word, int numwords)
 	}
 	else if (arch==arch_spc700_inline && is1("skip"))
 	{
-		int num=snespos+getnum(par);
+		int num=snespos+(int)getnum(par);
 		if (foundlabel) error(0, "skip Label is not valid");
 		inline_org(num);
 	}
@@ -149,7 +149,7 @@ bool asblock_spc700(char** word, int numwords)
 	}
 	else if (arch==arch_spc700_inline && is1("startpos"))
 	{
-		inlinestartpos=getnum(par);
+		inlinestartpos=(int)getnum(par);
 	}
 	else if (numwords==1)
 	{
@@ -189,10 +189,10 @@ bool asblock_spc700(char** word, int numwords)
 #define ismatch(left, right) (matchandwrite(arg[0], left, right, math))
 #define eq(str) if (isam(str))
 #define w0(hex) do { write1((unsigned int)hex); return true; } while(0)
-#define w1(hex) do { write1((unsigned int)hex); write1((unsigned int)getnum(math)); return true; } while(0)
-#define w2(hex) do { write1((unsigned int)hex); write2((unsigned int)getnum(math)); return true; } while(0)
-#define wv(hex1, hex2) do { if (getlen(math)==1) { write1((unsigned int)hex1); write1((unsigned int)getnum(math)); } else { write1((unsigned int)hex2); write2((unsigned int)getnum(math)); } return true; } while(0)
-#define wr(hex) do { int len=getlen(math); int num=getnum(math); int pos=(len==1)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)hex); write1((unsigned int)pos); \
+#define w1(hex) do { write1((unsigned int)hex); write1(getnum(math)); return true; } while(0)
+#define w2(hex) do { write1((unsigned int)hex); write2(getnum(math)); return true; } while(0)
+#define wv(hex1, hex2) do { if (getlen(math)==1) { write1((unsigned int)hex1); write1(getnum(math)); } else { write1((unsigned int)hex2); write2(getnum(math)); } return true; } while(0)
+#define wr(hex) do { int len=getlen(math); int num=(int)getnum(math); int pos=(len==1)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)hex); write1((unsigned int)pos); \
 								if (pass==2 && foundlabel && (pos<-128 || pos>127)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
 								return true; } while(0)
 #define op0(str, hex) if (isop(str)) w0(hex)
@@ -251,9 +251,9 @@ bool asblock_spc700(char** word, int numwords)
 				else if (!stricmp(op, "set")) write1((unsigned int)(0x02|(bits<<5)));
 				else if (!stricmp(op, "clr")) write1((unsigned int)(0x12|(bits<<5)));
 				else return false;
-				int num=getnum(math);
-				if (num<0 || num>=0x100) error(2, "Address out of bounds");
-				write1((unsigned int)num);
+				unsigned int num=getnum(math);
+				if (num>=0x100) error(2, "Address out of bounds");
+				write1(num);
 				return true;
 			}
 			if (true)
@@ -261,7 +261,7 @@ bool asblock_spc700(char** word, int numwords)
 				math=arg[0];
 				if (isop("tcall"))
 				{
-					int num=getnum(math);
+					int num=(int)getnum(math);
 					if (num<0 || num>=16) error(2, "Invalid tcall");
 					write1((unsigned int)((num<<4)|1));
 					return true;
@@ -314,18 +314,18 @@ bool asblock_spc700(char** word, int numwords)
 #define vc(left1, right1, str2) if (isvc(left1, right1, str2))
 #define vv(left1, right1, left2, right2) if (isvv(left1, right1, left2, right2))
 #define w0(opcode) do { write1((unsigned int)opcode); return true; } while(0)
-#define w1(opcode, math) do { write1((unsigned int)opcode); int val=getnum(math); \
+#define w1(opcode, math) do { write1((unsigned int)opcode); int val=(int)getnum(math); \
 													if (val&0xFF00) warn0("This opcode does not exist with 16-bit parameters, assuming 8-bit"); write1((unsigned int)val); return true; } while(0)
-#define w2(opcode, math) do { write1((unsigned int)opcode); write2((unsigned int)getnum(math)); return true; } while(0)
-#define wv(opcode1, opcode2, math) do { if (getlen(math)==1) { write1((unsigned int)opcode1); write1((unsigned int)getnum(math)); } \
-																	 else { write1((unsigned int)opcode2); write2((unsigned int)getnum(math)); } return true; } while(0)
-#define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1((unsigned int)getnum(math1)); write1((unsigned int)getnum(math2)); return true; } while(0)
-#define wr(opcode, math) do { int len=getlen(math); int num=getnum(math); int pos=(len==1)?num:num-(snespos+2); \
+#define w2(opcode, math) do { write1((unsigned int)opcode); write2(getnum(math)); return true; } while(0)
+#define wv(opcode1, opcode2, math) do { if (getlen(math)==1) { write1((unsigned int)opcode1); write1(getnum(math)); } \
+																	 else { write1((unsigned int)opcode2); write2(getnum(math)); } return true; } while(0)
+#define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1(getnum(math1)); write1(getnum(math2)); return true; } while(0)
+#define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum(math); int pos=(len==1)?num:num-(snespos+2); \
 								if (pass && foundlabel && (pos<-128 || pos>127)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
 								write1((unsigned int)opcode); write1((unsigned int)pos); return true; } while(0)
-#define w1r(opcode, math1, math2) do { int len=getlen(math2); int num=getnum(math2); int pos=(len==1)?num:num-(snespos+3); \
+#define w1r(opcode, math1, math2) do { int len=getlen(math2); int num=(int)getnum(math2); int pos=(len==1)?num:num-(snespos+3); \
 								if (pass && foundlabel && (pos<-128 || pos>127)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
-								write1((unsigned int)opcode); write1((unsigned int)getnum(math1)); write1((unsigned int)pos); return true; } while(0)
+								write1((unsigned int)opcode); write1(getnum(math1)); write1((unsigned int)pos); return true; } while(0)
 			string s1;
 			string s2;
 			string op;
@@ -340,7 +340,7 @@ bool asblock_spc700(char** word, int numwords)
 			{
 				if (isop("mov") && !stricmp(arg[1], "c"))
 				{
-					int num=getnum(s1);
+					int num=(int)getnum(s1);
 					if (num>=0x2000) error(2, "Address out of bounds");
 					write1(0xCA);
 					write2((unsigned int)((bits<<13)|num));
@@ -350,9 +350,9 @@ bool asblock_spc700(char** word, int numwords)
 				else if (isop("bbs")) write1((unsigned int)(0x03|(bits<<5)));
 				else if (isop("bbc")) write1((unsigned int)(0x13|(bits<<5)));
 				else return false;
-				int num=getnum(s1);
+				unsigned int num=getnum(s1);
 				if (num>=0x100) error(2, "Address out of bounds");
-				write1((unsigned int)num);
+				write1(num);
 				write1((unsigned int)(getnum(arg[1])-(snespos+1)));
 				return true;
 			}

@@ -28,7 +28,7 @@ bool asblock_65816(char** word, int numwords)
 	char * par=NULL;
 	if (word[1]) par=strdup(word[1]);
 	autoptr<char*> parptr=par;
-	int num;
+	unsigned int num;
 	int len=0;//declared here for A->generic fallback
 	if(0);
 	else if (assemblemapper(word, numwords)) {}
@@ -39,21 +39,21 @@ bool asblock_65816(char** word, int numwords)
 #define blankinit() len=1; num=0
 #define end() return false
 #define as0(    op, byte) if (is(op)          ) { write1((unsigned int)byte);              return true; }
-#define as1(    op, byte) if (is(op) && len==1) { write1((unsigned int)byte); write1((unsigned int)num); return true; }
-#define as2(    op, byte) if (is(op) && len==2) { write1((unsigned int)byte); write2((unsigned int)num); return true; } \
+#define as1(    op, byte) if (is(op) && len==1) { write1((unsigned int)byte); write1(num); return true; }
+#define as2(    op, byte) if (is(op) && len==2) { write1((unsigned int)byte); write2(num); return true; } \
 													/*if (is(op) && len==3 && emulate) { write1(byte); write2(num); return true; }*/
-#define as3(    op, byte) if (is(op) && len==3) { write1((unsigned int)byte); write3((unsigned int)num); return true; }
+#define as3(    op, byte) if (is(op) && len==3) { write1((unsigned int)byte); write3(num); return true; }
 //#define as23(   op, byte) if (is(op) && (len==2 || len==3)) { write1(byte); write2(num); return true; }
-#define as32(   op, byte) if (is(op) && (len==2 || len==3)) { write1((unsigned int)byte); write3((unsigned int)num); return true; }
-#define as_a(   op, byte) if (is(op)) { if (len==1) { write1((unsigned int)byte); write1((unsigned int)num); } \
-																					 else { write1((unsigned int)byte); write2((unsigned int)num); } return true; }
-#define as_xy(  op, byte) if (is(op)) { if (len==1) { write1((unsigned int)byte); write1((unsigned int)num); } \
-																					 else {  write1((unsigned int)byte); write2((unsigned int)num); } return true; }
-#define as_rep( op, byte) if (is(op)) { if (pass==0) num=getnum(par); for (int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
-#define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
+#define as32(   op, byte) if (is(op) && (len==2 || len==3)) { write1((unsigned int)byte); write3(num); return true; }
+#define as_a(   op, byte) if (is(op)) { if (len==1) { write1((unsigned int)byte); write1(num); } \
+																					 else { write1((unsigned int)byte); write2(num); } return true; }
+#define as_xy(  op, byte) if (is(op)) { if (len==1) { write1((unsigned int)byte); write1(num); } \
+																					 else {  write1((unsigned int)byte); write2(num); } return true; }
+#define as_rep( op, byte) if (is(op)) { if (pass==0) num=getnum(par); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
+#define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
 													if (pass==2 && foundlabel && (pos<-128 || pos>127)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
 													return true; }
-#define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?num:num-((snespos&0xFFFFFF)+3); write1((unsigned int)byte); write2((unsigned int)pos);\
+#define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+3); write1((unsigned int)byte); write2((unsigned int)pos);\
 											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
 											return true; }
 #define the8(offset, len) as##len("ORA", offset+0x00); as##len("AND", offset+0x20); as##len("EOR", offset+0x40); as##len("ADC", offset+0x60); \
@@ -169,8 +169,8 @@ bool asblock_65816(char** word, int numwords)
 			if (numargs ==2)
 			{
 				write1(is("MVN")?(unsigned int)0x54:(unsigned int)0x44);
-				write1((unsigned int)getnum(param[0]));
-				write1((unsigned int)getnum(param[1]));
+				write1(getnum(param[0]));
+				write1(getnum(param[1]));
 				return true;
 			}
 		}
@@ -180,7 +180,7 @@ opAFallback:
 			unsigned int tmp=0;
 			if (pass && !labelval(par, &tmp)) return false;
 			len=getlen(par);
-			num=(int)tmp;
+			num=tmp;
 		}
 		if (is("JSR") || is("JMP"))
 		{

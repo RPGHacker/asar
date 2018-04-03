@@ -237,7 +237,7 @@ notposneglabel:
 extern bool foundlabel;
 extern bool forwardlabel;
 
-int getnum(const char * str)
+unsigned int getnum(const char * str)
 {
 	const char * e;
 	// RPG Hacker: this was originally an int - changed it into an unsigned int since I found
@@ -248,7 +248,7 @@ int getnum(const char * str)
 	{
 		error<errblock>(1, e);
 	}
-	return (int)num;
+	return num;
 }
 
 // RPG Hacker: Same function as above, but doesn't truncate our number via int conversion

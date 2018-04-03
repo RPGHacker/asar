@@ -1,0 +1,8 @@
+;@FF FF FF 7F
+;@FF FF FF FF
+;@00 00 00 80
+
+org $008000
+dd $7FFFFFFF
+dd $FFFFFFFF
+dd $80000000
