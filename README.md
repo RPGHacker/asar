@@ -19,11 +19,9 @@ Asar can also be built as a DLL. This makes it easier and faster to use Asar wit
 * docs contains the source of the manual and changelog.
   (You can view an online version of the manual [here](https://rpghacker.github.io/asar/manual/) and an online version of the changelog [here](https://rpghacker.github.io/asar/changelog/)).
 * ext currently only contains syntax highlighting files for Notepad++ and Sublime Text.
-* src contains the source code of Asar.
-  * In there, asar contains the source code of the main app and DLL
-  * asar-app-test contains code for running the built-in test suite using asar.exe (the standalone application)
-  * asar-dll-test contains code for running the built-in test suite using asar.dll (the library)
-  * asar-tests-shared contains code shared between the two above
+* src contains the source code of Asar. In there,
+  * asar contains the source code of the main app and DLL
+  * asar-tests contains code for the testing application (both the app test and DLL test)
   * asar-dll-bindings contains bindings of the Asar DLL to other languages (currently C/C++, C# and Python)
 * tests contains tests to verify Asar works correctly.
 
