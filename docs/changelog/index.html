@@ -134,7 +134,8 @@ asar 1.60</code></pre>
 			<li>Fixed a bug in <code class="65c816_asar">pad</code> command that made it not update the pc correctly and also made it trigger a bank cross error before actually writing any data into a new bank.</li>
 			<li>Fixed a rare crash when using the command-line interface in ways you're not supposed to use it.</li>
 			<li>Fixed <code class="65c816_asar">readfile()</code>/<code class="65c816_asar">canreadfile()</code> crashing when reading from more than 16 different files in the same patch.</li>
-			<li>Fixed the ROM title being reported incorrectly</li>
+			<li>Fixed the ROM title being reported incorrectly.</li>
+			<li>Fixed using really large values in math with <code>math round on</code> making the values negative sometimes.</li>
 		</ul>
 
 		<h3>Deprecated features:</h3>
