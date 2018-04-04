@@ -20,7 +20,7 @@ public:
 class memory_file : public virtual_file
 {
 public:
-    memory_file(void* data, size_t length)
+	memory_file(void* data, size_t length)
 		: m_data(data), m_length(length)
 	{		
 	}
@@ -30,29 +30,29 @@ public:
 		close();
 	}
 
-    virtual void close()
-    {
-    }
+	virtual void close()
+	{
+	}
 
-    virtual size_t read(void* out_buffer, size_t pos, size_t num_bytes)
-    {
-        if(pos > m_length) return 0;
+	virtual size_t read(void* out_buffer, size_t pos, size_t num_bytes)
+	{
+		if(pos > m_length) return 0;
 
-        int diff = (int)(pos + num_bytes) - (int)m_length;
-        num_bytes -= diff < 0 ? 0 : diff;
+		int diff = (int)(pos + num_bytes) - (int)m_length;
+		num_bytes -= diff < 0 ? 0 : diff;
 
-        memcpy(out_buffer, (char*)m_data + pos, num_bytes);
-        return num_bytes;
-    }
+		memcpy(out_buffer, (char*)m_data + pos, num_bytes);
+		return num_bytes;
+	}
 
-    virtual size_t get_size()
-    {
-        return m_length;
-    }
+	virtual size_t get_size()
+	{
+		return m_length;
+	}
 
 private:
-    void*  m_data;
-    size_t m_length;
+	void*  m_data;
+	size_t m_length;
 };
 
 class physical_file : public virtual_file
@@ -174,7 +174,7 @@ void virtual_filesystem::initialize(const char** include_paths, size_t num_inclu
 	}
 
 	m_last_error = vfe_none;
-    m_memory_files.reset();
+	m_memory_files.reset();
 }
 
 void virtual_filesystem::destroy()
@@ -215,14 +215,14 @@ virtual_file_handle virtual_filesystem::open_file(const char* path, const char* 
 
 		case vft_memory_file:
 		{
-            if(m_memory_files.exists(base_path)) {
-                memory_buffer mem_buf = m_memory_files.find(base_path);
-                memory_file* new_file = new memory_file(mem_buf.data, mem_buf.length);
-                return static_cast<virtual_file_handle>(new_file);
-            } else {
-                m_last_error = 	vfe_doesnt_exist;
+			if(m_memory_files.exists(base_path)) {
+				memory_buffer mem_buf = m_memory_files.find(base_path);
+				memory_file* new_file = new memory_file(mem_buf.data, mem_buf.length);
+				return static_cast<virtual_file_handle>(new_file);
+			} else {
+				m_last_error =	vfe_doesnt_exist;
 				return INVALID_VIRTUAL_FILE_HANDLE;
-            }
+			}
 		}
 
 		default:
@@ -274,17 +274,17 @@ size_t virtual_filesystem::get_file_size(virtual_file_handle file_handle)
 virtual_filesystem::virtual_file_type virtual_filesystem::get_file_type_from_path(const char* path)
 {
 	if(m_memory_files.exists(path)) {
-        return vft_memory_file;
-    } else {
-        return vft_physical_file;
-    }
+		return vft_memory_file;
+	} else {
+		return vft_physical_file;
+	}
 }
 
-void virtual_filesystem::create_memory_file(const char* name, void* buffer, size_t length) {
-    memory_buffer mem_buf = { buffer, length };
-    m_memory_files.remove(name);
-    m_memory_files.create(name) = mem_buf;
-    
+void virtual_filesystem::add_memory_file(const char* name, void* buffer, size_t length) {
+	memory_buffer mem_buf = { buffer, length };
+	m_memory_files.remove(name);
+	m_memory_files.create(name) = mem_buf;
+	
 }
 
 bool virtual_filesystem::is_path_absolute(const char* path)

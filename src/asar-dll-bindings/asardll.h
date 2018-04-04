@@ -171,6 +171,10 @@ asarfunc const struct writtenblockdata * (*asar_getwrittenblocks)(int * count);
 //Get the mapper currently used by Asar
 asarfunc enum mappertype (*asar_getmapper)(void);
 
+//Add a virtual memory file to the file system which can be assembled just as regular files.
+asarfunc void (*asar_add_virtual_memory_file)(const char* path, void* buffer, size_t length);
+
+
 #ifdef __cplusplus
 	}
 #endif

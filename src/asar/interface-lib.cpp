@@ -185,9 +185,7 @@ void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool should_re
 		memcpy((char*)romdata_r/*we just allocated this, it's safe to violate its const*/, romdata_, (size_t)*romlen_);
 	}
 	else romdata_r = (unsigned char*)romdata_;
-	romdata = (unsigned char*)malloc(maxromsize);
-	// RPG Hacker: Without this memset, freespace commands can (and probably will) fail.
-	memset((void*)romdata, 0, maxromsize);
+	romdata = (unsigned char*)calloc(1, maxromsize);
 	memcpy((unsigned char*)romdata, romdata_, (size_t)*romlen_);
 	if (should_reset)
 		resetdllstuff();
@@ -480,4 +478,9 @@ EXPORT mapper_t asar_getmapper()
 	return mapper;
 }
 
-
+EXPORT void asar_add_virtual_memory_file(const char* path, void* buffer, size_t length)
+{
+	if(filesystem) {
+		filesystem->add_memory_file(path, buffer, length);
+	}
+}

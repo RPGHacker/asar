@@ -6,7 +6,7 @@
 #include "libstr.h"
 
 // RPG Hacker: A virtual file system which can work with physical files
-// as well as (eventually) in-memory files. 
+// as well as in-memory files.
 
 typedef void* virtual_file_handle;
 static const virtual_file_handle INVALID_VIRTUAL_FILE_HANDLE = nullptr;
@@ -45,8 +45,8 @@ public:
 
 	string create_absolute_path(const char* base, const char* target);
 
-    void create_memory_file(const char* name, void* buffer, size_t length);
-    
+	void add_memory_file(const char* name, void* buffer, size_t length);
+
 	inline virtual_file_error get_last_error()
 	{
 		return m_last_error;
