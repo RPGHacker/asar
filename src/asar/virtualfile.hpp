@@ -2,6 +2,7 @@
 #define ASAR_VIRTUALFILE_H
 
 #include "autoarray.h"
+#include "assocarr.h"
 #include "libstr.h"
 
 // RPG Hacker: A virtual file system which can work with physical files
@@ -21,6 +22,12 @@ enum virtual_file_error
 	vfe_num_errors
 };
 
+struct memory_buffer
+{
+    void*  data;
+    size_t length;
+};
+
 class virtual_filesystem
 {
 public:
@@ -38,6 +45,8 @@ public:
 
 	string create_absolute_path(const char* base, const char* target);
 
+    void create_memory_file(const char* name, void* buffer, size_t length);
+    
 	inline virtual_file_error get_last_error()
 	{
 		return m_last_error;
@@ -52,6 +61,7 @@ private:
 
 	virtual_file_type get_file_type_from_path(const char* path);
 
+	assocarr<memory_buffer> m_memory_files;
 	autoarray<string> m_include_paths;
 	virtual_file_error m_last_error;
 };
