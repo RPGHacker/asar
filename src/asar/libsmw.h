@@ -154,7 +154,7 @@ inline int pctosnes(int addr)
 	{
 		for (int i=0;i<8;i++)
 		{
-			if (sa1banks[i]==(addr&0x600000)){ return 0x008000|(i<<21)|((addr&((i<4) ? 0x0F8000 : 0x1F8000))<<1)|(addr&0x7FFF);}
+			if (sa1banks[i]==(addr&0x600000)){ return 0x008000|(i<<21)|((addr&0x1F8000)<<1)|(addr&0x7FFF);}
 		}
 		return -1;
 	}
