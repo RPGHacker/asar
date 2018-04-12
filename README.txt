@@ -11,6 +11,15 @@ Writing Patches
 For a detailed guide on all commands supported by Asar, see the included manual
 (also available on-line at https://rpghacker.github.io/asar/manual/ ).
 
+Another thing that may be helpful when writing patches is syntax highlighting.
+Currently asar includes syntax definitions for Notepad++ and Sublime Text.
+
+To install it for Notepad++, go to Language -> Define your language..., then
+click Import near the top and navigate to Asar's directory -> ext ->
+notepad-plus-plus, and open syntax-highlighting.xml.
+For Sublime Text, go to Preferences -> Browse Packages... -> User, and copy
+ext/sublime-text/65c816.sublime-syntax there.
+
 History
 -------
 
