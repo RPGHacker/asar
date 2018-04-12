@@ -35,38 +35,27 @@ macro(set_asar_shared_properties target)
 	
 	# Enable maximum warning level
 	
-	if(MSVC)		
-		if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
-			string(REGEX REPLACE "/W[0-4]" "/Wall" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-		else()
-			set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Wall")
-		endif()		
+	if(MSVC)
+		target_compile_options(${target} PRIVATE "/Wall")
 		
 		# These certainly aren't worth a warning, though
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4514") # unreferenced inline function removed
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4710") # function not inlined
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4711") # function selected for automatic inline expansion
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4820") # 'bytes' bytes padding added after construct 'member_name'
+		target_compile_options(${target} PRIVATE
+			/wd4514 # unreferenced inline function removed
+			/wd4710 # function not inlined
+			/wd4711 # function selected for automatic inline expansion
+			/wd4820 # 'bytes' bytes padding added after construct 'member_name'
+		)
 	else()
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic")
-		# not the best place to put it but w/e
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+		target_compile_options(${target} PRIVATE -Wall -pedantic)
+		# for some reason this isn't available on MSVC?
+		target_compile_features(${target} PRIVATE c_std_99)
 
 		# Static link for MinGW
 		if(MINGW)
-			set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -static")
+			target_compile_options(${target} PRIVATE "-static")
 		endif()
-
-		# Garbage collection
-		if(APPLE)
-			set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-Wl,-dead_strip")
-			set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "-Wl,-dead_strip")
-		else()
-			set(CMAKE_EXE_LINKER_FLAGS_RELEASE "-s -Wl,--gc-sections")
-			set(CMAKE_SHARED_LINKER_FLAGS_RELEASE "-s -Wl,--gc-sections")
-		endif()
-		set(CMAKE_STATIC_LINKER_FLAGS_RELEASE "-T")
 	endif()
+	target_compile_features(${target} PRIVATE cxx_std_11)
 endmacro()
 
 

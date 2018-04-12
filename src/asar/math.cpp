@@ -760,7 +760,7 @@ static double getnumcore()
 static double sanitize(double val)
 {
 	if (val!=val) error("NaN encountered.");
-	if (math_round) return round(val); // why did this use an int cast?
+	if (math_round) return trunc(val); // originally used int cast, but that broke numbers > $8000_0000
 	return val;
 }
 
