@@ -56,8 +56,7 @@
 
 		<h3>New features:</h3>
 		<ul>
-			<li>Asar is now official hosted on GitHub:<br/>
-				<a href="https://github.com/RPGHacker/asar">https://github.com/RPGHacker/asar</a></li>
+			<li>Asar is now officially hosted on GitHub: <a href="https://github.com/RPGHacker/asar">https://github.com/RPGHacker/asar</a></li>
 			<li>Asar now uses CMake, which should make it easier to build on different platforms and with different compilers. (RPG Hacker, randomdude999)</li>
 			<li>Added a proper manual in HTML format to Asar, rather than just having the xkas manual and a TXT file with all changes. (RPG Hacker)</li>
 			<li>Added Python binding for the Asar DLL. (randomdude999)</li>
@@ -110,7 +109,8 @@ Main:
 			<li>You can now escape <code>\</code> by doing <code>\\</code>. (RPG Hacker)</li>
 			<li>Added support for <code class="65c816_asar">pushbase</code>/<code class="65c816_asar">pullbase</code>. (randomdude999, RPG Hacker)</li>
 			<li>Added <code class="65c816_asar">expecttitle</code> command which makes Asar verify the title of the output ROM (to assure a patch is applied to the correct ROM). (randomdude999)</li>
-			<li>Added support for nested namespaces. (randomdude999, RPG Hacker) Enable them via the command:
+			<li>Added support for nested namespaces. (randomdude999, RPG Hacker)<br/>
+				Enable them via the command:
 				<pre><code class="65c816_asar">namespace nested on</code></pre>
 			</li>
 			<li>Added support for <code class="65c816_asar">warn bankcross off</code> which disables checking for bank crossing. Use with caution; might not work with certain features or outright break some stuff. (randomdude999, RPG Hacker)</li>
@@ -124,7 +124,8 @@ Main:
 		<ul>
 			<li>Fixed various bugs in the DLL interface. It should now hopefully be possible to apply multiple patches in succession via the DLL interface without resorting to hacks. (RPG Hacker, randomdude999, boldowa)</li>
 			<li>Completely rewrote test applications once again to make it a lot easier to test a bunch of ASM files and actually get some meaningful information out of it. (RPG Hacker)</li>
-			<li>Fixed the way <code>;@</code> works. This command was really meant for backwards-compatibility with xkas and is supposed to assemble everything following it, which it now does again. (RPG Hacker) As a result of this change, any of the following are now valid Asar code:
+			<li>Fixed the way <code>;@</code> works. This command was really meant for backwards-compatibility with xkas and is supposed to assemble everything following it, which it now does again. (RPG Hacker)<br/>
+			As a result of this change, any of the following are now valid Asar code:
 			<pre><code class="65c816_asar">;@asar 1.60
 @asar 1.60
 asar 1.60</code></pre>
