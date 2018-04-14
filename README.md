@@ -34,15 +34,15 @@ Tests are mostly just asm files to be patched to a known ROM (currently SMW) wit
 * a line starting with `+` tells the testing app to patch this file to the SMW ROM instead of creating a new ROM.
 * `err` means that this test is expected to throw an error when patching. The test will fail if no error is thrown.
 
-When no offset is specified, a default offset of 000000 is used.
+When no offset is specified, a default offset of 0x00000 is used.
 
 For example, special lines
 ```
 ;@5A 40 00
 ```
-expect the bytes 5A, 40 and 00 to be at the start of the output ROM (offset 000000) after patching (in that order).
+expect the bytes 5A, 40 and 00 to be at the start of the output ROM (offset 0x00000) after patching (in that order).
 
 ```
 ;@07606 22 20 80 90
 ```
-expects the bytes 22, 20, 80 and 90 at ROM offset $007606.
+expects the bytes 22, 20, 80 and 90 at ROM offset 0x07606.
