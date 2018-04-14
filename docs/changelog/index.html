@@ -57,7 +57,7 @@
 		<h3>New features:</h3>
 		<ul>
 			<li>Asar is now officially hosted on GitHub: <a href="https://github.com/RPGHacker/asar">https://github.com/RPGHacker/asar</a></li>
-			<li>Asar now uses CMake, which should make it easier to build on different platforms and with different compilers. (RPG Hacker, randomdude999)</li>
+			<li>Asar now uses CMake, which should make it easier to build on different platforms and with different compilers. (RPG Hacker, randomdude999, boldowa)</li>
 			<li>Added a proper manual in HTML format to Asar, rather than just having the xkas manual and a TXT file with all changes. (RPG Hacker)</li>
 			<li>Added Python binding for the Asar DLL. (randomdude999)</li>
 			<li>Added <code class="65c816_asar">defined()</code> function (randomdude999) and <code class="65c816_asar">undef</code> command. (zetaPRIME)</li>
@@ -123,14 +123,14 @@ Main:
 		<h3>Bug fixes:</h3>
 		<ul>
 			<li>Fixed various bugs in the DLL interface. It should now hopefully be possible to apply multiple patches in succession via the DLL interface without resorting to hacks. (RPG Hacker, randomdude999, boldowa)</li>
-			<li>Completely rewrote test applications once again to make it a lot easier to test a bunch of ASM files and actually get some meaningful information out of it. (RPG Hacker)</li>
+			<li>Rewrote big parts of test applications once again to make it a lot easier to test a bunch of ASM files and actually get some meaningful information out of it. (RPG Hacker)</li>
 			<li>Fixed the way <code>;@</code> works. This command was really meant for backwards-compatibility with xkas and is supposed to assemble everything following it, which it now does again. (RPG Hacker)<br/>
 			As a result of this change, any of the following are now valid Asar code:
 			<pre><code class="65c816_asar">;@asar 1.60
 @asar 1.60
 asar 1.60</code></pre>
 			When Asar finds an unknown command on a line starting with <code>;@</code> or <code>@</code>, it only throws a warning instead of an error. You can make use of this fact by using optional features from newer Asar versions and still have your patch assemble in old Asar versions, where those features are ignored (don't know how practicable and useful this really is, but in theory, it should be possible). And of course it can be used for patches that are compatible with both xkas and Asar, not that that's particularly useful anymore in this day and age.</li>
-			<li>Changed format of existing command line arguments for consistency.</li>
+			<li>Changed format of existing command line arguments for consistency. (RPG Hacker)</li>
 			<li>LoROM banks <code>$70</code> to <code>$7D</code> can be used correctly. (randomdude999)</li>
 			<li>Struct definitions are cleared correctly in Asar lib. (randomdude999)</li>
 			<li>Fixed a freeze that could occur when using <code class="65c816_asar">freedata align</code>. (TheBiob)</li>
