@@ -46,7 +46,11 @@ void assign(const char * newstr)
 	if (!newstr) newstr="";
 	len=(int)strlen(newstr);
 	resize(len);
-	strcpy(str, newstr);
+    for(int i = 0; i < len; ++i)
+    {
+        str[i] = newstr[i];
+    }
+    str[len] = '\0';
 }
 
 void assign(const char * newstr, int newlen)
