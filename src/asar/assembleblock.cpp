@@ -607,6 +607,7 @@ extern bool math_pri;
 extern bool math_round;
 
 bool warnxkas;
+bool warnimpimmed;
 
 extern assocarr<string> defines;
 extern assocarr<string> clidefines;
@@ -670,6 +671,7 @@ void initstuff()
 	if (arch==arch_superfx) asinit_superfx();
 
 	warnxkas=false;
+	warnimpimmed=false;
 	emulatexkas=false;
 	disable_bank_cross_errors = false;
 	nested_namespaces = false;
@@ -1997,6 +1999,9 @@ void assembleblock(const char * block)
 		else if (!stricmp(word[1], "xkas")) {
 			warn0("xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
 			warnxkas=val;
+		}
+		else if (!stricmp(word[1], "immed")) {
+			warnimpimmed=val;
 		}
 		else if (!stricmp(word[1], "bankcross")) {
 			disable_bank_cross_errors = !val;
