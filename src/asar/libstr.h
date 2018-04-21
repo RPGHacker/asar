@@ -381,7 +381,7 @@ inline string hex2(unsigned int value)
 inline string hex3(unsigned int value)
 {
 	char buffer[64];
-	sprintf(buffer, "%.2X", value);
+	sprintf(buffer, "%.3X", value);
 	return buffer;
 }
 
