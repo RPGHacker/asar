@@ -31,6 +31,7 @@ extern virtual_filesystem* filesystem;
 extern assocarr<string> clidefines;
 
 autoarray<const char *> prints;
+string symbolsfile;
 int numprint;
 
 struct errordata {
@@ -480,4 +481,7 @@ EXPORT mapper_t asar_getmapper()
 	return mapper;
 }
 
-
+EXPORT const char * asar_getsymbolsfile(const char* type){
+	symbolsfile = create_symbols_file(type);
+	return symbolsfile;
+}

@@ -36,7 +36,7 @@ string getdecor();
 extern string thisfilename;
 
 extern assocarr<string> clidefines;
-extern assocarr<unsigned int> labels;//this is useless for cli, but it may be useful for other stuff
+extern assocarr<unsigned int> labels;
 
 void assemblefile(const char * filename, bool toplevel);
 
@@ -105,6 +105,8 @@ void onsigxcpu(int ignored)
 
 bool setmapper();
 
+
+
 int main(int argc, char * argv[])
 {
 #ifdef TIMELIMIT
@@ -165,6 +167,8 @@ int main(int argc, char * argv[])
 			"Supported options:\n"
 			" --version         Display version information\n"
 			" -v, --verbose     Enable verbose mode\n"
+			" --symbols[=<wla/nocash>]\n"
+			"                   Produce a symbols file in the specified format (default is WLA format)\n" 
 			" --no-title-check  Disable verifying ROM title (note that irresponsible use will likely corrupt your ROM)\n"
 			" --pause-mode=<never/on-error/on-warning/always>\n"
 			"                   Specify when Asar should pause the application (never, on error, on warning or always)\n"
@@ -173,6 +177,7 @@ int main(int argc, char * argv[])
 		ignoretitleerrors=false;
 		string par;
 		bool verbose=libcon_interactive;
+		string symbols="";
 		bool printed_version=false;
 
 		autoarray<string> includepaths;
@@ -188,6 +193,12 @@ int main(int argc, char * argv[])
 			if (par=="-werror") werror=true;
 			else if (par=="--no-title-check") ignoretitleerrors=true;
 			else if (par == "-v" || par=="--verbose") verbose=true;
+            else if (par == "--symbols") symbols="wla";
+			else if (checkstartmatch(par, "--symbols=")){
+				if (par=="--symbols=wla") symbols="wla";
+				else if (par=="--symbols=nocash") symbols="nocash";
+				else libcon_badusage();
+			}
 			else if (par=="--version")
 			{
 				if (!printed_version)
@@ -425,6 +436,15 @@ int main(int argc, char * argv[])
 			pause(yes);
 		}
 		closerom();
+		if (symbols)
+		{
+			string symfilename = romname.replace(".sfc", ".sym", false).replace(".smc", ".sym", false);
+			string contents = create_symbols_file(symbols);
+			FILE * symfile = fopen(symfilename, "wt");
+			fputs(contents, symfile);
+			fclose(symfile);
+
+		}
 		reseteverything();
 	}
 	catch(errfatal&)

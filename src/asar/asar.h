@@ -101,6 +101,8 @@ bool labelval(string name, unsigned int * rval, bool define=false);
 
 bool validatedefinename(const char * name);
 
+string create_symbols_file(string format);
+
 void parse_std_includes(const char* textfile, autoarray<string>& outarray);
 void parse_std_defines(const char* textfile);
 
