@@ -46,7 +46,7 @@ bool asblock_65816(char** word, int numwords)
 													/*if (is(op) && len==3 && emulate) { write1(byte); write2(num); return true; }*/
 #define as3(    op, byte) if (is(op) && len==3) { write1((unsigned int)byte); write3(num); return true; }
 //#define as23(   op, byte) if (is(op) && (len==2 || len==3)) { write1(byte); write2(num); return true; }
-#define as32(   op, byte) if (is(op) && (len==2 || len==3)) { write1((unsigned int)byte); write3(num); return true; }
+#define as32(   op, byte) if (is(op) && ((len==2 && !explicitlen) || len==3)) { write1((unsigned int)byte); write3(num); return true; }
 #define as_a(   op, byte) if (is(op)) { if(!explicitlen && warnimpimmed) warn0("implicitly sized immediate"); if (len==1) { write1(byte); write1(num); } \
 																					 else { write1((unsigned int)byte); write2(num); } return true; }
 #define as_xy(  op, byte) if (is(op)) { if(!explicitlen && warnimpimmed) warn0("implicitly sized immediate"); if (len==1) { write1(byte); write1(num); } \
