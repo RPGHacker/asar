@@ -168,7 +168,10 @@ int main(int argc, char * argv[])
 			" --version         Display version information\n"
 			" -v, --verbose     Enable verbose mode\n"
 			" --symbols[=<wla/nocash>]\n"
-			"                   Produce a symbols file in the specified format (default is WLA format)\n" 
+			"                   Produce a symbols file in the specified format (default is WLA format)\n"
+			" --symbols-out=<filename>\n"
+			"                   Override the default symbols file name. The default name is rom_name with the file\n"
+			"                   extention changed to .sym\n"
 			" --no-title-check  Disable verifying ROM title (note that irresponsible use will likely corrupt your ROM)\n"
 			" --pause-mode=<never/on-error/on-warning/always>\n"
 			"                   Specify when Asar should pause the application (never, on error, on warning or always)\n"
@@ -178,6 +181,7 @@ int main(int argc, char * argv[])
 		string par;
 		bool verbose=libcon_interactive;
 		string symbols="";
+		string symfilename="";
 		bool printed_version=false;
 
 		autoarray<string> includepaths;
@@ -193,11 +197,15 @@ int main(int argc, char * argv[])
 			if (par=="-werror") werror=true;
 			else if (par=="--no-title-check") ignoretitleerrors=true;
 			else if (par == "-v" || par=="--verbose") verbose=true;
-            else if (par == "--symbols") symbols="wla";
-			else if (checkstartmatch(par, "--symbols=")){
+			else if (par == "--symbols") symbols="wla";
+			else if (checkstartmatch(par, "--symbols="))
+			{
 				if (par=="--symbols=wla") symbols="wla";
 				else if (par=="--symbols=nocash") symbols="nocash";
 				else libcon_badusage();
+			}
+			else if (checkstartmatch(par, "--symbols-out=")) {
+				symfilename=((const char*)par) + strlen("--symbols-out=");
 			}
 			else if (par=="--version")
 			{
@@ -301,11 +309,9 @@ int main(int argc, char * argv[])
 		if (!strchr(asmname, '.') && !file_exists(asmname)) asmname+=".asm";
 		if (!romname)
 		{
-			char * romnametmp=(char*)malloc(sizeof(char)*256);
-			strcpy(romnametmp, asmname);
-			if (strrchr(romnametmp, '.')) *strrchr(romnametmp, '.')=0;
-			if (file_exists(S romnametmp+".sfc")) romname=S romnametmp+".sfc";
-			else if (file_exists(S romnametmp+".smc")) romname=S romnametmp+".smc";
+			string romnametmp = get_base_name(asmname);
+			if (file_exists(romnametmp+".sfc")) romname=romnametmp+".sfc";
+			else if (file_exists(romnametmp+".smc")) romname=romnametmp+".smc";
 			else romname=S romnametmp+".sfc";
 		}
 		else if (!strchr(romname, '.') && !file_exists(romname))
@@ -438,7 +444,7 @@ int main(int argc, char * argv[])
 		closerom();
 		if (symbols)
 		{
-			string symfilename = romname.replace(".sfc", ".sym", false).replace(".smc", ".sym", false);
+			if (!symfilename) symfilename = get_base_name(romname)+".sym";
 			string contents = create_symbols_file(symbols);
 			FILE * symfile = fopen(symfilename, "wt");
 			fputs(contents, symfile);
@@ -457,4 +463,3 @@ int main(int argc, char * argv[])
 	}
 	return 0;
 }
-
