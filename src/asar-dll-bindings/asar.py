@@ -17,8 +17,8 @@ __all__ = ["errordata", "writtenblockdata", "mappertype", "version",
            "apiversion", "init", "reset", "patch", "maxromsize", "close",
            "geterrors", "getwarnings", "getprints", "getalllabels",
            "getlabelval", "getdefine", "getalldefines", "resolvedefines",
-           "math", "getwrittenblocks", "getmapper"]
-_target_api_ver = 301
+           "math", "getwrittenblocks", "getmapper", "getsymbolsfile"]
+_target_api_ver = 302
 _asar = None
 
 
@@ -131,6 +131,7 @@ class _AsarDLL:
             self.setup_func("getwrittenblocks", (c_int_ptr,),
                             POINTER(writtenblockdata))
             self.setup_func("getmapper", (), c_int)
+            self.setup_func("getsymbolsfile", (c_char_p), c_char_p)
 
         except AttributeError:
             raise OSError("Asar DLL is missing some functions")
@@ -350,3 +351,11 @@ def getwrittenblocks():
 def getmapper():
     """Get the ROM mapper currently used by Asar."""
     return mappertype(_asar.dll.asar_getmapper())
+
+def getsymbolsfile(format):
+    """Generates the contents of a symbols file for in a specific format.
+
+    Returns the textual contents of the symbols file.
+    format specified the format of the symbols file that gets generated.
+    """
+    return _asar.dll.asar_getsymbolsfile(format)

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace AsarCLR
@@ -8,12 +9,14 @@ namespace AsarCLR
     /// </summary>
     public static unsafe class Asar
     {
-        const int expectedapiversion=300;
+        const int expectedapiversion=302;
 
         [DllImport("asar", EntryPoint = "asar_init", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [return:MarshalAs(UnmanagedType.I1)]
         private static extern bool asar_init();
 
         [DllImport("asar", EntryPoint = "asar_close", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [return:MarshalAs(UnmanagedType.I1)]
         private static extern bool asar_close();
 
         [DllImport("asar", EntryPoint = "asar_version", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
@@ -23,11 +26,17 @@ namespace AsarCLR
         private static extern int asar_apiversion();
 
         [DllImport("asar", EntryPoint = "asar_reset", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [return:MarshalAs(UnmanagedType.I1)]
         private static extern bool asar_reset();
 
         [DllImport("asar", EntryPoint = "asar_patch", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [return:MarshalAs(UnmanagedType.I1)]
         private static extern bool asar_patch(string patchLocation, byte* romData, int bufLen, int* romLength);
-
+        
+        [DllImport("asar", EntryPoint = "asar_patch_ex", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        [return:MarshalAs(UnmanagedType.I1)]
+        private static extern bool asar_patch_ex(ref Rawpatchparams parameters);
+        
         [DllImport("asar", EntryPoint = "asar_maxromsize", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern int asar_maxromsize();
 
@@ -63,6 +72,9 @@ namespace AsarCLR
 
         [DllImport("asar", EntryPoint = "asar_getmapper", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern MapperType asar_getmapper();
+        
+        [DllImport("asar", EntryPoint = "asar_getsymbolsfile", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr asar_getsymbolsfile(string format);
 
         /// <summary>
         /// Loads and initializes the DLL. You must call this before using any other Asar function.
@@ -117,24 +129,100 @@ namespace AsarCLR
             return asar_reset();
         }
 
+        [StructLayout(LayoutKind.Sequential,CharSet = CharSet.Ansi)]
+        private unsafe struct Rawpatchparams 
+        {
+            public int structsize;
+            public string patchloc;
+            public byte* romdata;
+            public int buflen;
+            public int* romlen;
+            public byte** includepaths;
+            public int numincludepaths;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool should_reset;
+            public Rawasardefine* additional_defines;
+            public int additional_define_count;
+            public string stdincludesfile;
+            public string stddefinesfile;
+        };
+        
         /// <summary>
         /// Applies a patch.
         /// </summary>
         /// <param name="patchLocation">The patch location.</param>
         /// <param name="romData">The rom data. It must not be headered.</param>
+        /// <param name="includePaths">lists additional include paths</param>
+        /// <param name="shouldReset">specifies whether asar should clear out all defines, labels,
+        /// etc from the last inserted file. Setting it to False will make Asar act like the
+        //  currently patched file was directly appended to the previous one.</param>
+        /// <param name="additionalDefines">specifies extra defines to give to the patch</param>
+        /// <param name="stdIncludeFile">path to a file that specifes additional include paths</param>
+        /// <param name="stdDefineFile">path to a file that specifes additional defines</param>
         /// <returns>True if no errors.</returns>
-        public static bool patch(string patchLocation, ref byte[] romData)
+        public static bool patch(string patchLocation, ref byte[] romData, string[] includePaths=null, bool shouldReset=true, Dictionary<string,string> additionalDefines=null, string stdIncludeFile=null, string stdDefineFile=null)
         {
-            int newsize=maxromsize();
-            int length = romData.Length;
-            if (length<newsize) Array.Resize(ref romData, newsize);
-            bool success;
-            fixed (byte* ptr = romData)
-            {
-                success=asar_patch(patchLocation, ptr, newsize, &length);
+            if (includePaths==null) includePaths=new string[0];
+            if (additionalDefines==null) additionalDefines= new Dictionary<string,string>();
+            var includes = new byte*[includePaths.Length];
+            var defines = new Rawasardefine[additionalDefines.Count];
+            try{
+                for(int i=0; i<includePaths.Length; i++)
+                {
+                    includes[i] = (byte*)Marshal.StringToCoTaskMemAnsi(includePaths[i]);
+                }
+                var keys=additionalDefines.Keys.ToArray();
+                for(int i=0; i<additionalDefines.Count; i++)
+                {
+                    var name = keys[i];
+                    var value = additionalDefines[name];
+                    defines[i].name=Marshal.StringToCoTaskMemAnsi(name);
+                    defines[i].contents = Marshal.StringToCoTaskMemAnsi(value);
+                }
+                
+                int newsize=maxromsize();
+                int length = romData.Length;
+                if (length<newsize) Array.Resize(ref romData, newsize);
+                bool success;
+                
+                fixed (byte* ptr = romData)
+                fixed (byte** includepaths = includes)
+                fixed (Rawasardefine* additional_defines = defines)
+                {
+                    var param= new Rawpatchparams
+                    {
+                        patchloc=patchLocation,
+                        romdata=ptr,
+                        buflen= newsize,
+                        romlen = &length,
+                        
+                        should_reset=shouldReset,
+                        includepaths = includepaths,
+                        numincludepaths = includes.Length,
+                        additional_defines = additional_defines,
+                        additional_define_count = defines.Length,
+                        stddefinesfile=stdDefineFile,
+                        stdincludesfile=stdIncludeFile
+                    };
+                    param.structsize=Marshal.SizeOf(param);
+                    
+                    success=asar_patch_ex(ref param);
+                }
+                if (length<newsize) Array.Resize(ref romData, length);
+                return success;
             }
-            if (length<newsize) Array.Resize(ref romData, length);
-            return success;
+            finally
+            {
+                for(int i=0;i<includes.Length;i++)
+                {
+                    Marshal.FreeCoTaskMem((IntPtr)includes[i]);
+                }
+                foreach(var define in defines)
+                {
+                    Marshal.FreeCoTaskMem(define.name);
+                    Marshal.FreeCoTaskMem(define.contents);
+                }
+            }
         }
 
         /// <summary>
@@ -366,6 +454,16 @@ namespace AsarCLR
         {
             MapperType mapper = asar_getmapper();
             return mapper;
+        }
+        
+        /// <summary>
+        /// Generates the contents of a symbols file for in a specific format.
+        /// </summary>
+        /// <param name="format">The symbol file format to generate</param>
+        /// <returns>Returns the textual contents of the symbols file.</returns>
+        public static string getsymbolsfile(string format)
+        {
+            return Marshal.PtrToStringAnsi(asar_getsymbolsfile(format));
         }
     }
 
