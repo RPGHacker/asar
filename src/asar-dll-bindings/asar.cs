@@ -461,7 +461,7 @@ namespace AsarCLR
         /// </summary>
         /// <param name="format">The symbol file format to generate</param>
         /// <returns>Returns the textual contents of the symbols file.</returns>
-        public static string getsymbolsfile(string format)
+        public static string getsymbolsfile(string format="wla")
         {
             return Marshal.PtrToStringAnsi(asar_getsymbolsfile(format));
         }
