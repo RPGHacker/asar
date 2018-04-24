@@ -253,7 +253,7 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
     pp = patchparams()
     pp.structsize = ctypes.sizeof(patchparams)
     pp.patchloc = patch_name.encode()
-    pp.romdata = rom_data
+    pp.romdata = ctypes.cast(rom_ptr, c_char_p)
     pp.buflen = maxromsize()
     pp.romlen = ctypes.pointer(romlen)
     # construct an array type of len(includepaths) elements and initialize
