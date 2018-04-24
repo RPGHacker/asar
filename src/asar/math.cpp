@@ -399,7 +399,7 @@ static double filesizefunc(const funcparam& fname)
 {
 	validateparam(fname, 0, Type_String);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return -1;
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) error("File does not exist.");
 	return (double)fhandle->filesize;
 }
 
