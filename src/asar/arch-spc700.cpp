@@ -395,8 +395,9 @@ bool asblock_spc700(char** word, int numwords)
 
 				cv("a"      , "#",""   ) w1(0xE8, s2);
 				cv("a"      , "(","+x)") w1(0xE7, s2);
+				cv("a"      , "(",")+y") w1(0xF7, s2);
 				cv("a"      , "","+x"  ) wv(0xF4, 0xF5, s2);
-				cv("a"      , "","+y"  ) wv(0xF7, 0xF6, s2);
+				cv("a"      , "","+y"  ) w2(0xF6, s2);
 				cv("a"      , "",""    ) wv(0xE4, 0xE5, s2);
 				cv("x"      , "#",""   ) w1(0xCD, s2);
 				cv("x"      , "","+y"  ) w1(0xF9, s2);
