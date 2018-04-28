@@ -176,6 +176,17 @@ bool asblock_spc700(char** word, int numwords)
 	else if (numwords==2)
 	{
 		int numwordsinner;
+		//Detect opcode length before continuing
+		int opLen=0; //In case of .b or .w, this overwrites auto-detection of opcode length
+		unsigned int periodLocCount=0;
+		do {
+			if (word[0][periodLocCount] == '.') {
+				opLen=getlenfromchar(word[0][periodLocCount+1]);
+				word[0][periodLocCount]='\0';
+			}
+			periodLocCount++;
+		} while ((opLen == 0) && (periodLocCount < strlen(word[0])));
+		if (opLen > 2) { error(0, "Opcode length is too long"); }
 		autoptr<char*> parcpy=strdup(par);
 		autoptr<char**> arg=qpsplit(parcpy, ",", &numwordsinner);
 		if (numwordsinner ==1)
@@ -191,7 +202,7 @@ bool asblock_spc700(char** word, int numwords)
 #define w0(hex) do { write1((unsigned int)hex); return true; } while(0)
 #define w1(hex) do { write1((unsigned int)hex); write1(getnum(math)); return true; } while(0)
 #define w2(hex) do { write1((unsigned int)hex); write2(getnum(math)); return true; } while(0)
-#define wv(hex1, hex2) do { if (getlen(math)==1) { write1((unsigned int)hex1); write1(getnum(math)); } else { write1((unsigned int)hex2); write2(getnum(math)); } return true; } while(0)
+#define wv(hex1, hex2) do { if ((opLen== 1) || (getlen(math)==1)) { write1((unsigned int)hex1); write1(getnum(math)); } else { write1((unsigned int)hex2); write2(getnum(math)); } return true; } while(0)
 #define wr(hex) do { int len=getlen(math); int num=(int)getnum(math); int pos=(len==1)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)hex); write1((unsigned int)pos); \
 								if (pass==2 && foundlabel && (pos<-128 || pos>127)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
 								return true; } while(0)
@@ -317,7 +328,7 @@ bool asblock_spc700(char** word, int numwords)
 #define w1(opcode, math) do { write1((unsigned int)opcode); int val=(int)getnum(math); \
 													if (val&0xFF00) warn0("This opcode does not exist with 16-bit parameters, assuming 8-bit"); write1((unsigned int)val); return true; } while(0)
 #define w2(opcode, math) do { write1((unsigned int)opcode); write2(getnum(math)); return true; } while(0)
-#define wv(opcode1, opcode2, math) do { if (getlen(math)==1) { write1((unsigned int)opcode1); write1(getnum(math)); } \
+#define wv(opcode1, opcode2, math) do { if ((opLen== 1) || (getlen(math)==1)) { write1((unsigned int)opcode1); write1(getnum(math)); } \
 																	 else { write1((unsigned int)opcode2); write2(getnum(math)); } return true; } while(0)
 #define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1(getnum(math1)); write1(getnum(math2)); return true; } while(0)
 #define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum(math); int pos=(len==1)?num:num-(snespos+2); \
