@@ -1386,6 +1386,7 @@ void assembleblock(const char * block)
 			}
 			else if (!stricmp(pars[i], "static") || !stricmp(pars[i], "fixed"))
 			{
+				if (pass == 0 && !stricmp(pars[i], "fixed")) warn("the 'fixed' parameter on freespace/freecode/freedata is deprecated - please use 'static' instead");
 				if (fixedpos) error(0, "Invalid freespace request.");
 				fixedpos=true;
 			}
@@ -1475,6 +1476,7 @@ void assembleblock(const char * block)
 	}
 	else if (is1("autoclean") || is2("autoclean") || is1("autoclear") || is2("autoclear"))
 	{
+		if (pass == 0 && (is1("autoclear") || is2("autoclear"))) warn("'autoclear' is deprecated - please use 'autoclean' instead");
 		if (numwords==3)
 		{
 			if (snespos&0xFF000000) error(0, "autoclean used in freespace");
