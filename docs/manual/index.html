@@ -1487,7 +1487,7 @@ and #%01111111</code></pre>
 		<pre><code class="65c816_asar">lda #0		; Could be either lda #$00 or lda #$0000
 lda.b #0	; Always lda #$00
 lda.w #0	; Always lda #$0000</code></pre>
-		When no length is specified, Asar tries to guess the length based on the operand. Note that Asar does not use the standard <code>&lt;&gt;</code> for length specifications to avoid ambiguity with other uses of these symbols (such as in macros or math statements).
+		When no length is specified, Asar tries to guess the length based on the operand. Note that Asar does not use the standard <code>&lt;&gt;</code> for length specifications to avoid ambiguity with other uses of these symbols (such as in macros or math statements). Opcode length specifications are currently supported for the 65c816 and SPC700 architectures.
 		<h4 id="pseudo-opcodes">Pseudo Opcodes</h4>
 		Pseudo opcodes are a convenience method of repeatedly using opcodes that don't take an operand. Instead of using the opcode multiple times, the following syntax can be used:
 		<pre><code class="65c816_asar">{opcode} #{num}</code></pre>
