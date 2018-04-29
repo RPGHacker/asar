@@ -14,6 +14,8 @@
 ;@01 90 02
 ;@00 80 00
 ;@01 90 02
+;@8a
+;@ac
 
 @asar 1.60
 
@@ -24,7 +26,7 @@ org $008000
 base $029001
 
 BaseTest1:
-	
+
 pushbase
 
 base off
@@ -34,7 +36,7 @@ BaseTest2:
 pullbase
 
 BaseTest3:
-	
+
 base off
 
 
@@ -78,3 +80,7 @@ dl BaseTest1
 dl BaseTest2
 dl BaseTest3
 
+function readfile1_incremented(filename, pos) = readfile1(filename, pos)+1
+
+db readfile1_incremented("data/64kb.bin",0)
+db readfile1_incremented("data/64kb.bin",1)
