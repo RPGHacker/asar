@@ -46,7 +46,8 @@ void assign(const char * newstr)
 	if (!newstr) newstr="";
 	len=(int)strlen(newstr);
 	resize(len);
-	strcpy(str, newstr);
+	memmove(str, newstr, len);
+	str[len] = '\0';
 }
 
 void assign(const char * newstr, int newlen)
@@ -54,7 +55,8 @@ void assign(const char * newstr, int newlen)
 	if (!newstr) return;
 	len=newlen;
 	resize(len);
-	memcpy(str, newstr, (size_t)len);
+	memmove(str, newstr, (size_t)len);
+	str[len] = '\0';
 	len=(int)strlen(str);
 }
 
@@ -76,8 +78,9 @@ string& operator+=(const string& newstr)
 {
 	fixlen();
 	resize(len+newstr.truelen());
-	strcpy(str+len, newstr.str);
+	memmove(str+len, newstr.str, newstr.len);
 	len+=newstr.len;
+	str[len] = '\0';
 	return *this;
 }
 
@@ -86,8 +89,9 @@ string& operator+=(const char * newstr)
 	fixlen();
 	int newlen=(int)strlen(newstr);
 	resize(len+newlen);
-	strcpy(str+len, newstr);
+	memmove(str+len, newstr, newlen);
 	len+=newlen;
+	str[len] = '\0';
 	return *this;
 }
 

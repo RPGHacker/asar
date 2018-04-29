@@ -241,6 +241,8 @@ autoarray<string> namespace_list;
 
 //bool fastrom=false;
 
+autoarray<string> includeonce;
+
 void startmacro(const char * line);
 void tomacro(const char * line);
 void endmacro(bool insert);
@@ -673,6 +675,8 @@ void initstuff()
 	nested_namespaces = false;
 
 	thisfilename = "";
+
+	includeonce.reset();
 }
 
 
@@ -778,6 +782,7 @@ void pop_pc()
 
 
 void resolvedefines(string& out, const char * start);
+bool file_included_once(const char* file);
 
 void assembleblock(const char * block)
 {
@@ -1139,6 +1144,13 @@ void assembleblock(const char * block)
 		{
 			if (par) fatalerror(S"This file may not be used as the main file. The main file is \""+S par+"\".");
 			else fatalerror("This file may not be used as the main file.");
+		}
+	}
+	else if (is0("includeonce"))
+	{
+		if (!file_included_once(thisfilename))
+		{
+			includeonce.append(thisfilename);
 		}
 	}
 	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))

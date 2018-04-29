@@ -56,16 +56,15 @@
 
 		<h3>New features:</h3>
 		<ul>
-			<li>Asar is now official hosted on GitHub:<br/>
-				<a href="https://github.com/RPGHacker/asar">https://github.com/RPGHacker/asar</a></li>
-			<li>Asar now uses CMake, which should make it easier to build on different platforms and with different compilers.</li>
-			<li>Added a proper manual in HTML format to Asar, rather than just having the xkas manual and a TXT file with all changes.</li>
-			<li>Added Python binding for the Asar DLL.</li>
-			<li>Added <code class="65c816_asar">defined()</code> function and <code class="65c816_asar">undef</code> command.</li>
-			<li>Added simple syntax highlighting for Sublime Text.</li>
-			<li>+/- label declarations can also end with an optional <code>:</code> now for consistency.</li>
-			<li>Added macro-local variations for +/- labels and sub labels, which are also prefixed with a <code>?</code>.</li>
-			<li>Added macro main label assignment.
+			<li>Asar is now officially hosted on GitHub: <a href="https://github.com/RPGHacker/asar">https://github.com/RPGHacker/asar</a></li>
+			<li>Asar now uses CMake, which should make it easier to build on different platforms and with different compilers. (RPG Hacker, randomdude999, boldowa)</li>
+			<li>Added a proper manual in HTML format to Asar, rather than just having the xkas manual and a TXT file with all changes. (RPG Hacker)</li>
+			<li>Added Python binding for the Asar DLL. (randomdude999)</li>
+			<li>Added <code class="65c816_asar">defined()</code> function (randomdude999) and <code class="65c816_asar">undef</code> command. (zetaPRIME)</li>
+			<li>Added simple syntax highlighting for Sublime Text. (randomdude999)</li>
+			<li>+/- label declarations can also end with an optional <code>:</code> now for consistency. (RPG Hacker)</li>
+			<li>Added macro-local variations for +/- labels and sub labels, which are also prefixed with a <code>?</code>. (RPG Hacker)</li>
+			<li>Added macro main label assignment. (RPG Hacker)
 			<pre><code class="65c816_asar">macro my_macro()
 	?MacroLabel = $008000
 	
@@ -75,7 +74,7 @@ endmacro
 %my_macro()
 
 dl ?MacroLabel		; Error!</code></pre></li>
-			<li>Added support for a new type of label declaration: prefixing a label or sub label declaration (including macro labels) with <code>#</code> will create that label without modifying existing label hierarchies. This is mainly intended for hacky incsrc/routine macros as used by GPS, which can break existing label hierarchies when used.
+			<li>Added support for a new type of label declaration: prefixing a label or sub label declaration (including macro labels) with <code>#</code> will create that label without modifying existing label hierarchies. This is mainly intended for hacky incsrc/routine macros as used by GPS, which can break existing label hierarchies when used. (RPG Hacker)
 			<pre><code class="65c816_asar">macro my_new_routine()
 	jsl MyNewRoutine
 			
@@ -104,42 +103,45 @@ Main:
 	dl Main_Sub</code></pre>
 			Note that while it's technically possible to use this feature on sub labels, macro labels and macro sub labels, I don't think there's any reasonable use case for this. In most cases, regular macro labels and regular macro sub labels are recommended for usage inside macros.
 			</li>
-			<li>Added support for include search paths.</li>
-			<li>Added asar_patch_ex() function to DLL API, which works like asar_patch(), but takes additional parameters.</li>
-			<li>You can now escape <code>!</code> by doing <code>\!</code> (useful for preventing Asar to replace defines in certain places).</li>
-			<li>You can now escape <code>\</code> by doing <code>\\</code>.</li>
-			<li>Added support for <code class="65c816_asar">pushbase</code>/<code class="65c816_asar">pullbase</code>.</li>
-			<li>Added <code class="65c816_asar">expecttitle</code> command which makes Asar verify the title of the output ROM (to assure a patch is applied to the correct ROM).</li>
-			<li>Added support for nested namespaces. Enable them via the command:
+			<li>Added support for include search paths. (RPG Hacker)</li>
+			<li>Added asar_patch_ex() function to DLL API, which works like asar_patch(), but takes additional parameters. (RPG Hacker)</li>
+			<li>You can now escape <code>!</code> by doing <code>\!</code> (useful for preventing Asar to replace defines in certain places). (randomdude999)</li>
+			<li>You can now escape <code>\</code> by doing <code>\\</code>. (RPG Hacker)</li>
+			<li>Added support for <code class="65c816_asar">pushbase</code>/<code class="65c816_asar">pullbase</code>. (randomdude999, RPG Hacker)</li>
+			<li>Added <code class="65c816_asar">expecttitle</code> command which makes Asar verify the title of the output ROM (to assure a patch is applied to the correct ROM). (randomdude999)</li>
+			<li>Added support for nested namespaces. (randomdude999, RPG Hacker)<br/>
+				Enable them via the command:
 				<pre><code class="65c816_asar">namespace nested on</code></pre>
 			</li>
-			<li>Added support for <code class="65c816_asar">warn bankcross off</code> which disables checking for bank crossing. Use with caution; might not work with certain features or outright break some stuff.</li>
-			<li>Added a new, simple README.</li>
-			<li>Added a <code class="65c816_asar">filesize()</code> function and a <code class="65c816_asar">getfilestatus()</code> function.</li>
-			<li>Added support for <code>stdincludes.txt</code> and <code>stddefines.txt</code> - see manual for details.</li>
-			<li>Added support for setting defines via the command line or DLL API. See manual (section: usage) for details.</li>
+			<li>Added support for <code class="65c816_asar">warn bankcross off</code> which disables checking for bank crossing. Use with caution; might not work with certain features or outright break some stuff. (randomdude999, RPG Hacker)</li>
+			<li>Added a new, simple README. (randomdude999, RPG Hacker)</li>
+			<li>Added a <code class="65c816_asar">filesize()</code> function and a <code class="65c816_asar">getfilestatus()</code> function. (randomdude999)</li>
+			<li>Added support for <code>stdincludes.txt</code> and <code>stddefines.txt</code> - see manual for details. (RPG Hacker, randomdude999)</li>
+			<li>Added support for setting defines via the command line or DLL API. See manual (section: usage) for details. (randomdude999)</li>
+			<li>Added <code class="65c816_asar">includeonce</code> command for shared files which may be included multiple times, but should only be assembled once. (RPG Hacker)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
 		<ul>
-			<li>Fixed various bugs in the DLL interface. It should now hopefully be possible to apply multiple patches in succession via the DLL interface without resorting to hacks.</li>
-			<li>Completely rewrote test applications once again to make it a lot easier to test a bunch of ASM files and actually get some meaningful information out of it.</li>
-			<li>Fixed the way <code>;@</code> works. This command was really meant for backwards-compatibility with xkas and is supposed to assemble everything following it, which it now does again. As a result of this change, any of the following are now valid Asar code:
+			<li>Fixed various bugs in the DLL interface. It should now hopefully be possible to apply multiple patches in succession via the DLL interface without resorting to hacks. (RPG Hacker, randomdude999, boldowa)</li>
+			<li>Rewrote big parts of test applications once again to make it a lot easier to test a bunch of ASM files and actually get some meaningful information out of it. (RPG Hacker)</li>
+			<li>Fixed the way <code>;@</code> works. This command was really meant for backwards-compatibility with xkas and is supposed to assemble everything following it, which it now does again. (RPG Hacker)<br/>
+			As a result of this change, any of the following are now valid Asar code:
 			<pre><code class="65c816_asar">;@asar 1.60
 @asar 1.60
 asar 1.60</code></pre>
 			When Asar finds an unknown command on a line starting with <code>;@</code> or <code>@</code>, it only throws a warning instead of an error. You can make use of this fact by using optional features from newer Asar versions and still have your patch assemble in old Asar versions, where those features are ignored (don't know how practicable and useful this really is, but in theory, it should be possible). And of course it can be used for patches that are compatible with both xkas and Asar, not that that's particularly useful anymore in this day and age.</li>
-			<li>Changed format of existing command line arguments for consistency.</li>
-			<li>LoROM banks <code>$70</code> to <code>$7D</code> can be used correctly.</li>
-			<li>Struct definitions are cleared correctly in Asar lib.</li>
-			<li>Fixed a freeze that could occur when using <code class="65c816_asar">freedata align.</code></li>
-			<li>Fixed a bug in <code class="65c816_asar">pad</code> command that made it not update the pc correctly and also made it trigger a bank cross error before actually writing any data into a new bank.</li>
-			<li>Fixed a rare crash when using the command-line interface in ways you're not supposed to use it.</li>
-			<li>Fixed <code class="65c816_asar">readfile()</code>/<code class="65c816_asar">canreadfile()</code> crashing when reading from more than 16 different files in the same patch.</li>
-			<li>Fixed the ROM title being reported incorrectly.</li>
-			<li>Fixed using really large values in math with <code>math round on</code> making the values negative sometimes.</li>
-			<li>Fixed an SA-1 mapping issue.</li>
-			<li>Fixed <code>print double()</code> not working when any of their arguments contain commas or parentheses.</li>
+			<li>Changed format of existing command line arguments for consistency. (RPG Hacker)</li>
+			<li>LoROM banks <code>$70</code> to <code>$7D</code> can be used correctly. (randomdude999)</li>
+			<li>Struct definitions are cleared correctly in Asar lib. (randomdude999)</li>
+			<li>Fixed a freeze that could occur when using <code class="65c816_asar">freedata align</code>. (TheBiob)</li>
+			<li>Fixed a bug in <code class="65c816_asar">pad</code> command that made it not update the pc correctly and also made it trigger a bank cross error before actually writing any data into a new bank. (RPG Hacker)</li>
+			<li>Fixed a rare crash when using the command-line interface in ways you're not supposed to use it. (randomdude999)</li>
+			<li>Fixed <code class="65c816_asar">readfile()</code>/<code class="65c816_asar">canreadfile()</code> crashing when reading from more than 16 different files in the same patch. (randomdude999)</li>
+			<li>Fixed the ROM title being reported incorrectly. (randomdude999)</li>
+			<li>Fixed using really large values in math with <code>math round on</code> making the values negative sometimes. (randomdude999)</li>
+			<li>Fixed an SA-1 mapping issue. (Vitor Vilela, randomdude999)</li>
+			<li>Fixed <code>print double()</code> not working when any of their arguments contain commas or parentheses. (randomdude999)</li>
 		</ul>
 
 		<h3>Deprecated features:</h3>

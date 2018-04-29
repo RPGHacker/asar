@@ -81,20 +81,21 @@ private:
 	static string create_final_path(const char* path, const char* base_path, const autoarray<string>& include_paths)
 	{
 		string path_to_use = "";
+		string test_path = "";
+
+		test_path = normalize_path(path);
 
 		// First check if path is absolute
-		if (path_is_absolute(path))
+		if (path_is_absolute(test_path))
 		{
-			if (file_exists(path))
+			if (file_exists(test_path))
 			{
-				path_to_use = path;
+				path_to_use = test_path;
 			}
 		}
 		else
 		{
 			// Now check if path exists relative to the base path
-			string test_path = "";
-
 			if (base_path != nullptr)
 			{
 				test_path = create_combined_path(dir(base_path), path);
