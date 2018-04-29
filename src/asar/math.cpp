@@ -453,6 +453,35 @@ extern chartabledata table;
 // RPG Hacker: Kind of a hack, but whatever, it's the simplest solution
 static char errorstringbuffer[256];
 
+#define maxint(a, b) ((unsigned int)a > (unsigned int)b ? (unsigned int)a : (unsigned int)b)
+
+// Check if the argument is simply a parent function parameter being passed through.
+// If so return the index of the parameter, otherwise return -1.
+// Update source if it is a parameter being pass through.
+int check_passthough_argument(const char** source)
+{
+	const char * current=str;
+	while (isalnum(*current) || *current == '_' || *current == '.') current++;
+	
+	size_t len=(size_t)(current-*source);
+	for (int i=0;i<numuserfuncargs;i++)
+	{
+		if (!strncmp(*source, funcargnames[i], (size_t)maxint(len, strlen(funcargnames[i]))))
+		{
+			const char* pos= *source+len;
+			while (*pos==' ') pos++;
+			if(*pos == ',' || *pos == ')')
+			{
+				*source = pos;
+				return i;
+			}
+			break;				
+		}
+	}
+	return -1;
+}
+
+
 static double getnumcore()
 {
 	if (*str=='(')
@@ -524,7 +553,12 @@ static double getnumcore()
 				while (true)
 				{
 					while (*str==' ') str++;
-					if (*str=='"')
+					int pass_arg = check_passthough_argument(&str);
+					if (pass_arg != -1)
+					{
+						params[numparams++] = funcargvals[pass_arg];
+					}
+					else if (*str=='"')
 					{
 						const char * strpos = str;
 						str++;
@@ -587,7 +621,6 @@ static double getnumcore()
 
 			// RPG Hacker: Originally, these macros used "len" in place of "maxint(len, strlen(name))"
 			// This caused Asar to recognize "canread()" as "canread1()", for example, so I changed it to this
-#define maxint(a, b) ((unsigned int)a > (unsigned int)b ? (unsigned int)a : (unsigned int)b)
 #define func(name, numpar, code, hasfurtheroverloads)                                   \
 					if (!strncasecmp(start, name, maxint(len, strlen(name))))                      \
 					{                                                        \
@@ -697,7 +730,6 @@ static double getnumcore()
 			wrappedfunc2("xor", params[0], params[1], (((params[0].value.longdoublevalue != 0 && params[1].value.longdoublevalue == 0) || (params[0].value.longdoublevalue == 0 && params[1].value.longdoublevalue != 0)) ? 1.0 : 0.0), false);
 			
 			func("round", 2, overlycomplicatedround(params[0], params[1]), false);
-#undef maxint
 #undef func
 #undef wrappedfunc1
 #undef wrappedfunc2
@@ -708,7 +740,7 @@ static double getnumcore()
 		{
 			for (int i=0;i<numuserfuncargs;i++)
 			{
-				if (!strncmp(start, funcargnames[i], (size_t)len))
+				if (!strncmp(start, funcargnames[i], (size_t)maxint(len, strlen(funcargnames[i]))))
 				{
 					if (funcargvals[i].type == Type_Double)
 						return funcargvals[i].value.longdoublevalue;
