@@ -144,6 +144,8 @@ asar 1.60</code></pre>
 			<li>Fixed using really large values in math with <code>math round on</code> making the values negative sometimes. (randomdude999)</li>
 			<li>Fixed an SA-1 mapping issue. (Vitor Vilela, randomdude999)</li>
 			<li>Fixed <code>print double()</code> not working when any of their arguments contain commas or parentheses. (randomdude999)</li>
+			<li>Made it possible to pass string parameters to functions like <code class="65c816_asar">readfile1()</code> via user-defined functions. Previously, this failed as Asar expected all parameters in user-defined functions to be numbers. (KevinCathcart)</li>
+			<li>Fixed a bug related to evaluation of parameters in user-defined functions. In some situations, Asar returned the incorrect parameter. For example: given a user-defined function with a parameter <code>ab</code> and a paramater <code>abc</code>, Asar occasionally returned the parameter <code>abc</code> when referencing the paramter <code>ab</code>. (KevinCathcart)</li>
 		</ul>
 
 		<h3>Deprecated features:</h3>
