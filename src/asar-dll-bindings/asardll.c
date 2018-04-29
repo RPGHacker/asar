@@ -75,6 +75,7 @@ bool asar_init_shared(void)
 	load(math);
 	load(getwrittenblocks);
 	load(getmapper);
+	load(getsymbolsfile);
 	if (asar_apiversion() < expectedapiversion || (asar_apiversion() / 100) > (expectedapiversion / 100)) return false;
 	require(asar_i_init());
 	return true;

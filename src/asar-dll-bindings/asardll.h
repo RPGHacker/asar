@@ -3,7 +3,7 @@
 #define asarfunc extern
 #endif
 
-#define expectedapiversion 301
+#define expectedapiversion 302
 
 #include <stdbool.h>
 
@@ -170,6 +170,9 @@ asarfunc const struct writtenblockdata * (*asar_getwrittenblocks)(int * count);
 
 //Get the mapper currently used by Asar
 asarfunc enum mappertype (*asar_getmapper)(void);
+
+// Generates the contents of a symbols file for in a specific format.
+asarfunc const char * (*asar_getsymbolsfile)(const char * format);
 
 #ifdef __cplusplus
 	}
