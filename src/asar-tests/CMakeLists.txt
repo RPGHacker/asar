@@ -18,13 +18,20 @@ macro(set_asar_test_shared_properties target)
             /wd4711 # function selected for automatic inline expansion
             /wd4820 # 'bytes' bytes padding added after construct 'member_name'
         )
+		
+		if(MSVC_VERSION VERSION_LESS "1900")
+			target_compile_features(${target} PRIVATE cxx_std_11)
+		else()
+			# MSVC throws errors in STL headers when building with MSVC 2017 without C++14...
+			target_compile_features(${target} PRIVATE cxx_std_14)
+		endif()
     else()
         target_link_libraries(${target} dl)
         target_compile_options(${target} PRIVATE -Wall -pedantic)
         # for some reason this isn't available on MSVC?
         target_compile_features(${target} PRIVATE c_std_99)
+		target_compile_features(${target} PRIVATE cxx_std_11)
     endif()
-    target_compile_features(${target} PRIVATE cxx_std_11)
 endmacro()
 
 set(CXX_EXTENSIONS OFF)

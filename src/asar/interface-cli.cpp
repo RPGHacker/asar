@@ -36,7 +36,7 @@ string getdecor();
 extern string thisfilename;
 
 extern assocarr<string> clidefines;
-extern assocarr<unsigned int> labels;//this is useless for cli, but it may be useful for other stuff
+extern assocarr<unsigned int> labels;
 
 void assemblefile(const char * filename, bool toplevel);
 
@@ -105,6 +105,8 @@ void onsigxcpu(int ignored)
 
 bool setmapper();
 
+
+
 int main(int argc, char * argv[])
 {
 #ifdef TIMELIMIT
@@ -162,17 +164,28 @@ int main(int argc, char * argv[])
 		//if (dot) *dot='.';
 		libcon_init(argc, argv,
 			"[options] asm_file [rom_file]\n"
-			"Supported options:\n"
-			" --version         Display version information\n"
-			" -v, --verbose     Enable verbose mode\n"
-			" --no-title-check  Disable verifying ROM title (note that irresponsible use will likely corrupt your ROM)\n"
-			" --pause-mode=<never/on-error/on-warning/always>\n"
+			"Supported options:\n\n"
+			" --version         \n"
+			"                   Display version information\n\n"
+			" -v, --verbose     \n"
+			"                   Enable verbose mode\n\n"
+			" --symbols=<none/wla/nocash>\n"
+			"                   Specifies the format of the symbols output file (default is none for no symbols file)\n\n"
+			" --symbols-path=<filename>\n"
+			"                   Override the default path to the symbols output file. The default is the ROM's base name with an\n"
+			"                   extension of .sym\n\n"
+			" --no-title-check  \n"
+			"                   Disable verifying ROM title (note that irresponsible use will likely corrupt your ROM)\n"
+			" --pause-mode=<never/on-error/on-warning/always>\n\n"
 			"                   Specify when Asar should pause the application (never, on error, on warning or always)\n"
-			" -werror           Treat warnings as errors\n"
+			" -werror           \n"
+			"                   Treat warnings as errors\n\n"
 			);
 		ignoretitleerrors=false;
 		string par;
 		bool verbose=libcon_interactive;
+		string symbols="";
+		string symfilename="";
 		bool printed_version=false;
 
 		autoarray<string> includepaths;
@@ -188,6 +201,16 @@ int main(int argc, char * argv[])
 			if (par=="-werror") werror=true;
 			else if (par=="--no-title-check") ignoretitleerrors=true;
 			else if (par == "-v" || par=="--verbose") verbose=true;
+			else if (checkstartmatch(par, "--symbols="))
+			{
+				if (par == "--symbols=none") symbols = "";
+				else if (par=="--symbols=wla") symbols="wla";
+				else if (par=="--symbols=nocash") symbols="nocash";
+				else libcon_badusage();
+			}
+			else if (checkstartmatch(par, "--symbols-path=")) {
+				symfilename=((const char*)par) + strlen("--symbols-path=");
+			}
 			else if (par=="--version")
 			{
 				if (!printed_version)
@@ -290,11 +313,9 @@ int main(int argc, char * argv[])
 		if (!strchr(asmname, '.') && !file_exists(asmname)) asmname+=".asm";
 		if (!romname)
 		{
-			char * romnametmp=(char*)malloc(sizeof(char)*256);
-			strcpy(romnametmp, asmname);
-			if (strrchr(romnametmp, '.')) *strrchr(romnametmp, '.')=0;
-			if (file_exists(S romnametmp+".sfc")) romname=S romnametmp+".sfc";
-			else if (file_exists(S romnametmp+".smc")) romname=S romnametmp+".smc";
+			string romnametmp = get_base_name(asmname);
+			if (file_exists(romnametmp+".sfc")) romname=romnametmp+".sfc";
+			else if (file_exists(romnametmp+".smc")) romname=romnametmp+".smc";
 			else romname=S romnametmp+".sfc";
 		}
 		else if (!strchr(romname, '.') && !file_exists(romname))
@@ -425,6 +446,15 @@ int main(int argc, char * argv[])
 			pause(yes);
 		}
 		closerom();
+		if (symbols)
+		{
+			if (!symfilename) symfilename = get_base_name(romname)+".sym";
+			string contents = create_symbols_file(symbols);
+			FILE * symfile = fopen(symfilename, "wt");
+			fputs(contents, symfile);
+			fclose(symfile);
+
+		}
 		reseteverything();
 	}
 	catch(errfatal&)
@@ -437,4 +467,3 @@ int main(int argc, char * argv[])
 	}
 	return 0;
 }
-

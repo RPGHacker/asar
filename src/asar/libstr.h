@@ -46,7 +46,7 @@ void assign(const char * newstr)
 	if (!newstr) newstr="";
 	len=(int)strlen(newstr);
 	resize(len);
-	memmove(str, newstr, len);
+	memmove(str, newstr, (size_t)len);
 	str[len] = '\0';
 }
 
@@ -78,7 +78,7 @@ string& operator+=(const string& newstr)
 {
 	fixlen();
 	resize(len+newstr.truelen());
-	memmove(str+len, newstr.str, newstr.len);
+	memmove(str+len, newstr.str, (size_t)newstr.len);
 	len+=newstr.len;
 	str[len] = '\0';
 	return *this;
@@ -89,7 +89,7 @@ string& operator+=(const char * newstr)
 	fixlen();
 	int newlen=(int)strlen(newstr);
 	resize(len+newlen);
-	memmove(str+len, newstr, newlen);
+	memmove(str+len, newstr, (size_t)newlen);
 	len+=newlen;
 	str[len] = '\0';
 	return *this;
@@ -381,7 +381,7 @@ inline string hex2(unsigned int value)
 inline string hex3(unsigned int value)
 {
 	char buffer[64];
-	sprintf(buffer, "%.2X", value);
+	sprintf(buffer, "%.3X", value);
 	return buffer;
 }
 
