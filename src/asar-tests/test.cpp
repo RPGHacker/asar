@@ -690,6 +690,7 @@ int main(int argc, char * argv[])
 		size_t fsize = (size_t)ftell(err);
 		fseek(err, 0, SEEK_SET);
 		char* buf = (char*)malloc(fsize + 1);
+		memset(buf, 0, fsize + 1);
 		fread(buf, 1, fsize + 1, err);
 		bool did_err = (strstr(buf, "error") != nullptr) || (strstr(buf, "Error") != nullptr);
 		if (did_err && !shouldfail)

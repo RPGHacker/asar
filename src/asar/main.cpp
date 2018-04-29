@@ -522,10 +522,33 @@ extern autoarray<whiletracker> whilestatus;
 
 int incsrcdepth=0;
 
+extern autoarray<string> includeonce;
+
+// Returns true if a file is protected via
+// an "includeonce".
+bool file_included_once(const char* file)
+{
+	for (int i = 0; i < includeonce.count; ++i)
+	{
+		if (includeonce[i] == file)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
 void assemblefile(const char * filename, bool toplevel)
 {
 	incsrcdepth++;
 	string absolutepath = filesystem->create_absolute_path(thisfilename, filename);
+
+	if (file_included_once(absolutepath))
+	{
+		return;
+	}
+
 	thisfilename = absolutepath;
 	thisline=-1;
 	thisblock=NULL;
@@ -667,7 +690,7 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 					stdinclude = dir(textfile) + stdinclude;
 				}
 
-				outarray.append(stdinclude);
+				outarray.append(normalize_path(stdinclude));
 			}
 		}
 

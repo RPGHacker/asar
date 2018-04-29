@@ -134,6 +134,7 @@
 				<ul>
 					<li><a href="#incsrc">incsrc</a></li>
 					<li><a href="#includefrom">include/includefrom</a></li>
+					<li><a href="#includeonce">includeonce</a></li>
 				</ul>
 			</li>
 			<li>
@@ -2735,13 +2736,33 @@ incsrc "routine.asm"
 ;	!is_sa1_rom = 0
 ;endif
 
+
 @asar 1.37
 
-incsrc "shared.asm"
+incsrc &quot;shared.asm&quot;
 
 if !is_sa1_rom
 	; ...
 endif</code></pre>
+		<h4 id="includeonce">includeonce</h4>
+		<pre><code class="65c816_asar">includeonce</code></pre>
+		The includeonce command places an include guard on the file that is currently being assembled. This prevents it from being assembled again in the same pass. This is intended for shared files which may be included from multiple source files, but should only be assembled once to prevent redefinition errors etc.		
+		<pre><code class="65c816_asar">; Contents of shared.asm:
+;
+;includeonce
+;
+;MyRoutine = $018000
+;MyOtherRoutine = $028000
+
+
+; Note that the second include does not throw
+; redefinition errors, thanks to the &quot;includeonce&quot;.
+incsrc &quot;shared.asm&quot;
+incsrc &quot;shared.asm&quot;
+
+jsl MyRoutine
+jsl MyOtherRoutine
+</code></pre>		
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="freespace"><h3>Freespace</h3>
