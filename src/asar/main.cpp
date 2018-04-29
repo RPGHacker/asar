@@ -164,6 +164,20 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 
 string posneglabelname(const char ** input, bool define);
 
+bool is_hex_constant(const char* str){
+	if (*str=='$')
+	{
+		str++;
+		while(isxdigit(*str)) {
+			str++;
+		}
+		if(*str=='\0'){
+			return true;
+		}
+	}
+	return false;
+}
+
 int getlen(const char * orgstr, bool optimizebankextraction)
 {
 	const char * str=orgstr;

@@ -2000,7 +2000,7 @@ void assembleblock(const char * block)
 			warn0("xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
 			warnxkas=val;
 		}
-		else if (!stricmp(word[1], "immed")) {
+		else if (!stricmp(word[1], "immediate")) {
 			warnimpimmed=val;
 		}
 		else if (!stricmp(word[1], "bankcross")) {

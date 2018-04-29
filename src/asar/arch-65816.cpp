@@ -32,9 +32,10 @@ bool asblock_65816(char** word, int numwords)
 	unsigned int num;
 	int len=0;//declared here for A->generic fallback
 	bool explicitlen = false;
+	bool hexconstant = false;
 	if(0);
 	else if (assemblemapper(word, numwords)) {}
-#define getvars(optbank) num=(pass!=0)?getnum(par):0; if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
+#define getvars(optbank) num=(pass!=0)?getnum(par):0; hexconstant=is_hex_constant(par); if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
 #define match(left, right) (word[1] && stribegin(par, left) && striend(par, right))
 #define init(left, right) itrim(par, left, right); getvars(false)
 #define bankoptinit(left, right) itrim(par, left, right); getvars(true)
@@ -47,9 +48,9 @@ bool asblock_65816(char** word, int numwords)
 #define as3(    op, byte) if (is(op) && len==3) { write1((unsigned int)byte); write3(num); return true; }
 //#define as23(   op, byte) if (is(op) && (len==2 || len==3)) { write1(byte); write2(num); return true; }
 #define as32(   op, byte) if (is(op) && ((len==2 && !explicitlen) || len==3)) { write1((unsigned int)byte); write3(num); return true; }
-#define as_a(   op, byte) if (is(op)) { if(!explicitlen && warnimpimmed) warn0("implicitly sized immediate"); if (len==1) { write1(byte); write1(num); } \
+#define as_a(   op, byte) if (is(op)) { if(!explicitlen && !hexconstant && warnimpimmed) warn0("implicitly sized immediate"); if (len==1) { write1(byte); write1(num); } \
 																					 else { write1((unsigned int)byte); write2(num); } return true; }
-#define as_xy(  op, byte) if (is(op)) { if(!explicitlen && warnimpimmed) warn0("implicitly sized immediate"); if (len==1) { write1(byte); write1(num); } \
+#define as_xy(  op, byte) if (is(op)) { if(!explicitlen && !hexconstant && warnimpimmed) warn0("implicitly sized immediate"); if (len==1) { write1(byte); write1(num); } \
 																					 else {  write1((unsigned int)byte); write2(num); } return true; }
 #define as_rep( op, byte) if (is(op)) { if (pass==0) num=getnum(par); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
 #define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
