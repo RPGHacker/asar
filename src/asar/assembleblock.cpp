@@ -1880,27 +1880,23 @@ void assembleblock(const char * block)
 			else if (!strncasecmp(pars[i], "double(", strlen("double(")))
 			{
 				char * arg1pos = pars[i] + strlen("double(");
-				char * pos = arg1pos;
+				char * endpos = strchr(arg1pos, '\0');
+				while (*endpos == ' ' || *endpos == '\t' || *endpos == '\0') endpos--;
+				if (*endpos != ')') error<errblock>(0, "Invalid syntax");
+				string params = string(arg1pos, (int)(endpos - arg1pos));
 
-				while (*pos != ',' && *pos != ')' && *pos != '\0') pos++;
-				if (*pos == '\0') error(2, "Mismatched parentheses");
+				int numargs;
+				autoptr<char**> double_pars = qpsplit(params.str, ",", &numargs);
+				if (numargs > 2) error<errblock>(0, "Wrong number of arguments to function double()");
+				// qpsplit always returns at least 1 part (if the input is empty, it returns an empty string)
 
-				char * arg1endpos = pos;
-
-				if (*pos == ')')
+				if (numargs == 1)
 				{
-					out += ftostrvar(getnumdouble(string(arg1pos, (int)(arg1endpos - arg1pos))), 5);
+					out += ftostrvar(getnumdouble(double_pars[0]), 5);
 				}
-				else
+				else // numargs == 2
 				{
-					pos++;
-					char * arg2pos = pos;
-
-					while (*pos != ',' && *pos != ')' && *pos != '\0') pos++;
-					if (*pos == '\0') error(2, "Mismatched parentheses");
-					if (*pos == ',') error(2, "Wrong number of arguments to function double()");
-
-					out += ftostrvar(getnumdouble(string(arg1pos, (int)(arg1endpos - arg1pos))), (int)getnum(string(arg2pos, (int)(pos - arg2pos))));
+					out += ftostrvar(getnumdouble(double_pars[0]), (int)getnum(double_pars[1]));
 				}
 			}
 			else error(2, "Unknown variable.");
