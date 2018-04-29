@@ -8,3 +8,4 @@ char get_native_path_separator();
 
 string dir(char const *name);
 string create_combined_path(const char* path1, const char* path2);
+string normalize_path(const char* path);

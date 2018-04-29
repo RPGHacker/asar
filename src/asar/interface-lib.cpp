@@ -3,6 +3,7 @@
 #include "libstr.h"
 #include "libsmw.h"
 #include "virtualfile.hpp"
+#include "platform/file-helpers.h"
 
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -197,6 +198,8 @@ void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool should_re
 
 void asar_patch_main(const char * patchloc)
 {
+	if (!path_is_absolute(patchloc)) warn("Relative patch file path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!");
+
 	try
 	{
 		for (pass = 0;pass < 3;pass++)
@@ -297,11 +300,13 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 
 	for (int i = 0; i < paramscurrent.numincludepaths; ++i)
 	{
+		if (!path_is_absolute(paramscurrent.includepaths[i])) warn("Relative include path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!");
 		string& newpath = includepaths.append(paramscurrent.includepaths[i]);
 		includepath_cstrs.append((const char*)newpath);
 	}
 
 	if (paramscurrent.stdincludesfile != nullptr) {
+		if (!path_is_absolute(paramscurrent.stdincludesfile)) warn("Relative std includes file path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!");
 		string stdincludespath = paramscurrent.stdincludesfile;
 		parse_std_includes(stdincludespath, includepaths);
 	}
@@ -333,6 +338,7 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	}
 
 	if (paramscurrent.stddefinesfile != nullptr) {
+		if (!path_is_absolute(paramscurrent.stddefinesfile)) warn("Relative std defines file path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!");
 		string stddefinespath = paramscurrent.stddefinesfile;
 		parse_std_defines(stddefinespath);
 	}
