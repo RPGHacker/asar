@@ -1,4 +1,5 @@
 ;@AD 07 00 AD 02 00 AD 02 00 DC 00 00 DC 07 00 A9 40 00 8D 25 43
+;@02 03 05 07 03 05
 
 org $008000
 
@@ -18,11 +19,6 @@ lda test[1].size
 ;lda test.size
 lda test.test2.lol
 lda test.test3.lol
-
-; print hex(test[1].size)," ",hex(test[2].test2.lol)," "
-; print hex(test.size)," ",hex(test.test2.lol)," "
-; print hex(sizeof(test))," ",hex(sizeof(test.test2))," "
-; print hex(objectsize(test))," ",hex(objectsize(test.test2))," ",hex(objectsize(test.test3))
 
 jmp [$0000]
 jmp [test[1].size]
@@ -55,3 +51,10 @@ endstruct align $10
 
 lda #$0040
 sta DMA[2].size
+
+db sizeof("test")
+db sizeof("test.test2")
+db sizeof("test.test3")
+db objectsize("test")
+db objectsize("test.test2")
+db objectsize("test.test3")

@@ -447,6 +447,32 @@ static int object_size(const char *name)
 	return structure.object_size;
 }
 
+static double structsizefunc(const funcparam& structname)
+{
+	validateparam(structname, 0, Type_String);
+	return (double)struct_size(structname.value.stringvalue);
+}
+
+static double objectsizefunc(const funcparam& structname)
+{
+	validateparam(structname, 0, Type_String);
+	return (double)object_size(structname.value.stringvalue);
+}
+
+static double stringsequalfunc(const funcparam& string1, const funcparam& string2)
+{
+	validateparam(string1, 0, Type_String);
+	validateparam(string1, 1, Type_String);
+	return (strcmp(string1.value.stringvalue, string2.value.stringvalue) == 0 ? 1.0 : 0.0);
+}
+
+static double stringsequalinsensitivefunc(const funcparam& string1, const funcparam& string2)
+{
+	validateparam(string1, 0, Type_String);
+	validateparam(string1, 1, Type_String);
+	return (stricmp(string1.value.stringvalue, string2.value.stringvalue) == 0 ? 1.0 : 0.0);
+}
+
 
 extern chartabledata table;
 
@@ -524,23 +550,6 @@ static double getnumcore()
 		{
 			str++;
 			while (*str==' ') str++;
-
-			if (!strncasecmp(start, "sizeof", (size_t)len)) {
-				string label;
-				while (*str == ' ') str++;
-				while (isalnum(*str) || *str == '.') label += *(str++);
-				//printf("%s\n", (const char*)label);
-				if (*(str++) != ')') error("Malformed sizeof call.");
-				return struct_size(label);
-			}
-			if (!strncasecmp(start, "objectsize", (size_t)len)) {
-				string label;
-				while (*str == ' ') str++;
-				while (isalnum(*str) || *str == '.') label += *(str++);
-				//printf("%s\n", (const char*)label);
-				if (*(str++) != ')') error("Malformed objectsize call.");
-				return object_size(label);
-			}
 
 			// RPG Hacker: This is only here to assure that all strings are still
 			// alive in memory when we call our functions further down
@@ -660,6 +669,7 @@ static double getnumcore()
 						}                                                      \
 						else if (!hasfurtheroverloads) error("Wrong number of parameters to function."); \
 					}
+
 			wrappedfunc1("sqrt", params[0], sqrt((double)params[0].value.longdoublevalue), false);
 			wrappedfunc1("sin", params[0], sin((double)params[0].value.longdoublevalue), false);
 			wrappedfunc1("cos", params[0], cos((double)params[0].value.longdoublevalue), false);
@@ -730,6 +740,13 @@ static double getnumcore()
 			wrappedfunc2("xor", params[0], params[1], (((params[0].value.longdoublevalue != 0 && params[1].value.longdoublevalue == 0) || (params[0].value.longdoublevalue == 0 && params[1].value.longdoublevalue != 0)) ? 1.0 : 0.0), false);
 			
 			func("round", 2, overlycomplicatedround(params[0], params[1]), false);
+
+			func("sizeof", 1, structsizefunc(params[0]), false);
+			func("objectsize", 1, objectsizefunc(params[0]), false);
+
+			func("stringsequal", 2, stringsequalfunc(params[0], params[1]), false);
+			func("stringsequalnocase", 2, stringsequalinsensitivefunc(params[0], params[1]), false);
+
 #undef func
 #undef wrappedfunc1
 #undef wrappedfunc2

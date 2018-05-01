@@ -59,6 +59,11 @@ void tomacro(const char * line);
 void endmacro(bool insert);
 void callmacro(const char * data);
 
+int get_version_int()
+{
+	return asarver_maj * 10000 + asarver_min * 100 + asarver_bug;
+}
+
 bool setmapper()
 {
 	int maxscore=-99999;
@@ -286,6 +291,7 @@ assocarr<sourcefile> filecontents;
 assocarr<string> defines;
 // needs to be separate because defines is reset between parsing arguments and patching
 assocarr<string> clidefines;
+assocarr<string> builtindefines;
 
 void assembleblock(const char * block);
 
@@ -353,6 +359,7 @@ void resolvedefines(string& out, const char * start)
 			if (warnxkas && here[0]=='(' && here[1]==')')
 				warn0("xkas compatibility warning: Unlike xkas, Asar does not eat parentheses after defines");
 			//if (emulatexkas && here[0]=='(' && here[1]==')') here+=2;
+
 			if (first)
 			{
 				enum {
@@ -394,6 +401,13 @@ void resolvedefines(string& out, const char * start)
 				//if (strqchr(val.str, ';')) *strqchr(val.str, ';')=0;
 				if (*here && !stribegin(here, " : ")) error<errline>(0, "Broken define declaration");
 				clean(val);
+
+				// RPG Hacker: throw an error if we're trying to overwrite built-in defines.
+				if (builtindefines.exists(defname))
+				{
+					error<errline>(0, S "Trying to set define '" + defname + "', which is the name of a built-in define and thus can't be modified.");
+				}
+
 				switch (mode)
 				{
 					case null:
@@ -783,6 +797,12 @@ void parse_std_defines(const char* textfile)
 		}
 		free(content);
 	}
+
+	// RPG Hacker: add built-in defines.
+	// (They're not really standard defines, but I was lazy and this was
+	// one convenient place for doing it).
+	builtindefines.create("assembler") = "asar";
+	builtindefines.create("assembler_ver") = get_version_int();
 }
 
 bool checksum=true;
@@ -864,6 +884,7 @@ void reseteverything()
 	string str;
 	labels.reset();
 	defines.reset();
+	builtindefines.each(adddefine);
 	clidefines.each(adddefine);
 	structs.reset();
 

@@ -16,7 +16,7 @@ var asar_opcodes = ["db", "dw", "dl", "dd", "adc", "and", "asl", "bcc", "blt", "
 
 var asar_keywords = ["lorom", "hirom", "exlorom", "exhirom", "sa1rom", "fullsa1rom", "sfxrom", "norom", "macro", "endmacro", "struct", "endstruct", "extends", "incbin", "incsrc", "fillbyte", "fillword", "filllong", "filldword", "fill", "padbyte", "pad", "padword", "padlong", "paddword", "table", "cleartable", "ltr", "rtl", "skip", "namespace", "import", "print", "org", "warnpc", "base", "on", "off", "reset", "freespaceuse", "pc", "bytes", "hex", "freespace", "freecode", "freedata", "ram", "noram", "align", "cleaned", "static", "autoclean", "autoclear", "prot", "pushpc", "pullpc", "pushbase", "pullbase", "function", "if", "else", "elseif", "endif", "while", "assert", "arch", "65816", "spc700", "spc700", "inline", "superfx", "math", "pri", "round", "warn", "xkas", "bankcross", "bank", "noassume", "auto", "asar", "includefrom", "includeonce", "include", "error", "warn", "skip", "double", "round", "pushtable", "pulltable", "undef", "expecttitle", "nested"];
 
-var asar_intrinsic_functions = ["read1", "read2", "read3", "read4", "canread1", "canread2", "canread4", "sqrt", "sin", "cos", "tan", "asin", "acos", "atan", "arcsin", "arccos", "arctan", "log", "log10", "log2", "_read1", "_read2", "_read3", "_read4", "_canread1", "_canread2", "_canread4", "_sqrt", "_sin", "_cos", "_tan", "_asin", "_acos", "_atan", "_arcsin", "_arccos", "_arctan", "_log", "_log10", "_log2", "readfile1", "_readfile1", "readfile2", "_readfile2", "readfile3", "_readfile3", "readfile4", "_readfile4", "canreadfile1", "_canreadfile1", "canreadfile2", "_canreadfile2", "canreadfile3", "_canreadfile3", "canreadfile4", "_canreadfile4", "canreadfile", "_canreadfile", "filesize", "_filesize", "getfilestatus", "_getfilestatus", "snestopc", "_snestopc", "pctosnes", "_pctosnes", "max", "_max", "min", "_min", "clamp", "_clamp", "safediv", "_safediv", "select", "_select", "not", "_not", "equal", "_equal", "notequal", "_notequal", "less", "_less", "lessequal", "_lessequal", "greater", "_greater", "greaterequal", "_greaterequal", "and", "_and", "or", "_or", "nand", "_nand", "nor", "_nor", "xor", "_xor", "defined", "_defined"];
+var asar_intrinsic_functions = ["read1", "read2", "read3", "read4", "canread1", "canread2", "canread4", "sqrt", "sin", "cos", "tan", "asin", "acos", "atan", "arcsin", "arccos", "arctan", "log", "log10", "log2", "_read1", "_read2", "_read3", "_read4", "_canread1", "_canread2", "_canread4", "_sqrt", "_sin", "_cos", "_tan", "_asin", "_acos", "_atan", "_arcsin", "_arccos", "_arctan", "_log", "_log10", "_log2", "readfile1", "_readfile1", "readfile2", "_readfile2", "readfile3", "_readfile3", "readfile4", "_readfile4", "canreadfile1", "_canreadfile1", "canreadfile2", "_canreadfile2", "canreadfile3", "_canreadfile3", "canreadfile4", "_canreadfile4", "canreadfile", "_canreadfile", "filesize", "_filesize", "getfilestatus", "_getfilestatus", "snestopc", "_snestopc", "pctosnes", "_pctosnes", "max", "_max", "min", "_min", "clamp", "_clamp", "safediv", "_safediv", "select", "_select", "not", "_not", "equal", "_equal", "notequal", "_notequal", "less", "_less", "lessequal", "_lessequal", "greater", "_greater", "greaterequal", "_greaterequal", "and", "_and", "or", "_or", "nand", "_nand", "nor", "_nor", "xor", "_xor", "defined", "_defined", "sizeof", "_sizeof", "objectsize", "_objectsize", "stringsequal", "_stringsequal", "stringsequalnocase", "_stringsequalnocase"];
 
 var asar_opcodes_not = asar_opcodes.join("|");
 var asar_keywords_not = asar_keywords.join("|");
@@ -52,6 +52,12 @@ hljs.registerLanguage("65c816_asar",
 					r: 0
 				},
 				{
+					cN: "string",
+					b: '\'',
+					e: '\'',
+					r: 0
+				},
+				{
 					cN: "special",
 					b: '\\s*^@',
 					e: '$',
@@ -62,14 +68,20 @@ hljs.registerLanguage("65c816_asar",
 					v:
 					[
 						{
-							b: "#?[0-9]+(\\.[0-9]+)?"
+							b: "#?[+-~]?0x[0-9a-fA-F]+"
 						},
 						{
-							b: "#?%[0-1]+"
+							b: "#?[+-~]?[0-9]+(\\.[0-9]+)?"
 						},
 						{
-							b: "#?\\$[0-9a-fA-F]+"
-						}
+							b: "#?[+-~]?%[0-1]+"
+						},
+						{
+							b: "#?[+-~]?\\$[0-9a-fA-F]+"
+						}/*,
+						{
+							b: "#?(\\(|\\)|\\+|\\-|\\*|\\/|\\%|\\<\\<|\\>\\>|\\&|\\||\\^|\\~|\\*\\*)+"
+						}*/
 					],
 					r: 0
 				},
@@ -89,7 +101,7 @@ hljs.registerLanguage("65c816_asar",
 					v:
 					[
 						{
-							b: "![a-zA-Z0-9_]+"
+							b: "![a-zA-Z0-9_{}]+"
 						},
 						{
 							b: "<[a-zA-Z0-9_]+>"

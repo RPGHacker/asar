@@ -508,7 +508,7 @@ int main(int argc, char * argv[])
 				fseek(asmfile, -1, SEEK_CUR);
 			}
 				
-			line[current_line_length-1] = '\0';
+			line[current_line_length > 0 ? current_line_length-1 : 0] = '\0';
 			
 			if (line[0] != ';' || line[1] != '@')
 			{				

@@ -155,9 +155,11 @@ EXPORT bool asar_init()
 	return true;
 }
 
+int get_version_int();
+
 EXPORT int asar_version()
 {
-	return asarver_maj*10000+asarver_min*100+asarver_bug;
+	return get_version_int();
 }
 
 EXPORT int asar_apiversion()

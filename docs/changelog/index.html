@@ -123,6 +123,8 @@ Main:
 			<li>Added <code class="65c816_asar">includeonce</code> command for shared files which may be included multiple times, but should only be assembled once. (RPG Hacker)</li>
 			<li>Added support for generating a symbols file. Currently, WLA and no$sns format are supported. (KevinCathcart)</li>
 			<li>Opcode length specifiers (<code>.b</code>, <code>.w</code> and <code>.l</code>) are now also supported for the SPC700 architecture. (KungFuFurby)</li>
+			<li>Added <code class="65c816_asar">stringsequal()</code> and <code class="65c816_asar">stringsequalnocase()</code> functions. (RPG Hacker)</li>
+			<li>Added support for some built-in defines. Currently, <code class="65c816_asar">!assembler</code> and <code class="65c816_asar">!assembler_ver</code> are supported. Trying to modify those defines will throw an error. (RPG Hacker)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
@@ -148,11 +150,15 @@ asar 1.60</code></pre>
 			<li>Fixed <code>print double()</code> not working when any of their arguments contain commas or parentheses. (randomdude999)</li>
 			<li>Made it possible to pass string parameters to functions like <code class="65c816_asar">readfile1()</code> via user-defined functions. Previously, this failed as Asar expected all parameters in user-defined functions to be numbers. (KevinCathcart)</li>
 			<li>Fixed a bug related to evaluation of parameters in user-defined functions. In some situations, Asar returned the incorrect parameter. For example: given a user-defined function with a parameter <code>ab</code> and a paramater <code>abc</code>, Asar occasionally returned the parameter <code>abc</code> when referencing the paramter <code>ab</code>. (KevinCathcart)</li>
+			<li>Added more undocumented features to the manual. (RPG Hacker)</li>
 		</ul>
 
 		<h3>Deprecated features:</h3>
 		<ul>
 			<li>Started the process of deprecating xkas compatibility mode. From now on, using xkas compatibility features will throw warnings. In a future version of Asar, xkas compatibility will be removed entirely.</li>
+			<li>Started deprecating <code class="65c816_asar">autoclear</code>, which is an alias of <code class="65c816_asar">autoclean</code>. Please use only <code class="65c816_asar">autoclean</code> from now on.</li>
+			<li>Started deprecating <code class="65c816_asar">freespace fixed</code>, which is an alias of <code class="65c816_asar">freespace static</code>. Please use only <code class="65c816_asar">freespace static</code> from now on.</li>
+			<li>Deprecated and removed support for <code class="65c816_asar">if !condition</code>. This feature was planned for deprecation as it bites with Asar's define syntax, but it was removed earlier than planned because, after inspecting the code, it was determined that it didn't work properly and probably wasn't even usable in versions prior to 1.60 at all. The only way to use it in Asar 1.60 was by using the new escape sequence for !, which didn't exist in earlier Asar versions. Thus it can be assumed that the feature wasn't used in previous Asar versions and can be removed safely. To negate conditions in Asar 1.60, either use the built-in logic functions (<code class="65c816_asar">if !(a == 0 && b == 0)</code> becomes <code class="65c816_asar">if not(and(equal(a, 0),equal(b, 0)))</code>) or directly negate the condition (<code class="65c816_asar">if !(a == 0 && b == 0)</code> becomes <code class="65c816_asar">if a != 0 || b != 0</code>).</li>
 		</ul></div>
 
 		

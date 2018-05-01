@@ -610,6 +610,7 @@ bool warnxkas;
 
 extern assocarr<string> defines;
 extern assocarr<string> clidefines;
+extern assocarr<string> builtindefines;
 
 static void adddefine(const string & key, string & value)
 {
@@ -636,6 +637,7 @@ void initstuff()
 	macrorecursion=0;
 	repeatnext=1;
 	defines.reset();
+	builtindefines.each(adddefine);
 	clidefines.each(adddefine);
 	ns="";
 	namespace_list.reset();
@@ -889,19 +891,9 @@ void assembleblock(const char * block)
 			bool thiscond = false;
 			if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
 			{
-				if (nextword[0][0]=='!')
-				{
-					//this part is not mentioned in the manual
-					unsigned int val=getnum(nextword[0]+1);
-					if (foundlabel) error(1, S"Label in "+lower(word[0])+" command");
-					thiscond=!(val>0);
-				}
-				else
-				{
-					unsigned int val=getnum(nextword[0]);
-					if (foundlabel) error(1, S"Label in "+lower(word[0])+" command");
-					thiscond=(val>0);
-				}
+				unsigned int val = getnum(nextword[0]);
+				if (foundlabel) error(1, S"Label in " + lower(word[0]) + " command");
+				thiscond = (val > 0);
 
 				if (condstr && nextword[1])
 				{

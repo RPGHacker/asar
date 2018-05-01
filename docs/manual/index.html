@@ -105,7 +105,12 @@
 					<li><a href="#namespaces">Namespaces</a></li>
 				</ul>
 			</li>
-			<li><a href="#defines">Defines</a></li>
+			<li>
+				<a href="#defines">Defines</a></li>
+				<ul>
+					<li><a href="#nested-defines">Nested Defines</a></li>
+					<li><a href="#built-in-defines">Built-in Defines</a></li>
+				</ul>
 			<li><a href="#macros">Macros</a></li>
 			<li>
 				<a href="#functions">Functions</a>
@@ -1477,11 +1482,18 @@ lda $00
 arch spc700
 mov a,$00</code></pre>
 		<h4 id="number-literals">Number Literals</h4>
-		Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use <code>$</code> as a prefix, binary literals use <code>%</code> as a prefix. Decimal literals can be positive or negative.
+		Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use either <code>$</code> or <code>0x</code> as a prefix, binary literals use <code>%</code> as a prefix. Number literals can be made positive or negative by prefixing a <code>+</code> or a <code>-</code> (without a sign, positive is assumed). They can also be prefixed with a <code>~</code> to get their unary complement (a 32-bit integer with all the bits inverted).
 		<pre><code class="65c816_asar">lda $00
 clc
 adc #-10
-and #%01111111</code></pre>
+and #%01111111
+sta 0x00
+lda #~0x80	; Equal to lda #0xFFFFFF7F</code></pre>
+		Aditionally, Asar supports character literals by delimiting a single ASCII character with <code>'</code>. Asar will automatically convert them to the integer value currently mapped to them (by default their ASCII value). They can be used in all places where number literals can be used. See section <a href="#tables">Tables</a> for details on ASCII character mapping.
+		<pre><code class="65c816_asar">lda #'a'
+sta $00
+
+db 'x','x'+1,'x'+2</code></pre>
 		<h4 id="opcode-length">Opcode Length Specification</h4>
 		By appending <code>.b</code>, <code>.w</code> or <code>.l</code> to an opcode, you can specify that opcode's length. This is recommended in cases where the length could be ambiguous.
 		<pre><code class="65c816_asar">lda #0		; Could be either lda #$00 or lda #$0000
@@ -2257,7 +2269,50 @@ undef "define"
 if defined("define")
 	print "This won't be printed!"
 endif</code></pre>
-		Note that Asar tries to replace defines wherever possible, even inside strings. In some occasions, this might be undesirable. See section <a href="#tables">Tables</a> for details on how to escape certain characters.<br/>
+		Note that Asar tries to replace defines wherever possible, even inside strings. In some occasions, this might be undesirable. See section <a href="#tables">Tables</a> for details on how to escape certain characters.
+		<h4 id="nested-defines">Nested Defines</h4>
+		By default, the define parser in Asar considers every supported character in a connected string to be a part of the define's name. This may not always be desired as it can lead to a certain define becoming inaccessible in a certain situation. In cases like that, the <code>{}</code> operator makes it possible to still use those defines by resovling everything inside the braces immediately.
+		<pre><code class="65c816_asar">!hex = $
+		
+db !hexFF     ; Error - define !hexFF not found
+db !{hex}FF   ; OK</code></pre>
+		Perhaps the more useful feature of this operator is that it can also be nested to allow for the creation of dynamic define names.
+		<pre><code class="65c816_asar">; Please specifiy a mode from 0 to 3
+!mode = 1
+
+assert !mode >= 0 && !mode <= 3, "Please specify a mode from 0 to 3!"
+
+!modename0 = "Default"
+!modename1 = "Debug"
+!modename2 = "Fast"
+!modename3 = "Small"
+
+!modenamestring = !{modename!{mode}}
+
+print "Building in mode: !modenamestring"</code></pre>
+		<h4 id="built-in-defines">Built-in Defines</h4>
+		Aside from user defines, Asar also supports a number of built-in defines. These defines are read-only and any attempt to modify them will throw an error.<br/><br/>
+		<table>
+			<tr>
+				<th style="width:150px">Define</th>
+				<th>Details</th>
+				<th>Example</th>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">!assembler</code></td>
+				<td>Contains the value <code class="65c816_asar">asar</code>. Theoretically can be used to differentiate between different assemblers if other assemblers use this define and a syntax similar to Asar.</td>
+				<td><pre><code class="65c816_asar">if not(stringsequal("!assembler", "asar"))
+	warn "This patch was written for Asar and may not be compatible with your current assembler."
+endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">!assembler_ver</code></td>
+				<td>Contains the version number of Asar in the format <code>(major_version * 10000) + (minor_version * 100) + revision</code>. For Asar version 1.60, this contains 10600.</td>
+				<td><pre><code class="65c816_asar">if !assembler_ver &lt; 10600
+	warn "This patch might not behave correctly due to a bug in Asar versions prior to 1.60."
+endif</code></pre></td>
+			</tr>
+		</table><br/>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="macros"><h3>Macros</h3>
@@ -2383,7 +2438,7 @@ endif</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">filesize(filename)</code></td>
-				<td>Returns the size of file filename (if the file doesn't exist or another error occurred, -1 is returned instead).</td>
+				<td>Returns the size of file filename. Throws an error if the file doesn't exist.</td>
 				<td><pre><code class="65c816_asar">!fsize #= filesize("datafile.bin")
 !fpos = 0
 
@@ -2494,9 +2549,54 @@ endif</code></pre></td>
 	; ...	
 endif</code></pre></td>
 			</tr>
+			<tr>
+				<td><code class="65c816_asar">sizeof(identifier)</code></td>
+				<td>Takes the identifier of a struct as a string parameter and returns the base size of that struct (without any extension structs). Throws an error if a struct with that name doesn't exist.</td>
+				<td><pre><code class="65c816_asar">struct parent $0000
+	.data1: skip 2
+endstruct
+
+struct child extends parent
+	.data2: skip 3
+endstruct
+
+db sizeof("parent")             ; db 2
+db sizeof("parent.child")       ; db 3</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">objectsize(identifier)</code></td>
+				<td>Takes the identifier of a struct as a string parameter and returns the object size of that struct. In the case of an extended struct, this will be the base size of the struct plus the size of its largest extension struct. Throws an error if a struct with that name doesn't exist.</td>
+				<td><pre><code class="65c816_asar">struct parent $0000
+	.data1: skip 2
+endstruct
+
+struct child extends parent
+	.data2: skip 3
+endstruct
+
+db objectsize("parent")         ; db 5
+db objectsize("parent.child")   ; db 3</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">stringsequal(string1, string2)</code></td>
+				<td>Returns 1 if the given string parameters are equal and 0 otherwise.</td>
+				<td><pre><code class="65c816_asar">if not(stringsequal("!assembler", "asar"))
+	warn "This patch was only tested in Asar and might not work correctly in your assembler."
+endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">stringsequalnocase(string1, string2)</code></td>
+				<td>Returns 1 if the given string parameters are equal and 0 otherwise. The comparison is case-insensitive.</td>
+				<td><pre><code class="65c816_asar">if not(stringsequalnocase("!assembler", "ASAR"))
+	warn "This patch was only tested in Asar and might not work correctly in your assembler."
+endif</code></pre></td>
+			</tr>
 		</table><br/>
 		All built-in functions can be overridden by user-defined functions. Prepending an underscore (for example: <code class="65c816_asar">_read1()</code>) leads to the original function, which can be used to make an overridden function call its original function.
 		<pre><code class="65c816_asar">function read1(x) = _read1(x+$010000)</code></pre>
+		While user-defined functions can't use string parameters themselves, passthrough of string parameters to built-in functions is supported.
+		<pre><code class="65c816_asar">function readfilenormalized(filename, pos) = readfile4(filename, pos)/2147483648.0
+db readfilenormalizd("datafile.bin", 0)</code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="conditionals"><h3>Conditional Compilation</h3>
@@ -2610,12 +2710,14 @@ dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 		<pre><code class="65c816_asar">table {filename}[,ltr/rtl]</code></pre>
 		Where <code>filename</code> specifies the path to a table file (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and ltr/rtl specifies whether that file is in left-to-right or right-to left format (default: left-to-right).<br />
 		Format of left-to-right table files:
-		<pre><code>{character}={hex_value}
-[character=hex_value...]</code></pre>
+		<pre><code>{character}={value}
+[character=value...]</code></pre>
 		Format of right-to-left table files:
-		<pre><code>{hex_value}={character}
-[hex_value=character...]</code></pre>
-		where <code>character</code> represents an ASCII character and <code>hex_value</code> represents a hexadecimal number literal (without the <code>$</code> prefix) to map to that ASCII character. Note that the table command initializes the mapping to garbage, so when using it, it's recommended to provide mappings for all ASCII characters.<br />
+		<pre><code>{value}={character}
+[value=character...]</code></pre>
+		where <code>character</code> represents an ASCII character and <code>value</code> represents a hexadecimal number literal (without a prefix) to map to that ASCII character. Note that the table command initializes the mapping to garbage, so when using it, it's recommended to provide mappings for all ASCII characters. It's also possible to directly map characters inline without using a table file by using the syntax
+		<pre><code>'{character}' = {value}</code></pre>
+		where <code>value</code> can be any number literal or math statement.<br />
 		To reset the current table mapping to a direct ASCII mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push the current table mapping to the stack, whereas the <code>pulltable</code> command lets you restore the mapping from the stack.
 		<pre><code class="65c816_asar">; Contents of table1.txt:
 ;A=1A
@@ -2649,7 +2751,15 @@ db "ABC"
 cleartable
 
 ; This writes $41 $42 $43
-db "ABC"</code></pre>
+db "ABC"
+
+'A' = $20
+'B' = $20+1
+'C' = $20+2
+
+; Those both write $20 $21 $22
+db "ABC"
+db 'A','B','C'</code></pre>
 		Note that Asar tries to replace defines wherever possible - even inside strings. Sometimes, this might be undesired. In those cases, you can prefix the <code>!</code> with a <code>\</code> to escape it. The <code>\</code> itself can be escaped with another <code>\</code>.
 		<pre><code class="65c816_asar">!define = "text"
 		
@@ -2680,7 +2790,7 @@ pad $008004</code></pre>
 		It's also possible to write 16-bit, 24-bit or 32-bit values with the pad command by using <code>padword</code>, <code>padlong</code> or <code>paddword</code> instead of padbyte. Note that the <code>snes_address</code> parameter of pad still specifies the end offset of the write in those cases. Values might get truncated as needed to exactly reach the specified end offset.
 		<h4 id="incbin">incbin</h4>
 		<pre><code class="65c816_asar">incbin {filename}[:range_start-range_end][ -> label_identifier_or_sness_address]</code></pre>
-		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are hexadecimal number literals (without the <code>$</code> prefix) which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file).
+		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are hexadecimal number literals (without a prefix) which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file).
 		<pre><code class="65c816_asar">; datafile.bin contains the following bytes:
 ; $00 $01 $02 $03 $04 $05 $06 $07 $08 $09 $0A $0B $0C $0D $0E $0F
 
