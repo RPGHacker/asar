@@ -505,6 +505,8 @@ bool goodchecksum()
 
 void fixchecksum()
 {
+	// randomdude999: clear out checksum bytes before recalculating checksum, this should make it correct on roms that don't have a checksum yet
+	writeromdata(snestopc(0x00FFDC), "\xFF\xFF\0\0", 4);
 	int checksum=(int)getchecksum();
 	writeromdata_byte(snestopc(0x00FFDE), (unsigned char)(checksum&255));
 	writeromdata_byte(snestopc(0x00FFDF), (unsigned char)((checksum>>8)&255));
