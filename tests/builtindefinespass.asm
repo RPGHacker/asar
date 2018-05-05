@@ -1,4 +1,4 @@
-;@01 03 06 07
+;`01 03 06 07
 
 if stringsequal("!assembler", "asar")
 	db $01

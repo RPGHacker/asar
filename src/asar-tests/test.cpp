@@ -43,7 +43,7 @@
 #	include "asardll.h"
 #endif
 
-#define die() { fclose(fopen(fail_name, "wb")); numfailed++; free(expectedrom); free(truerom); printf("\nFailure!\n\n\n"); continue; }
+#define die() { numfailed++; free(expectedrom); free(truerom); printf("\nFailure!\n\n\n"); continue; }
 #define dief(...) { printf(__VA_ARGS__); die(); }
 
 #define min(a, b) ((a)<(b)?(a):(b))
@@ -450,14 +450,11 @@ int main(int argc, char * argv[])
 		snprintf(azm_name, sizeof(azm_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".azm");
 		char log_name[512];
 		snprintf(log_name, sizeof(log_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".log");
-		char fail_name[512];
-		snprintf(fail_name, sizeof(fail_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".fail");
 
 		// Delete files if they already exist, so we don't get leftovers from a previous testrun
 		delete_file(out_rom_name);
 		delete_file(azm_name);
 		delete_file(log_name);
-		delete_file(fail_name);
 
 		char * expectedrom = (char*)malloc(max_rom_size);
 		char * truerom = (char*)malloc(max_rom_size);
@@ -510,7 +507,7 @@ int main(int argc, char * argv[])
 				
 			line[current_line_length > 0 ? current_line_length-1 : 0] = '\0';
 			
-			if (line[0] != ';' || line[1] != '@')
+			if (line[0] != ';' || line[1] != '`')
 			{				
 				fseek(asmfile, line_start_pos, SEEK_SET);
 				break;
@@ -542,30 +539,6 @@ int main(int argc, char * argv[])
 				if (pos > len) len = pos;
 			}
 		}
-		
-		FILE * azmfile = fopen(azm_name, "wt");		
-		
-		size_t remaining_read = 0;
-		do
-		{
-			char next_char = '\0';
-			remaining_read = fread(&next_char, 1, sizeof(next_char), asmfile);
-			if (remaining_read > 0)
-			{
-				if (next_char != '\r')
-				{
-					if (next_char == '\n')
-					{
-						next_char = '\n';
-					}
-			
-					fwrite(&next_char, 1, sizeof(next_char), azmfile);
-				}
-			}
-		}
-		while (remaining_read > 0);
-		
-		fclose(azmfile);
 
 		fclose(asmfile);
 		fclose(rom);
@@ -579,7 +552,7 @@ int main(int argc, char * argv[])
 		fseek(rom, 0, SEEK_SET);
 		fread(truerom, 1, (size_t)truelen, rom);
 		fclose(rom);
-		printf("Patching:\n > %s\n", azm_name);
+		printf("Patching:\n > %s\n", fname);
 		FILE * err = fopen(log_name, "wt");
 
 		{
@@ -591,7 +564,7 @@ int main(int argc, char * argv[])
 
 			asar_patch_params.structsize = (int)sizeof(asar_patch_params);
 
-			asar_patch_params.patchloc = azm_name;
+			asar_patch_params.patchloc = fname;
 			asar_patch_params.romdata = truerom;
 			asar_patch_params.buflen = (int)max_rom_size;
 			asar_patch_params.romlen = &truelen;
@@ -625,7 +598,7 @@ int main(int argc, char * argv[])
 				
 				if (!asar_patch_ex(&asar_patch_params))
 				{
-					printf("asar_patch() failed on file '%s':\n", azm_name);
+					printf("asar_patch() failed on file '%s':\n", fname);
 					int numerrors;
 					const errordata * errdata = asar_geterrors(&numerrors);
 					for (int j = 0; j < numerrors; ++j)
@@ -691,7 +664,7 @@ int main(int argc, char * argv[])
 
 			char cmd[1024];
 			// randomdude999: temp workaround: using $ in command line is unsafe on linux, so use dec representation instead (for !cmddefined3)
-			snprintf(cmd, sizeof(cmd), "\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \" \"%s\" \"%s\"", asar_exe_path, base_path, azm_name, out_rom_name);
+			snprintf(cmd, sizeof(cmd), "\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \" \"%s\" \"%s\"", asar_exe_path, base_path, fname, out_rom_name);
 			for (int i = 0;i < numiter;i++)
 			{
 				printf("Executing:\n > %s\n", cmd);

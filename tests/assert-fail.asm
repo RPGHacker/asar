@@ -1,2 +1,2 @@
-;@err
+;`err
 assert 0

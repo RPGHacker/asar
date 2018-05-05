@@ -1,2 +1,2 @@
-;@err
+;`err
 !assembler = "not_asar"
