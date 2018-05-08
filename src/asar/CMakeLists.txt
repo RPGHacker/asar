@@ -52,10 +52,6 @@ macro(set_asar_shared_properties target)
 			# MSVC throws errors in STL headers when building with MSVC 2017 without C++14...
 			target_compile_features(${target} PRIVATE cxx_std_14)
 		endif()
-	elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-		target_compile_options(${target} PRIVATE
-			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
-		)
 	else()
 		target_compile_options(${target} PRIVATE -Wall -pedantic)
 		# for some reason this isn't available on MSVC?
@@ -64,6 +60,10 @@ macro(set_asar_shared_properties target)
 		# Static link for MinGW
 		if(MINGW)
 			target_compile_options(${target} PRIVATE "-static")
+
+			target_compile_options(${target} PRIVATE
+				-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
+			)
 		endif()
 
 		target_compile_features(${target} PRIVATE cxx_std_11)
