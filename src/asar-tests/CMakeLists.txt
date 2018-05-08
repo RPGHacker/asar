@@ -29,7 +29,7 @@ macro(set_asar_test_shared_properties target)
         target_link_libraries(${target} dl)
         target_compile_options(${target} PRIVATE -Wall -pedantic)
         # for some reason this isn't available on MSVC?
-        target_compile_features(${target} PRIVATE c_std_99)
+        target_compile_features(${target} PRIVATE c_std_11)
 		target_compile_features(${target} PRIVATE cxx_std_11)
     endif()
 endmacro()
