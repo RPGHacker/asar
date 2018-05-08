@@ -87,6 +87,8 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/math.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/errors.cpp"
 
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.cpp"
 	
@@ -98,6 +100,8 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libmisc.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/errors.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.hpp"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"

@@ -1,6 +1,6 @@
 #include "asar.h"
+#include "errors.h"
 
-#define error error<errblock>
 #define write1 write1_pick
 extern bool emulatexkas;
 
@@ -12,9 +12,9 @@ void asend_superfx()
 {
 }
 
-static void range(int min, int mid, int max, const char * err)
+static void range(int min, int mid, int max)
 {
-	if (mid<min || mid>max) error(0, err);
+	if (mid<min || mid>max) asar_throw_error(0, error_type_block, error_id_superfx_invalid_register, min, max);
 }
 
 enum reg_t {
@@ -51,8 +51,7 @@ static bool getreg(const char * par, int * reg, reg_t type)
 //for LMS and SMS short addressing forms, check range & evenness
 static bool check_short_addr(int num) {
 	if (num % 2 > 0 || num < 0 || num > 0x1FE) {
-		error(0, S"Invalid short address argument: $" + hex((unsigned int)num) +
-			" (must be even number and $0000-$01FE)");
+		asar_throw_error(0, error_type_block, error_id_superfx_invalid_short_address, hex((unsigned int)num).str);
 		return false;
 	}
 	return true;
@@ -131,7 +130,7 @@ bool asblock_superfx(char** word, int numwords)
 		if (numwordsinner ==1)
 		{
 #define w(val) ,write1((unsigned int)(val+reg))
-#define range(min, max) ,range(min, reg, max, "Invalid register for opcode; valid range is "#min"-"#max)
+#define range(min, max) ,range(min, reg, max)
 			int reg;
 			if (getreg(par, &reg, reg_r))
 			{
@@ -209,7 +208,7 @@ bool asblock_superfx(char** word, int numwords)
 					write1((unsigned int)byte); write1((unsigned int)pos);
 					if (pass==2 && (pos<-128 || pos>127))
 					{
-						error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")");
+						asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str);
 					}
 				}
 			}

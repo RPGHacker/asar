@@ -25,6 +25,8 @@
 #	include <windows.h>
 #	include <vector>
 #	include <string>
+#	include <algorithm>
+#	include <set>
 
 #	if defined(_MSC_VER)
 #		pragma warning(pop)
@@ -36,7 +38,9 @@
 #	include <vector>
 #	include <string>
 #	include <string.h>
+#	include <algorithm>
 #	include <sys/stat.h>
+#	include <set>
 #endif
 
 #if defined(ASAR_TEST_DLL)
@@ -471,7 +475,9 @@ int main(int argc, char * argv[])
 
 		int numiter = 1;
 
-		bool shouldfail = false;
+		std::set<int> expected_errors;
+		std::set<int> expected_warnings;
+
 		while (true)
 		{
 			long int line_start_pos = ftell(asmfile);
@@ -518,7 +524,7 @@ int main(int argc, char * argv[])
 			{
 				std::string& cur_word = words[i];
 				char * outptr;
-				int num = strtol(words[i].c_str(), &outptr, 16);
+				int num = (int)strtol(words[i].c_str(), &outptr, 16);
 				if (*outptr) num = -1;
 				if (cur_word == "+")
 				{
@@ -535,7 +541,37 @@ int main(int argc, char * argv[])
 				{
 					numiter = atoi(cur_word.c_str() + 1);
 				}
-				if (cur_word == "err") shouldfail = true;
+
+				const char* token = "errE";
+				if (strncmp(cur_word.c_str(), token, strlen(token)) == 0)
+				{
+					const char* idstr = cur_word.c_str() + strlen(token);
+					char* endpos = nullptr;
+					long int id = strtol(idstr, &endpos, 10);
+
+					if (endpos == nullptr || *endpos != '\0')
+					{
+						dief("Error: Invalid %s declaration!\n", token);
+					}
+
+					expected_errors.insert((int)id);
+				}
+
+				token = "warnW";
+				if (strncmp(cur_word.c_str(), token, strlen(token)) == 0)
+				{
+					const char* idstr = cur_word.c_str() + strlen(token);
+					char* endpos = nullptr;
+					long int id = strtol(idstr, &endpos, 10);
+
+					if (endpos == nullptr || *endpos != '\0')
+					{
+						dief("Error: Invalid %s declaration!\n", token);
+					}
+
+					expected_warnings.insert((int)id);
+				}
+
 				if (pos > len) len = pos;
 			}
 		}
@@ -598,14 +634,7 @@ int main(int argc, char * argv[])
 				
 				if (!asar_patch_ex(&asar_patch_params))
 				{
-					printf("asar_patch() failed on file '%s':\n", fname);
-					int numerrors;
-					const errordata * errdata = asar_geterrors(&numerrors);
-					for (int j = 0; j < numerrors; ++j)
-					{
-						fwrite(errdata[j].fullerrdata, 1, strlen(errdata[j].fullerrdata), err);
-						fwrite("\n", 1, strlen("\n"), err);
-					}
+					printf("asar_patch_ex() failed on file '%s':\n", fname);
 				}
 				else
 				{
@@ -653,6 +682,26 @@ int main(int argc, char * argv[])
 						}
 					}
 				}
+
+				{
+					int numerrors;
+					const struct errordata * errors = asar_geterrors(&numerrors);
+					for (int j = 0; j < numerrors; ++j)
+					{
+						fwrite(errors[j].fullerrdata, 1, strlen(errors[j].fullerrdata), err);
+						fwrite("\n", 1, strlen("\n"), err);
+					}
+				}
+
+				{
+					int numwarnings;
+					const struct errordata * warnings = asar_getwarnings(&numwarnings);
+					for (int j = 0; j < numwarnings; ++j)
+					{
+						fwrite(warnings[j].fullerrdata, 1, strlen(warnings[j].fullerrdata), err);
+						fwrite("\n", 1, strlen("\n"), err);
+					}
+				}
 			}
 		}
 
@@ -682,23 +731,114 @@ int main(int argc, char * argv[])
 		fseek(err, 0, SEEK_SET);
 		char* buf = (char*)malloc(fsize + 1);
 		memset(buf, 0, fsize + 1);
-		fread(buf, 1, fsize + 1, err);
-		bool did_err = (strstr(buf, "error") != nullptr) || (strstr(buf, "Error") != nullptr);
-		if (did_err && !shouldfail)
-		{
-			fclose(err);
-			printf("%s: Insertion error: %s\n", fname, buf);
-			free(buf);
-			die();
-		}
-		if (!did_err && shouldfail)
-		{
-			fclose(err);
-			free(buf);
-			dief("%s: No insertion error\n", fname);
-		}
-		free(buf);
+		fread(buf, 1, fsize, err);
 		fclose(err);
+
+		printf("\n");
+
+		std::set<int> actual_errors;
+		std::set<int> actual_warnings;
+
+		std::string log_line;
+
+		for (size_t i = 0; i < fsize; ++i)
+		{
+			if (buf[i] == '\n' || buf[i] == '\0')
+			{
+				const char* token = ": error: (E";
+				size_t found = log_line.find(token);
+				if (found != std::string::npos)
+				{
+					char* endpos = nullptr;
+					long int num = strtol(log_line.c_str() + found + strlen(token), &endpos, 10);
+
+					if (endpos == nullptr || *endpos != ')')
+					{
+						dief("Error: Failed parsing error code from Asar output!\n");
+					}
+
+					actual_errors.insert(num);
+
+					printf("%s\n", log_line.c_str());
+				}
+
+				token = ": warning: (W";
+				found = log_line.find(token);
+				if (found != std::string::npos)
+				{
+					char* endpos = nullptr;
+					long int num = strtol(log_line.c_str() + found + strlen(token), &endpos, 10);
+
+					if (endpos == nullptr || *endpos != ')')
+					{
+						dief("Error: Failed parsing warning code from Asar output!\n");
+					}
+
+					actual_warnings.insert(num);
+
+					printf("%s\n", log_line.c_str());
+				}
+
+				log_line.clear();
+			}
+			else
+			{
+				if (buf[i] != '\r')
+				{
+					log_line += buf[i];
+				}
+			}
+		}
+
+		free(buf);
+
+
+		if (actual_errors.size() > 0 || actual_warnings.size() > 0)
+		{
+			printf("\n");
+		}
+
+
+		printf("Expected errors: ");
+		for (auto it = expected_errors.begin(); it != expected_errors.end(); ++it)
+		{
+			printf("%sE%d", (it != expected_errors.begin() ? "," : ""), *it);
+		}
+		printf("\n");
+
+		printf("Actual errors: ");
+		for (auto it = actual_errors.begin(); it != actual_errors.end(); ++it)
+		{
+			printf("%sE%d", (it != actual_errors.begin() ? "," : ""), *it);
+		}
+		printf("\n");
+		printf("\n");
+
+
+		printf("Expected warnings: ");
+		for (auto it = expected_warnings.begin(); it != expected_warnings.end(); ++it)
+		{
+			printf("%sW%d", (it != expected_warnings.begin() ? "," : ""), *it);
+		}
+		printf("\n");
+
+		printf("Actual warnings: ");
+		for (auto it = actual_warnings.begin(); it != actual_warnings.end(); ++it)
+		{
+			printf("%sW%d", (it != actual_warnings.begin() ? "," : ""), *it);
+		}
+		printf("\n");
+		printf("\n");
+
+
+		if (expected_errors.size() != actual_errors.size()
+			|| expected_warnings.size() != actual_warnings.size()
+			|| !std::equal(expected_errors.begin(), expected_errors.end(), actual_errors.begin())
+			|| !std::equal(expected_warnings.begin(), expected_warnings.end(), actual_warnings.begin()))
+		{
+			dief("Mismatch!\n");
+		}
+
 
 #if !defined(ASAR_TEST_DLL)
 		rom = fopen(out_rom_name, "rb");
@@ -723,7 +863,7 @@ int main(int argc, char * argv[])
 		free(expectedrom);
 		free(truerom);
 
-		printf("\nSuccess!\n\n\n");
+		printf("Success!\n\n\n");
 	}
 
 	free(smwrom);

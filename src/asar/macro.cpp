@@ -2,8 +2,8 @@
 #include "asar.h"
 #include "autoarray.h"
 #include "assocarr.h"
+#include "errors.h"
 
-template<typename t> void error(int pass, const char * e_);
 bool confirmname(const char * name);
 
 struct macrodata
@@ -43,27 +43,27 @@ extern int callerline;
 void startmacro(const char * line_)
 {
 	thisone=NULL;
-	if (!confirmqpar(line_)) error<errblock>(0, "Broken macro declaration");
+	if (!confirmqpar(line_)) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	string line=line_;
 	clean(line);
 	char * startpar=strqchr(line.str, '(');
-	if (!startpar) error<errblock>(0, "Broken macro declaration");
+	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	*startpar=0;
 	startpar++;
-	if (!confirmname(line)) error<errblock>(0, "Bad macro name");
+	if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_invalid_macro_name);
 	thisname=line;
 	char * endpar=strqrchr(startpar, ')');
 	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nulls
-	if (endpar[1]) error<errblock>(0, "Broken macro declaration");
+	if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	*endpar=0;
 	for (int i=0;startpar[i];i++)
 	{
 		char c=startpar[i];
-		if (!isalnum(c) && c!='_' && c!=',') error<errline>(0, "Broken macro declaration");
-		if (c==',' && isdigit(startpar[i+1])) error<errline>(0, "Broken macro declaration");
+		if (!isalnum(c) && c!='_' && c!=',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+		if (c==',' && isdigit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	}
-	if (*startpar==',' || isdigit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') error<errline>(0, "Broken macro declaration");
-	if (macros.exists(thisname)) error<errblock>(0, "Duplicate macro");
+	if (*startpar==',' || isdigit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+	if (macros.exists(thisname)) asar_throw_error(0, error_type_block, error_id_macro_redefined, thisname.str);
 	thisone=(macrodata*)malloc(sizeof(macrodata));
 	new(thisone) macrodata;
 	if (*startpar)
@@ -79,10 +79,10 @@ void startmacro(const char * line_)
 	}
 	for (int i=0;thisone->arguments[i];i++)
 	{
-		if (!confirmname(thisone->arguments[i])) error<errblock>(0, "Bad macro argument name");
+		if (!confirmname(thisone->arguments[i])) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
 		for (int j=i+1;thisone->arguments[j];j++)
 		{
-			if (!strcmp(thisone->arguments[i], thisone->arguments[j])) error<errblock>(0, S"Duplicate macro argument '"+thisone->arguments[i]+"'");
+			if (!strcmp(thisone->arguments[i], thisone->arguments[j])) asar_throw_error(0, error_type_block, error_id_macro_param_redefined, thisone->arguments[i]);
 		}
 	}
 	thisone->fname=strdup(thisfilename);
@@ -104,8 +104,6 @@ void endmacro(bool insert)
 	else delete thisone;
 }
 
-#define merror(str) do { if (!macrorecursion) { callerfilename=NULL; callerline=-1; } error<errblock>(0, str); } while(0)
-
 
 extern autoarray<int>* macroposlabels;
 extern autoarray<int>* macroneglabels;
@@ -115,23 +113,23 @@ void callmacro(const char * data)
 {
 	int numcm=reallycalledmacros++;
 	macrodata * thismacro;
-	if (!confirmqpar(data)) merror("Broken macro usage");
+	if (!confirmqpar(data)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	string line=data;
 	clean(line);
 	char * startpar=strqchr(line.str, '(');
-	if (!startpar) merror("Broken macro usage");
+	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	*startpar=0;
 	startpar++;
-	if (!confirmname(line)) merror("Bad macro name");
-	if (!macros.exists(line)) merror("Unknown macro");
+	if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
+	if (!macros.exists(line)) asar_throw_error(0, error_type_block, error_id_macro_not_found, line.str);
 	thismacro = macros.find(line);
 	char * endpar=strqrchr(startpar, ')');
-	if (endpar[1]) merror("Broken macro usage");
+	if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	*endpar=0;
 	autoptr<const char **> args;
 	int numargs=0;
 	if (*startpar) args=(const char**)qpsplit(strdup(startpar), ",", &numargs);
-	if (numargs!= thismacro->numargs) merror("Wrong number of arguments to macro");
+	if (numargs != thismacro->numargs) asar_throw_error(0, error_type_block, error_id_macro_wrong_num_params);
 	macrorecursion++;
 	int startif=numif;
 
@@ -176,7 +174,7 @@ void callmacro(const char * data)
 					}
 					*end=0;
 					in++;
-					if (!confirmname(in)) error<errline>(0, "Broken macro contents");
+					if (!confirmname(in)) asar_throw_error(0, error_type_block, error_id_broken_macro_contents);
 					bool found=false;
 					for (int j=0;thismacro->arguments[j];j++)
 					{
@@ -192,7 +190,7 @@ void callmacro(const char * data)
 							break;
 						}
 					}
-					if (!found) error<errline>(0, "Unknown macro argument");
+					if (!found) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
 					in=end+1;
 				}
 				else out+=*(in++);
@@ -216,13 +214,13 @@ void callmacro(const char * data)
 	{
 		thisblock=NULL;
 		repeatnext=1;
-		merror("rep or if at the end of a macro");
+		asar_throw_error(0, error_type_block, error_id_rep_at_macro_end);
 	}
 	if (numif!=startif)
 	{
 		thisblock=NULL;
 		numif=startif;
 		numtrue=startif;
-		merror("Unclosed if statement");
+		asar_throw_error(0, error_type_block, error_id_unclosed_if);
 	}
 }

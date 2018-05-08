@@ -3,6 +3,7 @@
 #include "libstr.h"
 #include "libsmw.h"
 #include "virtualfile.hpp"
+#include "warnings.h"
 #include "platform/file-helpers.h"
 
 #if defined(CPPCLI)
@@ -43,6 +44,7 @@ struct errordata {
 	int line;
 	const char * callerfilename;
 	int callerline;
+	int errid;
 };
 autoarray<errordata> errors;
 int numerror;
@@ -69,7 +71,7 @@ void print(const char * str)
 	prints[numprint++]=strdup(str);
 }
 
-void fillerror(errordata& myerr, const char * type, const char * str)
+void fillerror(errordata& myerr, int errid, const char * type, const char * str)
 {
 	myerr.filename=strdup(thisfilename);
 	myerr.line=thisline;
@@ -79,37 +81,28 @@ void fillerror(errordata& myerr, const char * type, const char * str)
 	myerr.fullerrdata=strdup(S getdecor()+type+str+(thisblock?(S" ["+thisblock+"]"):""));
 	myerr.callerline=callerline;
 	myerr.callerfilename=callerfilename;
+	myerr.errid = errid;
 }
 
 static bool ismath=false;
 static string matherror;
-template<typename t> void error(int neededpass, const char * str)
-{
-	try
-	{
-		errored=true;
-		if (ismath) matherror=str;
-		else if (pass==neededpass) fillerror(errors[numerror++], "error: ", str);
-		else {}//ignore anything else
-		t err;
-		throw err;
-	}
-	catch(errnull&){}
-}
 
-void (*shutupgcc1)(int, const char*)=error<errnull>;
-void (*shutupgcc2)(int, const char*)=error<errblock>;
-void (*shutupgcc3)(int, const char*)=error<errline>;
-void (*shutupgcc4)(int, const char*)=error<errfatal>;
+void error_interface(int errid, int whichpass, const char * e_)
+{
+	errored = true;
+	if (ismath) matherror = e_;
+	else if (pass == whichpass) fillerror(errors[numerror++], errid, S "error: (E" + string(errid) + "): ", e_);
+	else {}//ignore anything else
+}
 
 void initmathcore();
 
 void initstuff();
 void finishpass();
 
-void warn(const char * str)
+void warn(int errid, const char * str)
 {
-	fillerror(warnings[numwarn++], "warning: ", str);
+	fillerror(warnings[numwarn++], errid, S "warning: (W" + string(errid) + "): ", str);
 }
 
 void reseteverything();
@@ -165,7 +158,7 @@ EXPORT int asar_version()
 EXPORT int asar_apiversion()
 {
 	expectsNewAPI=true;
-	return 302;
+	return 303;
 }
 
 EXPORT bool asar_reset()
@@ -201,7 +194,7 @@ void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool should_re
 
 void asar_patch_main(const char * patchloc)
 {
-	if (!path_is_absolute(patchloc)) warn("Relative patch file path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!");
+	if (!path_is_absolute(patchloc)) asar_throw_warning(pass, warning_id_relative_path_used, "patch file");
 
 	try
 	{
@@ -219,7 +212,7 @@ bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 {
 	if (checksum) fixchecksum();
 	if (romdata_!=(char*)romdata_r) free((char*)romdata_r);
-	if (buflen<romlen) error<errnull>(pass, "The given buffer is too small to contain the resulting ROM.");
+	if (buflen < romlen) asar_throw_error(pass, error_type_null, error_id_buffer_too_small);
 	if (errored)
 	{
 		if (buflen != maxromsize) free((unsigned char*)romdata);
@@ -283,12 +276,12 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 {
 	if (params == nullptr)
 	{
-		error<errnull>(pass, "params passed to asar_patch_ex() is null.");
+		asar_throw_error(pass, error_type_null, error_id_params_null);
 	}
 
 	if (params->structsize != sizeof(patchparams_v160))
 	{
-		error<errnull>(pass, "Size of params passed to asar_patch_ex() is invalid.");
+		asar_throw_error(pass, error_type_null, error_id_params_invalid_size);
 	}
 
 	patchparams paramscurrent;
@@ -303,13 +296,13 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 
 	for (int i = 0; i < paramscurrent.numincludepaths; ++i)
 	{
-		if (!path_is_absolute(paramscurrent.includepaths[i])) warn("Relative include path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!");
+		if (!path_is_absolute(paramscurrent.includepaths[i])) asar_throw_warning(pass, warning_id_relative_path_used, "include search");
 		string& newpath = includepaths.append(paramscurrent.includepaths[i]);
 		includepath_cstrs.append((const char*)newpath);
 	}
 
 	if (paramscurrent.stdincludesfile != nullptr) {
-		if (!path_is_absolute(paramscurrent.stdincludesfile)) warn("Relative std includes file path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!");
+		if (!path_is_absolute(paramscurrent.stdincludesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std includes file");
 		string stdincludespath = paramscurrent.stdincludesfile;
 		parse_std_includes(stdincludespath, includepaths);
 	}
@@ -331,9 +324,9 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 		name = name.replace("\t", " ", true);
 		name = itrim(name.str, " ", " ", true);
 		name = itrim(name.str, "!", "", false); // remove leading ! if present
-		if (!validatedefinename(name)) error<errnull>(0, S "Invalid define name in asar_patch_ex() additional defines: '" + name + "'.");
+		if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.str);
 		if (clidefines.exists(name)) {
-			error<errnull>(pass, S "asar_patch_ex() additional define '" + name + "' overrides a previous define. Did you specify the same define twice?");
+			asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.str);
 			return false;
 		}
 		string contents = (paramscurrent.additional_defines[i].contents != nullptr ? paramscurrent.additional_defines[i].contents : "");
@@ -341,7 +334,7 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	}
 
 	if (paramscurrent.stddefinesfile != nullptr) {
-		if (!path_is_absolute(paramscurrent.stddefinesfile)) warn("Relative std defines file path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!");
+		if (!path_is_absolute(paramscurrent.stddefinesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std defines file");
 		string stddefinespath = paramscurrent.stddefinesfile;
 		parse_std_defines(stddefinespath);
 	}
@@ -453,7 +446,7 @@ EXPORT const definedata * asar_getalldefines(int * count)
 	return ddata;
 }
 
-double math(const char * mystr, const char ** e);
+double math(const char * mystr);
 extern autoarray<string> sublabels;
 extern string ns;
 extern autoarray<string> namespace_list;
@@ -468,7 +461,7 @@ EXPORT double asar_math(const char * str, const char ** e)
 	double rval=0;
 	try
 	{
-		rval=(double)math(str, e);
+		rval=(double)math(str);
 	}
 	catch(errfatal&)
 	{

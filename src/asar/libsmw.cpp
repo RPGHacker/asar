@@ -1,6 +1,7 @@
 #include "std-includes.h"
 #include "libsmw.h"
 #include "autoarray.h"
+#include "errors.h"
 
 mapper_t mapper=lorom;
 int sa1banks[8]={0<<20, 1<<20, -1, -1, 2<<20, 3<<20, -1, -1};
@@ -9,7 +10,7 @@ int romlen;
 static bool header;
 static FILE * thisfile;
 
-const char * openromerror;
+asar_error_id openromerror;
 
 autoarray<writtenblockdata> writtenblocks;
 
@@ -392,7 +393,7 @@ bool openrom(const char * filename, bool confirm)
 	thisfile=fopen(filename, "r+b");
 	if (!thisfile)
 	{
-		openromerror="Couldn't open ROM";
+		openromerror = error_id_open_rom_failed;
 		return false;
 	}
 	fseek(thisfile, 0, SEEK_END);
@@ -409,7 +410,7 @@ bool openrom(const char * filename, bool confirm)
 	int truelen=(int)fread((char*)romdata, 1u, (size_t)romlen, thisfile);
 	if (truelen!=romlen)
 	{
-		openromerror="Couldn't open ROM";
+		openromerror = error_id_open_rom_failed;
 		free((unsigned char*)romdata);
 		return false;
 	}
@@ -417,7 +418,7 @@ bool openrom(const char * filename, bool confirm)
 	if (confirm && snestopc(0x00FFC0)+21<(int)romlen && strncmp((char*)romdata+snestopc(0x00FFC0), "SUPER MARIOWORLD     ", 21))
 	{
 		closerom(false);
-		openromerror=header?"Doesn't look like an SMW ROM (maybe its extension is wrong?)":"Doesn't look like an SMW ROM (maybe it's headered?)";
+		openromerror = header ? error_id_open_rom_not_smw_extension : error_id_open_rom_not_smw_header;
 		return false;
 	}
 	return true;

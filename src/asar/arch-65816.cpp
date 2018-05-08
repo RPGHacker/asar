@@ -1,6 +1,7 @@
 #include "asar.h"
+#include "warnings.h"
+#include "errors.h"
 
-#define error error<errblock>
 #define write1 write1_pick
 
 void asinit_65816()
@@ -51,10 +52,10 @@ bool asblock_65816(char** word, int numwords)
 																					 else {  write1((unsigned int)byte); write2(num); } return true; }
 #define as_rep( op, byte) if (is(op)) { if (pass==0) num=getnum(par); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
 #define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
-													if (pass==2 && foundlabel && (pos<-128 || pos>127)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
+													if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
 													return true; }
 #define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+3); write1((unsigned int)byte); write2((unsigned int)pos);\
-											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) error(2, S"Relative branch out of bounds (distance is "+dec(pos)+")"); \
+											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
 											return true; }
 #define the8(offset, len) as##len("ORA", offset+0x00); as##len("AND", offset+0x20); as##len("EOR", offset+0x40); as##len("ADC", offset+0x60); \
 													as##len("STA", offset+0x80); as##len("LDA", offset+0xA0); as##len("CMP", offset+0xC0); as##len("SBC", offset+0xE0)
@@ -134,7 +135,7 @@ bool asblock_65816(char** word, int numwords)
 	else if (match("", ",x"))
 	{
 		init("", ",x");
-		if (match("(", ")") && confirmqpar(substr(word[1]+1, (int)(strlen(word[1]+1)-2-1)))) warn0("($yy),x does not exist, assuming $yy,x");
+		if (match("(", ")") && confirmqpar(substr(word[1] + 1, (int)(strlen(word[1] + 1) - 2 - 1)))) asar_throw_warning(0, warning_id_65816_yy_x_does_not_exist);
 		the8(0x1F, 3);
 		the8(0x1D, 2);
 		the8(0x15, 1);
@@ -154,7 +155,7 @@ bool asblock_65816(char** word, int numwords)
 		as2("LDX", 0xBE);
 		if (len==1 && (is("ORA") || is("AND") || is("EOR") || is("ADC") || is("STA") || is("LDA") || is("CMP") || is("SBC")))
 		{
-			warn0(S word[0]+" $xx,y is not valid with 8-bit parameters, assuming 16-bit");
+			asar_throw_warning(0, warning_id_65816_xx_y_assume_16_bit, word[0]);
 			len=2;
 		}
 		the8(0x19, 2);

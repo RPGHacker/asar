@@ -1,5 +1,7 @@
 ;`01 03 06 07
 
+org $008000
+
 if stringsequal("!assembler", "asar")
 	db $01
 else

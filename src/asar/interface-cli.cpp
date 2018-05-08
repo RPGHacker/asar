@@ -3,6 +3,7 @@
 #include "libstr.h"
 #include "libcon.h"
 #include "libsmw.h"
+#include "errors.h"
 #include "platform/file-helpers.h"
 #include "virtualfile.hpp"
 
@@ -53,27 +54,17 @@ void print(const char * str)
 FILE * errloc=stderr;
 static int errnum=0;
 
-template<typename t> void error(int neededpass, const char * e_)
+void error_interface(int errid, int whichpass, const char * e_)
 {
-	try
+	errored = true;
+	if (pass == whichpass)
 	{
-		errored=true;
-		if (pass==neededpass)
-		{
-			errnum++;
-			fputs(S getdecor()+"error: "+e_+(thisblock?(S" ["+thisblock+"]"):"")+"\n", errloc);
-			if (errnum==20+1) error<errfatal>(pass, "Over 20 errors detected. Aborting.");
-		}
-		t err;
-		throw err;
+		errnum++;
+		fputs(S getdecor() + "error: (E" + string(errid) + "): " + e_ + (thisblock ? (S" [" + thisblock + "]") : "") + "\n", errloc);
+		static const int max_num_errors = 20;
+		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
-	catch (errnull&) {}
 }
-
-void (*shutupgcc1)(int, const char*)=error<errnull>;
-void (*shutupgcc2)(int, const char*)=error<errblock>;
-void (*shutupgcc3)(int, const char*)=error<errline>;
-void (*shutupgcc4)(int, const char*)=error<errfatal>;
 
 void initmathcore();
 
@@ -85,9 +76,9 @@ void reseteverything();
 bool werror=false;
 bool warned=false;
 
-void warn(const char * e_)
+void warn(int errid, const char * e_)
 {
-	fputs(S getdecor()+"warning: "+e_+"\n", errloc);
+	fputs(S getdecor()+"warning: (W" + string(errid) + "): " + e_ + "\n", errloc);
 	warned=true;
 }
 
@@ -273,10 +264,10 @@ int main(int argc, char * argv[])
 					name = itrim(name.str, " ", " ", true);
 					name = itrim(name.str, "!", "", false); // remove leading ! if present
 
-					if (!validatedefinename(name)) error<errnull>(0, S "Invalid define name in command line defines: '" + name + "'.");
+					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.str);
 
 					if (clidefines.exists(name)) {
-						error<errnull>(pass, S "Command line define '" + name + "' overrides a previous define. Did you specify the same define twice?");
+						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.str);
 						pause(err);
 						return 1;
 					}
@@ -290,10 +281,10 @@ int main(int argc, char * argv[])
 					name = itrim(name.str, " ", " ", true);
 					name = itrim(name.str, "!", "", false); // remove leading ! if present
 
-					if (!validatedefinename(name)) error<errnull>(0, S "Invalid define name in command line defines: '" + name + "'.");
+					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.str);
 
 					if (clidefines.exists(name)) {
-						error<errnull>(pass, S "Command line define '" + name + "' overrides a previous define. Did you specify the same define twice?");
+						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.str);
 						pause(err);
 						return 1;
 					}
@@ -328,14 +319,14 @@ int main(int argc, char * argv[])
 			FILE * f=fopen(romname, "wb");
 			if (!f)
 			{
-				error<errfatal>(pass, "Couldn't create ROM.");
+				asar_throw_error(pass, error_type_fatal, error_id_create_rom_failed);
 			}
 			fclose(f);
 		}
 		if (!openrom(romname, false))
 		{
 			thisfilename=NULL;
-			error<errnull>(pass, openromerror);
+			asar_throw_error(pass, error_type_null, openromerror);
 			pause(err);
 			return 1;
 		}
@@ -410,7 +401,7 @@ int main(int argc, char * argv[])
 		filesystem = nullptr;
 
 
-		if (werror && warned) error<errnull>(pass, "One or more warnings was detected with werror on.");
+		if (werror && warned) asar_throw_error(pass, error_type_null, error_id_werror);
 		if (checksum) fixchecksum();
 		//if (pcpos>romlen) romlen=pcpos;
 		if (errored)

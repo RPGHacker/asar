@@ -3,6 +3,7 @@
 #include "libsmw.h"
 #include "assocarr.h"
 #include "autoarray.h"
+#include "warnings.h"
 #include "platform/file-helpers.h"
 
 int arch=arch_65816;
@@ -31,14 +32,9 @@ bool in_sub_struct = false;
 
 assocarr<snes_struct> structs;
 
-template<typename t> void error(int neededpass, const char * e_);
-void warn(const char * e);
-
 static bool movinglabelspossible = false;
 
 bool disable_bank_cross_errors = false;
-
-#define error(p, e) error<errblock>(p, e)
 
 int bytes;
 
@@ -57,7 +53,7 @@ inline void verifysnespos()
 {
 	if (snespos<0 || realsnespos<0)
 	{
-		warn0("Missing org or freespace command");
+		asar_throw_warning(0, warning_id_missing_org);
 		snespos=0x008000;
 		realsnespos=0x008000;
 		startpos=0x008000;
@@ -104,7 +100,7 @@ inline void write1_65816(unsigned int num)
 		if (pcpos<0)
 		{
 			movinglabelspossible=true;
-			error(2, S"SNES address $"+hex6((unsigned int)realsnespos)+" doesn't map to ROM");
+			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).str);
 		}
 		writeromdata_byte(pcpos, (unsigned char)num);
 		if (pcpos>=romlen) romlen=pcpos+1;
@@ -143,7 +139,7 @@ bool asblock_pick(char** word, int numwords)
 const char * safedequote(char * str)
 {
 	const char * tmp=dequote(str);
-	if (!tmp) error(0, "Garbage near quoted string");
+	if (!tmp) asar_throw_error(0, error_type_block, error_id_garbage_near_quoted_string);
 	return tmp;
 }
 #define dequote safedequote
@@ -161,7 +157,7 @@ extern string thisfilename;
 extern int thisline;
 extern int lastspecialline;
 
-const char * createuserfunc(const char * name, const char * arguments, const char * content);
+void createuserfunc(const char * name, const char * arguments, const char * content);
 
 bool commandlineflag(const char * cmd, const char * val);
 
@@ -221,7 +217,7 @@ int getlenfromchar(char c)
 	if (c=='w') return 2;
 	if (c=='l') return 3;
 	if (c=='d') return 4;
-	error(0, "Invalid size modifier");
+	asar_throw_error(0, error_type_block, error_id_invalid_opcode_length);
 	return -1;
 }
 
@@ -304,7 +300,7 @@ string posneglabelname(const char ** input, bool define)
 		{
 			if (macrorecursion == 0 || macroposlabels == nullptr || macroneglabels == nullptr)
 			{
-				if (!macrorecursion) error(0, "Macro label outside of a macro");
+				if (!macrorecursion) asar_throw_error(0, error_type_block, error_id_macro_label_outside_of_macro);
 			}
 			else
 			{
@@ -348,7 +344,7 @@ string labelname(const char ** rawname, bool define=false)
 		sublabellist = macrosublabels;
 	}
 
-	if (isdigit(*rawname)) error(0, "Broken label name");
+	if (isdigit(*rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
 	if (*rawname==':')
 	{
 		rawname++;
@@ -357,11 +353,11 @@ string labelname(const char ** rawname, bool define=false)
 	else if (!in_struct && !in_sub_struct)
 	{
 		for (i=0;(*rawname=='.');i++) rawname++;
-		if (!isualnum(*rawname)) error(0, "Invalid label name.");
-		if (emulatexkas && i>1) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
+		if (!isualnum(*rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+		if (emulatexkas && i>1) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (i)
 		{
-			if (!(*sublabellist)[i-1]) error(0, "This label has no parent.");
+			if (!(*sublabellist)[i - 1]) asar_throw_error(0, error_type_block, error_id_label_missing_parent);
 			name+=S(*sublabellist)[i-1]+"_";
 			issublabel = true;
 		}
@@ -371,7 +367,7 @@ string labelname(const char ** rawname, bool define=false)
 	{
 		// RPG Hacker: Don't add the prefix for sublabels, because they already inherit it from
 		// their parents' names.
-		if (!macrorecursion || macrosublabels == nullptr) error(1, "Macro label outside of a macro");
+		if (!macrorecursion || macrosublabels == nullptr) asar_throw_error(1, error_type_block, error_id_macro_label_outside_of_macro);
 		name = S":macro_" + dec(calledmacros) + "_" + name;
 	}
 
@@ -387,7 +383,7 @@ string labelname(const char ** rawname, bool define=false)
 		rawname++;
 	}
 
-	if (!isualnum(*rawname)) error(0, "Invalid label name.");
+	if (!isualnum(*rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
 
 	while (isualnum(*rawname) || *rawname == '.' || *rawname == '[')
 	{
@@ -404,12 +400,12 @@ string labelname(const char ** rawname, bool define=false)
 			}
 			if (invalid)
 			{
-				error(0, "Invalid label name, missing array closer.");
+				asar_throw_error(0, error_type_block, error_id_invalid_label_missing_closer);
 			}
 		}
 		else if (*rawname == '{')
 		{
-			error(0, "Array syntax invalid inside structs.");
+			asar_throw_error(0, error_type_block, error_id_array_invalid_inside_structs);
 		}
 
 		name+=*(rawname++);
@@ -438,7 +434,7 @@ inline bool labelvalcore(const char ** rawname, unsigned int * rval, bool define
 	{
 		if (shouldthrow && pass)
 		{
-			error(1, S"Label " + name + " not found");
+			asar_throw_error(1, error_type_block, error_id_label_not_found, name.str);
 		}
 		if (rval) *rval=(unsigned int)-1;
 		return false;
@@ -502,7 +498,7 @@ void setlabel(string name, int loc=-1)
 		if (labels.exists(name))
 		{
 			movinglabelspossible=true;
-			error(0, S"Label \""+name+"\" redefined");
+			asar_throw_error(0, error_type_block, error_id_label_redefined, name.str);
 		}
 		labels.create(name) = (unsigned int)loc;
 	}
@@ -513,9 +509,9 @@ void setlabel(string name, int loc=-1)
 	else if (pass==2)
 	{
 		//all label locations are known at this point, add a sanity check
-		if (!labels.exists(name)) error(2, "Internal error: A label was created on the third pass. Please create an issue on the official GitHub repository and attach a patch which reproduces the error.");
+		if (!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_on_third_pass);
 		labelpos = labels.find(name);
-		if ((int)labelpos!=loc && !movinglabelspossible) error(2, "Internal error: A label is moving around. Please create an issue on the official GitHub repository and attach a patch which reproduces the error.");
+		if ((int)labelpos != loc && !movinglabelspossible) asar_throw_error(2, error_type_block, error_id_label_moving);
 	}
 }
 
@@ -573,7 +569,8 @@ bool nested_namespaces = false;
 
 int getfreespaceid()
 {
-	if (freespaceidnext>125) fatalerror("A patch may not contain more than 125 freespaces.");
+	static const int max_num_freespaces = 125;
+	if (freespaceidnext > max_num_freespaces) asar_throw_error(pass, error_type_fatal, error_id_freespace_limit_reached, max_num_freespaces);
 	return freespaceidnext++;
 }
 
@@ -584,7 +581,7 @@ void checkbankcross()
 	if ( (((snespos^    startpos) & 0x7FFF0000) && (((snespos - 1) ^ startpos) & 0x7FFF0000))
 		|| (((realsnespos^realstartpos) & 0x7FFF0000) && (((realsnespos - 1) ^ realstartpos) & 0x7FFF0000)) )
 	{
-		fatalerror("A bank border was crossed somewhere prior to this point.");
+		asar_throw_error(pass, error_type_fatal, error_id_bank_border_crossed);
 	}
 }
 
@@ -687,8 +684,8 @@ void initstuff()
 void finishpass()
 {
 //defines.traverse(nerf);
-	if (in_struct || in_sub_struct) nullerror("struct without matching endstruct.");
-	else if (pushpcnum && pass == 0) nullerror("pushpc without matching pullpc.");
+	if (in_struct || in_sub_struct) asar_throw_error(pass, error_type_null, error_id_struct_without_endstruct);
+	else if (pushpcnum && pass == 0) asar_throw_error(pass, error_type_null, error_id_pushpc_without_pullpc);
 	freespaceend();
 	if (arch==arch_65816) asend_65816();
 	if (arch==arch_spc700) asend_spc700();
@@ -705,7 +702,7 @@ bool addlabel(const char * label, int pos=-1)
 
 	if (posnegname.truelen() > 0)
 	{
-		if (*posneglabel != '\0' && *posneglabel != ':') error(0, "Broken label definition.");
+		if (*posneglabel != '\0' && *posneglabel != ':') asar_throw_error(0, error_type_block, error_id_broken_label_definition);
 		setlabel(posnegname, pos);
 		return true;
 	}
@@ -727,8 +724,8 @@ bool addlabel(const char * label, int pos=-1)
 		bool requirecolon = (label[0] != '.' && label[1] != '.') && (in_struct || in_sub_struct);
 		string name=labelname(&label, define);
 		if (label[0]==':') label++;
-		else if (requirecolon) error(0, "Broken label definition");
-		if (label[0]) error(0, "Broken label definition");
+		else if (requirecolon) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
+		if (label[0]) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
 		if (ns) name=S ns+name;
 		setlabel(name, pos);
 		return true;
@@ -853,12 +850,12 @@ void assembleblock(const char * block)
 		}
 		else
 		{
-			error(0, S"Tried to undefine '" + def + "', which is not the name of a known define.");
+			asar_throw_error(0, error_type_block, error_id_define_not_found, def.str);
 		}
 	}
 	else if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
-		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
+		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		const char * errmsg=NULL;
 		whiletracker wstatus;		
 		wstatus.startline = thisline;
@@ -887,28 +884,28 @@ void assembleblock(const char * block)
 		char * condstr=NULL;
 		while (true)
 		{
-			if (!nextword[0]) error(0, S"Broken "+lower(word[0])+" command");
+			if (!nextword[0]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 			bool thiscond = false;
 			if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
 			{
 				unsigned int val = getnum(nextword[0]);
-				if (foundlabel) error(1, S"Label in " + lower(word[0]) + " command");
+				if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 				thiscond = (val > 0);
 
 				if (condstr && nextword[1])
 				{
-					if (strcmp(condstr, nextword[1])) error(1, "Invalid condition");
+					if (strcmp(condstr, nextword[1])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
 				}
 				else condstr=nextword[1];
 				nextword+=2;
 			}
 			else
 			{
-				if (!nextword[2]) error(0, S"Broken "+lower(word[0])+" command");
+				if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 				unsigned int par1=getnum(nextword[0]);
-				if (foundlabel) error(1, S"Label in "+lower(word[0])+" command");
+				if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 				unsigned int par2=getnum(nextword[2]);
-				if (foundlabel) error(1, S"Label in "+lower(word[0])+" command");
+				if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 				if(0);
 				else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
 				else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
@@ -918,11 +915,11 @@ void assembleblock(const char * block)
 				else if (!strcmp(nextword[1], "==")) thiscond=(par1==par2);
 				else if (!strcmp(nextword[1], "!=")) thiscond=(par1!=par2);
 				//else if (!strcmp(nextword[1], "<>")) thiscond=(par1!=par2);
-				else error(0, S"Broken "+lower(word[0])+" command");
+				else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 
 				if (condstr && nextword[3])
 				{
-					if (strcmp(condstr, nextword[3])) error(1, "Invalid condition");
+					if (strcmp(condstr, nextword[3])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
 				}
 				else condstr=nextword[3];
 				nextword+=4;
@@ -983,9 +980,9 @@ void assembleblock(const char * block)
 		}
 		else if (is("elseif"))
 		{
-			if (!numif) error(1, "Misplaced elseif");
-			if (whilestatus[numif-1].iswhile) error(1, "Can't use elseif in a while loop.");
-			if (moreonline) error(1, "Can't use elseif on single-line statements");
+			if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_elseif);
+			if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_elseif_in_while);
+			if (moreonline) asar_throw_error(1, error_type_block, error_id_elseif_in_singleline);
 			if (numif==numtrue) numtrue--;
 			if (cond && !elsestatus[numif])
 			{
@@ -995,20 +992,20 @@ void assembleblock(const char * block)
 		}
 		else if (!cond)
 		{
-			if (errmsg) error(1, S"Assertion failed: "+(const char*)errmsg);
-			else error(1, "Assertion failed");
+			if (errmsg) asar_throw_error(1, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).str);
+			else asar_throw_error(1, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
 	else if (is0("endif"))
 	{
-		if (!numif) error(1, "Misplaced endif");
+		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
 		if (numif==numtrue) numtrue--;
 		numif--;
 	}
 	else if (is0("else"))
 	{
-		if (!numif) error(1, "Misplaced else");
-		if (whilestatus[numif-1].iswhile) error(1, "Can't use else in a while loop.");
+		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_else);
+		if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
 		else if (numif==numtrue) numtrue--;
 		else if (numif==numtrue+1 && !elsestatus[numif])
 		{
@@ -1020,19 +1017,19 @@ void assembleblock(const char * block)
 	else if (asblock_pick(word, numwords)) { numopcodes++; }
 	else if (is0("error"))
 	{
-		error(0, "error command encountered");
+		asar_throw_error(0, error_type_block, error_id_error_command, ".");
 	}
 	else if (is0("warn"))
 	{
-		if (pass==2) warn("warn command encountered");
+		asar_throw_warning(2, warning_id_warn_command, ".");
 	}
 	else if (is1("error"))
 	{
-		error(0, dequote(par));
+		asar_throw_error(0, error_type_block, error_id_error_command, (string(": ") + dequote(par)).str);
 	}
 	else if (is1("warn"))
 	{
-		if (pass==2) warn(dequote(par));
+		asar_throw_warning(2, warning_id_warn_command, (string(": ") + dequote(par)).str);
 	}
 	else if (is1("expecttitle"))
 	{
@@ -1046,9 +1043,9 @@ void assembleblock(const char * block)
 		if (romlen < ((mapper==hirom || mapper==exhirom) ? 0x10000 : 0x8000)) // too short
 		{
 			if (!ignoretitleerrors) // title errors shouldn't be ignored
-				error(0, S"ROM is too short to have a title (expected '" + expected_title + "')");
+				asar_throw_error(0, error_type_block, error_id_rom_too_short, expected_title.str);
 			else // title errors should be ignored, throw a warning anyways
-				if (pass==0) warn(S"ROM is too short to have a title (expected '" + expected_title + "')");
+				asar_throw_warning(0, warning_id_rom_too_short, expected_title.str);
 		}
 		else {
 			string actual_title;
@@ -1071,59 +1068,59 @@ void assembleblock(const char * block)
 			if (strncmp(expected_title, actual_title, 21) != 0)
 			{
 				if (!ignoretitleerrors) // title errors shouldn't be ignored
-					error(0, S"ROM title is incorrect. Expected '" + expected_title + "', got '" + actual_display_title + "'");
+					asar_throw_error(0, error_type_block, error_id_rom_title_incorrect, expected_title.str, actual_display_title.str);
 				else // title errors should be ignored, throw a warning anyways
-					if (pass==0) warn(S"ROM title is incorrect. Expected '" + expected_title + "', got '" + actual_display_title + "'");
+					asar_throw_warning(0, warning_id_rom_title_incorrect, expected_title.str, actual_display_title.str);
 			}
 		}
 	}
 	else if (is0("asar") || is1("asar"))
 	{
-		if (!asarverallowed) error(0, "This command may only be used at the start of a file.");
+		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (!par) return;
-		if (emulatexkas) error(0, "Using @xkas and @asar in the same patch is not supported.");
+		if (emulatexkas) asar_throw_error(0, error_type_block, error_id_xkas_asar_conflict);
 		int dots=0;
 		int dig=0;
 		for (int i=0;par[i];i++)
 		{
 			if (par[i]=='.')
 			{
-				if (!dig) error(0, "Invalid version number");
+				if (!dig) asar_throw_error(0, error_type_block, error_id_invalid_version_number);
 				dig=0;
 				dots++;
 			}
 			else if (isdigit(par[i])) dig++;
-			else error(0, "Invalid version number");
+			else asar_throw_error(0, error_type_block, error_id_invalid_version_number);
 		}
-		if (!dig || !dots || dots>2) error(0, "Invalid version number");
+		if (!dig || !dots || dots>2) asar_throw_error(0, error_type_block, error_id_invalid_version_number);
 		autoptr<char**> vers=split(par, ".");
 		int vermaj=atoi(vers[0]);
-		if (vermaj>asarver_maj) fatalerror("This version of Asar is too old for this patch.");
+		if (vermaj > asarver_maj) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
 		if (vermaj<asarver_maj) return;
 		if (dots==1)
 		{
-			if (strlen(vers[1])!=2) error(0, "Invalid version number.");
+			if (strlen(vers[1])!=2) asar_throw_error(0, error_type_block, error_id_invalid_version_number);
 			//if (asarver_min<10 && asarver_bug<10 && strlen(vers[1])>2) error(0, "This version of Asar is too old for this patch.");
 			int verminbug=atoi(vers[1]);
 			int tmpver=asarver_bug;
 			if (tmpver>9) tmpver=9;
-			if (asarver_min*10+tmpver<verminbug) fatalerror("This version of Asar is too old for this patch.");
+			if (asarver_min*10+tmpver<verminbug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
 		}
 		else
 		{
 			int vermin=atoi(vers[1]);
-			if (vermin>asarver_min) fatalerror("This version of Asar is too old for this patch.");
+			if (vermin>asarver_min) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
 			int verbug=atoi(vers[2]);
-			if (vermin==asarver_min && verbug>asarver_bug) fatalerror("This version of Asar is too old for this patch.");
+			if (vermin==asarver_min && verbug>asarver_bug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
 		}
 		specifiedasarver = true;
 	}
 	else if (is0("xkas"))
 	{
-		if (!asarverallowed) error(0, "This command may only be used at the start of a file.");
-		if (incsrcdepth != 1 && !emulatexkas) error(0, "This command may only be used in the root file.");
-		if (specifiedasarver) error(0, "Using @xkas and @asar in the same patch is not supported.");
-		warn0("xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
+		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
+		if (incsrcdepth != 1 && !emulatexkas) asar_throw_error(0, error_type_block, error_id_command_in_non_root_file);
+		if (specifiedasarver) asar_throw_error(0, error_type_block, error_id_xkas_asar_conflict);
+		asar_throw_warning(0, warning_id_xkas_deprecated);
 		emulatexkas=true;
 		optimizeforbank=0x100;
 		checksum=false;
@@ -1131,11 +1128,11 @@ void assembleblock(const char * block)
 	}
 	else if (is0("include") || is1("includefrom"))
 	{
-		if (!asarverallowed) error(0, "This command may only be used at the start of a file.");
+		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (istoplevel)
 		{
-			if (par) fatalerror(S"This file may not be used as the main file. The main file is \""+S par+"\".");
-			else fatalerror("This file may not be used as the main file.");
+			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string("The main file is '") + S par + S "'.").str);
+			else asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, "");
 		}
 	}
 	else if (is0("includeonce"))
@@ -1148,7 +1145,7 @@ void assembleblock(const char * block)
 	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
 	{
 		int len = 0;
-		if (!confirmqpar(par)) error(0, "Mismatched parentheses");
+		if (!confirmqpar(par)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 		if (is1("db")) len=1;
 		if (is1("dw")) len=2;
 		if (is1("dl")) len=3;
@@ -1159,7 +1156,7 @@ void assembleblock(const char * block)
 			if (pars[i][0]=='"')
 			{
 				if (!strcmp(pars[i],"\"STAR\"") && !emulatexkas)
-						warn0("If you want to assemble an xkas patch, add ;@xkas at the top or you may run into a couple of problems.");
+					asar_throw_warning(0, warning_id_xkas_patch);
 				for (unsigned char * str=(unsigned char*)dequote(pars[i]);*str;str++)
 				{
 					if (len==1) write1(table.table[*str]);
@@ -1190,7 +1187,7 @@ void assembleblock(const char * block)
 		// randomdude999: int cast b/c i'm too lazy to also mess with making setlabel()
 		// unsigned, besides it wouldn't matter anyways.
 		int num=(int)getnum(word[2]);
-		if (foundlabel) error(0, "Setting labels to each other is not valid");
+		if (foundlabel) asar_throw_error(0, error_type_block, error_id_label_cross_assignment);
 
 		const char* newlabelname = word[0];
 		bool ismacro = false;
@@ -1203,10 +1200,10 @@ void assembleblock(const char * block)
 
 		if (ismacro && macrorecursion == 0)
 		{
-			error(0, "Macro label outside of a macro");
+			asar_throw_error(0, error_type_block, error_id_macro_label_outside_of_macro);
 		}
 
-		if (!confirmname(newlabelname)) error(0, "Invalid label name");
+		if (!confirmname(newlabelname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
 
 		string completename;
 
@@ -1223,24 +1220,24 @@ void assembleblock(const char * block)
 	{
 		freespaceend();
 		int num=(int)getnum(par);
-		if (forwardlabel) error(0, "org Label is only valid for labels earlier in the patch");
-		if (num&~0xFFFFFF) error(1, "Address out of bounds");
-		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000) warn0("It would be wise to set the 008000 bit of this address.");
+		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
+		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
+		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000) asar_throw_warning(0, warning_id_set_middle_byte);
 		//if (fastrom) num|=0x800000;
 		snespos=num;
 		realsnespos=num;
 		startpos=num;
 		realstartpos=num;
 	}
-#define ret_error(message) { error(0, message); return; }
+#define ret_error(errid, ...) { asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
 	else if (is("struct"))
 	{
-		if (in_struct || in_sub_struct) ret_error("Can not nest structs.");
-		if (numwords < 2) ret_error("Missing struct parameters.");
-		if (numwords > 4) ret_error("Too many struct parameters.");
-		if (!confirmname(word[1])) ret_error("Invalid struct name.");
+		if (in_struct || in_sub_struct) ret_error(error_id_nested_struct);
+		if (numwords < 2) ret_error(error_id_missing_struct_params);
+		if (numwords > 4) ret_error(error_id_too_many_struct_params);
+		if (!confirmname(word[1])) ret_error(error_id_invalid_struct_name);
 
-		if (structs.exists(word[1]) && pass == 0) ret_error("Struct already exists, choose a different name.");
+		if (structs.exists(word[1]) && pass == 0) ret_error(error_id_struct_redefined, word[1]);
 
 		old_snespos = snespos;
 		old_startpos = startpos;
@@ -1252,17 +1249,17 @@ void assembleblock(const char * block)
 		if (numwords == 3)
 		{
 			int base = (int)getnum(word[2]);
-			if (base&~0xFFFFFF) ret_error("Address out of bounds.");
+			if (base&~0xFFFFFF) ret_error(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).str);
 			snespos = base;
 			startpos = base;
 		}
 		else if (numwords == 4)
 		{
-			if (strcasecmp(word[2], "extends")) ret_error("Missing extends keyword.");
-			if (!confirmname(word[3])) ret_error("Invalid parent name.");
+			if (strcasecmp(word[2], "extends")) ret_error(error_id_missing_extends);
+			if (!confirmname(word[3])) ret_error(error_id_struct_invalid_parent_name);
 			struct_parent = word[3];
 
-			if (!structs.exists(struct_parent)) ret_error("Parent struct does not exist.");
+			if (!structs.exists(struct_parent)) ret_error(error_id_struct_not_found, struct_parent.str);
 			snes_struct structure = structs.find(struct_parent);
 
 			snespos = structure.base_end;
@@ -1278,12 +1275,12 @@ void assembleblock(const char * block)
 	}
 	else if (is("endstruct"))
 	{
-		if (numwords != 1 && numwords != 3) ret_error("Invalid endstruct parameter count.");
-		if (numwords == 3 && strcasecmp(word[1], "align")) ret_error("Expected align parameter.");
-		if (!in_struct && !in_sub_struct) ret_error("endstruct can only be used in combination with struct.");
+		if (numwords != 1 && numwords != 3) ret_error(error_id_invalid_endstruct_count);
+		if (numwords == 3 && strcasecmp(word[1], "align")) ret_error(error_id_expected_align);
+		if (!in_struct && !in_sub_struct) ret_error(error_id_endstruct_without_struct);
 
 		int alignment = numwords == 3 ? (int)getnum(word[2]) : 1;
-		if (alignment < 1) ret_error("Alignment must be >= 1.");
+		if (alignment < 1) ret_error(error_id_alignment_too_small);
 
 		snes_struct structure;
 		structure.base_end = snespos;
@@ -1324,8 +1321,8 @@ void assembleblock(const char * block)
 			return;
 		}
 		int num=(int)getnum(par);
-		if (forwardlabel) error(0, "base Label is not valid");
-		if (num&~0xFFFFFF) error(1, "Address out of bounds");
+		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
+		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
 		snespos=num;
 		startpos=num;
 		optimizeforbank=-1;
@@ -1345,16 +1342,16 @@ void assembleblock(const char * block)
 		int num=(int)getnum(par);
 		//if (forwardlabel) error(0, "bank Label is not valid");
 		//if (foundlabel) num>>=16;
-		if (num&~0x0000FF) error(1, "Address out of bounds");
+		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
 		optimizeforbank=num;
 	}
 	else if (is("freespace") || is("freecode") || is("freedata"))
 	{
-		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
+		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		string parstr;
 		if (numwords==1) parstr="\n";//crappy hack: impossible character to cut out extra commas
 		else if (numwords==2) parstr=word[1];
-		else error(0, "Invalid freespace request.");
+		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 		if (is("freecode")) parstr=S"ram,"+parstr;
 		if (is("freedata")) parstr=S"noram,"+parstr;
 		autoptr<char**> pars=split(parstr.str, ",");
@@ -1368,28 +1365,28 @@ void assembleblock(const char * block)
 			if (pars[i][0]=='\n') {}
 			else if (!stricmp(pars[i], "ram"))
 			{
-				if (useram!=-1) error(0, "Invalid freespace request.");
+				if (useram!=-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 				useram=1;
 			}
 			else if (!stricmp(pars[i], "noram"))
 			{
-				if (useram!=-1) error(0, "Invalid freespace request.");
+				if (useram!=-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 				useram=0;
 			}
 			else if (!stricmp(pars[i], "static") || !stricmp(pars[i], "fixed"))
 			{
-				if (!stricmp(pars[i], "fixed")) warn0("the 'fixed' parameter on freespace/freecode/freedata is deprecated - please use 'static' instead");
-				if (fixedpos) error(0, "Invalid freespace request.");
+				if (!stricmp(pars[i], "fixed")) asar_throw_warning(0, warning_id_fixed_deprecated);
+				if (fixedpos) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 				fixedpos=true;
 			}
 			else if (!stricmp(pars[i], "align"))
 			{
-				if (align) error(0, "Invalid freespace request.");
+				if (align) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 				align=true;
 			}
 			else if (!stricmp(pars[i], "cleaned"))
 			{
-				if (!leakwarn) error(0, "Invalid freespace request.");
+				if (!leakwarn) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 				leakwarn=false;
 			}
 			else
@@ -1397,9 +1394,9 @@ void assembleblock(const char * block)
 				fsbyte = (unsigned char)getnum(pars[i]);
 			}
 		}
-		if (useram==-1) error(0, "Invalid freespace request.");
-		if ((mapper==hirom || mapper==exhirom) && useram) error(0, "No banks contain the RAM mirrors in hirom or exhirom.");
-		if (mapper==norom) error(0, "Can't find freespace in norom.");
+		if (useram==-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		if ((mapper == hirom || mapper == exhirom) && useram) asar_throw_error(0, error_type_block, error_id_no_banks_with_ram_mirrors);
+		if (mapper == norom) asar_throw_error(0, error_type_block, error_id_no_freespace_norom);
 		freespaceend();
 		freespaceid=getfreespaceid();
 		freespacebyte[freespaceid] = fsbyte;
@@ -1410,8 +1407,7 @@ void assembleblock(const char * block)
 			{
 				freespacepos[freespaceid]=0x008000;
 				freespaceleak[freespaceid]=false;//mute some other errors
-				/*if (freespaceorgpos[freespaceid]==-1)*/ error(1, "A static freespace must be targeted by at least one autoclean.");
-				/*if (freespaceorgpos[freespaceid]==-2)   error(1, "A static freespace must be targeted by at least one autoclean.");*/
+				asar_throw_error(1, error_type_block, error_id_static_freespace_autoclean);
 			}
 			if (fixedpos && freespaceorgpos[freespaceid]) freespacepos[freespaceid]=snespos=(freespaceid<<24)|freespaceorgpos[freespaceid];
 			else freespacepos[freespaceid]=snespos=(freespaceid<<24)|getsnesfreespace(freespacelen[freespaceid], (useram != 0), true, true, align, freespacebyte[freespaceid]);
@@ -1421,14 +1417,14 @@ void assembleblock(const char * block)
 			if (fixedpos && freespaceorgpos[freespaceid]==-1) return;//to kill some errors
 			snespos=(freespaceid<<24)|freespacepos[freespaceid];
 			resizerats(snespos, freespacelen[freespaceid]);
-			if (freespaceleak[freespaceid] && leakwarn) warn2("This freespace appears to be leaked.");
+			if (freespaceleak[freespaceid] && leakwarn) asar_throw_warning(2, warning_id_freespace_leaked);
 			if (fixedpos && freespaceorgpos[freespaceid]>0 && freespacelen[freespaceid]>freespaceorglen[freespaceid])
-					error(2, "A static freespace may not grow.");
+				asar_throw_error(2, error_type_block, error_id_static_freespace_growing);
 			freespaceuse+=8+freespacelen[freespaceid];
 		}
 		freespacestatic[freespaceid]=fixedpos;
-		if (snespos<0 && mapper==sa1rom) fatalerror(S"No freespace found in the mapped banks (requested size: "+dec(freespacelen[freespaceid])+")");
-		if (snespos<0) fatalerror(S"No freespace found (requested size: "+dec(freespacelen[freespaceid])+")");
+		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(freespacelen[freespaceid]).str);
+		if (snespos < 0) asar_throw_error(pass, error_type_fatal, error_id_no_freespace, dec(freespacelen[freespaceid]).str);
 		bytes+=8;
 		freespacestart=snespos;
 		startpos=snespos;
@@ -1439,8 +1435,8 @@ void assembleblock(const char * block)
 	}
 	else if (is1("prot"))
 	{
-		if (!confirmqpar(par)) error(0, "Mismatched parentheses");
-		if (!ratsmetastate) error(2, "PROT must be used at the start of a freespace block.");
+		if (!confirmqpar(par)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
+		if (!ratsmetastate) asar_throw_error(2, error_type_block, error_id_prot_not_at_freespace_start);
 		if (ratsmetastate==ratsmeta_used) step(-5);
 		int num;
 		autoptr<char**> pars=qpsplit(par, ",", &num);
@@ -1448,14 +1444,15 @@ void assembleblock(const char * block)
 		write1('R');
 		write1('O');
 		write1('T');
-		if (num*3>255) error(0, "Too many entries to PROT.");
+		if (num * 3 > 255) asar_throw_error(0, error_type_block, error_id_prot_too_many_entries);
 		write1((unsigned int)(num*3));
 		for (int i=0;i<num;i++)
 		{
 			//int num=getnum(pars[i]);
 			const char * labeltest=pars[i];
+			string testlabel = labeltest;
 			int labelnum=(int)labelval(&labeltest);
-			if (*labeltest) error(0, "Not a label.");
+			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.str);
 			write3((unsigned int)labelnum);
 			if (pass==1) freespaceleak[labelnum >>24]=false;
 		}
@@ -1468,13 +1465,14 @@ void assembleblock(const char * block)
 	}
 	else if (is1("autoclean") || is2("autoclean") || is1("autoclear") || is2("autoclear"))
 	{
-		if (is1("autoclear") || is2("autoclear")) warn0("'autoclear' is deprecated - please use 'autoclean' instead");
+		if (is1("autoclear") || is2("autoclear")) asar_throw_warning(0, warning_id_autoclear_deprecated);
 		if (numwords==3)
 		{
-			if (snespos&0xFF000000) error(0, "autoclean used in freespace");
-			const char * labeltest=word[2];
+			if (snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
+			const char * labeltest = word[2];
+			string testlabel = labeltest;
 			int num=(int)labelval(&labeltest);
-			if (*labeltest) error(0, "Not a label.");
+			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.str);
 			unsigned char targetid=(unsigned char)(num>>24);
 			if (pass==1) freespaceleak[targetid]=false;
 			num&=0xFFFFFF;
@@ -1499,7 +1497,7 @@ void assembleblock(const char * block)
 					int start=ratsstart(num);
 					if (start>=num || start<0)
 					{
-						error(2, "Don't autoclean a label at the end of a freespace block, you'll remove some stuff you're not supposed to remove.");
+						asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
 					}
 				}
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
@@ -1517,18 +1515,18 @@ void assembleblock(const char * block)
 				}
 				else if (!ratsloc) ratsloc=0;
 				if ((start==num || start<0) && pass==2)
-					error(2, "Don't autoclean a label at the end of a freespace block, you'll remove some stuff you're not supposed to remove.");
+					asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
 				write3((unsigned int)num);
 				freespaceorgpos[targetid]=ratsloc;
 				freespaceorglen[targetid]=read2(ratsloc-4)+1;
 			}
-			else error(0, "Broken autoclean command");
+			else asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 		}
 		else if (pass==0) removerats((int)getnum(word[1]), 0x00);
 	}
 	else if (is0("pushpc"))
 	{
-		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
+		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		pushpc[pushpcnum].arch=arch;
 		pushpc[pushpcnum].snespos=snespos;
 		pushpc[pushpcnum].snesstart=startpos;
@@ -1545,10 +1543,10 @@ void assembleblock(const char * block)
 	}
 	else if (is0("pullpc"))
 	{
-		if (!pushpcnum) error(0, "pullpc without matching pushpc");
+		if (!pushpcnum) asar_throw_error(0, error_type_block, error_id_pullpc_without_pushpc);
 		pushpcnum--;
 		freespaceend();
-		if (arch!=pushpc[pushpcnum].arch) error(0, "pullpc in another architecture than the pushpc");
+		if (arch != pushpc[pushpcnum].arch) asar_throw_error(0, error_type_block, error_id_pullpc_different_arch);
 		snespos=pushpc[pushpcnum].snespos;
 		startpos=pushpc[pushpcnum].snesstart;
 		realsnespos=pushpc[pushpcnum].snesposreal;
@@ -1559,13 +1557,13 @@ void assembleblock(const char * block)
 	}
 	else if (is0("pushbase"))
 	{
-		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
+		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		basestack[basestacknum] = snespos;
 		basestacknum++;
 	}
 	else if (is0("pullbase"))
 	{
-		if (!basestacknum) error(0, "pullbase without matching pushbase");
+		if (!basestacknum) asar_throw_error(0, error_type_block, error_id_pullbase_without_pushbase);
 		basestacknum--;
 		snespos = basestack[basestacknum];
 		startpos = basestack[basestacknum];
@@ -1582,20 +1580,20 @@ void assembleblock(const char * block)
 		{
 			if (!stricmp(par, "off"))
 			{
-				if (word[2]) error(0, "Invalid use of namespace command");
+				if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
 				leave = true;
 			}
 			else if (!stricmp(par, "nested"))
 			{
-				if (!word[2]) error(0, "Invalid use of namespace command");
+				if (!word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
 				else if (!stricmp(word[2], "on")) nested_namespaces = true;
 				else if (!stricmp(word[2], "off")) nested_namespaces = false;
 			}
 			else
 			{
-				if (word[2]) error(0, "Invalid use of namespace command");
+				if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
 				const char * tmpstr=dequote(par);
-				if (!confirmname(tmpstr)) error(0, "Bad namespace name");
+				if (!confirmname(tmpstr)) asar_throw_error(0, error_type_block, error_id_invalid_namespace_name);
 				if (!nested_namespaces)
 				{
 					namespace_list.reset();
@@ -1631,16 +1629,16 @@ void assembleblock(const char * block)
 	else if (is1("warnpc"))
 	{
 		int maxpos=(int)getnum(par);
-		if (snespos&0xFF000000) error(0, "warnpc used in freespace");
-		if (maxpos&0xFF000000) error(0, "Broken warnpc argument");
-		if (snespos>maxpos) error(0, S"warnpc failed: Current position ("+hex6((unsigned int)snespos)+") is after end position ("+hex6((unsigned int)maxpos)+")");
-		if (warnxkas && snespos==maxpos) warn0(S"xkas conversion warning: warnpc is relaxed one byte in Asar");
-		if (emulatexkas && snespos==maxpos) error(0, S"warnpc failed: Current position ("+hex6((unsigned int)snespos)+") is equal to end position ("+hex6((unsigned int)maxpos)+")");
+		if (snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
+		if (maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);
+		if (snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
+		if (warnxkas && snespos == maxpos) asar_throw_warning(0, warning_id_xkas_warnpc_relaxed);
+		if (emulatexkas && snespos==maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed_equal, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
 	}
 	else if (is1("rep"))
 	{
 		int rep=(int)getnum(par);
-		if (foundlabel) error(0, "rep Label is not valid");
+		if (foundlabel) asar_throw_error(0, error_type_block, error_id_rep_label);
 		if (rep<=1)
 		{
 			if (emulatexkas)
@@ -1650,14 +1648,14 @@ void assembleblock(const char * block)
 				repeatnext=rep;
 				return;
 			}
-			warn0("xkas-style conditional compilation detected. Please use the if command instead.");
+			asar_throw_warning(0, warning_id_xkas_style_conditional);
 		}
 		repeatnext=rep;
 	}
 #ifdef SANDBOX
 	else if (is("incsrc") || is("incbin") || is("table"))
 	{
-		error(0, "This command is disabled.");
+		asar_throw_error(0, error_type_block, error_id_command_disabled);
 	}
 #endif
 	else if (is1("incsrc"))
@@ -1665,8 +1663,7 @@ void assembleblock(const char * block)
 		checkbankcross();
 		string name;
 		if (warnxkas && (strchr(thisfilename, '/') || strchr(thisfilename, '\\')))
-			warn0("xkas compatibility warning: incsrc and incbin look for files relative to the patch in Asar, "
-					"but xkas looks relative to the assembler.");
+			asar_throw_warning(0, warning_id_xkas_incsrc_relative);
 		if (strchr(par, '\\'))
 		{
 			if (emulatexkas)
@@ -1677,7 +1674,7 @@ void assembleblock(const char * block)
 				}
 			}
 #ifdef _WIN32
-			else warn0("This patch may not assemble cleanly on all platforms. Please use / instead.");
+			else asar_throw_warning(0, warning_id_cross_platform_path);
 #endif
 		}
 		if (emulatexkas) name=dequote(par);
@@ -1686,7 +1683,7 @@ void assembleblock(const char * block)
 	}
 	else if (is1("incbin") || is3("incbin"))
 	{
-		if (numwords==4 && strcmp(word[2], "->")) error(0, "Broken incbin command");
+		if (numwords == 4 && strcmp(word[2], "->")) asar_throw_error(0, error_type_block, error_id_broken_incbin);
 		int len;
 		int start=0;
 		int end=0;
@@ -1695,17 +1692,16 @@ void assembleblock(const char * block)
 			char * lengths=strqchr(par, ':');
 			*lengths=0;
 			lengths++;
-			if (strchr(lengths, '"')) error(0, "Broken incbin command");
+			if (strchr(lengths, '"')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
 			start=(int)strtoul(lengths, &lengths, 16);
-			if (*lengths!='-') error(0, "Broken incbin command");
+			if (*lengths!='-') asar_throw_error(0, error_type_block, error_id_broken_incbin);
 			lengths++;
 			end=(int)strtoul(lengths, &lengths, 16);
-			if (*lengths) error(0, "Broken incbin command");
+			if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
 		}
 		string name;
 		if (warnxkas && (strchr(thisfilename, '/') || strchr(thisfilename, '\\')))
-			warn0("xkas compatibility warning: incsrc and incbin look for files relative to the patch in native mode, "
-					"but relative to the assembler in emulation mode");
+			asar_throw_warning(0, warning_id_xkas_incsrc_relative);
 		if (strchr(par, '\\'))
 		{
 			if (emulatexkas)
@@ -1716,25 +1712,24 @@ void assembleblock(const char * block)
 				}
 			}
 #ifdef _WIN32
-			else warn0("This patch may not assemble cleanly on all platforms. Please use / instead.");
+			else asar_throw_warning(0, warning_id_cross_platform_path);
 #endif
 		}
 		if (emulatexkas) name=dequote(par);
 		else name=S dequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
-		if (!readfile(name, thisfilename, &data, &len)) error(0, "File not found");
+		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, error_id_file_not_found, name.str);
 		autoptr<char*> datacopy=data;
 		if (!end) end=len;
-		if (end<start) error(0, "Negative range in incbin");
-		if (end>len) error(0, "The file is not that long.");
+		if (end < start || end > len) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).str, name.str);
 		if (numwords==4)
 		{
 			if (!confirmname(word[3]))
 			{
 				int pos=(int)getnum(word[3]);
-				if (foundlabel) error(0, "Can't use labels here.");
+				if (foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 				int offset=snestopc(pos);
-				if (offset+end-start>0xFFFFFF) error(0, "Can't create ROMs larger than 16MB");
+				if (offset + end - start > 0xFFFFFF) asar_throw_error(0, error_type_block, error_id_16mb_rom_limit);
 				if (offset+end-start>romlen) romlen=offset+end-start;
 				if (pass==2) writeromdata(offset, data+start, end-start);
 			}
@@ -1743,9 +1738,9 @@ void assembleblock(const char * block)
 				int pos;
 				if (pass==0)
 				{
-					if (end-start>65536) error(0, "Can't include more than 64 kilobytes at once");
+					if (end - start > 65536) asar_throw_error(0, error_type_block, error_id_incbin_64kb_limit);
 					pos=getpcfreespace(end-start, false, true, false);
-					if (pos<0) error(0, "No freespace found");
+					if (pos < 0) asar_throw_error(0, error_type_block, error_id_no_freespace, dec(end - start).str);
 					int foundfreespaceid=getfreespaceid();
 					freespacepos[foundfreespaceid]=pctosnes(pos)|(/*fastrom?0x800000:*/0x000000)|(foundfreespaceid <<24);
 					setlabel(word[3], freespacepos[foundfreespaceid]);
@@ -1758,7 +1753,7 @@ void assembleblock(const char * block)
 				if (pass==2)
 				{
 					int foundfreespaceid =getfreespaceid();
-					if (freespaceleak[foundfreespaceid]) warn2("This freespace appears to be leaked.");
+					if (freespaceleak[foundfreespaceid]) asar_throw_warning(2, warning_id_freespace_leaked);
 					writeromdata(snestopc(freespacepos[foundfreespaceid]&0xFFFFFF), data+start, end-start);
 					freespaceuse+=8+end-start;
 				}
@@ -1772,7 +1767,7 @@ void assembleblock(const char * block)
 	else if (is1("skip"))//nobody ever uses this, but whatever
 	{
 		int skip=(int)getnum(par);
-		if (foundlabel) error(0, "skip Label is not valid");
+		if (foundlabel) asar_throw_error(0, error_type_block, error_id_skip_label_invalid);
 		step(skip);
 	}
 	else if (is0("cleartable"))
@@ -1785,7 +1780,7 @@ void assembleblock(const char * block)
 	}
 	else if (is0("pulltable"))
 	{
-		if (tablestack.count<=0) error(0, "using pulltable when there is no table on the stack yet");
+		if (tablestack.count <= 0) asar_throw_error(0, error_type_block, error_id_pulltable_without_table);
 		table=tablestack[tablestack.count-1];
 		tablestack.remove(tablestack.count-1);
 	}
@@ -1797,7 +1792,7 @@ void assembleblock(const char * block)
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
 		string name=S dequote(par);
 		autoptr<char*> tablecontents=readfile(name, thisfilename);
-		if (!tablecontents) error(0, "File not found");
+		if (!tablecontents) asar_throw_error(0, error_type_block, error_id_file_not_found, name.str);
 		autoptr<char**> tablelines=split(tablecontents, "\n");
 		for (int i=0;i<256;i++) table.table[i]=(unsigned int)(((numopcodes+read2(0x00FFDE)+i)*0x26594131)|0x40028020);
 			//garbage value so people will notice they're doing it wrong (for bonus points: figure out what 0x26594131 is)
@@ -1805,61 +1800,47 @@ void assembleblock(const char * block)
 		{
 			string tableline=tablelines[i];
 			if (!*tableline) continue;
-			if (strlen(tableline)<4 || strlen(tableline)&1 || strlen(tableline)>10) error(0, "Invalid table file");
+			if (strlen(tableline) < 4 || strlen(tableline) & 1 || strlen(tableline) > 10) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 			if (!fliporder)
 			{
-				if (tableline[3]=='x' || tableline[3]=='X') error(0, "Invalid table file");
+				if (tableline[3]=='x' || tableline[3]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 				char * end;
 				table.table[(unsigned char)tableline[0]]=(unsigned int)strtol(tableline+2, &end, 16);
-				if (*end) error(0, "Invalid table file");
+				if (*end) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 			}
 			else
 			{
-				if (tableline[1]=='x' || tableline[1]=='X') error(0, "Invalid table file");
+				if (tableline[1]=='x' || tableline[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 				char * eq;
 				unsigned int val=(unsigned int)strtol(tableline, &eq, 16);
-				if (eq[0]!='=' || eq[2]) error(0, "Invalid table file");
+				if (eq[0]!='=' || eq[2]) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 				table.table[(unsigned char)eq[1]]=val;
 			}
-			//if (strlen(tableline)!=4 || tableline[eqoff]!='=' || !ctype_xdigit(tableline+hexoff, 2)) error(0, "Invalid table file");
-			//table[(unsigned char)tableline[charoff]]=strtol(tableline+hexoff, NULL, 16);
-			//autoptr<char**> words=split(tablelines[i], "=");
-			//string ch=fliporder?words[1]:words[0];
-			//string val=fliporder?words[0]:words[1];
-			//bool space=(*ch==' ');
-			//clean(ch);
-			//clean(val);
-			//if (space && !*ch) ch=" ";
-			//if (strlen(ch)!=1 || strlen(val)>8) error(0, "Invalid table file");
-			//char * endtest;
-			//table[(unsigned char)*ch]=strtol(val, &endtest, 16);
-			//if (*endtest) error(0, "Invalid table file");
 		}
 	}
 	else if (is3("function"))
 	{
 		if (!pass)
 		{
-			if (stricmp(word[2], "=")) error(0, "Broken function declaration");
-			if (!confirmqpar(word[1])) error(0, "Broken function declaration");
+			if (stricmp(word[2], "=")) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
+			if (!confirmqpar(word[1])) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			string line=word[1];
 			clean(line);
 			char * startpar=strqchr(line.str, '(');
-			if (!startpar) error(0, "Broken function declaration");
+			if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			*startpar=0;
 			startpar++;
-			if (!confirmname(line)) error(0, "Bad function name");
+			if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_invalid_function_name);
 			char * endpar=strqchr(startpar, ')');
 			//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nulls
-			if (endpar[1]) error(0, "Broken function declaration");
+			if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			*endpar=0;
-			const char * e=createuserfunc(line, startpar, word[3]);
-			if (e) error(0, e);
+			createuserfunc(line, startpar, word[3]);
 		}
 	}
 	else if (is1("print"))
 	{
-		if (!confirmqpar(par)) error(0, "Mismatched parentheses");
+		if (!confirmqpar(par)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 		string out;
 		autoptr<char**> pars=qpsplit(par, ",");
 		for (int i=0;pars[i];i++)
@@ -1876,12 +1857,12 @@ void assembleblock(const char * block)
 				char * arg1pos = pars[i] + strlen("double(");
 				char * endpos = strchr(arg1pos, '\0');
 				while (*endpos == ' ' || *endpos == '\t' || *endpos == '\0') endpos--;
-				if (*endpos != ')') error<errblock>(0, "Invalid syntax");
+				if (*endpos != ')') asar_throw_error(0, error_type_block, error_id_invalid_print_function_syntax);
 				string params = string(arg1pos, (int)(endpos - arg1pos));
 
 				int numargs;
 				autoptr<char**> double_pars = qpsplit(params.str, ",", &numargs);
-				if (numargs > 2) error<errblock>(0, "Wrong number of arguments to function double()");
+				if (numargs > 2) asar_throw_error(0, error_type_block, error_id_wrong_num_parameters);
 				// qpsplit always returns at least 1 part (if the input is empty, it returns an empty string)
 
 				if (numargs == 1)
@@ -1893,7 +1874,7 @@ void assembleblock(const char * block)
 					out += ftostrvar(getnumdouble(double_pars[0]), (int)getnum(double_pars[1]));
 				}
 			}
-			else error(2, "Unknown variable.");
+			else asar_throw_error(2, error_type_block, error_id_unknown_variable);
 		}
 		if (pass!=2) return;
 		print(out);
@@ -1903,7 +1884,7 @@ void assembleblock(const char * block)
 		if(0);
 		else if (!stricmp(par, "bytes")) bytes=0;
 		else if (!stricmp(par, "freespaceuse")) freespaceuse=0;
-		else error(2, "Unknown variable.");
+		else asar_throw_error(2, error_type_block, error_id_unknown_variable);
 	}
 	else if (is1("padbyte") || is1("padword") || is1("padlong") || is1("paddword"))
 	{
@@ -1925,9 +1906,9 @@ void assembleblock(const char * block)
 	}
 	else if (is1("pad"))
 	{
-		if (realsnespos&0xFF000000) error(0, "pad does not make sense in a freespaced code");
+		if (realsnespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
 		int num=(int)getnum(par);
-		if (num&0xFF000000) error(0, "Out of bounds");
+		if (num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)num).str);
 		if (num>realsnespos)
 		{
 			int end=snestopc(num);
@@ -1961,7 +1942,7 @@ void assembleblock(const char * block)
 	}
 	else if (is1("arch"))
 	{
-		if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
+		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
 		if (!stricmp(par, "spc700-inline")) { arch=arch_spc700_inline; return; }
@@ -1974,11 +1955,11 @@ void assembleblock(const char * block)
 		if(0);
 		else if (!stricmp(word[2], "on")) val=true;
 		else if (!stricmp(word[2], "off")) val=false;
-		else error(0, "Invalid math command.");
+		else asar_throw_error(0, error_type_block, error_id_invalid_math);
 		if(0);
 		else if (!stricmp(word[1], "pri")) math_pri=val;
 		else if (!stricmp(word[1], "round")) math_round=val;
-		else error(0, "Invalid math command.");
+		else asar_throw_error(0, error_type_block, error_id_invalid_math);
 	}
 	else if (is2("warn"))
 	{
@@ -1986,16 +1967,16 @@ void assembleblock(const char * block)
 		if(0);
 		else if (!stricmp(word[2], "on")) val=true;
 		else if (!stricmp(word[2], "off")) val=false;
-		else error(0, "Invalid warn command.");
+		else asar_throw_error(0, error_type_block, error_id_invalid_warn);
 		if(0);
 		else if (!stricmp(word[1], "xkas")) {
-			warn0("xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
+			asar_throw_warning(0, warning_id_xkas_deprecated);
 			warnxkas=val;
 		}
 		else if (!stricmp(word[1], "bankcross")) {
 			disable_bank_cross_errors = !val;
 		}
-		else error(0, "Invalid warn command.");
+		else asar_throw_error(0, error_type_block, error_id_invalid_warn);
 	}
 	else if (is0("fastrom"))
 	{
@@ -2009,11 +1990,11 @@ void assembleblock(const char * block)
 	{
 		if (thisline == lastspecialline)
 		{
-			warn0(S"unrecognized special command - your version of Asar might be outdated.");
+			asar_throw_warning(0, warning_id_unrecognized_special_command);
 		}
 		else
 		{
-			error(1, "Unknown command.");
+			asar_throw_error(1, error_type_block, error_id_unknown_command);
 		}
 	}
 }
@@ -2061,14 +2042,14 @@ bool assemblemapper(char** word, int numwords)
 		//fastrom=false;
 		if (par)
 		{
-			if (word[2]) error(0, "Invalid mapper.");
+			if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
 			if (!isdigit(par[0]) || par[1]!=',' ||
 					!isdigit(par[2]) || par[3]!=',' ||
 					!isdigit(par[4]) || par[5]!=',' ||
-					!isdigit(par[6]) || par[7]) error(0, "Invalid mapper.");
+					!isdigit(par[6]) || par[7]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
 			int len;
 			autoptr<char**> pars=qpsplit(par, ",", &len);
-			if (len!=4) error(0, "Invalid mapper.");
+			if (len!=4) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
 			sa1banks[0]=(par[0]-'0')<<20;
 			sa1banks[1]=(par[2]-'0')<<20;
 			sa1banks[4]=(par[4]-'0')<<20;

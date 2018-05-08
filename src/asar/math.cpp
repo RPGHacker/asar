@@ -15,13 +15,6 @@ extern bool emulatexkas;
 extern assocarr<snes_struct> structs;
 extern assocarr<string> defines;
 
-//int bp(const char * str)
-//{
-//	throw str;
-//	return 0;
-//}
-//#define error(str) bp(str)
-#define error(str) throw str
 static const char * str;
 
 static double getnumcore();
@@ -47,14 +40,14 @@ struct funcdat {
 autoarray<funcdat> userfunc;
 int numuserfunc=0;
 
-const char * createuserfunc(const char * name, const char * arguments, const char * content)
+void createuserfunc(const char * name, const char * arguments, const char * content)
 {
-	if (!confirmqpar(content)) return "Mismatched parentheses";
+	if (!confirmqpar(content)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 	for (int i=0;i<numuserfunc;i++)
 	{
 		if (!strcmp(name, userfunc[i].name))
 		{
-			return "Duplicate function name";
+			asar_throw_error(0, error_type_block, error_id_function_redefined, name);
 		}
 	}
 	funcdat& thisone=userfunc[numuserfunc];
@@ -67,11 +60,10 @@ const char * createuserfunc(const char * name, const char * arguments, const cha
 		if (!confirmname(thisone.arguments[i]))
 		{
 			userfunc.remove(numuserfunc);
-			return "Invalid argument name";
+			asar_throw_error(0, error_type_block, error_id_invalid_param_name);
 		}
 	}
 	numuserfunc++;
-	return NULL;
 }
 
 struct cachedfile {
@@ -146,7 +138,7 @@ cachedfile * opencachedfile(string fname, bool should_error)
 
 	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) && should_error)
 	{
-		error("Failed to open file.");
+		asar_throw_error(1, error_type_block, error_id_failed_to_open_file, fname.str);
 	}
 
 	return cachedfilehandle;
@@ -220,7 +212,7 @@ int snestopc_pick(int addr);
 #define validateparam(inparam, paramindex, expectedtype)     \
 	if (inparam.type != expectedtype)            \
 	{                                             \
-		error("Wrong type for argument " #paramindex ", expected " #expectedtype ".");   \
+		asar_throw_error(1, error_type_block, error_id_math_invalid_type, #paramindex, #expectedtype);   \
 	}
 
 static double validaddr(const funcparam& in, const funcparam& len)
@@ -236,46 +228,50 @@ static double read1(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) error("read1(): Address doesn't map to ROM.");
-	else if (addr+1>romlen_r) error("Address out of bounds.");
+	if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)in.value.longdoublevalue) + " in read1()").str);
+	else if (addr+1>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6((unsigned int)in.value.longdoublevalue) + " in read1()").str);
 	else return
 			 romdata_r[addr  ]     ;
+	return 0.0f;
 }
 
 static double read2(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) error("read2(): Address doesn't map to ROM.");
-	else if (addr+2>romlen_r) error("Address out of bounds.");
+	if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)in.value.longdoublevalue) + " in read2()").str);
+	else if (addr+2>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6((unsigned int)in.value.longdoublevalue) + " in read2()").str);
 	else return
 			 romdata_r[addr  ]    |
 			(romdata_r[addr+1]<< 8);
+	return 0.0f;
 }
 
 static double read3(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) error("read3(): Address doesn't map to ROM.");
-	else if (addr+3>romlen_r) error("Address out of bounds.");
+	if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)in.value.longdoublevalue) + " in read3()").str);
+	else if (addr+3>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6((unsigned int)in.value.longdoublevalue) + " in read3()").str);
 	else return
 			 romdata_r[addr  ]     |
 			(romdata_r[addr+1]<< 8)|
 			(romdata_r[addr+2]<<16);
+	return 0.0f;
 }
 
 static double read4(const funcparam& in)
 {
 	validateparam(in, 0, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) error("read4(): Address doesn't map to ROM.");
-	else if (addr+4>romlen_r) error("Address out of bounds.");
+	if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)in.value.longdoublevalue) + " in read4()").str);
+	else if (addr+4>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6((unsigned int)in.value.longdoublevalue) + " in read4()").str);
 	else return
 			 romdata_r[addr  ]     |
 			(romdata_r[addr+1]<< 8)|
 			(romdata_r[addr+2]<<16)|
 			(romdata_r[addr+3]<<24);
+	return 0.0f;
 }
 
 static double read1s(const funcparam& in, const funcparam& def)
@@ -332,10 +328,10 @@ static double readfilefunc(const funcparam& fname, const funcparam& offset, long
 {
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
-	if (numbytes <=0 || numbytes > 4) error("Can only read chunks of 1 to 4 bytes.");
+	if (numbytes <= 0 || numbytes > 4) asar_throw_error(1, error_type_block, error_id_readfile_1_to_4_bytes);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, true);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) error("Failed to open file.");
-	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) error("File read offset out of bounds.");
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, error_id_failed_to_open_file, fname.value.stringvalue);
+	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) asar_throw_error(1, error_type_block, error_id_file_offset_out_of_bounds, dec((int)offset.value.longdoublevalue).str, fname.value.stringvalue);
 	unsigned char readdata[4] = { 0, 0, 0, 0 };
 	filesystem->read_file(fhandle->filehandle, readdata, (size_t)offset.value.longdoublevalue, (size_t)numbytes);
 	return
@@ -350,7 +346,7 @@ static double readfilefuncs(const funcparam& fname, const funcparam& offset, con
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
 	validateparam(def, 2, Type_Double);
-	if (numbytes <= 0 || numbytes > 4) error("Can only read chunks of 1 to 4 bytes.");
+	if (numbytes <= 0 || numbytes > 4) asar_throw_error(1, error_type_block, error_id_readfile_1_to_4_bytes);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
 	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return def.value.longdoublevalue;
 	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) return def.value.longdoublevalue;
@@ -368,7 +364,7 @@ static double canreadfilefunc(const funcparam& fname, const funcparam& offset, c
 	validateparam(fname, 0, Type_String);
 	validateparam(offset, 1, Type_Double);
 	validateparam(numbytes, 2, Type_Double);
-	if ((long)numbytes.value.longdoublevalue <= 0) error("Number of bytes to check must be > 0.");
+	if ((long)numbytes.value.longdoublevalue <= 0) asar_throw_error(1, error_type_block, error_id_canreadfile_0_bytes);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
 	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return 0;
 	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes.value.longdoublevalue > fhandle->filesize) return 0;
@@ -399,7 +395,7 @@ static double filesizefunc(const funcparam& fname)
 {
 	validateparam(fname, 0, Type_String);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) error("File does not exist.");
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, error_id_file_not_found, fname.value.stringvalue);
 	return (double)fhandle->filesize;
 }
 
@@ -434,7 +430,7 @@ static double overlycomplicatedround(const funcparam& number, const funcparam& d
 static int struct_size(const char *name)
 {
 	snes_struct structure;
-	if(!structs.exists(name)) error("Struct not found.");
+	if(!structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
 	structure = structs.find(name);
 	return structure.struct_size;
 }
@@ -442,7 +438,7 @@ static int struct_size(const char *name)
 static int object_size(const char *name)
 {
 	snes_struct structure;
-	if(!structs.exists(name)) error("Struct not found.");
+	if(!structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
 	structure = structs.find(name);
 	return structure.object_size;
 }
@@ -475,9 +471,6 @@ static double stringsequalinsensitivefunc(const funcparam& string1, const funcpa
 
 
 extern chartabledata table;
-
-// RPG Hacker: Kind of a hack, but whatever, it's the simplest solution
-static char errorstringbuffer[256];
 
 #define maxint(a, b) ((unsigned int)a > (unsigned int)b ? (unsigned int)a : (unsigned int)b)
 
@@ -514,24 +507,24 @@ static double getnumcore()
 	{
 		str++;
 		double rval=eval(0);
-		if (*str!=')') error("Mismatched parentheses.");
+		if (*str != ')') asar_throw_error(1, error_type_block, error_id_mismatched_parentheses);
 		str++;
 		return rval;
 	}
 	if (*str=='$')
 	{
-		if (!isxdigit(str[1])) error("Invalid hex value.");
+		if (!isxdigit(str[1])) asar_throw_error(1, error_type_block, error_id_invalid_hex_value);
 		if (tolower(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
 		return strtoul(str+1, (char**)&str, 16);
 	}
 	if (*str=='%')
 	{
-		if (str[1]!='0' && str[1]!='1') error("Invalid binary value.");
+		if (str[1] != '0' && str[1] != '1') asar_throw_error(1, error_type_block, error_id_invalid_binary_value);
 		return strtoul(str+1, (char**)&str, 2);
 	}
 	if (*str=='\'')
 	{
-		if (!str[1] || str[2]!='\'') error("Invalid character.");
+		if (!str[1] || str[2] != '\'') asar_throw_error(1, error_type_block, error_id_invalid_character);
 		unsigned int rval=table.table[(unsigned char)str[1]];
 		str+=3;
 		return rval;
@@ -583,7 +576,7 @@ static double getnumcore()
 						}
 						// RPG Hacker: AFAIK, this is never actually triggered, since unmatched quotes are already detected earlier,
 						// but since it does no harm here, I'll keep it in, just to be safe
-						else error("String literal not terminated.");
+						else asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
 					}
 					else
 					{
@@ -601,7 +594,7 @@ static double getnumcore()
 						str++;
 						break;
 					}
-					error("Malformed function call.");
+					asar_throw_error(1, error_type_block, error_id_malformed_function_call);
 				}
 			}
 			double rval;
@@ -609,7 +602,7 @@ static double getnumcore()
 			{
 				if ((int)strlen(userfunc[i].name)==len && !strncmp(start, userfunc[i].name, (size_t)len))
 				{
-					if (userfunc[i].numargs!=numparams) error("Wrong number of parameters to function.");
+					if (userfunc[i].numargs != numparams) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters);
 					char ** oldfuncargnames=funcargnames;
 					funcparam * oldfuncargvals=funcargvals;
 					const char * oldstr=str;
@@ -634,7 +627,7 @@ static double getnumcore()
 					if (!strncasecmp(start, name, maxint(len, strlen(name))))                      \
 					{                                                        \
 						if (numparams==numpar) return (code);                  \
-						else if (!hasfurtheroverloads) error("Wrong number of parameters to function."); \
+						else if (!hasfurtheroverloads) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters); \
 					}
 #define wrappedfunc1(name, inparam, code, hasfurtheroverloads)                             \
 					if (!strncasecmp(start, name, maxint(len, strlen(name))))                      \
@@ -644,7 +637,7 @@ static double getnumcore()
 							validateparam(inparam, 0, Type_Double);      \
 							return (code);                                    \
 						}                                                      \
-						else if (!hasfurtheroverloads) error("Wrong number of parameters to function."); \
+						else if (!hasfurtheroverloads) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters); \
 					}
 #define wrappedfunc2(name, inparam1, inparam2, code, hasfurtheroverloads)                             \
 					if (!strncasecmp(start, name, maxint(len, strlen(name))))                      \
@@ -655,7 +648,7 @@ static double getnumcore()
 							validateparam(inparam2, 0, Type_Double);      \
 							return (code);                                    \
 						}                                                      \
-						else if (!hasfurtheroverloads) error("Wrong number of parameters to function."); \
+						else if (!hasfurtheroverloads) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters); \
 					}
 #define wrappedfunc3(name, inparam1, inparam2, inparam3, code, hasfurtheroverloads)                             \
 					if (!strncasecmp(start, name, maxint(len, strlen(name))))                      \
@@ -667,7 +660,7 @@ static double getnumcore()
 							validateparam(inparam3, 0, Type_Double);      \
 							return (code);                                    \
 						}                                                      \
-						else if (!hasfurtheroverloads) error("Wrong number of parameters to function."); \
+						else if (!hasfurtheroverloads) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters); \
 					}
 
 			wrappedfunc1("sqrt", params[0], sqrt((double)params[0].value.longdoublevalue), false);
@@ -751,7 +744,7 @@ static double getnumcore()
 #undef wrappedfunc1
 #undef wrappedfunc2
 #undef wrappedfunc3
-			error("Unknown function.");
+			asar_throw_error(1, error_type_block, error_id_function_not_found, start);
 		}
 		else
 		{
@@ -763,11 +756,7 @@ static double getnumcore()
 						return funcargvals[i].value.longdoublevalue;
 					else
 					{
-						string tmp("Wrong type for argument ");
-						tmp += string(i);
-						tmp += ", expected Type_Double.";
-						strcpy(errorstringbuffer, tmp);
-						error(errorstringbuffer);
+						asar_throw_error(1, error_type_block, error_id_math_invalid_type, string(i).str, "Type_Double");
 					}
 				}
 			}
@@ -784,13 +773,13 @@ static double getnumcore()
 				{
 					if (subscript_passed)
 					{
-						error("Multiple subscript operators is invalid");
+						asar_throw_error(1, error_type_block, error_id_multiple_subscript_operators);
 						break;
 					}
 					subscript_passed = true;
 					if (scope_passed)
 					{
-						error("Invalid array subscript after first scope resolution.");
+						asar_throw_error(1, error_type_block, error_id_invalid_subscript);
 						break;
 					}
 					string struct_name = substr(old_start, (int)(str - old_start - 1));
@@ -803,12 +792,13 @@ static double getnumcore()
 			return (int)i&0xFFFFFF;
 		}
 	}
-	error("Invalid number.");
+	asar_throw_error(1, error_type_block, error_id_invalid_number);
+	return 0.0f;
 }
 
 static double sanitize(double val)
 {
-	if (val!=val) error("NaN encountered.");
+	if (val != val) asar_throw_error(1, error_type_block, error_id_nan);
 	if (math_round) return trunc(val); // originally used int cast, but that broke numbers > $8000_0000
 	return val;
 }
@@ -827,6 +817,12 @@ static double getnum()
 
 
 string posneglabelname(const char ** input, bool define);
+
+static double oper_wrapped_throw(asar_error_id errid)
+{
+	asar_throw_error(1, error_type_block, errid);
+	return 0.0;
+}
 
 static double eval(int depth)
 {
@@ -874,8 +870,8 @@ notposneglabel:
 			}
 		oper("**", 4, pow((double)left, (double)right));
 		oper("*", 3, left*right);
-		oper("/", 3, right?left/right:error("Division by zero."));
-		oper("%", 3, right?fmod((double)left, (double)right):error("Modulos by zero."));
+		oper("/", 3, right ? left / right : oper_wrapped_throw(error_id_division_by_zero));
+		oper("%", 3, right ? fmod((double)left, (double)right) : oper_wrapped_throw(error_id_modulo_by_zero));
 		oper("+", 2, left+right);
 		oper("-", 2, left-right);
 		oper("<<", 1, (unsigned int)left<<(unsigned int)right);
@@ -883,42 +879,28 @@ notposneglabel:
 		oper("&", 0, (unsigned int)left&(unsigned int)right);
 		oper("|", 0, (unsigned int)left|(unsigned int)right);
 		oper("^", 0, (unsigned int)left^(unsigned int)right);
-		error("Unknown operator.");
+		asar_throw_error(1, error_type_block, error_id_unknown_operator);
 #undef oper
 	}
 	return left;
 }
 
 //static autoptr<char*> freeme;
-double math(const char * s, const char ** e)
+double math(const char * s)
 {
 	//free(freeme);
 	//freeme=NULL;
 	foundlabel=false;
 	forwardlabel=false;
-	try
+
+	str = s;
+	double rval = eval(0);
+	if (*str)
 	{
-		str=s;
-		double rval=eval(0);
-		if (*str)
-		{
-			if (*str==',') error("Invalid input.");
-			else error("Mismatched parentheses.");
-		}
-		*e=NULL;
-		return rval;
+		if (*str == ',') asar_throw_error(1, error_type_block, error_id_invalid_input);
+		else asar_throw_error(1, error_type_block, error_id_mismatched_parentheses);
 	}
-	catch (const char * error)
-	{
-		*e=error;
-		return 0;
-	}
-	//catch (string& error)
-	//{
-	//	freeme=strdup(error);
-	//	*e=error;
-	//	return 0;
-	//}
+	return rval;
 }
 
 void initmathcore()

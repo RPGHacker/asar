@@ -3,7 +3,7 @@
 #define asarfunc extern
 #endif
 
-#define expectedapiversion 302
+#define expectedapiversion 303
 
 #include <stdbool.h>
 
@@ -16,6 +16,7 @@ struct errordata {
 	int line;
 	const char * callerfilename;
 	int callerline;
+	int errid;
 };
 
 struct labeldata {

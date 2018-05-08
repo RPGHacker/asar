@@ -1,8 +1,10 @@
 #pragma once
 
+#include "errors.h"
+
 extern const unsigned char * romdata;
 extern int romlen;
-extern const char * openromerror;
+extern asar_error_id openromerror;
 bool openrom(const char * filename, bool confirm=true);
 void closerom(bool save=true);
 

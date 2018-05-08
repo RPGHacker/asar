@@ -13,15 +13,10 @@
 #include "assocarr.h"
 #include "libstr.h"
 #include "libsmw.h"
+#include "errors.h"
+
 extern unsigned const char * romdata_r;
 extern int romlen_r;
-
-struct errfatal {};
-struct errline : public errfatal {};
-struct errblock : public errline {};
-struct errnull : public errblock {};
-template<typename t> void error(int neededpass, const char * str);
-#define berror(e) error<errblock>(e)
 
 #define clean(string) do { string.qreplace("\t", " ", true); string.qreplace(", ", ",", true); string.qreplace("  ", " ", true); \
 											itrim(string.str, " ", " ", true); } while(0)
@@ -52,20 +47,6 @@ extern bool ignoretitleerrors;
 
 enum { arch_65816, arch_spc700, arch_spc700_inline, arch_superfx };
 extern int arch;
-
-template<typename t> void error(int neededpass, const char * e_);
-inline void fatalerror(const char * e_)
-{
-	error<errfatal>(pass, e_);
-}
-inline void nullerror(const char * e_)
-{
-	error<errnull>(pass, e_);
-}
-void warn(const char * e);
-#define warn0(e) do { if (pass==0) warn(e); } while(0)
-#define warn1(e) do { if (pass==1) warn(e); } while(0)
-#define warn2(e) do { if (pass==2) warn(e); } while(0)
 
 void write1_pick(unsigned int num);
 
@@ -112,7 +93,7 @@ public:
 	recurseblock()
 	{
 		recursioncount++;
-		if (recursioncount>2500) fatalerror("Recursion limit reached.");
+		if (recursioncount > 2500) asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
 	}
 	~recurseblock()
 	{

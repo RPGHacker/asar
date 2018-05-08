@@ -5,6 +5,7 @@
 #include "autoarray.h"
 #include "asar.h"
 #include "virtualfile.hpp"
+#include "warnings.h"
 #include "platform/file-helpers.h"
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
@@ -25,7 +26,7 @@ extern char blockreleasedebug[(asarver_beta)?1:-1];
 unsigned const char * romdata_r;
 int romlen_r;
 
-double math(const char * mystr, const char ** e);
+double math(const char * mystr);
 void initmathcore();
 
 int pass;
@@ -136,7 +137,7 @@ static bool freespaced;
 static int getlenforlabel(int insnespos, int thislabel, bool exists)
 {
 	if (warnxkas && (((thislabel^insnespos)&0xFFFF0000)==0))
-		warn1("xkas compatibility warning: label access is always 24bit in emulation mode, but may be 16bit in native mode");
+		asar_throw_warning(1, warning_id_xkas_label_access);
 	if (!exists)
 	{
 		if (!freespaced) freespaceextra++;
@@ -244,27 +245,17 @@ extern bool forwardlabel;
 
 unsigned int getnum(const char * str)
 {
-	const char * e;
 	// RPG Hacker: this was originally an int - changed it into an unsigned int since I found
 	// that to yield the more predictable results when converting from a double
 	// (e.g.: $FFFFFFFF was originally converted to $80000000, whereas now it remains $FFFFFFFF
-	unsigned int num=(unsigned int)math(str, &e);
-	if (e)
-	{
-		error<errblock>(1, e);
-	}
+	unsigned int num=(unsigned int)math(str);
 	return num;
 }
 
 // RPG Hacker: Same function as above, but doesn't truncate our number via int conversion
 double getnumdouble(const char * str)
 {
-	const char * e;
-	double num = math(str, &e);
-	if (e)
-	{
-		error<errblock>(1, e);
-	}
+	double num = math(str);
 	return num;
 }
 
@@ -344,20 +335,20 @@ void resolvedefines(string& out, const char * start)
 				{
 					if (*here=='{') braces++;
 					if (*here=='}') braces--;
-					if (!*here) error<errline>(0, "Unmatched braces.");
+					if (!*here) asar_throw_error(0, error_type_line, error_id_mismatched_braces);
 					if (!braces) break;
 					unprocessedname+=*here++;
 				}
 				here++;
 				resolvedefines(defname, unprocessedname);
-				if (!validatedefinename(defname)) error<errline>(0, S "Invalid define name: '" + defname + "'.");
+				if (!validatedefinename(defname)) asar_throw_error(0, error_type_line, error_id_invalid_define_name);
 			}
 			else
 			{
 				while (isualnum(*here)) defname+=*here++;
 			}
 			if (warnxkas && here[0]=='(' && here[1]==')')
-				warn0("xkas compatibility warning: Unlike xkas, Asar does not eat parentheses after defines");
+				asar_throw_warning(0, warning_id_xkas_eat_parentheses);
 			//if (emulatexkas && here[0]=='(' && here[1]==')') here+=2;
 
 			if (first)
@@ -376,7 +367,7 @@ void resolvedefines(string& out, const char * start)
 				else if (stribegin(here, " #= ")) { here+=4; mode=domath; }
 				else if (stribegin(here, " ?= ")) { here+=4; mode=setifnotset; }
 				else goto notdefineset;
-				if (emulatexkas && mode!=null) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
+				if (emulatexkas && mode != null) asar_throw_warning(0, warning_id_convert_to_asar);
 				//else if (stribegin(here, " equ ")) here+=5;
 				string val;
 				if (*here=='"')
@@ -388,7 +379,7 @@ void resolvedefines(string& out, const char * start)
 						{
 							if (!here[1] || here[1]==' ') break;
 							else if (here[1]=='"') here++;
-							else error<errline>(0, "Broken define declaration");
+							else asar_throw_error(0, error_type_line, error_id_broken_define_declaration);
 						}
 						val+=*here++;
 					}
@@ -399,13 +390,13 @@ void resolvedefines(string& out, const char * start)
 					while (*here && *here!=' ') val+=*here++;
 				}
 				//if (strqchr(val.str, ';')) *strqchr(val.str, ';')=0;
-				if (*here && !stribegin(here, " : ")) error<errline>(0, "Broken define declaration");
+				if (*here && !stribegin(here, " : ")) asar_throw_error(0, error_type_line, error_id_broken_define_declaration);
 				clean(val);
 
 				// RPG Hacker: throw an error if we're trying to overwrite built-in defines.
 				if (builtindefines.exists(defname))
 				{
-					error<errline>(0, S "Trying to set define '" + defname + "', which is the name of a built-in define and thus can't be modified.");
+					asar_throw_error(0, error_type_line, error_id_overriding_builtin_define, defname.str);
 				}
 
 				switch (mode)
@@ -417,7 +408,7 @@ void resolvedefines(string& out, const char * start)
 					}
 					case append:
 					{
-						if (!defines.exists(defname)) error<errnull>(0, "Appending to an undefined define");
+						if (!defines.exists(defname)) asar_throw_error(0, error_type_null, error_id_define_not_found, defname.str);
 						string oldval = defines.find(defname);
 						val=oldval+val;
 						defines.create(defname) = val;
@@ -435,7 +426,7 @@ void resolvedefines(string& out, const char * start)
 						string newval;
 						resolvedefines(newval, val);
 						double num= getnumdouble(newval);
-						if (foundlabel) error<errline>(0, "!Define #= Label is not allowed");
+						if (foundlabel) asar_throw_error(0, error_type_line, error_id_define_label_math);
 						defines.create(defname) = ftostr(num);
 						break;
 					}
@@ -452,7 +443,7 @@ void resolvedefines(string& out, const char * start)
 				if (!defname) out+="!";
 				else
 				{
-					if (!defines.exists(defname)) error<errline>(0, S"Define !"+defname+" not found");
+					if (!defines.exists(defname)) asar_throw_error(0, error_type_line, error_id_define_not_found, defname.str);
 					else {
 						string thisone = defines.find(defname);
 						resolvedefines(out, thisone);
@@ -488,7 +479,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	try
 	{
 		string tmp=line;
-		if (!confirmquotes(tmp)) error<errline>(0, "Mismatched quotes");
+		if (!confirmquotes(tmp)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
 		clean(tmp);
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);
@@ -575,7 +566,7 @@ void assemblefile(const char * filename, bool toplevel)
 		char * temp= readfile(absolutepath, "");
 		if (!temp)
 		{
-			error<errnull>(0, "Couldn't open file");
+			asar_throw_error(0, error_type_null, error_id_failed_to_open_file, absolutepath.str);
 			return;
 		}
 		file.contents =split(temp, "\n");
@@ -598,7 +589,7 @@ void assemblefile(const char * filename, bool toplevel)
 				comment = strqchr(comment, ';');
 			}
 			while (strqchr(line, '\t')) *strqchr(line, '\t')=' ';
-			if (!confirmquotes(line)) { thisline=i; thisblock=line; error<errnull>(0, "Mismatched quotes"); line[0]='\0'; }
+			if (!confirmquotes(line)) { thisline = i; thisblock = line; asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
 			itrim(line, " ", " ", true);
 			for (int j=1;strqchr(line, ',') && !strqchr(line, ',')[1] && file.contents[i+j];j++)
 			{
@@ -623,13 +614,13 @@ void assemblefile(const char * filename, bool toplevel)
 			istoplevel=toplevel;
 			if (stribegin(file.contents[i], "macro ") && numif==numtrue)
 			{
-				if (inmacro) error<errline>(0, "Nested macro definition");
+				if (inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
 				inmacro=true;
 				if (!pass) startmacro(file.contents[i]+6);
 			}
 			else if (!stricmp(file.contents[i], "endmacro") && numif==numtrue)
 			{
-				if (!inmacro) error<errline>(0, "Misplaced endmacro");
+				if (!inmacro) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
 				inmacro=false;
 				if (!pass) endmacro(true);
 			}
@@ -656,19 +647,19 @@ void assemblefile(const char * filename, bool toplevel)
 	checkbankcross();
 	if (inmacro)
 	{
-		error<errnull>(0, "Unclosed macro");
+		asar_throw_error(0, error_type_null, error_id_unclosed_macro);
 		if (!pass) endmacro(false);
 	}
 	if (repeatnext!=1)
 	{
 		repeatnext=1;
-		error<errnull>(0, "rep at the end of a file");
+		asar_throw_error(0, error_type_null, error_id_rep_at_file_end);
 	}
 	if (numif!=startif)
 	{
 		numif=startif;
 		numtrue=startif;
-		error<errnull>(0, "Unclosed if statement");
+		asar_throw_error(0, error_type_null, error_id_unclosed_if);
 	}
 	incsrcdepth--;
 }
@@ -746,10 +737,10 @@ void parse_std_defines(const char* textfile)
 					continue;
 				}
 
-				error<errnull>(pass, "stddefines.txt contains a line with a value, but no identifier");
+				asar_throw_error(pass, error_type_null, error_id_stddefines_no_identifier);
 			}
 
-			if (!validatedefinename(define_name)) error<errnull>(0, S "Invalid define name in stddefines.txt: '" + define_name + "'.");
+			if (!validatedefinename(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "stddefines.txt", define_name.str);
 
 			// clean define_val
 			char* defval = define_val.str;
@@ -757,7 +748,7 @@ void parse_std_defines(const char* textfile)
 
 			if (*defval == 0) {
 				// no value
-				if (clidefines.exists(define_name)) error<errnull>(pass, S "Std define '" + define_name + "' overrides a previous define. Did you specify the same define twice?");
+				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.str);
 				clidefines.create(define_name) = "";
 				continue;
 			}
@@ -769,14 +760,14 @@ void parse_std_defines(const char* textfile)
 					cleaned_defval += *defval++;
 
 				if (*defval == 0) {
-					error<errnull>(pass, "Broken std defines (no closing quote)");
+					asar_throw_error(pass, error_type_null, error_id_mismatched_quotes);
 				}
 				defval++; // skip closing quote
 				while (*defval == ' ' || *defval == '\t') defval++; // skip whitespace
 				if (*defval != 0 && *defval != '\n')
-					error<errnull>(pass, "Broken std defines (something after closing quote)");
+					asar_throw_error(pass, error_type_null, error_id_stddefine_after_closing_quote);
 
-				if (clidefines.exists(define_name)) error<errnull>(pass, S "Std define '" + define_name + "' overrides a previous define. Did you specify the same define twice?");
+				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.str);
 				clidefines.create(define_name) = cleaned_defval;
 				continue;
 			}
@@ -789,7 +780,7 @@ void parse_std_defines(const char* textfile)
 				while (*defval_end == ' ' || *defval_end == '\t') defval_end--;
 				cleaned_defval = string(defval, (int)(defval_end - defval + 1));
 
-				if (clidefines.exists(define_name)) error<errnull>(pass, S "Std define '" + define_name + "' overrides a previous define. Did you specify the same define twice?");
+				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.str);
 				clidefines.create(define_name) = cleaned_defval;
 				continue;
 			}
