@@ -6,7 +6,7 @@
 // If you need to remove one, stub it out.
 // If you need to add one, add it at the end (before error_id_end).
 // Keep in sync with asar_errors.
-enum asar_error_id
+enum asar_error_id : int
 {
 	error_id_start = ASAR_ERROR_RANGE_START,
 

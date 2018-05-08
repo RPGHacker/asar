@@ -6,7 +6,7 @@
 // If you need to remove one, stub it out.
 // If you need to add one, add it at the end (before warning_id_end).
 // Keep in sync with asar_warnings.
-enum asar_warning_id
+enum asar_warning_id : int
 {
 	warning_id_start = ASAR_WARNING_RANGE_START,
 
