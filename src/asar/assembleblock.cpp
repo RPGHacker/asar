@@ -1229,7 +1229,8 @@ void assembleblock(const char * block)
 		startpos=num;
 		realstartpos=num;
 	}
-#define ret_error(errid, ...) { asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
+#define ret_error(errid) { asar_throw_error(0, error_type_block, errid); return; }
+#define ret_error_params(errid, ...) { asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
 	else if (is("struct"))
 	{
 		if (in_struct || in_sub_struct) ret_error(error_id_nested_struct);
@@ -1237,7 +1238,7 @@ void assembleblock(const char * block)
 		if (numwords > 4) ret_error(error_id_too_many_struct_params);
 		if (!confirmname(word[1])) ret_error(error_id_invalid_struct_name);
 
-		if (structs.exists(word[1]) && pass == 0) ret_error(error_id_struct_redefined, word[1]);
+		if (structs.exists(word[1]) && pass == 0) ret_error_params(error_id_struct_redefined, word[1]);
 
 		old_snespos = snespos;
 		old_startpos = startpos;
@@ -1249,7 +1250,7 @@ void assembleblock(const char * block)
 		if (numwords == 3)
 		{
 			int base = (int)getnum(word[2]);
-			if (base&~0xFFFFFF) ret_error(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).str);
+			if (base&~0xFFFFFF) ret_error_params(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).str);
 			snespos = base;
 			startpos = base;
 		}
@@ -1259,7 +1260,7 @@ void assembleblock(const char * block)
 			if (!confirmname(word[3])) ret_error(error_id_struct_invalid_parent_name);
 			struct_parent = word[3];
 
-			if (!structs.exists(struct_parent)) ret_error(error_id_struct_not_found, struct_parent.str);
+			if (!structs.exists(struct_parent)) ret_error_params(error_id_struct_not_found, struct_parent.str);
 			snes_struct structure = structs.find(struct_parent);
 
 			snespos = structure.base_end;
