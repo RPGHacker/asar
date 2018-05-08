@@ -53,17 +53,15 @@ macro(set_asar_shared_properties target)
 			target_compile_features(${target} PRIVATE cxx_std_14)
 		endif()
 	else()
-		target_compile_options(${target} PRIVATE -Wall -pedantic)
+		target_compile_options(${target} PRIVATE -Wall -pedantic
+			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
+		)
 		# for some reason this isn't available on MSVC?
 		target_compile_features(${target} PRIVATE c_std_99)
 
 		# Static link for MinGW
 		if(MINGW)
 			target_compile_options(${target} PRIVATE "-static")
-
-			target_compile_options(${target} PRIVATE
-				-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
-			)
 		endif()
 
 		target_compile_features(${target} PRIVATE cxx_std_11)
