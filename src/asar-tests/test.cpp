@@ -151,9 +151,9 @@ bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * 
 					strncpy(new_file.file_path, directory_name, sizeof(new_file.file_path));
 					if (!has_path_seperator)
 					{
-						strncat(new_file.file_path, "/", sizeof(new_file.file_path));
+						strcat_s(new_file.file_path, sizeof(new_file.file_path), "/");
 					}
-					strncat(new_file.file_path, fd.cFileName, sizeof(new_file.file_path));
+					strcat_s(new_file.file_path, sizeof(new_file.file_path), fd.cFileName);
 					new_file.file_path[sizeof(new_file.file_path) - 1] = '\0';
 					out_array.push_back(new_file);
 				}
@@ -189,9 +189,9 @@ bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * 
 					strncpy(new_file.file_path, directory_name, sizeof(new_file.file_path));
 					if (!has_path_seperator)
 					{
-						strncat(new_file.file_path, "/", sizeof(new_file.file_path));
+						strcat_s(new_file.file_path, sizeof(new_file.file_path), "/");
 					}
-					strncat(new_file.file_path, ent->d_name, sizeof(new_file.file_path));
+					strcat_s(new_file.file_path, sizeof(new_file.file_path), ent->d_name);
 					new_file.file_path[sizeof(new_file.file_path) - 1] = '\0';
 					out_array.push_back(new_file);
 				}

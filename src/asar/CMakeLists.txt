@@ -55,6 +55,7 @@ macro(set_asar_shared_properties target)
 	else()
 		target_compile_options(${target} PRIVATE -Wall -pedantic
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
+			-Wno-unused-result # ignoring return value
 		)
 		# for some reason this isn't available on MSVC?
 		target_compile_features(${target} PRIVATE c_std_99)
