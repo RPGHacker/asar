@@ -27,7 +27,7 @@ Asar can also be built as a DLL. This makes it easier and faster to use Asar wit
 
 ## Test format
 
-Tests are mostly just asm files to be patched to a known ROM (currently SMW, but there's also a dummy ROM included that should work with all tests) with a bit of special syntax to verify that the correct values are written to the ROM. Tests contain a number of lines starting with ``;` `` in the beginning of the file. All of these lines are removed before actually applying the patch. On those lines:
+Tests are mostly just asm files to be patched to a known ROM (currently SMW, but there's also a dummy ROM included that should work with all tests) with a bit of special syntax to verify that the correct values are written to the ROM. Tests contain a number of lines starting with ``;` `` in the beginning of the file. These lines are seen as comments by Asar itself and thus ignored. On those lines:
 
 * 5-6 hex digits specify the offset in the ROM (as a PC address, not a an SNES address!) to expect the following bytes at.
 * 2 hexadecimal digits means that the byte specified will be expected in the ROM at the current offset (automatically increases the current offset).
