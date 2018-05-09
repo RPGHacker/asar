@@ -6,13 +6,13 @@ os:
   - linux
   - osx
 install: # misc setup that I didn't want to put in script
-  - if [ $TRAVIS_OS_NAME == osx ]; then LIBNAME=libasar.dylib; else LIBNAME=libasar.so; fi
   - mkdir build tests_dll_tmp tests_app_tmp
   - cd build
 script:
   - cmake -DCMAKE_BUILD_TYPE=MinSizeRel ../src
   - make
   # run dll test suite
-  - asar-tests/asar-dll-test asar/$LIBNAME $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
+  # We need to pass the DLL path as an absolute path because it is used to calculate the std defines location, which will throw a warning when it's a relative path
+  - asar-tests/asar-dll-test $TRAVIS_BUILD_DIR/build/asar/libasar.* $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
   # run app test suite
   - asar-tests/asar-app-test asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
