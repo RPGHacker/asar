@@ -3,7 +3,7 @@
 ;`80000
 ;must be in "patch-to-smw" mode since Asar considers it to read outside the ROM otherwise
 
-expecttitle "SUPER MARIOWORLD     "
+check title "SUPER MARIOWORLD     "
 
 org $008000
 db $01

@@ -190,6 +190,7 @@ enum asar_error_id : int
 
 	error_id_invalid_math,
 	error_id_invalid_warn,
+	error_id_invalid_check,
 
 	error_id_warnpc_in_freespace,
 	error_id_warnpc_broken_param,

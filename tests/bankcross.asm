@@ -548,7 +548,7 @@
 ;`42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42  42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42  42 42 42 42 42 42 42 42 42 42 42 42 42 42 42 42  42 42 42 42 42 42 42 42 42 42 42 42 42 42
 
 
-warn bankcross off
+check bankcross off
 
 org $00FFFF
 
@@ -561,7 +561,7 @@ Second:
 	dl First
 	dl Second
 	
-warn bankcross on
+check bankcross on
 
 	db $00,$00,$00
 	
@@ -574,7 +574,7 @@ warn bankcross on
 	
 norom
 
-warn bankcross off
+check bankcross off
 
 org $00FFFF
 
@@ -587,7 +587,7 @@ Fourth:
 	dl Third
 	dl Fourth
 	
-warn bankcross on
+check bankcross on
 
 	db $00,$00,$00
 	
@@ -598,7 +598,7 @@ warn bankcross on
 	
 	
 	
-warn bankcross off
+check bankcross off
 
 org $000015
 
@@ -609,13 +609,13 @@ Sixth:
 	dl Fifth
 	dl Sixth
 	
-warn bankcross on
+check bankcross on
 
 
 
 org $020000
 
-warn bankcross off
+check bankcross off
 
 base $000015
 
@@ -629,7 +629,7 @@ Eigth:
 	
 base off
 
-warn bankcross on
+check bankcross on
 
 
 
@@ -641,7 +641,7 @@ db $02
 db $03
 
 norom
-warn bankcross off
+check bankcross off
 
 org $057FFC
 base $00002
@@ -655,7 +655,7 @@ db $FE
 
 lorom
 base off
-warn bankcross on
+check bankcross on
 
 org $068002
 padbyte $42 : pad $078000

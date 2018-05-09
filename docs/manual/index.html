@@ -67,9 +67,7 @@
 					<li><a href="#warn-xkas">warn xkas</a></li>
 					<li><a href="#math-pri">math pri</a></li>
 					<li><a href="#math-round">math round</a></li>
-					<li><a href="#expecttitle">expecttitle</a></li>
 					<li><a href="#namespace-nested">namespace nested</a></li>
-					<li><a href="#warn-bankcross">warn bankcross</a></li>
 				</ul>
 			</li>
 			<li>
@@ -157,6 +155,13 @@
 					<li><a href="#warn">warn</a></li>
 					<li><a href="#error">error</a></li>
 					<li><a href="#assert">assert</a></li>
+				</ul>
+			</li>
+			<li>
+				<a href="#checks">Checks</a>
+				<ul>
+					<li><a href="#check-title">check title</a></li>
+					<li><a href="#check-bankcross">check bankcross</a></li>
 				</ul>
 			</li>
 		</ul>
@@ -1642,33 +1647,9 @@ db (3/4)+1.75
 
 ; !some_number contains 0.75 after this line
 !some_number #= 0.75</code></pre>
-		<h4 id="expecttitle">expecttitle</h4>
-		<pre><code class="65c816_asar">expecttitle &quot;{title}&quot;</code></pre>
-		The expecttitle command verifies that the title stored in the output ROM is identical to <code>title</code>. If it isn't, an error is thrown (unless <code>--no-title-check</code> is passed to the application, in which case only a warning is thrown - see section <a href="#usage">Usage</a> for details). The purpose of this command is to assure that patches are applied to the correct output ROM.
-		<pre><code class="65c816_asar">; This patch is only for a Super Mario World ROM
-expecttitle &quot;SUPER MARIOWORLD     &quot;
-
-; Remove small bonus stars from game
-org $009053
-	nop #3
-	
-org $009068
-	nop #3</code></pre>
 		<h4 id="namespace-nested">namespace nested</h4>
 		<pre><code class="65c816_asar">namespace nested {on/off}</code></pre>
 		The <code class="65c816_asar">namespace nested</code> command enables (<code class="65c816_asar">on</code>) or disables (<code class="65c816_asar">off</code>) nested namespaces. The default is <code class="65c816_asar">off</code>. See section <a href="#namespaces">Namespaces</a> for details.<br /><br />
-		<h4 id="warn-bankcross">warn bankcross</h4>
-		<pre><code class="65c816_asar">warn bankcross {on/off}</code></pre>
-		The <code class="65c816_asar">warn bankcross</code> command enables (<code class="65c816_asar">on</code>) or disables (<code class="65c816_asar">off</code>) throwing errors when a bank border is crossed while assembling a file. The default is <code class="65c816_asar">on</code>. Use this with caution as some features may not behave correctly with bank border checking disabled and some places may still check for bank borders, anyways.
-		<pre><code class="65c816_asar">warn bankcross off
-
-org $80FFFF
-
-	db $00,$00
-	
-warn bankcross on
-
-print pc	; Will print 818001 when using LoROM mapper</code></pre>
 <a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="formatting"><h3>Code Formatting</h3>
@@ -3092,6 +3073,34 @@ endif</code></pre>
 		<pre><code class="65c816_asar">assert {condition}[,custom_error_text]</code></pre>
 		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
 		<pre><code class="65c816_asar">assert read1($00FFD5) != $23,"This patch is not SA-1 compatible!"</code></pre>
+		<a href="#contents">Return to top</a></div>
+		<hr />
+		<div id="checks"><h3>Checks</h3>
+		Checks allow Asar to monitor certain states and throw warnings or errors when certain criteria are met. This can be helpful for catching or preventing certain problems.
+		<h4 id="check-title">check title</h4>
+		<pre><code class="65c816_asar">check title &quot;{title}&quot;</code></pre>
+		The check title command verifies that the title stored in the output ROM is identical to <code>title</code>. If it isn't, an error is thrown (unless <code>--no-title-check</code> is passed to the application, in which case only a warning is thrown - see section <a href="#usage">Usage</a> for details). The purpose of this command is to assure that patches are applied to the correct output ROM.
+		<pre><code class="65c816_asar">; This patch is only for a Super Mario World ROM
+check title &quot;SUPER MARIOWORLD     &quot;
+
+; Remove small bonus stars from game
+org $009053
+	nop #3
+	
+org $009068
+	nop #3</code></pre>
+		<h4 id="check-bankcross">check bankcross</h4>
+		<pre><code class="65c816_asar">check bankcross {on/off}</code></pre>
+		The <code class="65c816_asar">check bankcross</code> command enables (<code class="65c816_asar">on</code>) or disables (<code class="65c816_asar">off</code>) throwing errors when a bank border is crossed while assembling a file. The default is <code class="65c816_asar">on</code>. Use this with caution as some features may not behave correctly with bank border checking disabled and some places may still check for bank borders, anyways.
+		<pre><code class="65c816_asar">check bankcross off
+
+org $80FFFF
+
+	db $00,$00
+	
+check bankcross on
+
+print pc	; Will print 818001 when using LoROM mapper</code></pre>
 		<a href="#contents">Return to top</a></div>
 	</body>
 </html>

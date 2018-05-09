@@ -1031,47 +1031,64 @@ void assembleblock(const char * block)
 	{
 		asar_throw_warning(2, warning_id_warn_command, (string(": ") + dequote(par)).str);
 	}
-	else if (is1("expecttitle"))
+	else if (is2("check"))
 	{
-		// RPG Hacker: Removed trimming for now - I think requiring an exact match is probably
-		// better here (not sure, though, it's worth discussing)
-		string expected_title = dequote(par);
-		// randomdude999: this also removes leading spaces because itrim gets stuck in an endless
-		// loop when multi is true and one argument is empty
-		//expected_title = itrim(expected_title.str, " ", " ", true); // remove trailing spaces
-		// in hirom the rom needs to be an entire bank for it to have a title, other modes only need 0x8000 bytes
-		if (romlen < ((mapper==hirom || mapper==exhirom) ? 0x10000 : 0x8000)) // too short
+		if (stricmp(word[1], "title") == 0)
 		{
-			if (!ignoretitleerrors) // title errors shouldn't be ignored
-				asar_throw_error(0, error_type_block, error_id_rom_too_short, expected_title.str);
-			else // title errors should be ignored, throw a warning anyways
-				asar_throw_warning(0, warning_id_rom_too_short, expected_title.str);
-		}
-		else {
-			string actual_title;
-			string actual_display_title;
-			for (int i=0;i<21;i++)
-			{
-				unsigned char c = romdata[snestopc(0x00FFC0+i)];
-				actual_title += (char)c;
-				// the replacements are from interface-cli.cpp
-				if (c==7) c=14;
-				if (c==8) c=27;
-				if (c==9) c=26;
-				if (c=='\r') c=17;
-				if (c=='\n') c=25;
-				if (c=='\0') c=155;
-				actual_display_title += (char)c;
-			}
-			//actual_display_title = itrim(actual_display_title.str, " ", " ", true); // remove trailing spaces
-			//actual_title = itrim(actual_title.str, " ", " ", true); // remove trailing spaces
-			if (strncmp(expected_title, actual_title, 21) != 0)
+			// RPG Hacker: Removed trimming for now - I think requiring an exact match is probably
+			// better here (not sure, though, it's worth discussing)
+			string expected_title = dequote(word[2]);
+			// randomdude999: this also removes leading spaces because itrim gets stuck in an endless
+			// loop when multi is true and one argument is empty
+			//expected_title = itrim(expected_title.str, " ", " ", true); // remove trailing spaces
+			// in hirom the rom needs to be an entire bank for it to have a title, other modes only need 0x8000 bytes
+			if (romlen < ((mapper == hirom || mapper == exhirom) ? 0x10000 : 0x8000)) // too short
 			{
 				if (!ignoretitleerrors) // title errors shouldn't be ignored
-					asar_throw_error(0, error_type_block, error_id_rom_title_incorrect, expected_title.str, actual_display_title.str);
+					asar_throw_error(0, error_type_block, error_id_rom_too_short, expected_title.str);
 				else // title errors should be ignored, throw a warning anyways
-					asar_throw_warning(0, warning_id_rom_title_incorrect, expected_title.str, actual_display_title.str);
+					asar_throw_warning(0, warning_id_rom_too_short, expected_title.str);
 			}
+			else {
+				string actual_title;
+				string actual_display_title;
+				for (int i = 0;i < 21;i++)
+				{
+					unsigned char c = romdata[snestopc(0x00FFC0 + i)];
+					actual_title += (char)c;
+					// the replacements are from interface-cli.cpp
+					if (c == 7) c = 14;
+					if (c == 8) c = 27;
+					if (c == 9) c = 26;
+					if (c == '\r') c = 17;
+					if (c == '\n') c = 25;
+					if (c == '\0') c = 155;
+					actual_display_title += (char)c;
+				}
+				//actual_display_title = itrim(actual_display_title.str, " ", " ", true); // remove trailing spaces
+				//actual_title = itrim(actual_title.str, " ", " ", true); // remove trailing spaces
+				if (strncmp(expected_title, actual_title, 21) != 0)
+				{
+					if (!ignoretitleerrors) // title errors shouldn't be ignored
+						asar_throw_error(0, error_type_block, error_id_rom_title_incorrect, expected_title.str, actual_display_title.str);
+					else // title errors should be ignored, throw a warning anyways
+						asar_throw_warning(0, warning_id_rom_title_incorrect, expected_title.str, actual_display_title.str);
+				}
+			}
+		}
+		else if (stricmp(word[1], "bankcross") == 0)
+		{
+			bool val = false;
+			if (0);
+			else if (!stricmp(word[2], "on")) val = true;
+			else if (!stricmp(word[2], "off")) val = false;
+			else asar_throw_error(0, error_type_block, error_id_invalid_check);
+
+			disable_bank_cross_errors = !val;
+		}
+		else
+		{
+			asar_throw_error(0, error_type_block, error_id_invalid_check);
 		}
 	}
 	else if (is0("asar") || is1("asar"))
@@ -1973,9 +1990,6 @@ void assembleblock(const char * block)
 		else if (!stricmp(word[1], "xkas")) {
 			asar_throw_warning(0, warning_id_xkas_deprecated);
 			warnxkas=val;
-		}
-		else if (!stricmp(word[1], "bankcross")) {
-			disable_bank_cross_errors = !val;
 		}
 		else asar_throw_error(0, error_type_block, error_id_invalid_warn);
 	}

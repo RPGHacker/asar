@@ -215,6 +215,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_invalid_math, "Invalid math command." },
 	{ error_id_invalid_warn, "Invalid warn command." },
+	{ error_id_invalid_check, "Invalid check command." },
 
 	{ error_id_warnpc_in_freespace, "warnpc used in freespace." },
 	{ error_id_warnpc_broken_param, "Broken warnpc parameter." },
