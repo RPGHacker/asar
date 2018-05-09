@@ -304,7 +304,9 @@ bool execute_command_line(char * commandline, const char * log_file)
 
 	fflush(stdout);
 	
-	FILE * fp = popen(commandline, "r");
+	std::string line = commandline;
+	line += " 2>&1";
+	FILE * fp = popen(line.c_str(), "r");
 	FILE * logfilehandle = fopen(log_file, "wt+");
 	
 	char buffer[4096];
