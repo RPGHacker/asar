@@ -3133,8 +3133,8 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 				<th>Details</th>
 			</tr>
 			<tr>
-				<td><code></code></td>
-				<td></td>
+				<td><code>W1013</code></td>
+				<td>Thrown when opcodes are sized implicitly and Asar has to assume a size. An opcode is considered to be sized explicitly when either a length specifier is used or a simple hex constant that can be assumed to be of a specific size (that is, a hex constant with either two or four digits). Opcodes that don't support multiple sizes are always considered to be sized explicitly. Everything else is considered to be sized implicitly and will throw this warning when enabled.</td>
 			</tr>
 		</table>
 		<h4 id="warnings-push-pull">warnings {push/pull}</h4>

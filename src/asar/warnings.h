@@ -30,6 +30,8 @@ enum asar_warning_id : int
 
 	warning_id_warn_command,
 
+	warning_id_implicitly_sized_immediate,
+
 	warning_id_xkas_deprecated,
 	warning_id_xkas_eat_parentheses,
 	warning_id_xkas_label_access,
