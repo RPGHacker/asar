@@ -70,6 +70,7 @@ extern int bytes;
 int getlen(const char * str, bool optimizebankextraction=false);
 unsigned int getnum(const char * str);
 double getnumdouble(const char * str);
+bool is_hex_constant(const char * str);
 
 int getlenfromchar(char c);
 

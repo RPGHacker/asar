@@ -59,6 +59,8 @@ static asar_warning_mapping asar_warnings[] =
 
 	{ warning_id_warn_command, "warn command%s" },
 
+	{ warning_id_implicitly_sized_immediate, "Implicitly sized immediate.", false },
+
 	{ warning_id_xkas_deprecated, "xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it." },
 	{ warning_id_xkas_eat_parentheses, "xkas compatibility warning: Unlike xkas, Asar does not eat parentheses after defines." },
 	{ warning_id_xkas_label_access, "xkas compatibility warning: Label access is always 24bit in emulation mode, but may be 16bit in native mode." },
