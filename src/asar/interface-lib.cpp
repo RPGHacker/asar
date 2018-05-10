@@ -64,6 +64,11 @@ struct definedata {
 };
 extern assocarr<string> defines;
 
+struct warnsetting {
+	const char * warnid;
+	bool enabled;
+};
+
 extern autoarray<writtenblockdata> writtenblocks;
 
 void print(const char * str)
@@ -137,6 +142,10 @@ void resetdllstuff()
 	warnings.reset();
 	numwarn=0;
 #undef free
+
+	clidefines.reset();
+	reset_warnings_to_default();
+
 	reseteverything();
 }
 
@@ -260,11 +269,14 @@ struct patchparams_v160 : public patchparams_base
 
 	bool should_reset;
 
-	definedata* additional_defines;
+	const definedata* additional_defines;
 	int definecount;
 
 	const char* stdincludesfile;
 	const char* stddefinesfile;
+
+	const warnsetting * warning_settings;
+	int warning_setting_count;
 };
 
 struct patchparams : public patchparams_v160
@@ -318,7 +330,7 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	filesystem = &new_filesystem;
 
 	clidefines.reset();
-	for (int i = 0; i < paramscurrent.definecount; i++)
+	for (int i = 0; i < paramscurrent.definecount; ++i)
 	{
 		string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
 		name = name.replace("\t", " ", true);
@@ -337,6 +349,20 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 		if (!path_is_absolute(paramscurrent.stddefinesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std defines file");
 		string stddefinespath = paramscurrent.stddefinesfile;
 		parse_std_defines(stddefinespath);
+	}
+
+	for (int i = 0; i < paramscurrent.warning_setting_count; ++i)
+	{
+		asar_warning_id warnid = parse_warning_id_from_string(paramscurrent.warning_settings[i].warnid);
+
+		if (warnid != warning_id_end)
+		{
+			set_warning_enabled(warnid, paramscurrent.warning_settings[i].enabled);
+		}
+		else
+		{
+			asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "asar_patch_ex() warning_settings", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+		}
 	}
 
 	asar_patch_main(paramscurrent.patchloc);

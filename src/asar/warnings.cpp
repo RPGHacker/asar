@@ -13,13 +13,17 @@ struct asar_warning_mapping
 {
 	asar_warning_id warnid;
 	const char* message;
+	bool enabled;
+	bool enabled_default;
 
-	asar_warning_mapping(asar_warning_id warnid, const char* message)
+	asar_warning_mapping(asar_warning_id warnid, const char* message, bool enabled = true)
 	{
 		++asar_num_warnings;
 
 		this->warnid = warnid;
 		this->message = message;
+		this->enabled = enabled;
+		this->enabled_default = enabled;
 
 		// RPG Hacker: Sanity check. This makes sure that the order
 		// of entries in asar_warnings matches with the order of
@@ -78,13 +82,139 @@ void asar_throw_warning(int whichpass, asar_warning_id warnid, ...)
 {
 	if (pass == whichpass)
 	{
+		assert(warnid > warning_id_start && warnid < warning_id_end);
+
 		const asar_warning_mapping& warning = asar_warnings[warnid - warning_id_start - 1];
 
-		char warning_buffer[1024];
-		va_list args;
-		va_start(args, warnid);
-		vsnprintf(warning_buffer, sizeof(warning_buffer), warning.message, args);
-		va_end(args);
-		warn((int)warnid, warning_buffer);
+		if (warning.enabled)
+		{
+			char warning_buffer[1024];
+			va_list args;
+			va_start(args, warnid);
+			vsnprintf(warning_buffer, sizeof(warning_buffer), warning.message, args);
+			va_end(args);
+			warn((int)warnid, warning_buffer);
+		}
+	}
+}
+
+
+
+void set_warning_enabled(asar_warning_id warnid, bool enabled)
+{
+	assert(warnid > warning_id_start && warnid < warning_id_end);
+
+	asar_warning_mapping& warning = asar_warnings[warnid - warning_id_start - 1];
+
+	warning.enabled = enabled;
+}
+
+asar_warning_id parse_warning_id_from_string(const char* string)
+{
+	const char* pos = string;
+
+	if (pos == nullptr)
+	{
+		return warning_id_end;
+	}
+
+	if (pos[0] == 'w' || pos[0] == 'W')
+	{
+		++pos;
+	}
+
+	char* endpos = nullptr;
+	int numid = (int)strtol(pos, &endpos, 10);
+
+	if (endpos == nullptr || endpos[0] != '\0')
+	{
+		return warning_id_end;
+	}
+
+	asar_warning_id warnid = (asar_warning_id)numid;
+
+	if (warnid <= warning_id_start || warnid >= warning_id_end)
+	{
+		return warning_id_end;
+	}
+
+	return warnid;
+}
+
+void reset_warnings_to_default()
+{
+	for (int i = (int)(warning_id_start + 1); i < (int)warning_id_end; ++i)
+	{
+		asar_warning_mapping& warning = asar_warnings[i - (int)warning_id_start - 1];
+
+		warning.enabled = warning.enabled_default;
+	}
+}
+
+struct warnings_state
+{
+	bool enabled[warning_id_count];
+};
+
+autoarray<warnings_state> warnings_state_stack;
+warnings_state main_warnings_state;
+
+void push_warnings(bool warnings_command)
+{
+	warnings_state current_state;
+
+	for (int i = 0; i < (int)warning_id_count; ++i)
+	{
+		current_state.enabled[i] = asar_warnings[i].enabled;
+	}
+
+	if (warnings_command)
+	{
+		warnings_state_stack.append(current_state);
+	}
+	else
+	{
+		main_warnings_state = current_state;
+	}
+}
+
+void pull_warnings(bool warnings_command)
+{
+	if (warnings_state_stack.count > 0 || !warnings_command)
+	{
+		warnings_state prev_state;
+
+		if (warnings_command)
+		{
+			prev_state = warnings_state_stack[warnings_state_stack.count - 1];
+		}
+		else
+		{
+			prev_state = main_warnings_state;
+		}
+
+		for (int i = 0; i < (int)warning_id_count; ++i)
+		{
+			asar_warnings[i].enabled = prev_state.enabled[i];
+		}
+
+		if (warnings_command)
+		{
+			warnings_state_stack.remove(warnings_state_stack.count - 1);
+		}
+	}
+	else
+	{
+		asar_throw_error(0, error_type_block, error_id_pullwarnings_without_pushwarnings);
+	}
+}
+
+void verify_warnings()
+{
+	if (warnings_state_stack.count > 0)
+	{
+		asar_throw_error(0, error_type_null, error_id_pushwarnings_without_pullwarnings);
+		
+		warnings_state_stack.reset();
 	}
 }

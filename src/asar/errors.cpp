@@ -228,6 +228,11 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_invalid_print_function_syntax, "Invalid print function syntax." },
 	{ error_id_unknown_variable, "Unknown variable." },
+
+	{ error_id_invalid_warning_id, "Invalid warning ID passed to %s. Expected format is WXXXX where %d <= XXXX <= %d." },
+
+	{ error_id_pushwarnings_without_pullwarnings, "warnings push without matching warnings pull." },
+	{ error_id_pullwarnings_without_pushwarnings, "warnings pull without matching warnings push." },
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
@@ -254,6 +259,8 @@ void(*shutupgcc4)(asar_error_id, int, const char*) = asar_error_template<errfata
 
 void asar_throw_error(int whichpass, asar_error_type type, asar_error_id errid, ...)
 {
+	assert(errid > error_id_start && errid < error_id_end);
+
 	const asar_error_mapping& error = asar_errors[errid - error_id_start - 1];
 
 	char error_buffer[1024];

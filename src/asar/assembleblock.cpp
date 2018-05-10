@@ -676,6 +676,8 @@ void initstuff()
 	thisfilename = "";
 
 	includeonce.reset();
+
+	push_warnings(false);
 }
 
 
@@ -683,6 +685,9 @@ void initstuff()
 
 void finishpass()
 {
+	verify_warnings();
+	pull_warnings(false);
+
 //defines.traverse(nerf);
 	if (in_struct || in_sub_struct) asar_throw_error(pass, error_type_null, error_id_struct_without_endstruct);
 	else if (pushpcnum && pass == 0) asar_throw_error(pass, error_type_null, error_id_pushpc_without_pullpc);
@@ -1030,6 +1035,46 @@ void assembleblock(const char * block)
 	else if (is1("warn"))
 	{
 		asar_throw_warning(2, warning_id_warn_command, (string(": ") + dequote(par)).str);
+	}
+	else if (is1("warnings"))
+	{
+		if (stricmp(word[1], "push") == 0)
+		{
+			push_warnings();
+		}
+		else if (stricmp(word[1], "pull") == 0)
+		{
+			pull_warnings();
+		}
+	}
+	else if (is2("warnings"))
+	{
+		if (stricmp(word[1], "enable") == 0)
+		{
+			asar_warning_id warnid = parse_warning_id_from_string(word[2]);
+
+			if (warnid != warning_id_end)
+			{
+				set_warning_enabled(warnid, true);
+			}
+			else
+			{
+				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "warnings enable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+			}
+		}
+		else if (stricmp(word[1], "disable") == 0)
+		{
+			asar_warning_id warnid = parse_warning_id_from_string(word[2]);
+
+			if (warnid != warning_id_end)
+			{
+				set_warning_enabled(warnid, false);
+			}
+			else
+			{
+				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "warnings disable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+			}
+		}
 	}
 	else if (is2("check"))
 	{

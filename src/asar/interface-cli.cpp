@@ -4,6 +4,7 @@
 #include "libcon.h"
 #include "libsmw.h"
 #include "errors.h"
+#include "warnings.h"
 #include "platform/file-helpers.h"
 #include "virtualfile.hpp"
 
@@ -141,36 +142,47 @@ int main(int argc, char * argv[])
 		initmathcore();
 		string version=S"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
 				dec(asarver_bug)+(asarver_beta?"pre":"")+", originally developed by Alcaro, maintained by Asar devs.\n"+
-				"Source code: https://github.com/RPGHacker/asar";
+				"Source code: https://github.com/RPGHacker/asar\n";
 		char * myname=argv[0];
 		if (strrchr(myname, '/')) myname=strrchr(myname, '/')+1;
 		//char * dot=strrchr(myname, '.');
 		//if (dot) *dot='\0';
 		if (!strncasecmp(myname, "xkas", strlen("xkas"))) {
-			// can we use warn here?
+			// RPG Hacker: no asar_throw_Warning() here, because we didn't have a chance to disable warnings yet.
+			// Also seems like warning aren't even registered at this point yet.
 			puts("Warning: xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
 			puts("(this was triggered by renaming asar.exe to xkas.exe, which activated a compatibility feature.)");
 			errloc=stdout;
 		}
 		//if (dot) *dot='.';
 		libcon_init(argc, argv,
-			"[options] asm_file [rom_file]\n"
+			"[options] asm_file [rom_file]\n\n"
 			"Supported options:\n\n"
 			" --version         \n"
-			"                   Display version information\n\n"
+			"                   Display version information.\n\n"
 			" -v, --verbose     \n"
-			"                   Enable verbose mode\n\n"
+			"                   Enable verbose mode.\n\n"
 			" --symbols=<none/wla/nocash>\n"
-			"                   Specifies the format of the symbols output file (default is none for no symbols file)\n\n"
+			"                   Specifies the format of the symbols output file. (Default is none for no symbols file)\n\n"
 			" --symbols-path=<filename>\n"
 			"                   Override the default path to the symbols output file. The default is the ROM's base name with an\n"
-			"                   extension of .sym\n\n"
+			"                   extension of '.sym'.\n\n"
 			" --no-title-check  \n"
-			"                   Disable verifying ROM title (note that irresponsible use will likely corrupt your ROM)\n"
+			"                   Disable verifying ROM title. (Note that irresponsible use will likely corrupt your ROM)\n"
 			" --pause-mode=<never/on-error/on-warning/always>\n\n"
-			"                   Specify when Asar should pause the application (never, on error, on warning or always)\n"
+			"                   Specify when Asar should pause the application. (Never, on error, on warning or always)\n"
+			" -I<path>          \n"
+			" --include <path>  \n"
+			"                   Add an include search path to Asar.\n\n"
+			" -D<def>[=<val>]   \n"
+			" --define <def>[=<val>]\n"
+			"                   Add a define (optionally with a value) to Asar.\n\n"
 			" -werror           \n"
-			"                   Treat warnings as errors\n\n"
+			"                   Treat warnings as errors.\n\n"
+			" -w<ID>            \n"
+			"                   Enable a specific warning.\n\n"
+			" -wno<ID>          \n"
+			"                   Disable a specific warning.\n\n"
 			);
 		ignoretitleerrors=false;
 		string par;
@@ -189,8 +201,7 @@ int main(int argc, char * argv[])
 
 #define checkstartmatch(arg, stringliteral) (!strncmp(arg, stringliteral, strlen(stringliteral)))
 
-			if (par=="-werror") werror=true;
-			else if (par=="--no-title-check") ignoretitleerrors=true;
+			if (par=="--no-title-check") ignoretitleerrors=true;
 			else if (par == "-v" || par=="--verbose") verbose=true;
 			else if (checkstartmatch(par, "--symbols="))
 			{
@@ -246,6 +257,42 @@ int main(int argc, char * argv[])
 				{
 					postprocess_param = cmdlparam_adddefine;
 				}
+			}
+			else if (checkstartmatch(par, "-w"))
+			{
+				const char* w_param = ((const char*)par) + strlen("-w");
+
+				if (checkstartmatch(w_param, "error"))
+				{
+					werror = true;
+				}
+				else if (checkstartmatch(w_param, "no"))
+				{
+					asar_warning_id warnid = parse_warning_id_from_string(w_param + strlen("no"));
+					
+					if (warnid != warning_id_end)
+					{
+						set_warning_enabled(warnid, false);
+					}
+					else
+					{
+						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "-wno", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+					}
+				}
+				else
+				{
+					asar_warning_id warnid = parse_warning_id_from_string(w_param);
+
+					if (warnid != warning_id_end)
+					{
+						set_warning_enabled(warnid, true);
+					}
+					else
+					{
+						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "-w", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+					}
+				}
+
 			}
 			else libcon_badusage();
 

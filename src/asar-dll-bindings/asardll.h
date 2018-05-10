@@ -47,6 +47,12 @@ enum mappertype {
 	norom
 };
 
+struct warnsetting {
+	const char * warnid;
+	bool enabled;
+};
+
+
 
 struct patchparams
 {
@@ -80,6 +86,11 @@ struct patchparams
 	// Path to a text file to parse standard defines from.
 	// Set to NULL to not use any standard defines.
 	const char* stddefinesfile;
+
+	// A list of warnings to enable or disable.
+	// Specify warnings in the format "WXXXX" where XXXX = warning ID.
+	const struct warnsetting * warning_settings;
+	int warning_setting_count;
 };
 
 

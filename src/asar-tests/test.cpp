@@ -632,6 +632,9 @@ int main(int argc, char * argv[])
 
 			asar_patch_params.additional_defines = libdefines;
 			asar_patch_params.additional_define_count = sizeof(libdefines) / sizeof(libdefines[0]);
+
+			asar_patch_params.warning_settings = nullptr;
+			asar_patch_params.warning_setting_count = 0;
 			
 			for (int i = 0;i < numiter;i++)
 			{			

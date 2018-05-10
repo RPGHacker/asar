@@ -48,3 +48,16 @@ enum asar_warning_id : int
 };
 
 void asar_throw_warning(int whichpass, asar_warning_id warnid, ...);
+
+void set_warning_enabled(asar_warning_id warnid, bool enabled);
+
+// Supported string format: wXXXX, WXXXX or XXXX.
+// Returns warning_id_end if the string is malformed
+// or the ID wasn't found.
+asar_warning_id parse_warning_id_from_string(const char* string);
+
+void reset_warnings_to_default();
+
+void push_warnings(bool warnings_command = true);
+void pull_warnings(bool warnings_command = true);
+void verify_warnings();

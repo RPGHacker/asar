@@ -164,6 +164,14 @@
 					<li><a href="#check-bankcross">check bankcross</a></li>
 				</ul>
 			</li>
+			<li>
+				<a href="#warnings">Warnings</a>
+				<ul>
+					<li><a href="#disabled-warnings">Disabled Warnings</a></li>
+					<li><a href="#warnings-push-pull">warnings {push/pull}</a></li>
+					<li><a href="#warnings-enable-disable">warnings {enable/disable}</a></li>
+				</ul>
+			</li>
 		</ul>
 		</div>
 		<hr />
@@ -257,6 +265,18 @@
 				<td><pre><code class="powershell">asar.exe --symbols=wla
 	--symbols-path=C:/homebrew/my_game/symbols/main.symbols
 	C:/homebrew/my_game/main.asm</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="powershell">-w{id}</code></td>
+				<td>Input</td>
+				<td>Enables the warning with the specified ID. See section <a href="#warnings">Warnings</a> for details.</td>
+				<td><pre><code class="powershell">asar.exe -wW1023 C:/homebrew/my_game/main.asm</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="powershell">-wno{id}</code></td>
+				<td>Input</td>
+				<td>Disables the warning with the specified ID. See section <a href="#warnings">Warnings</a> for details.</td>
+				<td><pre><code class="powershell">asar.exe -wnoW1013 C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
 				<td>&nbsp;</td>
@@ -3101,6 +3121,42 @@ org $80FFFF
 check bankcross on
 
 print pc	; Will print 818001 when using LoROM mapper</code></pre>
+		<a href="#contents">Return to top</a></div>
+		<hr />
+		<div id="warnings"><h3>Warnings</h3>
+		Warnings are messages that Asar outputs to inform the user about potentially unintended or risky code that isn't critical and thus doesn't cause assembly to fail on its own. These messages can be useful for detecting potential problems in the code, but in some situations may be undesirable. For this reason, Asar supports a few methods of explicitly enabling or disabling certain warnings (see section <a href="#usage">Usage</a> for details on how to configure warnings via the command line). Additionally, there are warnings which may be useful in some situations, but would be intrusive in most other situations. They are disabled by default and have to be enabled explicitly to be used. Commands that enable or disable warnings refer to them via their ID. This ID is in the format <code>WXXXX</code>, where <code>XXXX</code> is a number uniquely identifying a warning. The easiest way of finding the ID for a specific warning is to look at the console output of a patch producing it. Asar will always output the warning ID along with the respective warning.
+		<h4 id="disabled-warnings">Disabled Warnings</h4>
+		This is a list of all warnings that are disabled by default and have to be enabled explicitly.<br/><br/>
+		<table>
+			<tr>
+				<th style="width:150px">Warning ID</th>
+				<th>Details</th>
+			</tr>
+			<tr>
+				<td><code></code></td>
+				<td></td>
+			</tr>
+		</table>
+		<h4 id="warnings-push-pull">warnings {push/pull}</h4>
+		<pre><code class="65c816_asar">warnings {push/pull}</code></pre>
+		The <code class="65c816_asar">warnings push</code> command pushes the current state of enabled and disabled warnings to the stack. The <code class="65c816_asar">warnings pull</code> command pulls it back from the stack.
+		<pre><code class="65c816_asar">warnings push
+; Disable "freespace leaked" warning
+warnings disable W1011
+		
+freecode
+
+; [...]
+		
+warnings pull</code></pre>
+		<h4 id="warnings-enable-disable">warnings {enable/disable}</h4>
+		<pre><code class="65c816_asar">warnings {enable/disable} {id}</code></pre>
+		The <code class="65c816_asar">warnings enable</code> command enables the warning with the specified ID, the <code class="65c816_asar">warnings disable</code> command disables it. Warnings enabled or disabled via this command override warnings enabled or disabled via the command line (see section <a href="#usage">Usage</a> for details). When using these commands inside shared code, it's recommended to do so in conjunction with <a href="#warnings-push-pull">warnings {push/pull}</a> to prevent the modified settings from leaking into other files.
+		<pre><code class="65c816_asar">warnings disable W1012
+		
+warn "This text in invisible!"
+
+warn enable W1012</code></pre>
 		<a href="#contents">Return to top</a></div>
 	</body>
 </html>
