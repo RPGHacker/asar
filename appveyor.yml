@@ -14,7 +14,7 @@ environment:
       PLATFORM: "Win32"
     - CMAKE_TARGET: "Visual Studio 15 2017 Win64"
       PLATFORM: "x64"
-	  
+
 install:
 - cmd: >-
     mkdir build tests_tmp_dll tests_tmp_app
@@ -24,10 +24,10 @@ install:
     set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
 
     cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -G "%CMAKE_TARGET%" ..\src
-	
+
 build:
   verbosity: minimal
-  
+
 artifacts:
 - path: build\asar\MinSizeRel\asar-standalone.exe
 - path: build\asar\MinSizeRel\asar.dll
@@ -40,7 +40,7 @@ test_script:
       asar-tests\MinSizeRel\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\MinSizeRel\asar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
 
       asar-tests\MinSizeRel\asar-app-test.exe asar\MinSizeRel\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
-	  
+
 for:
 -
   matrix:
