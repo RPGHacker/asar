@@ -6,10 +6,10 @@ install:
 
     cd build
 
-    - set PATH=C:/msys64/usr/bin;C:/msys64/mingw64/bin;%PATH%
-    - set MINGWPREFIX=x86_64-w64-mingw32
-    - set CC=%MINGWPREFIX%-gcc.exe
-    - set CXX=%MINGWPREFIX%-g++.exe
+    set PATH=C:/msys64/usr/bin;C:/msys64/mingw64/bin;%PATH%
+    set MINGWPREFIX=x86_64-w64-mingw32
+    set CC=%MINGWPREFIX%-gcc.exe
+    set CXX=%MINGWPREFIX%-g++.exe
 
     cmake -DCMAKE_MAKE_PROGRAM="%MINGWPREFIX%\\bin\\make.exe" -G "%CMAKE_TARGET%" ..\src
 environment:
