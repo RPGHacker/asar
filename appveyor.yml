@@ -6,9 +6,12 @@ install:
 
     cd build
 
-    cmake -G "%CMAKE_TARGET%" ..\src
+    set PATH=C:\MinGW\bin;%PATH%
+	
+    cmake -DCMAKE_MAKE_PROGRAM="C:\MinGW\bin\make.exe" -G "%CMAKE_TARGET%" ..\src
 environment:
   matrix:
+    - CMAKE_TARGET: "MinGW Makefiles"
     - CMAKE_TARGET: "Visual Studio 14 2015"
       PLATFORM: "Win32"
     - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
@@ -17,7 +20,6 @@ environment:
       PLATFORM: "Win32"
     - CMAKE_TARGET: "Visual Studio 15 2017 Win64"
       PLATFORM: "x64"
-    - CMAKE_TARGET: "MinGW Makefiles"
 build:
   verbosity: minimal
 artifacts:
