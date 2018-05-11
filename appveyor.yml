@@ -48,4 +48,5 @@ for:
       - CMAKE_TARGET: "MinGW Makefiles"
 
   build_script:
-  - cmd: %CMAKE_MAKE_PATH%
+  - cmd: >-
+      %CMAKE_MAKE_PATH%
