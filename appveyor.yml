@@ -6,7 +6,8 @@ install:
 
     cd build
 
-    dir C:\mingw-w64 /ad /b /s
+    dir C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin /ad /b /s
+    dir C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin /a-d /b /s
 
     set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw32\bin;%PATH%
 
