@@ -6,12 +6,9 @@ install:
 
     cd build
 
-    set PATH=C:/msys64/usr/bin;C:/msys64/mingw64/bin;%PATH%
-    set MINGWPREFIX=x86_64-w64-mingw32
-    set CC=%MINGWPREFIX%-gcc.exe
-    set CXX=%MINGWPREFIX%-g++.exe
+    set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw32\bin;%PATH%
 
-    cmake -DCMAKE_MAKE_PROGRAM="%MINGWPREFIX%\\bin\\mingw32-make.exe" -G "%CMAKE_TARGET%" ..\src
+    cmake -G "%CMAKE_TARGET%" ..\src
 environment:
   matrix:
     - CMAKE_TARGET: "MinGW Makefiles"
