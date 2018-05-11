@@ -49,4 +49,4 @@ for:
 
   build_script:
   - cmd: >-
-      %CMAKE_MAKE_PATH%
+      C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/mingw32-make.exe
