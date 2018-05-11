@@ -25,6 +25,7 @@ install:
     cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -G "%CMAKE_TARGET%" ..\src
 build:
   verbosity: minimal
+- cmd: IF "%CMAKE_TARGET%"=="MinGW Makefiles" ( "%CMAKE_MAKE_PATH%" )
 artifacts:
 - path: build\asar\MinSizeRel\asar-standalone.exe
 - path: build\asar\MinSizeRel\asar.dll
