@@ -11,7 +11,7 @@ install:
     set CC=%MINGWPREFIX%-gcc.exe
     set CXX=%MINGWPREFIX%-g++.exe
 
-    cmake -DCMAKE_MAKE_PROGRAM="%MINGWPREFIX%\\bin\\make.exe" -G "%CMAKE_TARGET%" ..\src
+    cmake -DCMAKE_MAKE_PROGRAM="%MINGWPREFIX%\\bin\\mingw32-make.exe" -G "%CMAKE_TARGET%" ..\src
 environment:
   matrix:
     - CMAKE_TARGET: "MinGW Makefiles"
