@@ -1,5 +1,5 @@
 version: '{build}'
-image: Visual Studio 2015
+image: Visual Studio 2017
 install:
 - cmd: >-
     mkdir build tests_tmp_dll tests_tmp_app
@@ -13,6 +13,11 @@ environment:
       PLATFORM: "Win32"
     - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
       PLATFORM: "x64"
+    - CMAKE_TARGET: "Visual Studio 15 2017"
+      PLATFORM: "Win32"
+    - CMAKE_TARGET: "Visual Studio 15 2017 Win64"
+      PLATFORM: "x64"
+    - CMAKE_TARGET: "MinGW Makefiles"
 build:
   verbosity: minimal
 artifacts:
