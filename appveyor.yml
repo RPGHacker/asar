@@ -1,17 +1,11 @@
 version: '{build}'
 image: Visual Studio 2017
-install:
-- cmd: >-
-    mkdir build tests_tmp_dll tests_tmp_app
-
-    cd build
-
-    set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
-
-    cmake -DCMAKE_MAKE_PROGRAM="C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/mingw32-make.exe" -DCMAKE_C_COMPILER="C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-gcc.exe" -DCMAKE_CXX_COMPILER="C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-g++.exe" -G "%CMAKE_TARGET%" ..\src
 environment:
   matrix:
     - CMAKE_TARGET: "MinGW Makefiles"
+      CMAKE_MAKE_PATH: "-DCMAKE_MAKE_PROGRAM=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/mingw32-make.exe"
+      CMAKE_GCC_PATH: "-DCMAKE_C_COMPILER=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-gcc.exe"
+      CMAKE_GXX_PATH: "-DCMAKE_CXX_COMPILER=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-g++.exe"
     - CMAKE_TARGET: "Visual Studio 14 2015"
       PLATFORM: "Win32"
     - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
@@ -20,6 +14,15 @@ environment:
       PLATFORM: "Win32"
     - CMAKE_TARGET: "Visual Studio 15 2017 Win64"
       PLATFORM: "x64"
+install:
+- cmd: >-
+    mkdir build tests_tmp_dll tests_tmp_app
+
+    cd build
+
+    set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
+
+    cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -G "%CMAKE_TARGET%" ..\src
 build:
   verbosity: minimal
 artifacts:
