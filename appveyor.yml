@@ -7,6 +7,8 @@ install:
     cd build
 
     set PATH=C:\MinGW\bin;%PATH%
+    set CC=C:\MinGW\bin\mingw32-gcc.exe
+    set CXX=C:\MinGW\bin\mingw32-g++.exe
 
     cmake -DCMAKE_MAKE_PROGRAM="C:\MinGW\bin\make.exe" -G "%CMAKE_TARGET%" ..\src
 environment:
