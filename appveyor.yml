@@ -7,7 +7,7 @@ install:
     cd build
 
     set PATH=C:\MinGW\bin;%PATH%
-	
+
     cmake -DCMAKE_MAKE_PROGRAM="C:\MinGW\bin\make.exe" -G "%CMAKE_TARGET%" ..\src
 environment:
   matrix:
