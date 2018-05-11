@@ -8,7 +8,7 @@ install:
 
     set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw32\bin;%PATH%
 
-    cmake -G "%CMAKE_TARGET%" ..\src
+    cmake -DCMAKE_MAKE_PROGRAM="C:\\mingw-w64\\x86_64-7.2.0-posix-seh-rt_v5-rev1\\mingw32\bin\\mingw32-make.exe" -G "%CMAKE_TARGET%" ..\src
 environment:
   matrix:
     - CMAKE_TARGET: "MinGW Makefiles"
