@@ -8,7 +8,7 @@ install:
 
     set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
 
-    cmake -DCMAKE_MAKE_PROGRAM="C:\\mingw-w64\\x86_64-7.2.0-posix-seh-rt_v5-rev1\\mingw64\\bin\\mingw32-make.exe" -DCMAKE_C_COMPILER="C:\\mingw-w64\\x86_64-7.2.0-posix-seh-rt_v5-rev1\\mingw64\\bin\\gcc.exe" -DCMAKE_CXX_COMPILER="C:\\mingw-w64\\x86_64-7.2.0-posix-seh-rt_v5-rev1\\mingw64\\bin\\g++.exe" -G "%CMAKE_TARGET%" ..\src
+    cmake -DCMAKE_MAKE_PROGRAM="C:\\mingw-w64\\x86_64-7.2.0-posix-seh-rt_v5-rev1\\mingw64\\bin\\mingw32-make.exe" -DCMAKE_C_COMPILER="C:\\mingw-w64\\x86_64-7.2.0-posix-seh-rt_v5-rev1\\mingw64\\bin\\mingw32-gcc.exe" -DCMAKE_CXX_COMPILER="C:\\mingw-w64\\x86_64-7.2.0-posix-seh-rt_v5-rev1\\mingw64\\bin\\mingw32-g++.exe" -G "%CMAKE_TARGET%" ..\src
 environment:
   matrix:
     - CMAKE_TARGET: "MinGW Makefiles"
