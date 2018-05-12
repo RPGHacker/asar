@@ -19,11 +19,9 @@ install:
 
     cd build
 
-    echo %PATH%
-
-    where mingw32-make
-
     set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
+
+    dir C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin
 
     cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -G "%CMAKE_TARGET%" ..\src
 
