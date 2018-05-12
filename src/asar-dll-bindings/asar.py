@@ -50,6 +50,11 @@ class definedata(ctypes.Structure):
     _fields_ = [("name", c_char_p),
                 ("contents", c_char_p)]
 
+# For internal use only.
+class warningsetting(ctypes.Structure):
+    _fields_ = [("warnid", c_char_p),
+                ("enabled", ctypes.c_bool)]
+
 
 class writtenblockdata(ctypes.Structure):
     _fields_ = [("pcoffset", c_int),
@@ -73,7 +78,9 @@ class patchparams(ctypes.Structure):
                 ("additional_defines", POINTER(definedata)),
                 ("additional_define_count", c_int),
                 ("stdincludesfile", c_char_p),
-                ("stddefinesfile", c_char_p)]
+                ("stddefinesfile", c_char_p),
+                ("warning_settings", POINTER(warningsetting)),
+                ("warning_setting_count", c_int)]
 
 
 class mappertype(enum.Enum):
@@ -230,7 +237,8 @@ def reset():
 
 
 def patch(patch_name, rom_data, includepaths=[], should_reset=True,
-          additional_defines={}, std_include_file=None, std_define_file=None):
+          additional_defines={}, std_include_file=None, std_define_file=None,
+          warning_settings={}):
     """Applies a patch.
 
     Returns (success, new_rom_data). If success is False you should call
@@ -248,6 +256,9 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
 
     std_include_file and std_define_file specify files where to look for extra
     include paths and defines, respectively.
+
+    warning_settings is a mapping of warning ID -> if the warning is
+    enabled (bool). Specify warnings in the format "WXXXX" where XXXX = warning ID.
     """
     romlen = c_int(len(rom_data))
     rom_ptr = ctypes.create_string_buffer(rom_data, maxromsize())
@@ -270,6 +281,12 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
     pp.should_reset = should_reset
     pp.stdincludesfile = std_include_file.encode() if std_include_file else None
     pp.stddefinesfile = std_define_file.encode() if std_define_file else None
+    pp.warning_setting_count = len(warning_settings)
+    warnings = (warningsetting*len(warning_settings))()
+    for i, (k, v) in enumerate(warning_settings.items()):
+        warnings[i].warnid = k
+        warnings[i].enabled = v
+    pp.warning_settings = warnings
     result = _asar.dll.asar_patch_ex(ctypes.byref(pp))
     return result, rom_ptr.raw[:romlen.value]
 
