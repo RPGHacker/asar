@@ -60,7 +60,7 @@ macro(set_asar_shared_properties target)
 
 		# Static link for MinGW
 		if(MINGW)
-			target_compile_options(${target} PRIVATE "-static")
+			target_compile_options(${target} PRIVATE "-static -static-libgcc -s")
 		endif()
 
 		# for some reason this isn't available on MSVC?
