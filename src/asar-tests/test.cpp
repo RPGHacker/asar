@@ -889,7 +889,7 @@ int main(int argc, char * argv[])
 
 	free(smwrom);
 
-	printf("%zu out of %zu performed tests succeeded.\n", input_files.size() - numfailed, input_files.size());
+	printf("%u out of %u performed tests succeeded.\n", (unsigned int)(input_files.size() - numfailed), (unsigned int)input_files.size());
 
 	if (numfailed > 0)
 	{
