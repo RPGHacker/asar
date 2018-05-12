@@ -26,7 +26,10 @@ macro(set_asar_test_shared_properties target)
 			target_compile_features(${target} PRIVATE cxx_std_14)
 		endif()
     else()
-        target_link_libraries(${target} dl)
+        if(!MINGW)
+            # Not available nor needed on mingw
+            target_link_libraries(${target} dl)
+        endif()
         target_compile_options(${target} PRIVATE -Wall -pedantic
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
 			-Wno-unused-result # ignoring return value

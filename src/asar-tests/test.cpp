@@ -151,9 +151,17 @@ bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * 
 					strncpy(new_file.file_path, directory_name, sizeof(new_file.file_path));
 					if (!has_path_seperator)
 					{
+#if defined(__MINGW32__)
+						strncat(new_file.file_path, "/", sizeof(new_file.file_path) - strlen(new_file.file_path) - 1);
+#else
 						strcat_s(new_file.file_path, sizeof(new_file.file_path), "/");
+#endif
 					}
+#if defined(__MINGW32__)
+					strncat(new_file.file_path, "/", sizeof(new_file.file_path) - strlen(new_file.file_path) - 1);
+#else
 					strcat_s(new_file.file_path, sizeof(new_file.file_path), fd.cFileName);
+#endif
 					new_file.file_path[sizeof(new_file.file_path) - 1] = '\0';
 					out_array.push_back(new_file);
 				}
