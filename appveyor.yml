@@ -52,7 +52,7 @@ for:
       asar-tests\asar-app-test.exe asar\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
 
   environment:
-    CMAKE_MAKE_PATH: "-DCMAKE_MAKE_PROGRAM=C:/MinGW/bin/mingw32-make.exe"
+    # CMAKE_MAKE_PATH: "-DCMAKE_MAKE_PROGRAM=C:/MinGW/bin/mingw32-make.exe"
     # CMAKE_GCC_PATH: "-DCMAKE_C_COMPILER=gcc.exe"
     # CMAKE_GXX_PATH: "-DCMAKE_CXX_COMPILER=g++.exe"
     CMAKE_TARGET: "MinGW Makefiles"
