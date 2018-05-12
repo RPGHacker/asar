@@ -16,7 +16,7 @@ install:
 
     set PATH=C:\MinGW\bin;%PATH%
 
-    cmake -DCMAKE_MAKE_PROGRAM=C:/MinGW/bin/mingw32-make.exe -G "%CMAKE_TARGET%" ..\src
+    cmake %CMAKE_EXTRA_FLAGS% -G "%CMAKE_TARGET%" ..\src
 
 build:
   verbosity: minimal
@@ -43,6 +43,10 @@ for:
   build_script:
   - cmd: >-
       C:/MinGW/bin/mingw32-make.exe
+
+  environment:
+    CMAKE_EXTRA_FLAGS: "-DCMAKE_MAKE_PROGRAM=C:/MinGW/bin/mingw32-make.exe"
+    CMAKE_TARGET: "MinGW Makefiles"
 
   test_script:
   - cmd: >-
