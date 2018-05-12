@@ -57,13 +57,14 @@ macro(set_asar_shared_properties target)
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
 			-Wno-unused-result # ignoring return value
 		)
-		# for some reason this isn't available on MSVC?
-		target_compile_features(${target} PRIVATE c_std_99)
 
 		# Static link for MinGW
 		if(MINGW)
 			target_compile_options(${target} PRIVATE "-static")
 		endif()
+
+		# for some reason this isn't available on MSVC?
+		target_compile_features(${target} PRIVATE c_std_99)
 
 		target_compile_features(${target} PRIVATE cxx_std_11)
 	endif()

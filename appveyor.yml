@@ -19,9 +19,6 @@ install:
 - cmd: >-
     mkdir build tests_tmp_dll tests_tmp_app
 
-    dir C:\mingw-w64 /ad /b /s
-    dir C:\mingw-w64 /a-d /b /s
-
     cd build
 
     set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
