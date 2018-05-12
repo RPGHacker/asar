@@ -1507,13 +1507,12 @@ lda $00
 arch spc700
 mov a,$00</code></pre>
 		<h4 id="number-literals">Number Literals</h4>
-		Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use either <code>$</code> or <code>0x</code> as a prefix, binary literals use <code>%</code> as a prefix. Number literals can be made positive or negative by prefixing a <code>+</code> or a <code>-</code> (without a sign, positive is assumed). They can also be prefixed with a <code>~</code> to get their unary complement (a 32-bit integer with all the bits inverted).
+		Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use <code>$</code> as a prefix, binary literals use <code>%</code> as a prefix. Number literals can be made positive or negative by prefixing a <code>+</code> or a <code>-</code> (without a sign, positive is assumed). They can also be prefixed with a <code>~</code> to get their unary complement (a 32-bit integer with all the bits inverted).
 		<pre><code class="65c816_asar">lda $00
 clc
 adc #-10
 and #%01111111
-sta 0x00
-lda #~0x80	; Equal to lda #0xFFFFFF7F</code></pre>
+lda #~$80	; Equal to lda #$FFFFFF7F</code></pre>
 		Aditionally, Asar supports character literals by delimiting a single ASCII character with <code>'</code>. Asar will automatically convert them to the integer value currently mapped to them (by default their ASCII value). They can be used in all places where number literals can be used. See section <a href="#tables">Tables</a> for details on ASCII character mapping.
 		<pre><code class="65c816_asar">lda #'a'
 sta $00
