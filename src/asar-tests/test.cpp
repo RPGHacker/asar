@@ -158,7 +158,7 @@ bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * 
 #endif
 					}
 #if defined(__MINGW32__)
-					strncat(new_file.file_path, "/", sizeof(new_file.file_path) - strlen(new_file.file_path) - 1);
+					strncat(new_file.file_path, fd.cFileName, sizeof(new_file.file_path) - strlen(new_file.file_path) - 1);
 #else
 					strcat_s(new_file.file_path, sizeof(new_file.file_path), fd.cFileName);
 #endif
