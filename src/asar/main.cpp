@@ -810,7 +810,8 @@ void parse_std_defines(const char* textfile)
 	builtindefines.create("assembler_ver") = get_version_int();
 }
 
-bool checksum=true;
+bool checksum = true;
+bool force_checksum = false;
 extern assocarr<unsigned int> labels;
 extern autoarray<writtenblockdata> writtenblocks;
 
@@ -911,6 +912,7 @@ void reseteverything()
 	specifiedasarver=false;
 	errored = false;
 	checksum = true;
+	force_checksum = false;
 	
 	lastspecialline = -1;
 #undef free

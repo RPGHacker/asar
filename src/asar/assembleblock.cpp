@@ -751,6 +751,7 @@ extern bool moreonline;
 void print(const char * str);
 
 extern bool checksum;
+extern bool force_checksum;
 
 extern const char * callerfilename;
 extern int callerline;
@@ -1185,7 +1186,8 @@ void assembleblock(const char * block)
 		asar_throw_warning(0, warning_id_xkas_deprecated);
 		emulatexkas=true;
 		optimizeforbank=0x100;
-		checksum=false;
+		if(!force_checksum)
+			checksum=false;
 		sublabels[0]=":xkasdefault:";
 	}
 	else if (is0("include") || is1("includefrom"))
@@ -2009,7 +2011,13 @@ void assembleblock(const char * block)
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
 		if (!stricmp(par, "spc700-inline")) { arch=arch_spc700_inline; return; }
-		if (!stricmp(par, "spc700-raw")) { arch=arch_spc700; mapper=norom; checksum=false; return; }
+		if (!stricmp(par, "spc700-raw")) {
+			arch=arch_spc700;
+			mapper=norom;
+			if (!force_checksum)
+				checksum=false;
+			return;
+		}
 		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
 	}
 	else if (is2("math"))
@@ -2037,6 +2045,16 @@ void assembleblock(const char * block)
 			warnxkas=val;
 		}
 		else asar_throw_error(0, error_type_block, error_id_invalid_warn);
+	}
+	else if (is1("checksum"))
+	{
+		bool val = false;
+		if (!stricmp(word[1], "on")) val = true;
+		else if (!stricmp(word[1], "off")) val = false;
+		else asar_throw_error(0, error_type_block, error_id_invalid_checksum_cmd);
+
+		force_checksum = true;
+		checksum = val;
 	}
 	else if (is0("fastrom"))
 	{
@@ -2090,7 +2108,8 @@ bool assemblemapper(char** word, int numwords)
 		//$000000 would be the best snespos for this, but I don't care
 		mapper=norom;
 		//fastrom=false;
-		checksum=false;//we don't know where the header is, so don't set the checksum
+		if(!force_checksum)
+			checksum=false;//we don't know where the header is, so don't set the checksum
 	}
 	else if (is0("fullsa1rom"))
 	{
