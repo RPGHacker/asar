@@ -130,6 +130,7 @@
 					<li><a href="#fill">fillbyte/fill</a></li>
 					<li><a href="#pad">padbyte/pad</a></li>
 					<li><a href="#incbin">incbin</a></li>
+					<li><a href="#checksum">checksum</a></li>
 				</ul>
 			</li>
 			<li>
@@ -2815,7 +2816,11 @@ org {snes_addres}
 incbin {filename}
 
 pullpc</code></pre>
-		In this case there is no hard limitation on the size of your file.<br /><br />
+		In this case there is no hard limitation on the size of your file.
+		<h4 id="checksum">checksum</h4>
+		<pre><code class="65c816_asar">checksum {on/off}</code></pre>
+		Allows explicitly overriding Asar's checksum generation. By default, Asar fixes the checksum of a ROM in all cases except when <code>norom</code> was used. If you don't want the checksum, you can disable fixing it by using <code>checksum off</code> (but I don't really see why you'd want to do it). On the other hand, if you use <code>norom</code> in your patch and still want the checksum to be updated then you can use <code>checksum on</code>.
+		<br /><br />
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="includes"><h3>Includes</h3>

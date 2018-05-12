@@ -233,6 +233,8 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_pushwarnings_without_pullwarnings, "warnings push without matching warnings pull." },
 	{ error_id_pullwarnings_without_pushwarnings, "warnings pull without matching warnings push." },
+
+	{ error_id_invalid_checksum_cmd, "Invalid checksum command." },
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

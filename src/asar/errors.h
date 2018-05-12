@@ -209,6 +209,8 @@ enum asar_error_id : int
 	error_id_pushwarnings_without_pullwarnings,
 	error_id_pullwarnings_without_pushwarnings,
 
+	error_id_invalid_checksum_cmd,
+
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
 };
