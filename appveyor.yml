@@ -23,7 +23,7 @@ install:
 
     dir C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin
 
-    cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -DCMAKE_SYSTEM_PROCESSOR=i686 -G "%CMAKE_TARGET%" ..\src
+    cmake %CMAKE_MAKE_PATH% %CMAKE_EXTRA_FLAGS% -G "%CMAKE_TARGET%" ..\src
 
 build:
   verbosity: minimal
@@ -59,6 +59,7 @@ for:
 
   environment:
     CMAKE_MAKE_PATH: "-DCMAKE_MAKE_PROGRAM=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/mingw32-make.exe"
+    CMAKE_EXTRA_FLAGS: "-DCMAKE_CXX_FLAGS=-m32 -DCMAKE_C_FLAGS=-m32 -DCMAKE_EXE_LINKER_FLAGS=-m32"
     # CMAKE_GCC_PATH: "-DCMAKE_C_COMPILER=gcc.exe"
     # CMAKE_GXX_PATH: "-DCMAKE_CXX_COMPILER=g++.exe"
     CMAKE_TARGET: "MinGW Makefiles"
