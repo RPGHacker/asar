@@ -20,6 +20,8 @@ install:
 
     set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
 
+    echo cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -G "%CMAKE_TARGET%" ..\src
+
     cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -G "%CMAKE_TARGET%" ..\src
 
 build:
@@ -43,10 +45,6 @@ for:
   matrix:
     only:
       - CMAKE_TARGET: "MinGW Makefiles"
-    environment:
-      CMAKE_MAKE_PATH: "-DCMAKE_MAKE_PROGRAM=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/mingw32-make.exe"
-      CMAKE_GCC_PATH: "-DCMAKE_C_COMPILER=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-gcc.exe"
-      CMAKE_GXX_PATH: "-DCMAKE_CXX_COMPILER=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-g++.exe"
 
   build_script:
   - cmd: >-
@@ -58,4 +56,7 @@ for:
 
       asar-tests\asar-app-test.exe asar\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
 
-  
+  environment:
+    CMAKE_MAKE_PATH: "-DCMAKE_MAKE_PROGRAM=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/mingw32-make.exe"
+    CMAKE_GCC_PATH: "-DCMAKE_C_COMPILER=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-gcc.exe"
+    CMAKE_GXX_PATH: "-DCMAKE_CXX_COMPILER=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-g++.exe"
