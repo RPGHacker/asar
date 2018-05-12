@@ -59,8 +59,8 @@ for:
 
   environment:
     CMAKE_MAKE_PATH: "-DCMAKE_MAKE_PROGRAM=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/mingw32-make.exe"
-    CMAKE_GCC_PATH: "-DCMAKE_C_COMPILER=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-gcc.exe"
-    CMAKE_GXX_PATH: "-DCMAKE_CXX_COMPILER=C:/mingw-w64/x86_64-7.2.0-posix-seh-rt_v5-rev1/mingw64/bin/x86_64-w64-mingw32-g++.exe"
+    CMAKE_GCC_PATH: "-DCMAKE_C_COMPILER=gcc.exe"
+    CMAKE_GXX_PATH: "-DCMAKE_CXX_COMPILER=g++.exe"
     CMAKE_TARGET: "MinGW Makefiles"
 
   artifacts:
