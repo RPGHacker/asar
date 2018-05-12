@@ -26,7 +26,7 @@ macro(set_asar_test_shared_properties target)
 			target_compile_features(${target} PRIVATE cxx_std_14)
 		endif()
     else()
-        if(!MINGW)
+        if(NOT MINGW)
             # Not available nor needed on mingw
             target_link_libraries(${target} dl)
         endif()
