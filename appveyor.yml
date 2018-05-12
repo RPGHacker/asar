@@ -5,12 +5,13 @@ environment:
     - CMAKE_TARGET: "MinGW Makefiles"
     - CMAKE_TARGET: "Visual Studio 14 2015"
       PLATFORM: "Win32"
-    - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
-      PLATFORM: "x64"
-    - CMAKE_TARGET: "Visual Studio 15 2017"
-      PLATFORM: "Win32"
-    - CMAKE_TARGET: "Visual Studio 15 2017 Win64"
-      PLATFORM: "x64"
+    # Not needed right now, and they seriously slow down debugging because Appveyor only builds 1 build at a time
+    # - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
+    #   PLATFORM: "x64"
+    # - CMAKE_TARGET: "Visual Studio 15 2017"
+    #   PLATFORM: "Win32"
+    # - CMAKE_TARGET: "Visual Studio 15 2017 Win64"
+    #   PLATFORM: "x64"
 
 install:
 - cmd: >-
@@ -18,9 +19,11 @@ install:
 
     cd build
 
-    set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
+    echo %PATH%
 
-    echo cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -G "%CMAKE_TARGET%" ..\src
+    where mingw32-make
+
+    set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
 
     cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -G "%CMAKE_TARGET%" ..\src
 
