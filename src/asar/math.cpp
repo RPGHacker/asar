@@ -531,7 +531,12 @@ static double getnumcore()
 	}
 	if (isdigit(*str))
 	{
-		return strtod(str, (char**)&str);
+		const char* end = str;
+		while (isdigit(*end) || *end == '.') end++;
+		string number;
+		number.assign(str, end - str);
+		str = end;
+		return atof(number);
 	}
 	if (isalpha(*str) || *str=='_' || *str=='.' || *str=='?')
 	{
