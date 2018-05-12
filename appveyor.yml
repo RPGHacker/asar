@@ -23,7 +23,7 @@ install:
 
     set PATH=C:\mingw-w64\x86_64-7.2.0-posix-seh-rt_v5-rev1\mingw64\bin;%PATH%
 
-    cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -G "%CMAKE_TARGET%" ..\src
+    cmake %CMAKE_MAKE_PATH% %CMAKE_GCC_PATH% %CMAKE_GXX_PATH% -DCMAKE_DL_LIBS= -G "%CMAKE_TARGET%" ..\src
 
 build:
   verbosity: minimal
