@@ -22,4 +22,8 @@ script:
   - asar-tests/asar-app-test asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
 after_success:
   - cd ..
-  - if [ $GEN_COVERAGE ]; then coveralls --verbose --include src/asar; fi
+  - if [ $GEN_COVERAGE ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file coverage.info; fi
+addons:
+  apt:
+    packages:
+      - lcov
