@@ -5,6 +5,8 @@ compiler:
 os:
   - linux
   - osx
+before_install:
+  - pip install --user cpp-coveralls
 install: # misc setup that I didn't want to put in script
   - mkdir build tests_dll_tmp tests_app_tmp
   - cd build
@@ -16,3 +18,5 @@ script:
   - asar-tests/asar-dll-test $TRAVIS_BUILD_DIR/build/asar/libasar.* $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
   # run app test suite
   - asar-tests/asar-app-test asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
+after_success:
+  - coveralls -i src/asar
