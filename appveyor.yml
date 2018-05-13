@@ -5,8 +5,16 @@ environment:
     - CMAKE_TARGET: "MinGW Makefiles"
     - CMAKE_TARGET: "Visual Studio 14 2015"
       PLATFORM: "Win32"
+      CMAKE_PLATFORM_TOOLSET: "-T v140"
     - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
       PLATFORM: "x64"
+      CMAKE_PLATFORM_TOOLSET: "-T v140"
+    - CMAKE_TARGET: "Visual Studio 14 2015"
+      PLATFORM: "Win32"
+      CMAKE_PLATFORM_TOOLSET: "-T v140_xp"
+    - CMAKE_TARGET: "Visual Studio 14 2015"
+      PLATFORM: "Win32"
+      CMAKE_PLATFORM_TOOLSET: "-T v140_clang_3_7"
 
 install:
 - cmd: >-
