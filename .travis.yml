@@ -11,7 +11,7 @@ install: # misc setup that I didn't want to put in script
   - mkdir build tests_dll_tmp tests_app_tmp
   - cd build
 script:
-  - cmake -DCMAKE_BUILD_TYPE=MinSizeRel ../src
+  - cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DASAR_COVERAGE=ON ../src
   - make
   # run dll test suite
   # We need to pass the DLL path as an absolute path because it is used to calculate the std defines location, which will throw a warning when it's a relative path
