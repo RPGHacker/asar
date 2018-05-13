@@ -24,7 +24,7 @@ install:
 
     set PATH=C:\MinGW\bin;%PATH%
 
-    cmake %CMAKE_EXTRA_FLAGS% -G "%CMAKE_TARGET%" ..\src
+    cmake %CMAKE_EXTRA_FLAGS% -G "%CMAKE_TARGET%" %CMAKE_PLATFORM_TOOLSET% ..\src
 
 build:
   verbosity: minimal
