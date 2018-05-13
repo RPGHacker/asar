@@ -36,7 +36,7 @@ macro(set_asar_shared_properties target)
 	# Enable maximum warning level
 	
 	if(MSVC)
-		target_compile_options(${target} PRIVATE "/Wall")
+		target_compile_options(${target} PRIVATE /Wall /MT)
 		
 		# These certainly aren't worth a warning, though
 		target_compile_options(${target} PRIVATE

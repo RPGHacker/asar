@@ -9,7 +9,7 @@ macro(set_asar_test_shared_properties target)
     # Maximum warning level
     if(MSVC)
         target_compile_definitions(${target} PRIVATE "_CRT_SECURE_NO_WARNINGS")
-        target_compile_options(${target} PRIVATE /Wall)
+        target_compile_options(${target} PRIVATE /Wall /MT)
         
         # These certainly aren't worth a warning, though
         target_compile_options(${target} PRIVATE
