@@ -20,8 +20,4 @@ script:
   - asar-tests/asar-app-test asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
 after_success:
   - cd ..
-  - if [ $TRAVIS_OS_NAME != osx ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file coverage.info; fi
-addons:
-  apt:
-    packages:
-    - lcov
+  - if [ $TRAVIS_OS_NAME != osx ]; then coveralls --verbose --include src/asar; fi
