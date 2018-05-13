@@ -6,8 +6,9 @@ os:
   - linux
   - osx
 before_install:
-  - echo $CC
-  - if [ $TRAVIS_OS_NAME != osx ]; then pip install --user cpp-coveralls; CMAKE_EXTRA_OPTS="-DASAR_COVERAGE=ON"; fi
+  # pip is annoying on osx and the coverage tool can't parse clang's output, so only run it on linux gcc
+  - if [ $TRAVIS_OS_NAME == linux -a $CC == gcc ]; then GEN_COVERAGE=1; fi
+  - if [ $GEN_COVERAGE ]; then pip install --user cpp-coveralls; CMAKE_EXTRA_OPTS="-DASAR_COVERAGE=ON"; fi
 install: # misc setup that I didn't want to put in script
   - mkdir build tests_dll_tmp tests_app_tmp
   - cd build
@@ -21,4 +22,4 @@ script:
   - asar-tests/asar-app-test asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
 after_success:
   - cd ..
-  - if [ $TRAVIS_OS_NAME != osx ]; then coveralls --verbose --include src/asar; fi
+  - if [ $GEN_COVERAGE ]; then coveralls --verbose --include src/asar; fi
