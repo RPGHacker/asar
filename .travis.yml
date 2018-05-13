@@ -6,12 +6,13 @@ os:
   - linux
   - osx
 before_install:
-  - if [ $TRAVIS_OS_NAME != osx ]; then pip install --user cpp-coveralls; fi
+  - echo $CC
+  - if [ $TRAVIS_OS_NAME != osx ]; then pip install --user cpp-coveralls; CMAKE_EXTRA_OPTS="-DASAR_COVERAGE=ON"; fi
 install: # misc setup that I didn't want to put in script
   - mkdir build tests_dll_tmp tests_app_tmp
   - cd build
 script:
-  - cmake -DCMAKE_BUILD_TYPE=MinSizeRel -DASAR_COVERAGE=ON ../src
+  - cmake -DCMAKE_BUILD_TYPE=Debug $CMAKE_EXTRA_OPTS ../src
   - make
   # run dll test suite
   # We need to pass the DLL path as an absolute path because it is used to calculate the std defines location, which will throw a warning when it's a relative path
