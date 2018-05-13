@@ -6,7 +6,7 @@ os:
   - linux
   - osx
 before_install:
-  - if [ $TRAVIS_OS_NAME != osx ]; pip install --user cpp-coveralls; fi
+  - if [ $TRAVIS_OS_NAME != osx ]; then pip install --user cpp-coveralls; fi
 install: # misc setup that I didn't want to put in script
   - mkdir build tests_dll_tmp tests_app_tmp
   - cd build
@@ -19,4 +19,4 @@ script:
   # run app test suite
   - asar-tests/asar-app-test asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
 after_success:
-  - if [ $TRAVIS_OS_NAME != osx ]; coveralls --verbose -i src/asar; fi
+  - if [ $TRAVIS_OS_NAME != osx ]; then coveralls --verbose -i src/asar; fi
