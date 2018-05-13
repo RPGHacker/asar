@@ -19,4 +19,4 @@ script:
   # run app test suite
   - asar-tests/asar-app-test asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
 after_success:
-  - if [ $TRAVIS_OS_NAME != osx ]; then coveralls --verbose -i src/asar; fi
+  - if [ $TRAVIS_OS_NAME != osx ]; then coveralls --verbose; fi
