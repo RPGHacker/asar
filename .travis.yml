@@ -21,3 +21,7 @@ script:
 after_success:
   - cd ..
   - if [ $TRAVIS_OS_NAME != osx ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file build/coverage.info; fi
+addons:
+  apt:
+    packages:
+    - lcov
