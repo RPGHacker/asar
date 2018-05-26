@@ -153,6 +153,7 @@ asar 1.60</code></pre>
 			<li>Made it possible to pass string parameters to functions like <code class="65c816_asar">readfile1()</code> via user-defined functions. Previously, this failed as Asar expected all parameters in user-defined functions to be numbers. (KevinCathcart)</li>
 			<li>Fixed a bug related to evaluation of parameters in user-defined functions. In some situations, Asar returned the incorrect parameter. For example: given a user-defined function with a parameter <code>ab</code> and a paramater <code>abc</code>, Asar occasionally returned the parameter <code>abc</code> when referencing the paramter <code>ab</code>. (KevinCathcart)</li>
 			<li>Added more undocumented features to the manual. (RPG Hacker)</li>
+			<li>0x hex literals were supported by Asar on some platforms, which wasn't supposed to be the case. Made sure 0x hex literals throw errors on all platforms. (randomdude999)</li>
 		</ul>
 
 		<h3>Deprecated features:</h3>
