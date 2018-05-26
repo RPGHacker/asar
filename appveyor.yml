@@ -1,27 +1,63 @@
 version: '{build}'
 image: Visual Studio 2015
+environment:
+  matrix:
+    - CMAKE_TARGET: "MinGW Makefiles"
+    - CMAKE_TARGET: "Visual Studio 14 2015"
+      PLATFORM: "Win32"
+      CMAKE_PLATFORM_TOOLSET: "-T v140"
+    - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
+      PLATFORM: "x64"
+      CMAKE_PLATFORM_TOOLSET: "-T v140"
+    - CMAKE_TARGET: "Visual Studio 14 2015"
+      PLATFORM: "Win32"
+      CMAKE_PLATFORM_TOOLSET: "-T v140_xp"
+    - CMAKE_TARGET: "Visual Studio 14 2015"
+      PLATFORM: "Win32"
+      CMAKE_PLATFORM_TOOLSET: "-T LLVM-vs2014"
+
 install:
 - cmd: >-
     mkdir build tests_tmp_dll tests_tmp_app
 
     cd build
 
-    cmake -G "%CMAKE_TARGET%" ..\src
-environment:
-  matrix:
-    - CMAKE_TARGET: "Visual Studio 14 2015"
-      PLATFORM: "Win32"
-    - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
-      PLATFORM: "x64"
+    set PATH=C:\MinGW\bin;%PATH%
+
+    cmake %CMAKE_EXTRA_FLAGS% -G "%CMAKE_TARGET%" %CMAKE_PLATFORM_TOOLSET% ..\src
+
 build:
   verbosity: minimal
+
 artifacts:
-- path: build\asar\MinSizeRel\asar-standalone.exe
-- path: build\asar\MinSizeRel\asar.dll
+- path: build\asar\**\asar-standalone.exe
+- path: build\asar\**\*asar.dll
+
 configuration: MinSizeRel
+
 test_script:
   # We need to pass the DLL path as an absolute path because it is used to calculate the std defines location, which will throw a warning when it's a relative path
   - cmd: >-
-      asar-tests\MinSizeRel\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\MinSizeRel\asar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
+      asar-tests\%CONFIGURATION%\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\%CONFIGURATION%\asar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
 
-      asar-tests\MinSizeRel\asar-app-test.exe asar\MinSizeRel\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
+      asar-tests\%CONFIGURATION%\asar-app-test.exe asar\%CONFIGURATION%\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
+
+for:
+-
+  matrix:
+    only:
+      - CMAKE_TARGET: "MinGW Makefiles"
+
+  build_script:
+  - cmd: >-
+      C:/MinGW/bin/mingw32-make.exe
+
+  environment:
+    CMAKE_EXTRA_FLAGS: "-DCMAKE_MAKE_PROGRAM=C:/MinGW/bin/mingw32-make.exe"
+    CMAKE_TARGET: "MinGW Makefiles"
+
+  test_script:
+  - cmd: >-
+      asar-tests\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\libasar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
+
+      asar-tests\asar-app-test.exe asar\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app

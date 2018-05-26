@@ -5,14 +5,25 @@ compiler:
 os:
   - linux
   - osx
+before_install:
+  # pip is annoying on osx and the coverage tool can't parse clang's output, so only run it on linux gcc
+  - if [ $TRAVIS_OS_NAME == linux -a $CC == gcc ]; then GEN_COVERAGE=1; fi
+  - if [ $GEN_COVERAGE ]; then pip install --user cpp-coveralls; CMAKE_EXTRA_OPTS="-DASAR_COVERAGE=ON"; fi
 install: # misc setup that I didn't want to put in script
   - mkdir build tests_dll_tmp tests_app_tmp
   - cd build
 script:
-  - cmake -DCMAKE_BUILD_TYPE=MinSizeRel ../src
+  - cmake -DCMAKE_BUILD_TYPE=Debug $CMAKE_EXTRA_OPTS ../src
   - make
   # run dll test suite
   # We need to pass the DLL path as an absolute path because it is used to calculate the std defines location, which will throw a warning when it's a relative path
   - asar-tests/asar-dll-test $TRAVIS_BUILD_DIR/build/asar/libasar.* $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
   # run app test suite
   - asar-tests/asar-app-test asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
+after_success:
+  - cd ..
+  - if [ $GEN_COVERAGE ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file coverage.info; fi
+addons:
+  apt:
+    packages:
+      - lcov

@@ -14,7 +14,16 @@
 
 #include <new>//placement new
 #include <stdlib.h>//malloc, realloc, free
-#include <string.h>//strcmp, memmove, strdup
+// we use our own strdup since the standard one is inconsistent
+#define strdup strdup_no
+#include <string.h>//strcmp, memmove
+#undef strdup
+inline char * strdup(const char * str) throw ()
+{
+	char * a = (char*)malloc(sizeof(char)*(strlen(str) + 1));
+	strcpy(a, str);
+	return a;
+}
 #include <stdio.h>
 #include <ctype.h>
 #include <math.h>

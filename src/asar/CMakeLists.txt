@@ -5,6 +5,7 @@ cmake_minimum_required(VERSION 3.9.0)
 
 option(ASAR_GEN_EXE "Build Asar standalone application" ON)
 option(ASAR_GEN_DLL "Build Asar shared library" ON)
+option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
 
 
 
@@ -36,7 +37,7 @@ macro(set_asar_shared_properties target)
 	# Enable maximum warning level
 	
 	if(MSVC)
-		target_compile_options(${target} PRIVATE "/Wall")
+		target_compile_options(${target} PRIVATE /Wall /MT)
 		
 		# These certainly aren't worth a warning, though
 		target_compile_options(${target} PRIVATE
@@ -57,13 +58,15 @@ macro(set_asar_shared_properties target)
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
 			-Wno-unused-result # ignoring return value
 		)
-		# for some reason this isn't available on MSVC?
-		target_compile_features(${target} PRIVATE c_std_99)
 
 		# Static link for MinGW
 		if(MINGW)
-			target_compile_options(${target} PRIVATE "-static")
+			target_compile_options(${target} PRIVATE -static -static-libgcc -s)
+			target_link_libraries(${target} PRIVATE -static -static-libgcc -s)
 		endif()
+
+		# for some reason this isn't available on MSVC?
+		target_compile_features(${target} PRIVATE c_std_99)
 
 		target_compile_features(${target} PRIVATE cxx_std_11)
 	endif()
@@ -168,6 +171,11 @@ if(ASAR_GEN_EXE)
 		)
 
 	set_asar_shared_properties(asar-standalone)
+
+	if(ASAR_COVERAGE)
+		target_compile_options(asar-standalone PRIVATE -fprofile-arcs -ftest-coverage)
+		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov --coverage -fprofile-arcs")
+	endif()
 endif(ASAR_GEN_EXE)
 
 

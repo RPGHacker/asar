@@ -14,6 +14,8 @@
 #	pragma warning(pop)
 #endif
 
+#include <ctype.h>
+
 bool file_exists(const char * filename)
 {
 	return (GetFileAttributes(filename) != INVALID_FILE_ATTRIBUTES);

@@ -9,7 +9,7 @@ macro(set_asar_test_shared_properties target)
     # Maximum warning level
     if(MSVC)
         target_compile_definitions(${target} PRIVATE "_CRT_SECURE_NO_WARNINGS")
-        target_compile_options(${target} PRIVATE /Wall)
+        target_compile_options(${target} PRIVATE /Wall /MT)
         
         # These certainly aren't worth a warning, though
         target_compile_options(${target} PRIVATE
@@ -26,11 +26,21 @@ macro(set_asar_test_shared_properties target)
 			target_compile_features(${target} PRIVATE cxx_std_14)
 		endif()
     else()
-        target_link_libraries(${target} dl)
+        if(NOT MINGW)
+            # Not available nor needed on mingw
+            target_link_libraries(${target} dl)
+        endif()
         target_compile_options(${target} PRIVATE -Wall -pedantic
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
 			-Wno-unused-result # ignoring return value
 		)
+
+		# Static link for MinGW
+		if(MINGW)
+			target_compile_options(${target} PRIVATE -static -static-libgcc -s)
+			target_link_libraries(${target} PRIVATE -static -static-libgcc -s)
+		endif()
+
         # for some reason this isn't available on MSVC?
         target_compile_features(${target} PRIVATE c_std_99)
 		target_compile_features(${target} PRIVATE cxx_std_11)
