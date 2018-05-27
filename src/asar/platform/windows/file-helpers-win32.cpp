@@ -8,13 +8,15 @@
 #	pragma warning(disable : 4987)
 #endif
 
-#include <windows.h>
+#include <Windows.h>
 
 #if defined(_MSC_VER)
 #	pragma warning(pop)
 #endif
 
 #include <ctype.h>
+
+#include "../file-helpers.h"
 
 bool file_exists(const char * filename)
 {

@@ -4,8 +4,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
-// This function should only be called inside this file now.
-void error_interface(int errid, int whichpass, const char * e_);
+#include "interface-shared.h"
 
 static int asar_num_errors = 0;
 
@@ -14,12 +13,12 @@ struct asar_error_mapping
 	asar_error_id errid;
 	const char* message;
 
-	asar_error_mapping(asar_error_id errid, const char* message)
+	asar_error_mapping(asar_error_id inerrid, const char* inmessage)
 	{
 		++asar_num_errors;
 
-		this->errid = errid;
-		this->message = message;
+		errid = inerrid;
+		message = inmessage;
 
 		// RPG Hacker: Sanity check. This makes sure that the order
 		// of entries in asar_errors matches with the order of
@@ -252,10 +251,12 @@ void asar_error_template(asar_error_id errid, int whichpass, const char* message
 	catch (errnull&) {}
 }
 
+#if !defined(__clang__)
 void(*shutupgcc1)(asar_error_id, int, const char*) = asar_error_template<errnull>;
 void(*shutupgcc2)(asar_error_id, int, const char*) = asar_error_template<errblock>;
 void(*shutupgcc3)(asar_error_id, int, const char*) = asar_error_template<errline>;
 void(*shutupgcc4)(asar_error_id, int, const char*) = asar_error_template<errfatal>;
+#endif
 
 void asar_throw_error(int whichpass, asar_error_type type, asar_error_id errid, ...)
 {
@@ -266,7 +267,21 @@ void asar_throw_error(int whichpass, asar_error_type type, asar_error_id errid, 
 	char error_buffer[1024];
 	va_list args;
 	va_start(args, errid);
+
+#if defined(__clang__)
+#	pragma clang diagnostic push
+	// "format string is not a literal".
+	// The pointer we're passing here should always point to a string literal,
+	// thus, I think, we can safely ignore this here.
+#	pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
+
 	vsnprintf(error_buffer, sizeof(error_buffer), error.message, args);
+
+#if defined(__clang__)
+#	pragma clang diagnostic pop
+#endif
+
 	va_end(args);
 
 	switch (type)

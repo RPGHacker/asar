@@ -1,8 +1,11 @@
 #include "asar.h"
 #include "errors.h"
+#include "assembleblock.h"
+#include "asar_math.h"
+
+#include "arch-shared.h"
 
 #define write1 write1_pick
-extern bool emulatexkas;
 
 void asinit_superfx()
 {
@@ -60,14 +63,8 @@ static bool check_short_addr(int num) {
 bool asblock_superfx(char** word, int numwords)
 {
 #define is(test) (!stricmp(word[0], test))
-#define is0(test) (!stricmp(word[0], test) && numwords==1)
-#define is1(test) (!stricmp(word[0], test) && numwords==2)
-#define is2(test) (!stricmp(word[0], test) && numwords==3)
-#define is3(test) (!stricmp(word[0], test) && numwords==4)
-#define is4(test) (!stricmp(word[0], test) && numwords==5)
-#define is5(test) (!stricmp(word[0], test) && numwords==6)
-	char * par=NULL;
-	if (word[1]) par=strdup(word[1]);
+	char * par= nullptr;
+	if (word[1]) par= duplicate_string(word[1]);
 	autoptr<char*> parptr=par;
 	if(0);
 	else if (assemblemapper(word, numwords)) {}
@@ -119,7 +116,7 @@ bool asblock_superfx(char** word, int numwords)
 	{
 		string tmp=par;
 		int numwordsinner;
-		autoptr<char*> parcpy=strdup(par);
+		autoptr<char*> parcpy= duplicate_string(par);
 		autoptr<char**> arg=qpsplit(parcpy, ",", &numwordsinner);
 		bool ret=false;
 #define ok() ret=true
@@ -130,55 +127,55 @@ bool asblock_superfx(char** word, int numwords)
 		if (numwordsinner ==1)
 		{
 #define w(val) ,write1((unsigned int)(val+reg))
-#define range(min, max) ,range(min, reg, max)
+#define reg_range(min, max) ,range(min, reg, max)
 			int reg;
 			if (getreg(par, &reg, reg_r))
 			{
-				op("TO")                w(0x10);
-				op("WITH")              w(0x20);
-				op("ADD")               w(0x50);
-				op("SUB")               w(0x60);
-				op("AND")  range(1, 15) w(0x70);
-				op("MULT")              w(0x80);
-				op("JMP")  range(8, 13) w(0x90);
-				op("FROM")              w(0xB0);
-				op("OR")   range(1, 15) w(0xC0);
-				op("INC")  range(0, 14) w(0xD0);
-				op("DEC")  range(0, 14) w(0xE0);
+				op("TO")                    w(0x10);
+				op("WITH")                  w(0x20);
+				op("ADD")                   w(0x50);
+				op("SUB")                   w(0x60);
+				op("AND")  reg_range(1, 15) w(0x70);
+				op("MULT")                  w(0x80);
+				op("JMP")  reg_range(8, 13) w(0x90);
+				op("FROM")                  w(0xB0);
+				op("OR")   reg_range(1, 15) w(0xC0);
+				op("INC")  reg_range(0, 14) w(0xD0);
+				op("DEC")  reg_range(0, 14) w(0xE0);
 
-				op("ADC")                w3d(0x50);
-				op("SBC")                w3d(0x60);
-				op("BIC")   range(1, 15) w3d(0x70);
-				op("UMULT")              w3d(0x80);
-				op("LJMP")  range(8, 13) w3d(0x90);
-				op("XOR")   range(1, 15) w3d(0xC0);
+				op("ADC")                    w3d(0x50);
+				op("SBC")                    w3d(0x60);
+				op("BIC")   reg_range(1, 15) w3d(0x70);
+				op("UMULT")                  w3d(0x80);
+				op("LJMP")  reg_range(8, 13) w3d(0x90);
+				op("XOR")   reg_range(1, 15) w3d(0xC0);
 
 				op("CMP") w3f(0x60);
 			}
 			if (getreg(par, &reg, reg_hash))
 			{
-				op("LINK") range(1, 4) w(0x90);
+				op("LINK") reg_range(1, 4) w(0x90);
 
-				op("ADD")               w3e(0x50);
-				op("SUB")               w3e(0x60);
-				op("AND")  range(1, 15) w3e(0x70);
-				op("MULT")              w3e(0x80);
-				op("OR")   range(1, 15) w3e(0xC0);
+				op("ADD")                   w3e(0x50);
+				op("SUB")                   w3e(0x60);
+				op("AND")  reg_range(1, 15) w3e(0x70);
+				op("MULT")                  w3e(0x80);
+				op("OR")   reg_range(1, 15) w3e(0xC0);
 
-				op("ADC")                w3f(0x50);
-				op("BIC")   range(1, 15) w3f(0x70);
-				op("UMULT")              w3f(0x80);
-				op("XOR")   range(1, 15) w3f(0xC0);
+				op("ADC")                    w3f(0x50);
+				op("BIC")   reg_range(1, 15) w3f(0x70);
+				op("UMULT")                  w3f(0x80);
+				op("XOR")   reg_range(1, 15) w3f(0xC0);
 			}
 			if (getreg(par, &reg, reg_parr))
 			{
-				op("STW") range(0, 11) w(0x30);
-				op("LDW") range(0, 11) w(0x40);
-				op("STB") range(0, 11) w3d(0x30);
-				op("LDB") range(0, 11) w3d(0x40);
+				op("STW") reg_range(0, 11) w(0x30);
+				op("LDW") reg_range(0, 11) w(0x40);
+				op("STB") reg_range(0, 11) w3d(0x30);
+				op("LDB") reg_range(0, 11) w3d(0x40);
 			}
 #undef w
-#undef range
+#undef reg_range
 			int byte=-1;
 #define br(name, val) if (is(name)) byte=val;
 			br("BRA", 0x05);
@@ -215,7 +212,7 @@ bool asblock_superfx(char** word, int numwords)
 		}
 		if (numwordsinner==2)
 		{
-#define w(val) ,write1((unsigned int)val)
+#define w(val) ,write1((unsigned int)(val))
 			int reg1; bool isreg1=getreg(arg[0], &reg1, reg_r);
 			int reg2; bool isreg2=getreg(arg[1], &reg2, reg_r);
 			if (isreg1)

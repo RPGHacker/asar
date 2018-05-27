@@ -1,22 +1,32 @@
-#define NULL 0
-#ifdef _WIN32
-	#pragma warning(push)
-	#pragma warning(disable : 4668)
-	#include <windows.h>
-	#pragma warning(pop)
-	#define getlib() LoadLibrary("asar.dll")
-	#define getlibfrompath(path) LoadLibrary(path)
-	#define loadraw(name, target) *((int(**)())&target)=(int(*)())GetProcAddress((HINSTANCE)asardll, name); require(target)
-	#define closelib(var) FreeLibrary((HINSTANCE)var)
-#else
-	#include <dlfcn.h>
-	#include <stdio.h>
 
-	#ifdef __APPLE__
-		#define EXTENSION ".dylib"
-	#else
-		#define EXTENSION ".so"
-	#endif
+#define NULL 0
+
+#if defined(_WIN32)
+#	if defined(_MSC_VER)
+#		pragma warning(push)
+#		pragma warning(disable : 4255)
+#		pragma warning(disable : 4668)
+#	endif
+
+#	include <Windows.h>
+
+#	if defined(_MSC_VER)
+#		pragma warning(pop)
+#	endif
+
+#	define getlib() LoadLibrary("asar.dll")
+#	define getlibfrompath(path) LoadLibrary(path)
+#	define loadraw(name, target) *((int(**)(void))&target)=(int(*)(void))GetProcAddress((HINSTANCE)asardll, name); require(target)
+#	define closelib(var) FreeLibrary((HINSTANCE)var)
+#else
+#	include <dlfcn.h>
+#	include <stdio.h>
+
+#	ifdef __APPLE__
+#		define EXTENSION ".dylib"
+#	else
+#		define EXTENSION ".so"
+#	endif
 
 	inline static void * getlib(void)
 	{
@@ -40,9 +50,15 @@
 		return NULL;
 	}
 
-	#define loadraw(name, target) *(void **)(&target)=dlsym(asardll, name); require(target)
-	#define closelib(var) dlclose(var)
+#	define loadraw(name, target) *(void **)(&target)=dlsym(asardll, name); require(target)
+#	define closelib(var) dlclose(var)
 #endif
+
+#include "asardll.h"
+	
+#undef asarfunc
+#undef ASAR_DLL_H_INCLUDED
+
 #define asarfunc
 #include "asardll.h"
 
@@ -55,7 +71,7 @@ static void(*asar_i_close)(void);
 #define loadi(name) loadraw("asar_"#name, asar_i_##name)
 #define load(name) loadraw("asar_"#name, asar_##name)
 
-bool asar_init_shared(void)
+static bool asar_init_shared(void)
 {
 	loadi(init);
 	loadi(close);

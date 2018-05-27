@@ -6,7 +6,10 @@
 #include "errors.h"
 #include "warnings.h"
 #include "platform/file-helpers.h"
-#include "virtualfile.hpp"
+#include "virtualfile.h"
+#include "interface-shared.h"
+#include "assembleblock.h"
+#include "asar_math.h"
 
 #ifdef TIMELIMIT
 # if defined(linux)
@@ -23,36 +26,14 @@
 # endif
 #endif
 
-extern bool errored;
-//extern int aborterrors;
-
-extern bool checksum;
-
 extern const char asarver[];
-
-//extern char romtitle[30];
-//extern bool stdlib;
-
-string getdecor();
-
-extern string thisfilename;
-
-extern assocarr<string> clidefines;
-extern assocarr<unsigned int> labels;
-
-void assemblefile(const char * filename, bool toplevel);
-
-extern int thisline;
-extern const char * thisblock;
-
-extern virtual_filesystem* filesystem;
 
 void print(const char * str)
 {
 	puts(str);
 }
 
-FILE * errloc=stderr;
+static FILE * errloc=stderr;
 static int errnum=0;
 
 void error_interface(int errid, int whichpass, const char * e_)
@@ -67,15 +48,8 @@ void error_interface(int errid, int whichpass, const char * e_)
 	}
 }
 
-void initmathcore();
-
-void initstuff();
-void finishpass();
-
-void reseteverything();
-
-bool werror=false;
-bool warned=false;
+static bool werror=false;
+static bool warned=false;
 
 void warn(int errid, const char * e_)
 {
@@ -95,8 +69,6 @@ void onsigxcpu(int ignored)
 #endif
 #endif
 
-bool setmapper();
-
 
 
 int main(int argc, char * argv[])
@@ -109,7 +81,7 @@ int main(int argc, char * argv[])
 	setrlimit(RLIMIT_CPU, &lim);
 	signal(SIGXCPU, onsigxcpu);
 #elif defined(_WIN32)
-	HANDLE hjob=CreateJobObject(NULL, NULL);
+	HANDLE hjob=CreateJobObject(NULL, nullptr);
 	AssignProcessToJobObject(hjob, GetCurrentProcess());
 	JOBOBJECT_BASIC_LIMIT_INFORMATION jbli;
 	jbli.LimitFlags=JOB_OBJECT_LIMIT_PROCESS_TIME;
@@ -302,7 +274,7 @@ int main(int argc, char * argv[])
 			}
 			else if (postprocess_param == cmdlparam_adddefine)
 			{
-				if (strchr(postprocess_arg, '=') != NULL)
+				if (strchr(postprocess_arg, '=') != nullptr)
 				{
 					// argument contains value, not only name
 					const char* eq_loc = strchr(postprocess_arg, '=');
@@ -345,8 +317,8 @@ int main(int argc, char * argv[])
 			printed_version = true;
 		}
 		string asmname=libcon_require_filename("Enter patch name:");
-		string romname=libcon_optional_filename("Enter ROM name:", NULL);
-		//char * outname=libcon_optional_filename("Enter output ROM name:", NULL);
+		string romname=libcon_optional_filename("Enter ROM name:", nullptr);
+		//char * outname=libcon_optional_filename("Enter output ROM name:", nullptr);
 		libcon_end();
 		if (!strchr(asmname, '.') && !file_exists(asmname)) asmname+=".asm";
 		if (!romname)
@@ -372,7 +344,7 @@ int main(int argc, char * argv[])
 		}
 		if (!openrom(romname, false))
 		{
-			thisfilename=NULL;
+			thisfilename= nullptr;
 			asar_throw_error(pass, error_type_null, openromerror);
 			pause(err);
 			return 1;
@@ -449,7 +421,7 @@ int main(int argc, char * argv[])
 
 
 		if (werror && warned) asar_throw_error(pass, error_type_null, error_id_werror);
-		if (checksum) fixchecksum();
+		if (checksum_fix_enabled) fixchecksum();
 		//if (pcpos>romlen) romlen=pcpos;
 		if (errored)
 		{

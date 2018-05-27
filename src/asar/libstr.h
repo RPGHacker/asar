@@ -26,7 +26,7 @@ void resize(int inlen)
 	if (inlen >=bufferlen-4)
 	{
 		while (inlen >=bufferlen-4) bufferlen*=2;
-		str=(char*)realloc(str, sizeof(char)*bufferlen);
+		str=(char*)realloc(str, sizeof(char)*(size_t)bufferlen);
 		memset(str+ inlen, 0, (size_t)(bufferlen- inlen));
 	}
 }
@@ -34,7 +34,7 @@ void resize(int inlen)
 void init()
 {
 	bufferlen=32;
-	str=(char*)malloc(sizeof(char)*bufferlen);
+	str=(char*)malloc(sizeof(char)*(size_t)bufferlen);
 	memset(str, 0, (size_t)bufferlen);
 	len=0;
 }
@@ -292,12 +292,12 @@ explicit
 #endif
 operator bool() const
 {
-	return (str != NULL);
+	return (str != nullptr);
 }
 
 cstring()
 {
-	str=NULL;
+	str= nullptr;
 }
 cstring(const char * newstr)
 {
@@ -335,12 +335,12 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 char ** nsplit(char * str, const char * key, int maxlen, int * len);
 char ** qnsplit(char * str, const char * key, int maxlen, int * len);
 char ** qpnsplit(char * str, const char * key, int maxlen, int * len);
-inline char ** split(char * str, const char * key, int * len=NULL) { return nsplit(str, key, 0, len); }
-inline char ** qsplit(char * str, const char * key, int * len=NULL) { return qnsplit(str, key, 0, len); }
-inline char ** qpsplit(char * str, const char * key, int * len=NULL) { return qpnsplit(str, key, 0, len); }
-inline char ** split1(char * str, const char * key, int * len=NULL) { return nsplit(str, key, 2, len); }
-inline char ** qsplit1(char * str, const char * key, int * len=NULL) { return qnsplit(str, key, 2, len); }
-inline char ** qpsplit1(char * str, const char * key, int * len=NULL) { return qpnsplit(str, key, 2, len); }
+inline char ** split(char * str, const char * key, int * len= nullptr) { return nsplit(str, key, 0, len); }
+inline char ** qsplit(char * str, const char * key, int * len= nullptr) { return qnsplit(str, key, 0, len); }
+inline char ** qpsplit(char * str, const char * key, int * len= nullptr) { return qpnsplit(str, key, 0, len); }
+inline char ** split1(char * str, const char * key, int * len= nullptr) { return nsplit(str, key, 2, len); }
+inline char ** qsplit1(char * str, const char * key, int * len= nullptr) { return qnsplit(str, key, 2, len); }
+inline char ** qpsplit1(char * str, const char * key, int * len= nullptr) { return qpnsplit(str, key, 2, len); }
 //void replace(string& str, const char * instr, const char * outstr, bool all);
 //void qreplace(string& str, const char * instr, const char * outstr, bool all);
 bool confirmquotes(const char * str);
@@ -353,7 +353,7 @@ inline string hex(unsigned int value)
 	else if (value<=0x000000FF) sprintf(buffer, "%.2X", value);
 	else if (value<=0x0000FFFF) sprintf(buffer, "%.4X", value);
 	else if (value<=0x00FFFFFF) sprintf(buffer, "%.6X", value);
-	else if (value<=0xFFFFFFFF) sprintf(buffer, "%.8X", value);
+	else sprintf(buffer, "%.8X", value);
 	return buffer;
 }
 
@@ -499,9 +499,9 @@ inline const char * dequote(char * str)
 		{
 			if (str[inpos+1]=='"') inpos++;
 			else if (str[inpos+1]=='\0') break;
-			else return NULL;
+			else return nullptr;
 		}
-		if (!str[inpos]) return NULL;
+		if (!str[inpos]) return nullptr;
 		str[outpos++]=str[inpos++];
 	}
 	str[outpos]=0;
@@ -517,23 +517,24 @@ inline char * strqchr(const char * str, char key)
 			str++;
 			while (*str!='"')
 			{
-				if (!*str) return NULL;
+				if (!*str) return nullptr;
 				str++;
 			}
 			str++;
 		}
 		else
 		{
-			if (*str==key) return (char*)str;
+			if (*str==key) return const_cast<char*>(str);
 			str++;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
+// RPG Hacker: WOW, these functions are poopy!
 inline char * strqrchr(const char * str, char key)
 {
-	char * ret=NULL;
+	const char * ret= nullptr;
 	while (*str)
 	{
 		if (*str=='"')
@@ -541,18 +542,18 @@ inline char * strqrchr(const char * str, char key)
 			str++;
 			while (*str!='"')
 			{
-				if (!*str) return NULL;
+				if (!*str) return nullptr;
 				str++;
 			}
 			str++;
 		}
 		else
 		{
-			if (*str==key) ret=(char*)str;
+			if (*str==key) ret=str;
 			str++;
 		}
 	}
-	return ret;
+	return const_cast<char*>(ret);
 }
 
 inline string substr(const char * str, int len)
@@ -564,63 +565,6 @@ inline string substr(const char * str, int len)
 
 char * trim(char * str, const char * left, const char * right, bool multi=false);
 char * itrim(char * str, const char * left, const char * right, bool multi=false);
-
-//edited from nall
-inline bool strwcmp(const char *s, const char *p) {
-  const char *cp = 0, *mp = 0;
-  while(*s && *p != '*') {
-    if(*p != '?' && *s != *p) return true;
-    p++, s++;
-  }
-  while(*s) {
-    if(*p == '*') {
-      if(!*++p) return false;
-      mp = p, cp = s + 1;
-    } else if(*p == '?' || *p == *s) {
-      p++, s++;
-    } else {
-      p = mp, s = cp++;
-    }
-  }
-  while(*p == '*') p++;
-  return (*p != 0);
-}
-
-inline bool striwcmp(const char *s, const char *p) {
-  const char *cp = 0, *mp = 0;
-  while(*s && *p != '*') {
-    if(*p != '?' && tolower(*s) != tolower(*p)) return true;
-    p++, s++;
-  }
-  while(*s) {
-    if(*p == '*') {
-      if(!*++p) return false;
-      mp = p, cp = s + 1;
-    } else if(*p == '?' || tolower(*p) == tolower(*s)) {
-      p++, s++;
-    } else {
-      p = mp, s = cp++;
-    }
-  }
-  while(*p == '*') p++;
-  return (*p != 0);
-}
-
-inline int strpos(const char * str, char key)
-{
-	if (str<(char*)0+64) return -1;//Someone needs to kill me for this.
-	const char * pos=strchr(str, key);
-	if (!pos) return -1;
-	return (int)(pos-str);
-}
-
-inline int strpos(const char * str, const char * key)
-{
-	if (str<(char*)0+64) return -1;
-	const char * pos=strstr(str, key);
-	if (!pos) return -1;
-	return (int)(pos-str);
-}
 
 inline string upper(const char * old)
 {
@@ -681,17 +625,17 @@ ctype(ualnum)
 ctype(ualpha)
 #undef ctype
 
-inline char * stristr(const char * string, const char * pattern)
+inline const char * stristr(const char * string, const char * pattern)
 {
-	if (!*pattern) return (char*)string;
-	char * pptr;
-	char * sptr;
-	char * start;
-	for (start=(char*)string;*start!=0;start++)
+	if (!*pattern) return string;
+	const char * pptr;
+	const char * sptr;
+	const char * start;
+	for (start=string;*start!=0;start++)
 	{
 		for (;(*start && (toupper(*start)!=toupper(*pattern)));start++);
-		if (!*start) return NULL;
-		pptr=(char*)pattern;
+		if (!*start) return nullptr;
+		pptr=pattern;
 		sptr=start;
 		while (toupper(*sptr)==toupper(*pptr))
 		{
@@ -700,7 +644,7 @@ inline char * stristr(const char * string, const char * pattern)
 			if (!*pptr) return start;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 

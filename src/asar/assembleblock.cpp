@@ -4,11 +4,15 @@
 #include "assocarr.h"
 #include "autoarray.h"
 #include "warnings.h"
+#include "assembleblock.h"
+#include "asar_math.h"
+#include "macro.h"
 #include "platform/file-helpers.h"
 
-int arch=arch_65816;
+#include "interface-shared.h"
+#include "arch-shared.h"
 
-extern int pass;
+int arch=arch_65816;
 
 int snespos;
 int realsnespos;
@@ -16,25 +20,22 @@ int startpos;
 int realstartpos;
 
 bool emulatexkas;
-bool specifiedasarver = false;
+static bool specifiedasarver = false;
 
-extern int optimizeforbank;
-extern bool ignoretitleerrors;
-
-int old_snespos;
-int old_startpos;
-int old_optimizeforbank;
-int struct_base;
-string struct_name;
-string struct_parent;
-bool in_struct = false;
-bool in_sub_struct = false;
+static int old_snespos;
+static int old_startpos;
+static int old_optimizeforbank;
+static int struct_base;
+static string struct_name;
+static string struct_parent;
+static bool in_struct = false;
+static bool in_sub_struct = false;
 
 assocarr<snes_struct> structs;
 
 static bool movinglabelspossible = false;
 
-bool disable_bank_cross_errors = false;
+static bool disable_bank_cross_errors = false;
 
 int bytes;
 
@@ -61,7 +62,7 @@ inline void verifysnespos()
 	}
 }
 
-int fixsnespos(int inaddr, int step)
+static int fixsnespos(int inaddr, int step)
 {
 	// RPG Hacker: No idea how reliable this is.
 	// Might not work with some of the more exotic mappers.
@@ -114,17 +115,7 @@ void write1_pick(unsigned int num)
 	write1_65816(num);
 }
 
-void asinit_65816();
-bool asblock_65816(char** word, int numwords);
-void asend_65816();
-void asinit_spc700();
-bool asblock_spc700(char** word, int numwords);
-void asend_spc700();
-void asinit_superfx();
-bool asblock_superfx(char** word, int numwords);
-void asend_superfx();
-
-bool asblock_pick(char** word, int numwords)
+static bool asblock_pick(char** word, int numwords)
 {
 	if (arch==arch_65816) return asblock_65816(word, numwords);
 	if (arch==arch_spc700) return asblock_spc700(word, numwords);
@@ -142,24 +133,9 @@ const char * safedequote(char * str)
 	if (!tmp) asar_throw_error(0, error_type_block, error_id_garbage_near_quoted_string);
 	return tmp;
 }
-#define dequote safedequote
 
 extern char romtitle[30];
 extern bool stdlib;
-
-extern bool foundlabel;
-extern bool forwardlabel;
-int getlen(const char * str);
-unsigned int getnum(const char * str);
-
-void assemblefile(const char * filename, bool toplevel);
-extern string thisfilename;
-extern int thisline;
-extern int lastspecialline;
-
-void createuserfunc(const char * name, const char * arguments, const char * content);
-
-bool commandlineflag(const char * cmd, const char * val);
 
 void write2(unsigned int num)
 {
@@ -222,8 +198,8 @@ int getlenfromchar(char c)
 }
 
 assocarr<unsigned int> labels;
-autoarray<int> poslabels;
-autoarray<int> neglabels;
+static autoarray<int> poslabels;
+static autoarray<int> neglabels;
 
 autoarray<int>* macroposlabels;
 autoarray<int>* macroneglabels;
@@ -238,18 +214,6 @@ autoarray<string> namespace_list;
 //bool fastrom=false;
 
 autoarray<string> includeonce;
-
-void startmacro(const char * line);
-void tomacro(const char * line);
-void endmacro(bool insert);
-void callmacro(const char * data);
-
-extern int reallycalledmacros;
-extern int calledmacros;
-extern int macrorecursion;
-extern int incsrcdepth;
-
-extern int repeatnext;
 
 bool confirmname(const char * name)
 {
@@ -323,14 +287,14 @@ string posneglabelname(const char ** input, bool define)
 	return output;
 }
 
-string labelname(const char ** rawname, bool define=false)
+static string labelname(const char ** rawname, bool define=false)
 {
-#define rawname (*rawname)
-	bool ismacro = (rawname[0] == '?');
+#define deref_rawname (*rawname)
+	bool ismacro = (deref_rawname[0] == '?');
 
 	if (ismacro)
 	{
-		rawname++;
+		deref_rawname++;
 	}
 
 	bool issublabel = false;
@@ -344,16 +308,16 @@ string labelname(const char ** rawname, bool define=false)
 		sublabellist = macrosublabels;
 	}
 
-	if (isdigit(*rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
-	if (*rawname==':')
+	if (isdigit(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+	if (*deref_rawname ==':')
 	{
-		rawname++;
+		deref_rawname++;
 		name=":";
 	}
 	else if (!in_struct && !in_sub_struct)
 	{
-		for (i=0;(*rawname=='.');i++) rawname++;
-		if (!isualnum(*rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+		for (i=0;(*deref_rawname =='.');i++) deref_rawname++;
+		if (!isualnum(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
 		if (emulatexkas && i>1) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (i)
 		{
@@ -380,19 +344,19 @@ string labelname(const char ** rawname, bool define=false)
 	{
 		name += struct_name;
 		name += '.';
-		rawname++;
+		deref_rawname++;
 	}
 
-	if (!isualnum(*rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+	if (!isualnum(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
 
-	while (isualnum(*rawname) || *rawname == '.' || *rawname == '[')
+	while (isualnum(*deref_rawname) || *deref_rawname == '.' || *deref_rawname == '[')
 	{
-		if(!in_struct && !in_sub_struct && *rawname == '[')
+		if(!in_struct && !in_sub_struct && *deref_rawname == '[')
 		{
 			bool invalid = true;
-			while (isprint(*rawname))
+			while (isprint(*deref_rawname))
 			{
-				if (*(rawname++) == ']')
+				if (*(deref_rawname++) == ']')
 				{
 					invalid = false;
 					break;
@@ -403,12 +367,12 @@ string labelname(const char ** rawname, bool define=false)
 				asar_throw_error(0, error_type_block, error_id_invalid_label_missing_closer);
 			}
 		}
-		else if (*rawname == '{')
+		else if (*deref_rawname == '{')
 		{
 			asar_throw_error(0, error_type_block, error_id_array_invalid_inside_structs);
 		}
 
-		name+=*(rawname++);
+		name+=*(deref_rawname++);
 	}
 	if (define && i>=0)
 	{
@@ -416,12 +380,7 @@ string labelname(const char ** rawname, bool define=false)
 		(*sublabellist)[i]=name;
 	}
 	return name;
-#undef rawname
-}
-
-string labelname(char ** rawname, bool define=false)
-{
-	return labelname((const char**)rawname, define);
+#undef deref_rawname
 }
 
 inline bool labelvalcore(const char ** rawname, unsigned int * rval, bool define, bool shouldthrow)
@@ -457,7 +416,7 @@ unsigned int labelval(const char ** rawname, bool define)
 unsigned int labelval(char ** rawname, bool define)
 {
 	unsigned int rval;
-	labelvalcore((const char**)rawname, &rval, define, true);
+	labelvalcore(const_cast<const char**>(rawname), &rval, define, true);
 	return rval;
 }
 
@@ -476,7 +435,7 @@ bool labelval(const char ** rawname, unsigned int * rval, bool define)
 
 bool labelval(char ** rawname, unsigned int * rval, bool define)
 {
-	return labelvalcore((const char**)rawname, rval, define, false);
+	return labelvalcore(const_cast<const char**>(rawname), rval, define, false);
 }
 
 bool labelval(string name, unsigned int * rval, bool define)
@@ -485,7 +444,7 @@ bool labelval(string name, unsigned int * rval, bool define)
 	return labelvalcore(&str, rval, define, false);
 }
 
-void setlabel(string name, int loc=-1)
+static void setlabel(string name, int loc=-1)
 {
 	if (loc==-1)
 	{
@@ -517,57 +476,54 @@ void setlabel(string name, int loc=-1)
 
 
 chartabledata table;
-autoarray<chartabledata> tablestack;
+static autoarray<chartabledata> tablestack;
 
-int freespacepos[256];
-int freespacelen[256];
-int freespaceidnext;
-int freespaceid;
-int freespacestart;
+static int freespacepos[256];
+static int freespacelen[256];
+static int freespaceidnext;
+static int freespaceid;
+static int freespacestart;
 int freespaceextra;
 
-bool freespaceleak[256];
-string freespacefile[256];
-int freespaceline[256];
+static bool freespaceleak[256];
+static string freespacefile[256];
 
-int freespaceorgpos[256];
-int freespaceorglen[256];
-bool freespacestatic[256];
-unsigned char freespacebyte[256];
+static int freespaceorgpos[256];
+static int freespaceorglen[256];
+static bool freespacestatic[256];
+static unsigned char freespacebyte[256];
 
-void cleartable()
+static void cleartable()
 {
 	for (unsigned int i=0;i<256;i++) table.table[i]=i;
 }
 
 struct pushable {
-int arch;
-int snespos;
-int snesstart;
-int snesposreal;
-int snesstartreal;
-int freeid;
-int freeex;
-int freest;
-int arch1;
-int arch2;
-int arch3;
-int arch4;
+	int arch;
+	int snespos;
+	int snesstart;
+	int snesposreal;
+	int snesstartreal;
+	int freeid;
+	int freeex;
+	int freest;
+	int arch1;
+	int arch2;
+	int arch3;
+	int arch4;
 };
-autoarray<pushable> pushpc;
-int pushpcnum;
+static autoarray<pushable> pushpc;
+static int pushpcnum;
 
-autoarray<int> basestack;
-int basestacknum;
+static autoarray<int> basestack;
+static int basestacknum;
 
-unsigned char fillbyte[12];
-unsigned char padbyte[12];
+static unsigned char fillbyte[12];
+static unsigned char padbyte[12];
 
-bool sandbox=false;
+static bool nested_namespaces = false;
 
-bool nested_namespaces = false;
-
-int getfreespaceid()
+static int getfreespaceid()
 {
 	static const int max_num_freespaces = 125;
 	if (freespaceidnext > max_num_freespaces) asar_throw_error(pass, error_type_fatal, error_id_freespace_limit_reached, max_num_freespaces);
@@ -585,29 +541,20 @@ void checkbankcross()
 	}
 }
 
-void freespaceend()
+static void freespaceend()
 {
 	checkbankcross();
-	if ((snespos&0x7F000000) && (snespos&0x80000000)==0)
+	if ((snespos&0x7F000000) && ((unsigned int)snespos&0x80000000)==0)
 	{
 		freespacelen[freespaceid]=snespos-freespacestart+freespaceextra;
-		snespos=0xFFFFFFFF;
+		snespos=(int)0xFFFFFFFF;
 	}
 	freespaceextra=0;
 }
 
-int savedoptions[16];
-
 int numopcodes;
 
-extern bool math_pri;
-extern bool math_round;
-
 bool warnxkas;
-
-extern assocarr<string> defines;
-extern assocarr<string> clidefines;
-extern assocarr<string> builtindefines;
 
 static void adddefine(const string & key, string & value)
 {
@@ -616,7 +563,6 @@ static void adddefine(const string & key, string & value)
 
 void initstuff()
 {
-	//int numsavedoptions=0;
 	if (pass==0)
 	{
 		for (int i=0;i<256;i++)
@@ -650,15 +596,16 @@ void initstuff()
 	bytes=0;
 	memset(fillbyte, 0, sizeof(fillbyte));
 	memset(padbyte, 0, sizeof(padbyte));
-	snespos=0xFFFFFFFF;
-	realsnespos=0xFFFFFFFF;
-	startpos=0xFFFFFFFF;
-	realstartpos=0xFFFFFFFF;
+	snespos=(int)0xFFFFFFFF;
+	realsnespos= (int)0xFFFFFFFF;
+	startpos= (int)0xFFFFFFFF;
+	realstartpos= (int)0xFFFFFFFF;
 	//fastrom=false;
 	freespaceidnext=1;
 	freespaceid=1;
 	freespaceextra=0;
 	numopcodes=0;
+	specifiedasarver = false;
 
 	math_pri=false;
 	math_round=true;
@@ -698,7 +645,7 @@ void finishpass()
 	if (arch==arch_superfx) asend_superfx();
 }
 
-bool addlabel(const char * label, int pos=-1)
+static bool addlabel(const char * label, int pos=-1)
 {
 	if (!label[0] || label[0]==':') return false;//colons are reserved for special labels
 
@@ -738,28 +685,16 @@ bool addlabel(const char * label, int pos=-1)
 	return false;
 }
 
-autoarray<bool> elsestatus;
+static autoarray<bool> elsestatus;
 int numtrue=0;//if 1 -> increase both
 int numif = 0;  //if 0 or inside if 0 -> increase only numif
+
 autoarray<whiletracker> whilestatus;
 
-extern bool asarverallowed;
-extern bool istoplevel;
-
-extern bool moreonline;
-
-void print(const char * str);
-
-extern bool checksum;
-
-extern const char * callerfilename;
-extern int callerline;
-extern int macrorecursion;
-
-int freespaceuse=0;
+static int freespaceuse=0;
 
 
-void push_pc()
+static void push_pc()
 {
 	pushpc[pushpcnum].arch=arch;
 	pushpc[pushpcnum].snespos=snespos;
@@ -772,7 +707,7 @@ void push_pc()
 	pushpcnum++;
 }
 
-void pop_pc()
+static void pop_pc()
 {
 	pushpcnum--;
 	snespos=pushpc[pushpcnum].snespos;
@@ -784,9 +719,6 @@ void pop_pc()
 	freespacestart=pushpc[pushpcnum].freest;
 }
 
-
-void resolvedefines(string& out, const char * start);
-bool file_included_once(const char* file);
 
 void assembleblock(const char * block)
 {
@@ -800,8 +732,6 @@ void assembleblock(const char * block)
 #define is1(test) (!stricmp(word[0], test) && numwords==2)
 #define is2(test) (!stricmp(word[0], test) && numwords==3)
 #define is3(test) (!stricmp(word[0], test) && numwords==4)
-#define is4(test) (!stricmp(word[0], test) && numwords==5)
-#define is5(test) (!stricmp(word[0], test) && numwords==6)
 #define par word[1]
 
 	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
@@ -829,7 +759,7 @@ void assembleblock(const char * block)
 		callmacro(strchr(block, '%')+1);
 		if (!macrorecursion)
 		{
-			callerfilename=NULL;
+			callerfilename= nullptr;
 			callerline=-1;
 		}
 		return;
@@ -846,8 +776,8 @@ void assembleblock(const char * block)
 		// Well, actually I just check and we can't support this in
 		// defined() (the defined is already replaced at that point), so
 		// I think we should not support it here, either.
-		/*if (*par == '!') def = S dequote(par) + 1;
-		else*/ def = S dequote(par);
+		/*if (*par == '!') def = S safedequote(par) + 1;
+		else*/ def = S safedequote(par);
 
 		if (defines.exists(def))
 		{
@@ -861,7 +791,7 @@ void assembleblock(const char * block)
 	else if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
-		const char * errmsg=NULL;
+		const char * errmsg= nullptr;
 		whiletracker wstatus;		
 		wstatus.startline = thisline;
 		wstatus.iswhile = false;
@@ -874,7 +804,7 @@ void assembleblock(const char * block)
 			if (rawerrmsg)
 			{
 				*rawerrmsg=0;
-				errmsg=dequote(rawerrmsg+1);
+				errmsg= safedequote(rawerrmsg+1);
 			}
 		}
 		if (numtrue!=numif && !(is("elseif") && numtrue+1==numif))
@@ -886,7 +816,7 @@ void assembleblock(const char * block)
 		bool cond;
 
 		char ** nextword=word+1;
-		char * condstr=NULL;
+		char * condstr= nullptr;
 		while (true)
 		{
 			if (!nextword[0]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
@@ -1030,11 +960,11 @@ void assembleblock(const char * block)
 	}
 	else if (is1("error"))
 	{
-		asar_throw_error(0, error_type_block, error_id_error_command, (string(": ") + dequote(par)).str);
+		asar_throw_error(0, error_type_block, error_id_error_command, (string(": ") + safedequote(par)).str);
 	}
 	else if (is1("warn"))
 	{
-		asar_throw_warning(2, warning_id_warn_command, (string(": ") + dequote(par)).str);
+		asar_throw_warning(2, warning_id_warn_command, (string(": ") + safedequote(par)).str);
 	}
 	else if (is1("warnings"))
 	{
@@ -1082,7 +1012,7 @@ void assembleblock(const char * block)
 		{
 			// RPG Hacker: Removed trimming for now - I think requiring an exact match is probably
 			// better here (not sure, though, it's worth discussing)
-			string expected_title = dequote(word[2]);
+			string expected_title = safedequote(word[2]);
 			// randomdude999: this also removes leading spaces because itrim gets stuck in an endless
 			// loop when multi is true and one argument is empty
 			//expected_title = itrim(expected_title.str, " ", " ", true); // remove trailing spaces
@@ -1185,7 +1115,7 @@ void assembleblock(const char * block)
 		asar_throw_warning(0, warning_id_xkas_deprecated);
 		emulatexkas=true;
 		optimizeforbank=0x100;
-		checksum=false;
+		checksum_fix_enabled =false;
 		sublabels[0]=":xkasdefault:";
 	}
 	else if (is0("include") || is1("includefrom"))
@@ -1219,12 +1149,12 @@ void assembleblock(const char * block)
 			{
 				if (!strcmp(pars[i],"\"STAR\"") && !emulatexkas)
 					asar_throw_warning(0, warning_id_xkas_patch);
-				for (unsigned char * str=(unsigned char*)dequote(pars[i]);*str;str++)
+				for (char * str=const_cast<char*>(safedequote(pars[i]));*str;str++)
 				{
-					if (len==1) write1(table.table[*str]);
-					if (len==2) write2(table.table[*str]);
-					if (len==3) write3(table.table[*str]);
-					if (len==4) write4(table.table[*str]);
+					if (len==1) write1(table.table[(size_t)*str]);
+					if (len==2) write2(table.table[(size_t)*str]);
+					if (len==3) write3(table.table[(size_t)*str]);
+					if (len==4) write4(table.table[(size_t)*str]);
 				}
 			}
 			else
@@ -1531,7 +1461,7 @@ void assembleblock(const char * block)
 		if (is1("autoclear") || is2("autoclear")) asar_throw_warning(0, warning_id_autoclear_deprecated);
 		if (numwords==3)
 		{
-			if (snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
+			if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
 			const char * labeltest = word[2];
 			string testlabel = labeltest;
 			int num=(int)labelval(&labeltest);
@@ -1599,10 +1529,10 @@ void assembleblock(const char * block)
 		pushpc[pushpcnum].freeex=freespaceextra;
 		pushpc[pushpcnum].freest=freespacestart;
 		pushpcnum++;
-		snespos=0xFFFFFFFF;
-		startpos=0xFFFFFFFF;
-		realsnespos=0xFFFFFFFF;
-		realstartpos=0xFFFFFFFF;
+		snespos=(int)0xFFFFFFFF;
+		startpos= (int)0xFFFFFFFF;
+		realsnespos= (int)0xFFFFFFFF;
+		realstartpos= (int)0xFFFFFFFF;
 	}
 	else if (is0("pullpc"))
 	{
@@ -1655,7 +1585,7 @@ void assembleblock(const char * block)
 			else
 			{
 				if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
-				const char * tmpstr=dequote(par);
+				const char * tmpstr= safedequote(par);
 				if (!confirmname(tmpstr)) asar_throw_error(0, error_type_block, error_id_invalid_namespace_name);
 				if (!nested_namespaces)
 				{
@@ -1692,8 +1622,8 @@ void assembleblock(const char * block)
 	else if (is1("warnpc"))
 	{
 		int maxpos=(int)getnum(par);
-		if (snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
-		if (maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);
+		if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
+		if ((unsigned int)maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);
 		if (snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
 		if (warnxkas && snespos == maxpos) asar_throw_warning(0, warning_id_xkas_warnpc_relaxed);
 		if (emulatexkas && snespos==maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed_equal, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
@@ -1740,8 +1670,8 @@ void assembleblock(const char * block)
 			else asar_throw_warning(0, warning_id_cross_platform_path);
 #endif
 		}
-		if (emulatexkas) name=dequote(par);
-		else name=S dequote(par);
+		if (emulatexkas) name= safedequote(par);
+		else name=S safedequote(par);
 		assemblefile(name, false);
 	}
 	else if (is1("incbin") || is3("incbin"))
@@ -1778,8 +1708,8 @@ void assembleblock(const char * block)
 			else asar_throw_warning(0, warning_id_cross_platform_path);
 #endif
 		}
-		if (emulatexkas) name=dequote(par);
-		else name=S dequote(par);
+		if (emulatexkas) name= safedequote(par);
+		else name=S safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
 		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, error_id_file_not_found, name.str);
 		autoptr<char*> datacopy=data;
@@ -1853,7 +1783,7 @@ void assembleblock(const char * block)
 		if(0);
 		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
-		string name=S dequote(par);
+		string name=S safedequote(par);
 		autoptr<char*> tablecontents=readfile(name, thisfilename);
 		if (!tablecontents) asar_throw_error(0, error_type_block, error_id_file_not_found, name.str);
 		autoptr<char**> tablelines=split(tablecontents, "\n");
@@ -1909,7 +1839,7 @@ void assembleblock(const char * block)
 		for (int i=0;pars[i];i++)
 		{
 			if(0);
-			else if (pars[i][0]=='"') out+=dequote(pars[i]);
+			else if (pars[i][0]=='"') out+= safedequote(pars[i]);
 			else if (!stricmp(pars[i], "bytes")) out+=dec(bytes);
 			else if (!stricmp(pars[i], "freespaceuse")) out+=dec(freespaceuse);
 			else if (!stricmp(pars[i], "pc")) out+=hex6((unsigned int)(snespos&0xFFFFFF));
@@ -1969,9 +1899,9 @@ void assembleblock(const char * block)
 	}
 	else if (is1("pad"))
 	{
-		if (realsnespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
+		if ((unsigned int)realsnespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
 		int num=(int)getnum(par);
-		if (num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)num).str);
+		if ((unsigned int)num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)num).str);
 		if (num>realsnespos)
 		{
 			int end=snestopc(num);
@@ -2009,7 +1939,7 @@ void assembleblock(const char * block)
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
 		if (!stricmp(par, "spc700-inline")) { arch=arch_spc700_inline; return; }
-		if (!stricmp(par, "spc700-raw")) { arch=arch_spc700; mapper=norom; checksum=false; return; }
+		if (!stricmp(par, "spc700-raw")) { arch=arch_spc700; mapper=norom; checksum_fix_enabled =false; return; }
 		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
 	}
 	else if (is2("math"))
@@ -2090,7 +2020,7 @@ bool assemblemapper(char** word, int numwords)
 		//$000000 would be the best snespos for this, but I don't care
 		mapper=norom;
 		//fastrom=false;
-		checksum=false;//we don't know where the header is, so don't set the checksum
+		checksum_fix_enabled =false;//we don't know where the header is, so don't set the checksum
 	}
 	else if (is0("fullsa1rom"))
 	{

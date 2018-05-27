@@ -4,8 +4,7 @@
 #include <assert.h>
 #include <stdarg.h>
 
-// This function should only be called inside this file now.
-void warn(int errid, const char * e);
+#include "interface-shared.h"
 
 static int asar_num_warnings = 0;
 
@@ -16,14 +15,14 @@ struct asar_warning_mapping
 	bool enabled;
 	bool enabled_default;
 
-	asar_warning_mapping(asar_warning_id warnid, const char* message, bool enabled = true)
+	asar_warning_mapping(asar_warning_id inwarnid, const char* inmessage, bool inenabled = true)
 	{
 		++asar_num_warnings;
 
-		this->warnid = warnid;
-		this->message = message;
-		this->enabled = enabled;
-		this->enabled_default = enabled;
+		warnid = inwarnid;
+		message = inmessage;
+		enabled = inenabled;
+		enabled_default = inenabled;
 
 		// RPG Hacker: Sanity check. This makes sure that the order
 		// of entries in asar_warnings matches with the order of
@@ -93,7 +92,21 @@ void asar_throw_warning(int whichpass, asar_warning_id warnid, ...)
 			char warning_buffer[1024];
 			va_list args;
 			va_start(args, warnid);
+
+#if defined(__clang__)
+#	pragma clang diagnostic push
+// "format string is not a literal".
+// The pointer we're passing here should always point to a string literal,
+// thus, I think, we can safely ignore this here.
+#	pragma clang diagnostic ignored "-Wformat-nonliteral"
+#endif
+
 			vsnprintf(warning_buffer, sizeof(warning_buffer), warning.message, args);
+
+#if defined(__clang__)
+#	pragma clang diagnostic pop
+#endif
+
 			va_end(args);
 			warn((int)warnid, warning_buffer);
 		}
@@ -158,8 +171,8 @@ struct warnings_state
 	bool enabled[warning_id_count];
 };
 
-autoarray<warnings_state> warnings_state_stack;
-warnings_state main_warnings_state;
+static autoarray<warnings_state> warnings_state_stack;
+static warnings_state main_warnings_state;
 
 void push_warnings(bool warnings_command)
 {

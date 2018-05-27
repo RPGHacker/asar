@@ -14,6 +14,7 @@
 #include "libstr.h"
 #include "libsmw.h"
 #include "errors.h"
+#include "virtualfile.h"
 
 extern unsigned const char * romdata_r;
 extern int romlen_r;
@@ -21,65 +22,8 @@ extern int romlen_r;
 #define clean(string) do { string.qreplace("\t", " ", true); string.qreplace(", ", ",", true); string.qreplace("  ", " ", true); \
 											itrim(string.str, " ", " ", true); } while(0)
 
-//void write1(unsigned int num);
-//void write2(unsigned int num);
-//void write3(unsigned int num);
-//void write4(unsigned int num);
-
-struct snes_struct {
-	string parent;
-	int base_end;
-	int struct_size;
-	int object_size;
-};
-
-// RPG Hacker: Really the only purpose of this struct is to support pushtable and pulltable
-// Also don't know where else to put this, so putting it in this header
-struct chartabledata {
-	unsigned int table[256];
-};
-
-extern int pass;
-extern bool foundlabel;
-extern bool ignoretitleerrors;
-
-//extern bool emulate;
-
-enum { arch_65816, arch_spc700, arch_spc700_inline, arch_superfx };
-extern int arch;
-
-void write1_pick(unsigned int num);
-
-void write2(unsigned int num);
-void write3(unsigned int num);
-void write4(unsigned int num);
-
-int read1(int snespos);
-int read2(int snespos);
-int read3(int snespos);
-
-bool assemblemapper(char** word, int numwords);
-
-extern int snespos;
-extern int realsnespos;
-extern int startpos;
-extern int realstartpos;
-
-extern int bytes;
-
 int getlen(const char * str, bool optimizebankextraction=false);
-unsigned int getnum(const char * str);
-double getnumdouble(const char * str);
 bool is_hex_constant(const char * str);
-
-int getlenfromchar(char c);
-
-unsigned int labelval(const char ** rawname, bool define=false);
-unsigned int labelval(char ** rawname, bool define=false);
-unsigned int labelval(string name, bool define=false);
-bool labelval(const char ** rawname, unsigned int * rval, bool define=false);
-bool labelval(char ** rawname, unsigned int * rval, bool define=false);
-bool labelval(string name, unsigned int * rval, bool define=false);
 
 bool validatedefinename(const char * name);
 
@@ -88,7 +32,24 @@ string create_symbols_file(string format);
 void parse_std_includes(const char* textfile, autoarray<string>& outarray);
 void parse_std_defines(const char* textfile);
 
+void reseteverything();
+
+void resolvedefines(string& out, const char * start);
+
+int get_version_int();
+
+bool setmapper();
+
+void assemblefile(const char * filename, bool toplevel);
+void assembleline(const char * fname, int linenum, const char * line);
+
+bool file_included_once(const char* file);
+
+string getdecor();
+
 extern volatile int recursioncount;
+extern int pass;
+
 class recurseblock {
 public:
 	recurseblock()
@@ -102,13 +63,39 @@ public:
 	}
 };
 
-struct whiletracker {
-	bool iswhile;
-	int startline;
-	bool cond;
-};
-
 extern const int asarver_maj;
 extern const int asarver_min;
 extern const int asarver_bug;
 extern const bool asarver_beta;
+
+extern bool asarverallowed;
+extern bool istoplevel;
+
+extern bool moreonline;
+
+extern bool checksum_fix_enabled;
+
+extern const char * callerfilename;
+extern int callerline;
+extern string thisfilename;
+extern int thisline;
+extern int lastspecialline;
+extern const char * thisblock;
+
+extern int incsrcdepth;
+
+extern bool ignoretitleerrors;
+
+extern int repeatnext;
+
+extern int optimizeforbank;
+
+extern bool errored;
+
+extern assocarr<string> clidefines;
+
+extern virtual_filesystem* filesystem;
+
+extern assocarr<string> defines;
+
+extern assocarr<string> builtindefines;

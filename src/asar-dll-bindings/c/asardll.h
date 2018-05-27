@@ -1,7 +1,14 @@
-#pragma once
+#ifndef ASAR_DLL_H_INCLUDED
+#	define ASAR_DLL_H_INCLUDED
+
+
+// RPG Hacker: Holy poopy; this is hacky.
+// All just for the convenience of not having to copy-paste
+// function prototypes into asardll.c, all while keeping
+// everything warning-free in clang...
 #ifndef asarfunc
+
 #define asarfunc extern
-#endif
 
 #define expectedapiversion 303
 
@@ -92,6 +99,8 @@ struct patchparams
 	const struct warnsetting * warning_settings;
 	int warning_setting_count;
 };
+
+#endif
 
 
 #ifdef __cplusplus
@@ -189,3 +198,5 @@ asarfunc const char * (*asar_getsymbolsfile)(const char * format);
 #ifdef __cplusplus
 	}
 #endif
+
+#endif		// ASAR_DLL_H_INCLUDED

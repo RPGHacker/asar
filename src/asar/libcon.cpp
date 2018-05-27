@@ -30,7 +30,7 @@ void libcon_badusage()
 	exit(1);
 }
 
-static const char * getarg(bool tellusage, const char * defval=NULL)
+static const char * getarg(bool tellusage, const char * defval= nullptr)
 {
 	if (!argsleft)
 	{
@@ -42,7 +42,7 @@ static const char * getarg(bool tellusage, const char * defval=NULL)
 	return args[0];
 }
 
-static const char * getfname(bool tellusage, const char * defval=NULL)
+static const char * getfname(bool tellusage, const char * defval= nullptr)
 {
 	return getarg(tellusage, defval);
 	//char * rval=malloc(char, 256);
@@ -50,7 +50,7 @@ static const char * getfname(bool tellusage, const char * defval=NULL)
 	//*rval=0;
 	//while (!strchr(rval, '.'))
 	//{
-	//	char * thisword=getarg(false, NULL);
+	//	char * thisword=getarg(false, nullptr);
 	//	if (!thisword)
 	//	{
 	//		if (tellusage) libcon_badusage();
@@ -146,13 +146,13 @@ const char * libcon_optional_filename(const char * desc, const char * defval)
 const char * libcon_option()
 {
 	if (!libcon_interactive && argsleft && args[1][0]=='-') return getarg(false);
-	return NULL;
+	return nullptr;
 }
 
 const char * libcon_option_value()
 {
 	if (!libcon_interactive) return getarg(false);
-	return NULL;
+	return nullptr;
 }
 
 const char * libcon_question(const char * desc, const char * defval)

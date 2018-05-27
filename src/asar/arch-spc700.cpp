@@ -1,12 +1,15 @@
 #include "asar.h"
 #include "warnings.h"
 #include "errors.h"
+#include "assembleblock.h"
+#include "asar_math.h"
+
+#include "arch-shared.h"
 
 #define write1 write1_pick
 
 static int writesizeto=-1;
 static int inlinestartpos=0;
-extern bool emulatexkas;
 
 static void inline_finalizeorg()
 {
@@ -111,7 +114,7 @@ static bool assinglebitwithc(const char * op, const char * math, int bits)
 		num=getnum(math);
 	}
 	if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).str);
-	write2((bits<<13)|num);
+	write2(((unsigned int)bits<<13)|num);
 	return true;
 }
 #undef isop
@@ -119,12 +122,7 @@ static bool assinglebitwithc(const char * op, const char * math, int bits)
 bool asblock_spc700(char** word, int numwords)
 {
 #define is(test) (!stricmp(word[0], test))
-#define is0(test) (!stricmp(word[0], test) && numwords==1)
 #define is1(test) (!stricmp(word[0], test) && numwords==2)
-#define is2(test) (!stricmp(word[0], test) && numwords==3)
-#define is3(test) (!stricmp(word[0], test) && numwords==4)
-#define is4(test) (!stricmp(word[0], test) && numwords==5)
-#define is5(test) (!stricmp(word[0], test) && numwords==6)
 #define par word[1]
 	if(0);
 	else if (arch==arch_spc700_inline && is1("org"))
@@ -188,14 +186,13 @@ bool asblock_spc700(char** word, int numwords)
 			periodLocCount++;
 		} while ((opLen == 0) && (periodLocCount < strlen(word[0])));
 		if (opLen > 2) { asar_throw_error(0, error_type_block, error_id_opcode_length_too_long); }
-		autoptr<char*> parcpy=strdup(par);
+		autoptr<char*> parcpy= duplicate_string(par);
 		autoptr<char**> arg=qpsplit(parcpy, ",", &numwordsinner);
 		if (numwordsinner ==1)
 		{
 			string op;
 			string math;
 			int bits;
-#define begin(str) (!strncasecmp(word[0], str, strlen(str)))
 #define isop(str) (!stricmp(word[0], str))
 #define isam(str) (!stricmp(arg[0], str))
 #define ismatch(left, right) (matchandwrite(arg[0], left, right, math))
@@ -365,7 +362,7 @@ bool asblock_spc700(char** word, int numwords)
 				unsigned int num=getnum(s1);
 				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).str);
 				write1(num);
-				write1((unsigned int)(getnum(arg[1])-(snespos+1)));
+				write1((getnum(arg[1])- (unsigned int)(snespos+1)));
 				return true;
 			}
 #undef isop

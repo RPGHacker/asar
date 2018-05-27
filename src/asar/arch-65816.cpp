@@ -1,6 +1,10 @@
 #include "asar.h"
 #include "warnings.h"
 #include "errors.h"
+#include "assembleblock.h"
+#include "asar_math.h"
+
+#include "arch-shared.h"
 
 #define write1 write1_pick
 
@@ -12,22 +16,14 @@ void asend_65816()
 {
 }
 
-extern int optimizeforbank;
 extern bool fastrom;
-extern bool emulatexkas;
 
 bool asblock_65816(char** word, int numwords)
 {
 #define is(test) (!stricmp(word[0], test))
-#define is0(test) (!stricmp(word[0], test) && numwords==1)
-#define is1(test) (!stricmp(word[0], test) && numwords==2)
-#define is2(test) (!stricmp(word[0], test) && numwords==3)
-#define is3(test) (!stricmp(word[0], test) && numwords==4)
-#define is4(test) (!stricmp(word[0], test) && numwords==5)
-#define is5(test) (!stricmp(word[0], test) && numwords==6)
 //#define par word[1]
-	char * par=NULL;
-	if (word[1]) par=strdup(word[1]);
+	char * par=nullptr;
+	if (word[1]) par= duplicate_string(word[1]);
 	autoptr<char*> parptr=par;
 	unsigned int num;
 	int len=0;//declared here for A->generic fallback

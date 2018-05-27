@@ -22,6 +22,24 @@ macro(set_asar_shared_properties target)
 		target_compile_definitions(${target} PRIVATE "_CRT_SECURE_NO_WARNINGS")
 		target_compile_definitions(${target} PRIVATE "_CRT_NONSTDC_NO_WARNINGS")
 		target_compile_definitions(${target} PRIVATE "_ALLOW_KEYWORD_MACROS")
+
+		if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$")
+			target_compile_options(${target} PRIVATE
+				-Wno-old-style-cast # use of old-style-cast
+				-Wno-unknown-argument # unknown argument ignored in clang-cl
+				-Wno-unused-command-line-argument # argument unused during compilation
+				-Wno-c++98-compat # 'x' is incompatible with C++98
+				-Wno-c++98-compat-pedantic
+				-Wno-missing-noreturn # 'x' could be declared with attribute 'noreturn'
+				-Wno-float-equal # comparting floating point with == or != is unsafe
+				-Wno-covered-switch-default # default label in switch which covers all enumeration values
+				-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
+
+				# RPG Hacker: These two are really nasty, but not easily fixable in Asar, so have to disable them...
+				-Wno-exit-time-destructors # declaration requires an exit-time destructor
+				-Wno-global-constructors # delcaration requires a global destructor
+			)
+		endif()
 	endif()
 		
 	if (WIN32)
@@ -37,7 +55,7 @@ macro(set_asar_shared_properties target)
 	# Enable maximum warning level
 	
 	if(MSVC)
-		target_compile_options(${target} PRIVATE /Wall /MT)
+		target_compile_options(${target} PRIVATE /Wall /MT /EHa)
 		
 		# These certainly aren't worth a warning, though
 		target_compile_options(${target} PRIVATE
@@ -45,6 +63,7 @@ macro(set_asar_shared_properties target)
 			/wd4710 # function not inlined
 			/wd4711 # function selected for automatic inline expansion
 			/wd4820 # 'bytes' bytes padding added after construct 'member_name'
+			/wd4464 # relativ include path contains '..'
 		)
 		
 		if(MSVC_VERSION VERSION_LESS "1900")
@@ -91,7 +110,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/macro.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/math.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/asar_math.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/errors.cpp"
@@ -108,7 +127,12 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/errors.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.hpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/assembleblock.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/asar_math.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/macro.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/interface-shared.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"

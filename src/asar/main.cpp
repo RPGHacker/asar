@@ -4,9 +4,12 @@
 #include "assocarr.h"
 #include "autoarray.h"
 #include "asar.h"
-#include "virtualfile.hpp"
+#include "virtualfile.h"
 #include "warnings.h"
 #include "platform/file-helpers.h"
+#include "assembleblock.h"
+#include "asar_math.h"
+#include "macro.h"
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
@@ -14,7 +17,6 @@ extern const int asarver_maj=1;
 extern const int asarver_min=6;
 extern const int asarver_bug=0;
 extern const bool asarver_beta=false;
-extern bool specifiedasarver;
 
 #ifdef _I_RELEASE
 extern char blockbetareleases[(!asarver_beta)?1:-1];
@@ -26,9 +28,6 @@ extern char blockreleasedebug[(asarver_beta)?1:-1];
 unsigned const char * romdata_r;
 int romlen_r;
 
-double math(const char * mystr);
-void initmathcore();
-
 int pass;
 
 int optimizeforbank=-1;
@@ -38,7 +37,7 @@ int thisline;
 int lastspecialline=-1;
 const char * thisblock;
 
-const char * callerfilename=NULL;
+const char * callerfilename= nullptr;
 int callerline=-1;
 
 bool errored=false;
@@ -47,18 +46,6 @@ bool ignoretitleerrors=false;
 volatile int recursioncount=0;
 
 virtual_filesystem* filesystem = nullptr;
-
-unsigned int labelval(const char ** rawname, bool update);
-unsigned int labelval(char ** rawname, bool update);
-unsigned int labelval(string name, bool define);
-bool labelval(const char ** rawname, unsigned int * rval, bool update);
-bool labelval(char ** rawname, unsigned int * rval, bool update);
-bool labelval(string name, unsigned int * rval, bool define);
-
-void startmacro(const char * line);
-void tomacro(const char * line);
-void endmacro(bool insert);
-void callmacro(const char * data);
 
 int get_version_int()
 {
@@ -124,19 +111,10 @@ string getdecor()
 	return e;
 }
 
-extern int freespaceextra;
-extern int freespaceid;
-extern int freespacepos[256];
-
-void checkbankcross();
-
-extern bool warnxkas;
-extern bool emulatexkas;
-
 static bool freespaced;
 static int getlenforlabel(int insnespos, int thislabel, bool exists)
 {
-	if (warnxkas && (((thislabel^insnespos)&0xFFFF0000)==0))
+	if (warnxkas && (((unsigned int)(thislabel^insnespos)&0xFFFF0000)==0))
 		asar_throw_warning(1, warning_id_xkas_label_access);
 	if (!exists)
 	{
@@ -146,7 +124,7 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 	}
 	else if (optimizeforbank>=0)
 	{
-		if (thislabel&0xFF000000) return 3;
+		if ((unsigned int)thislabel&0xFF000000) return 3;
 		else if ((thislabel>>16)==optimizeforbank) return 2;
 		else return 3;
 	}
@@ -158,17 +136,15 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 	{
 		return 2;
 	}
-	else if ((thislabel|insnespos)&0xFF000000)
+	else if ((unsigned int)(thislabel|insnespos)&0xFF000000)
 	{
-		if ((thislabel^insnespos)&0xFF000000) return 3;
+		if ((unsigned int)(thislabel^insnespos)&0xFF000000) return 3;
 		else return 2;
 	}
 	else if ((thislabel^insnespos)&0xFF0000) return 3;
 	else return 2;
 }
 
-
-string posneglabelname(const char ** input, bool define);
 
 bool is_hex_constant(const char* str){
 	if (*str=='$')
@@ -232,7 +208,7 @@ notposneglabel:
 		}
 		else if (isdigit(*str))
 		{
-			int val=strtol(str, (char**)&str, 10);
+			int val=strtol(str, const_cast<char**>(&str), 10);
 			if (val>=0) thislen=1;
 			if (val>=256) thislen=2;
 			if (val>=65536) thislen=3;
@@ -254,25 +230,6 @@ notposneglabel:
 	return len;
 }
 
-extern bool foundlabel;
-extern bool forwardlabel;
-
-unsigned int getnum(const char * str)
-{
-	// RPG Hacker: this was originally an int - changed it into an unsigned int since I found
-	// that to yield the more predictable results when converting from a double
-	// (e.g.: $FFFFFFFF was originally converted to $80000000, whereas now it remains $FFFFFFFF
-	unsigned int num=(unsigned int)math(str);
-	return num;
-}
-
-// RPG Hacker: Same function as above, but doesn't truncate our number via int conversion
-double getnumdouble(const char * str)
-{
-	double num = math(str);
-	return num;
-}
-
 struct strcompare {
 	bool operator() (const char * lhs, const char * rhs) const
 	{
@@ -292,13 +249,11 @@ struct sourcefile {
 	int numlines;
 };
 
-assocarr<sourcefile> filecontents;
+static assocarr<sourcefile> filecontents;
 assocarr<string> defines;
 // needs to be separate because defines is reset between parsing arguments and patching
 assocarr<string> clidefines;
 assocarr<string> builtindefines;
-
-void assembleblock(const char * block);
 
 bool validatedefinename(const char * name)
 {
@@ -471,16 +426,9 @@ void resolvedefines(string& out, const char * start)
 
 int repeatnext=1;
 
-bool autocolon=false;
-
 bool moreonline;
 bool asarverallowed;
 bool istoplevel;
-
-extern int numtrue;
-extern int numif;
-
-extern int macrorecursion;
 
 void assembleline(const char * fname, int linenum, const char * line)
 {
@@ -489,7 +437,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	string absolutepath = filesystem->create_absolute_path("", fname);
 	thisfilename = absolutepath;
 	thisline=linenum;
-	thisblock=NULL;
+	thisblock= nullptr;
 	try
 	{
 		string tmp=line;
@@ -504,7 +452,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 		moreonline=true;
 		for (int block=0;moreonline;block++)
 		{
-			moreonline=(blocks[block+1] != 0);
+			moreonline=(blocks[block+1] != nullptr);
 			int repeatthis=repeatnext;
 			repeatnext=1;
 			for (int i=0;i<repeatthis;i++)
@@ -535,13 +483,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	moreonline=moreonlinetmp;
 }
 
-extern int numif;
-extern int numtrue;
-extern autoarray<whiletracker> whilestatus;
-
 int incsrcdepth=0;
-
-extern autoarray<string> includeonce;
 
 // Returns true if a file is protected via
 // an "includeonce".
@@ -570,9 +512,9 @@ void assemblefile(const char * filename, bool toplevel)
 
 	thisfilename = absolutepath;
 	thisline=-1;
-	thisblock=NULL;
+	thisblock= nullptr;
 	sourcefile file;
-	file.contents = NULL;
+	file.contents = nullptr;
 	file.numlines = 0;
 	int startif=numif;
 	if (!filecontents.exists(absolutepath))
@@ -590,7 +532,7 @@ void assemblefile(const char * filename, bool toplevel)
 			char * line= file.contents[i];
 			char * comment=line;
 			comment = strqchr(comment, ';');
-			while (comment != NULL)
+			while (comment != nullptr)
 			{
 				if (comment[1]!='@')
 				{
@@ -624,7 +566,7 @@ void assemblefile(const char * filename, bool toplevel)
 		{
 			thisfilename= absolutepath;
 			thisline=i;
-			thisblock=NULL;
+			thisblock= nullptr;
 			istoplevel=toplevel;
 			if (stribegin(file.contents[i], "macro ") && numif==numtrue)
 			{
@@ -657,7 +599,7 @@ void assemblefile(const char * filename, bool toplevel)
 		catch (errline&) {}
 	}
 	thisline++;
-	thisblock=NULL;
+	thisblock= nullptr;
 	checkbankcross();
 	if (inmacro)
 	{
@@ -810,21 +752,7 @@ void parse_std_defines(const char* textfile)
 	builtindefines.create("assembler_ver") = get_version_int();
 }
 
-bool checksum=true;
-extern assocarr<unsigned int> labels;
-extern autoarray<writtenblockdata> writtenblocks;
-
-struct macrodata
-{
-autoarray<string> lines;
-int numlines;
-int startline;
-const char * fname;
-const char ** arguments;
-int numargs;
-};
-extern assocarr<macrodata*> macros;
-extern assocarr<snes_struct> structs;
+bool checksum_fix_enabled =true;
 
 #define cfree(x) free((void*)x)
 static void clearmacro(const string & key, macrodata* & macro)
@@ -849,15 +777,15 @@ static void adddefine(const string & key, string & value)
 	if (!defines.exists(key)) defines.create(key) = value;
 }
 
-string symbolfile;
+static string symbolfile;
 
-void printsymbol_wla(const string& key, unsigned int& address)
+static void printsymbol_wla(const string& key, unsigned int& address)
 {
 	string line = hex2((address & 0xFF0000)>>16)+":"+hex4(address & 0xFFFF)+" "+key+"\n";
 	symbolfile += line;
 }
 
-void printsymbol_nocash(const string& key, unsigned int& address)
+static void printsymbol_nocash(const string& key, unsigned int& address)
 {
 	string line = hex8(address & 0xFFFFFF)+" "+key+"\n";
 	symbolfile += line;
@@ -880,9 +808,6 @@ string create_symbols_file(string format){
 	}
 	return symbolfile;
 }
-
-void closecachedfiles();
-void deinitmathcore();
 
 void reseteverything()
 {
@@ -908,9 +833,8 @@ void reseteverything()
 	deinitmathcore();
 
 	incsrcdepth=0;
-	specifiedasarver=false;
 	errored = false;
-	checksum = true;
+	checksum_fix_enabled = true;
 	
 	lastspecialline = -1;
 #undef free

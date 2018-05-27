@@ -22,7 +22,7 @@
 #	include <string.h>
 #	include <stdlib.h>
 #	include <sys/stat.h>
-#	include <windows.h>
+#	include <Windows.h>
 #	include <vector>
 #	include <string>
 #	include <algorithm>
@@ -81,7 +81,7 @@ inline int file_exist(const char *filename)
 // PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER
 // TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
 // PERFORMANCE OF THIS SOFTWARE.
-std::string dir(char const *name)
+static std::string dir(char const *name)
 {
 	std::string result = name;
 	for (signed i = (int)result.length(); i >= 0; i--)
@@ -99,7 +99,7 @@ std::string dir(char const *name)
 
 inline bool str_ends_with(const char * str, const char * suffix)
 {
-	if (str == NULL || suffix == NULL)
+	if (str == nullptr || suffix == nullptr)
 		return false;
 
 	size_t str_len = strlen(str);
@@ -119,7 +119,7 @@ struct wrapped_file
 };
 
 
-bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * directory_name)
+static bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * directory_name)
 {
 #if defined(_WIN32)
 
@@ -184,8 +184,8 @@ bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * 
 	}
 	DIR * dir;
 	dirent * ent;
-	if ((dir = opendir(directory_name)) != NULL) {
-		while ((ent = readdir(dir)) != NULL) {
+	if ((dir = opendir(directory_name)) != nullptr) {
+		while ((ent = readdir(dir)) != nullptr) {
 			// Only consider regular files
 			if (ent->d_type == DT_REG)
 			{
@@ -225,7 +225,7 @@ bool find_files_in_directory(std::vector<wrapped_file>& out_array, const char * 
 }
 
 
-void delete_file(const char * filename)
+static void delete_file(const char * filename)
 {
 #if defined(_WIN32)
 
@@ -245,17 +245,17 @@ void delete_file(const char * filename)
 // complicated platform-specific solution.
 // NOTE: No cont char*, for commandline, because CreateProcess()
 // actually can mess with this string for some reason...
-bool execute_command_line(char * commandline, const char * log_file)
+static bool execute_command_line(char * commandline, const char * log_file)
 {
 #if defined(_WIN32)
 
-	HANDLE read_handle = NULL;
-	HANDLE write_handle = NULL;
+	HANDLE read_handle = nullptr;
+	HANDLE write_handle = nullptr;
 
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
-	sa.lpSecurityDescriptor = NULL;
+	sa.lpSecurityDescriptor = nullptr;
 
 	if (!CreatePipe(&read_handle, &write_handle, &sa, 0))
 	{
@@ -278,7 +278,7 @@ bool execute_command_line(char * commandline, const char * log_file)
 	si.hStdOutput = write_handle;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 
-	if (!CreateProcessA(NULL, commandline, NULL, NULL, TRUE, 0, NULL, NULL, &si, &pi))
+	if (!CreateProcessA(nullptr, commandline, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi))
 	{
 		printf("execute_command_line() failed with HRESULT: 0x%8x", (unsigned int)HRESULT_FROM_WIN32(GetLastError()));
 		CloseHandle(read_handle);
@@ -299,7 +299,7 @@ bool execute_command_line(char * commandline, const char * log_file)
 	BOOL bSuccess = FALSE;
 	for (;;)
 	{
-		bSuccess = ReadFile(read_handle, chBuf, sizeof(chBuf), &dwRead, NULL);
+		bSuccess = ReadFile(read_handle, chBuf, sizeof(chBuf), &dwRead, nullptr);
 		if (bSuccess == FALSE || dwRead == 0) break;
 		fwrite(chBuf, 1, dwRead, logfilehandle);
 	}
@@ -340,7 +340,7 @@ bool execute_command_line(char * commandline, const char * log_file)
 #endif
 
 
-std::vector<std::string> tokenize_string(const char * str, const char * key)
+static std::vector<std::string> tokenize_string(const char * str, const char * key)
 {
 	std::string s = str;
 	std::string delimiter = key;
@@ -744,7 +744,7 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		FILE * err = NULL;
+		FILE * err = nullptr;
 #endif
 		err = fopen(log_name, "rt");
 		fseek(err, 0, SEEK_END);
@@ -889,7 +889,7 @@ int main(int argc, char * argv[])
 
 	free(smwrom);
 
-	printf("%u out of %u performed tests succeeded.\n", (unsigned int)(input_files.size() - numfailed), (unsigned int)input_files.size());
+	printf("%u out of %u performed tests succeeded.\n", (unsigned int)(input_files.size() - (size_t)numfailed), (unsigned int)input_files.size());
 
 	if (numfailed > 0)
 	{

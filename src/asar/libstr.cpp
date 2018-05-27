@@ -1,19 +1,16 @@
 #include "std-includes.h"
 #include "libstr.h"
-#include "virtualfile.hpp"
+#include "virtualfile.h"
+#include "asar.h"
 
-#define malloc(type, count) (type*)malloc(sizeof(type)*(count))
-#define realloc(val, type, count) (type*)realloc(val, sizeof(type)*(count))
-
-extern virtual_filesystem* filesystem;
-extern string thisfilename;
+#define typed_malloc(type, count) (type*)malloc(sizeof(type)*(count))
 
 char * readfile(const char * fname, const char * basepath)
 {
 	virtual_file_handle myfile = filesystem->open_file(fname, basepath);
-	if (myfile == INVALID_VIRTUAL_FILE_HANDLE) return NULL;
+	if (myfile == INVALID_VIRTUAL_FILE_HANDLE) return nullptr;
 	size_t datalen = filesystem->get_file_size(myfile);
-	char * data=malloc(char, datalen+1);
+	char * data= typed_malloc(char, datalen+1);
 	data[filesystem->read_file(myfile, data, 0u, datalen)] = 0;
 	filesystem->close_file(myfile);
 	int inpos=0;
@@ -32,11 +29,11 @@ char * readfile(const char * fname, const char * basepath)
 char * readfilenative(const char * fname)
 {
 	FILE* myfile = fopen(fname, "rb");
-	if (myfile == NULL) return NULL;
+	if (myfile == nullptr) return nullptr;
 	fseek(myfile, 0, SEEK_END);
 	size_t datalen = (size_t)ftell(myfile);
 	fseek(myfile, 0, SEEK_SET);
-	char * data = malloc(char, datalen + 1);
+	char * data = typed_malloc(char, datalen + 1);
 	data[fread(data, 1u, datalen, myfile)] = 0;
 	fclose(myfile);
 	int inpos = 0;
@@ -55,7 +52,7 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 	virtual_file_handle myfile = filesystem->open_file(fname, basepath);
 	if (!myfile) return false;
 	size_t datalen = filesystem->get_file_size(myfile);
-	*data=malloc(char, datalen);
+	*data= typed_malloc(char, datalen);
 	*len = (int)filesystem->read_file(myfile, *data, 0, datalen);
 	filesystem->close_file(myfile);
 	return true;
@@ -80,7 +77,7 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 	if (strlen(instr)==strlen(outstr)+1 && !memcmp(instr, outstr, strlen(outstr)))
 	{
 		const char * indat= thisstring;
-		char * trueoutdat=malloc(char, strlen(indat)+1);
+		char * trueoutdat= typed_malloc(char, strlen(indat)+1);
 		char * outdat=trueoutdat;
 		int thelen=(int)strlen(outstr);
 		//nested hack
@@ -219,9 +216,9 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 {
 	if (!strstr(str, key))
 	{
-		char ** out=malloc(char*, 2);
+		char ** out= typed_malloc(char*, 2);
 		out[0]=str;
-		out[1]=0;
+		out[1]=nullptr;
 		if (len) *len=1;
 		return out;
 	}
@@ -238,7 +235,7 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 		else thisentry++;
 	}
 	if (maxlen && count>maxlen) count=maxlen;
-	char ** outdata=malloc(char*, count+1);
+	char ** outdata= typed_malloc(char*, (size_t)count+1);
 	if (len) *len=count;
 	int newcount=0;
 	thisentry=str;
@@ -253,7 +250,7 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 		}
 		else thisentry++;
 	}
-	outdata[newcount]=NULL;
+	outdata[newcount]= nullptr;
 	return outdata;
 }
 
@@ -265,7 +262,7 @@ char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 	char * thisentry=str;
 	while (*thisentry)
 	{
-		dequote(*thisentry, thisentry++, return NULL);
+		dequote(*thisentry, thisentry++, return nullptr);
 		else if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			count++;
@@ -274,14 +271,14 @@ char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 		else thisentry++;
 	}
 	if (maxlen && count>maxlen) count=maxlen;
-	char ** outdata=malloc(char*, count+1);
+	char ** outdata= typed_malloc(char*, (size_t)count+1);
 	if (len) *len=count;
 	int newcount=0;
 	thisentry=str;
 	outdata[newcount++]=thisentry;
 	while (newcount<count)
 	{
-		dequote(*thisentry, thisentry++, return NULL);
+		dequote(*thisentry, thisentry++, return nullptr);
 		else if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
@@ -290,7 +287,7 @@ char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 		}
 		else thisentry++;
 	}
-	outdata[newcount]=NULL;
+	outdata[newcount]= nullptr;
 	return outdata;
 }
 
@@ -301,7 +298,7 @@ char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 	char * thisentry=str;
 	while (*thisentry)
 	{
-		skippar(*thisentry, thisentry++, return NULL);
+		skippar(*thisentry, thisentry++, return nullptr);
 		else if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			count++;
@@ -310,14 +307,14 @@ char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 		else thisentry++;
 	}
 	if (maxlen && count>maxlen) count=maxlen;
-	char ** outdata=malloc(char*, count+1);
+	char ** outdata= typed_malloc(char*, (size_t)count+1);
 	if (len) *len=count;
 	int newcount=0;
 	thisentry=str;
 	outdata[newcount++]=thisentry;
 	while (newcount<count)
 	{
-		skippar(*thisentry, thisentry++, return NULL);
+		skippar(*thisentry, thisentry++, return nullptr);
 		else if (!memcmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
@@ -326,7 +323,7 @@ char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 		}
 		else thisentry++;
 	}
-	outdata[newcount]=NULL;
+	outdata[newcount]= nullptr;
 	return outdata;
 }
 

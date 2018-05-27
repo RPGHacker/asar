@@ -52,7 +52,7 @@ int bufferlen;
 char lastone[sizeof(right)];
 int lastid;
 
-void collectgarbage(const char * ifnotmatch=NULL)
+void collectgarbage(const char * ifnotmatch=nullptr)
 {
 	if (lastid==-1) return;
 	if (ifnotmatch && !strcmp(indexes[lastid], ifnotmatch)) return;
@@ -90,13 +90,13 @@ right& rawadd(const char * index, bool collect)
 	{
 		if (!num) bufferlen=1;
 		else bufferlen*=2;
-		ptr=(right**)realloc(ptr, sizeof(right*)*bufferlen);
-		indexes=(const char**)realloc(indexes, sizeof(const char *)*bufferlen);
+		ptr=(right**)realloc(ptr, sizeof(right*)*(size_t)bufferlen);
+		indexes=(const char**)realloc(indexes, sizeof(const char *)*(size_t)bufferlen);
 	}
 	num++;
-	memmove(indexes+loc+1, indexes+loc, sizeof(const char *)*(num-loc-1));
-	memmove(ptr+loc+1, ptr+loc, sizeof(right*)*(num-loc-1));
-	indexes[loc]=strdup(index);
+	memmove(indexes+loc+1, indexes+loc, sizeof(const char *)*(size_t)(num-loc-1));
+	memmove(ptr+loc+1, ptr+loc, sizeof(right*)*(size_t)(num-loc-1));
+	indexes[loc]= duplicate_string(index);
 	ptr[loc]=(right*)malloc(sizeof(right));
 	memset(ptr[loc], 0, sizeof(right));
 	new(ptr[loc]) right;
@@ -158,14 +158,14 @@ void remove(const char * index)
 			free((void*)indexes[loc]);
 			ptr[loc]->~right();
 			free(ptr[loc]);
-			memmove(indexes+loc, indexes+loc+1, sizeof(const char *)*(num-loc-1));
-			memmove(ptr+loc, ptr+loc+1, sizeof(right*)*(num-loc-1));
+			memmove(indexes+loc, indexes+loc+1, sizeof(const char *)*(size_t)(num-loc-1));
+			memmove(ptr+loc, ptr+loc+1, sizeof(right*)*(size_t)(num-loc-1));
 			num--;
 			if (num==bufferlen/2)
 			{
 				bufferlen/=2;
-				ptr=(right**)realloc(ptr, sizeof(right*)*bufferlen);
-				indexes=(const char**)realloc(indexes, sizeof(const char *)*bufferlen);
+				ptr=(right**)realloc(ptr, sizeof(right*)*(size_t)bufferlen);
+				indexes=(const char**)realloc(indexes, sizeof(const char *)*(size_t)bufferlen);
 			}
 			return;
 		}
@@ -202,7 +202,7 @@ void move(const char * from, const char * to)
 	if (topos==frompos || topos==frompos+1)
 	{
 		free((void*)indexes[frompos]);
-		indexes[frompos]=strdup(to);
+		indexes[frompos]= duplicate_string(to);
 	}
 	else if (topos>frompos)
 	{
@@ -210,7 +210,7 @@ void move(const char * from, const char * to)
 		memmove(indexes+frompos, indexes+frompos+1, sizeof(const char *)*(topos-frompos-1));
 		memmove(ptr+frompos, ptr+frompos+1, sizeof(right*)*(topos-frompos-1));
 		ptr[topos-1]=tmp;
-		indexes[topos-1]=strdup(to);//I wonder what the fuck I'm doing.
+		indexes[topos-1]= duplicate_string(to);//I wonder what the fuck I'm doing.
 	}
 	else
 	{
@@ -218,7 +218,7 @@ void move(const char * from, const char * to)
 		memmove(indexes+topos+1, indexes+topos, sizeof(const char *)*(frompos-topos));
 		memmove(ptr+topos+1, ptr+topos, sizeof(right*)*(frompos-topos));
 		ptr[topos]=tmp;
-		indexes[topos]=strdup(to);
+		indexes[topos]= duplicate_string(to);
 	}
 }
 
@@ -232,8 +232,8 @@ void reset()
 	}
 	free(indexes);
 	free(ptr);
-	indexes=NULL;
-	ptr=NULL;
+	indexes=nullptr;
+	ptr= nullptr;
 	num=0;
 	bufferlen=0;
 	lastid=-1;
@@ -241,8 +241,8 @@ void reset()
 
 assocarr()
 {
-	indexes=NULL;
-	ptr=NULL;
+	indexes= nullptr;
+	ptr= nullptr;
 	num=0;
 	bufferlen=0;
 	lastid=-1;

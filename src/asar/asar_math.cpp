@@ -6,22 +6,19 @@
 #include "libstr.h"
 #include "libsmw.h"
 #include "asar.h"
-#include "virtualfile.hpp"
+#include "virtualfile.h"
+#include "assembleblock.h"
+#include "asar_math.h"
+#include <math.h>
 
 bool math_pri=true;
 bool math_round=false;
-
-extern bool emulatexkas;
-extern assocarr<snes_struct> structs;
-extern assocarr<string> defines;
 
 static const char * str;
 
 static double getnumcore();
 static double getnum();
 static double eval(int depth);
-
-bool confirmname(const char * name);
 
 //label (bool foundLabel) (bool forwardLabel)
 //userfunction
@@ -37,8 +34,8 @@ struct funcdat {
 	autoptr<char**> arguments;
 	autoptr<char*> content;
 };
-autoarray<funcdat> userfunc;
-int numuserfunc=0;
+static autoarray<funcdat> userfunc;
+static int numuserfunc=0;
 
 void createuserfunc(const char * name, const char * arguments, const char * content)
 {
@@ -51,10 +48,10 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 		}
 	}
 	funcdat& thisone=userfunc[numuserfunc];
-	thisone.name=strdup(name);
-	thisone.argbuf=strdup(arguments);
+	thisone.name= duplicate_string(name);
+	thisone.argbuf= duplicate_string(arguments);
 	thisone.arguments=qsplit(thisone.argbuf, ",", &(thisone.numargs));
-	thisone.content=strdup(content);
+	thisone.content= duplicate_string(content);
 	for (int i=0;thisone.arguments[i];i++)
 	{
 		if (!confirmname(thisone.arguments[i]))
@@ -78,15 +75,9 @@ struct cachedfile {
 static cachedfile cachedfiles[numcachedfiles];
 static int cachedfileindex = 0;
 
-const char * safedequote(char * str);
-#define dequote safedequote
-extern string thisfilename;
-
 // Opens a file, trying to open it from cache first
 
-extern virtual_filesystem* filesystem;
-
-cachedfile * opencachedfile(string fname, bool should_error)
+static cachedfile * opencachedfile(string fname, bool should_error)
 {
 	cachedfile * cachedfilehandle = nullptr;
 
@@ -177,9 +168,6 @@ struct funcparam {
 	union valueunion {
 		const char * stringvalue;
 		double longdoublevalue;
-
-		valueunion() {}
-		~valueunion() {}
 	} value;
 
 	funcparam()
@@ -202,12 +190,9 @@ struct funcparam {
 };
 
 
-char ** funcargnames;
-funcparam * funcargvals;
-int numuserfuncargs;
-
-
-int snestopc_pick(int addr);
+static char ** funcargnames;
+static funcparam * funcargvals;
+static int numuserfuncargs;
 
 #define validateparam(inparam, paramindex, expectedtype)     \
 	if (inparam.type != expectedtype)            \
@@ -232,7 +217,7 @@ static double read1(const funcparam& in)
 	else if (addr+1>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6((unsigned int)in.value.longdoublevalue) + " in read1()").str);
 	else return
 			 romdata_r[addr  ]     ;
-	return 0.0f;
+	return 0.0;
 }
 
 static double read2(const funcparam& in)
@@ -244,7 +229,7 @@ static double read2(const funcparam& in)
 	else return
 			 romdata_r[addr  ]    |
 			(romdata_r[addr+1]<< 8);
-	return 0.0f;
+	return 0.0;
 }
 
 static double read3(const funcparam& in)
@@ -257,7 +242,7 @@ static double read3(const funcparam& in)
 			 romdata_r[addr  ]     |
 			(romdata_r[addr+1]<< 8)|
 			(romdata_r[addr+2]<<16);
-	return 0.0f;
+	return 0.0;
 }
 
 static double read4(const funcparam& in)
@@ -271,7 +256,7 @@ static double read4(const funcparam& in)
 			(romdata_r[addr+1]<< 8)|
 			(romdata_r[addr+2]<<16)|
 			(romdata_r[addr+3]<<24);
-	return 0.0f;
+	return 0.0;
 }
 
 static double read1s(const funcparam& in, const funcparam& def)
@@ -470,14 +455,12 @@ static double stringsequalinsensitivefunc(const funcparam& string1, const funcpa
 }
 
 
-extern chartabledata table;
-
 #define maxint(a, b) ((unsigned int)a > (unsigned int)b ? (unsigned int)a : (unsigned int)b)
 
 // Check if the argument is simply a parent function parameter being passed through.
 // If so return the index of the parameter, otherwise return -1.
 // Update source if it is a parameter being pass through.
-int check_passthough_argument(const char** source)
+static int check_passthough_argument(const char** source)
 {
 	const char * current=str;
 	while (isalnum(*current) || *current == '_' || *current == '.') current++;
@@ -515,12 +498,12 @@ static double getnumcore()
 	{
 		if (!isxdigit(str[1])) asar_throw_error(1, error_type_block, error_id_invalid_hex_value);
 		if (tolower(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
-		return strtoul(str+1, (char**)&str, 16);
+		return strtoul(str+1, const_cast<char**>(&str), 16);
 	}
 	if (*str=='%')
 	{
 		if (str[1] != '0' && str[1] != '1') asar_throw_error(1, error_type_block, error_id_invalid_binary_value);
-		return strtoul(str+1, (char**)&str, 2);
+		return strtoul(str+1, const_cast<char**>(&str), 2);
 	}
 	if (*str=='\'')
 	{
@@ -534,7 +517,7 @@ static double getnumcore()
 		const char* end = str;
 		while (isdigit(*end) || *end == '.') end++;
 		string number;
-		number.assign(str, end - str);
+		number.assign(str, (int)(end - str));
 		str = end;
 		return atof(number);
 	}
@@ -574,7 +557,7 @@ static double getnumcore()
 						{
 							params[numparams].type = Type_String;
 							string tempname(strpos, (int)(str - strpos + 1));
-							stringparams[numstrings] = string(dequote(&tempname[0]));
+							stringparams[numstrings] = string(safedequote(&tempname[0]));
 							params[numparams++].value.stringvalue = stringparams[numstrings];
 							numstrings++;
 							str++;
@@ -798,7 +781,7 @@ static double getnumcore()
 		}
 	}
 	asar_throw_error(1, error_type_block, error_id_invalid_number);
-	return 0.0f;
+	return 0.0;
 }
 
 static double sanitize(double val)
@@ -820,8 +803,22 @@ static double getnum()
 	return sanitize(getnumcore());
 }
 
+unsigned int getnum(const char * instr)
+{
+	// RPG Hacker: this was originally an int - changed it into an unsigned int since I found
+	// that to yield the more predictable results when converting from a double
+	// (e.g.: $FFFFFFFF was originally converted to $80000000, whereas now it remains $FFFFFFFF
+	unsigned int num = (unsigned int)math(instr);
+	return num;
+}
 
-string posneglabelname(const char ** input, bool define);
+// RPG Hacker: Same function as above, but doesn't truncate our number via int conversion
+double getnumdouble(const char * instr)
+{
+	double num = math(instr);
+	return num;
+}
+
 
 static double oper_wrapped_throw(asar_error_id errid)
 {
@@ -875,8 +872,8 @@ notposneglabel:
 			}
 		oper("**", 4, pow((double)left, (double)right));
 		oper("*", 3, left*right);
-		oper("/", 3, right ? left / right : oper_wrapped_throw(error_id_division_by_zero));
-		oper("%", 3, right ? fmod((double)left, (double)right) : oper_wrapped_throw(error_id_modulo_by_zero));
+		oper("/", 3, right != 0.0 ? left / right : oper_wrapped_throw(error_id_division_by_zero));
+		oper("%", 3, right != 0.0 ? fmod((double)left, (double)right) : oper_wrapped_throw(error_id_modulo_by_zero));
 		oper("+", 2, left+right);
 		oper("-", 2, left-right);
 		oper("<<", 1, (unsigned int)left<<(unsigned int)right);

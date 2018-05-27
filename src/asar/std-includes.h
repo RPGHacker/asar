@@ -8,26 +8,25 @@
 #if defined(_MSC_VER)
 #	pragma warning(push)
 #	pragma warning(disable : 4514)
+#	pragma warning(disable : 4577)
 #	pragma warning(disable : 4668)
 #	pragma warning(disable : 4987)
 #endif
 
 #include <new>//placement new
 #include <stdlib.h>//malloc, realloc, free
-// we use our own strdup since the standard one is inconsistent
-#define strdup strdup_no
 #include <string.h>//strcmp, memmove
-#undef strdup
-inline char * strdup(const char * str) throw ()
+#include <stdio.h>
+#include <ctype.h>
+#include <math.h>
+#include <cstdio>
+
+inline char * duplicate_string(const char * str)
 {
 	char * a = (char*)malloc(sizeof(char)*(strlen(str) + 1));
 	strcpy(a, str);
 	return a;
 }
-#include <stdio.h>
-#include <ctype.h>
-#include <math.h>
-#include <cstdio>
 
 #if defined(_MSC_VER)
 #	pragma warning(pop)

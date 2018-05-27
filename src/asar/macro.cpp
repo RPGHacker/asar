@@ -3,46 +3,21 @@
 #include "autoarray.h"
 #include "assocarr.h"
 #include "errors.h"
-
-bool confirmname(const char * name);
-
-struct macrodata
-{
-autoarray<string> lines;
-int numlines;
-int startline;
-const char * fname;
-const char ** arguments;
-int numargs;
-};
+#include "assembleblock.h"
+#include "macro.h"
 
 assocarr<macrodata*> macros;
-string thisname;
-macrodata * thisone;
-int numlines;
-
-extern string thisfilename;
-extern int thisline;
-extern const char * thisblock;
-
-extern autoarray<whiletracker> whilestatus;
-
-void assembleline(const char * fname, int linenum, const char * line);
+static string thisname;
+static macrodata * thisone;
+static int numlines;
 
 int reallycalledmacros;
 int calledmacros;
 int macrorecursion;
 
-extern int repeatnext;
-extern int numif;
-extern int numtrue;
-
-extern const char * callerfilename;
-extern int callerline;
-
 void startmacro(const char * line_)
 {
-	thisone=NULL;
+	thisone= nullptr;
 	if (!confirmqpar(line_)) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	string line=line_;
 	clean(line);
@@ -53,7 +28,7 @@ void startmacro(const char * line_)
 	if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_invalid_macro_name);
 	thisname=line;
 	char * endpar=strqrchr(startpar, ')');
-	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nulls
+	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nullptrs
 	if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	*endpar=0;
 	for (int i=0;startpar[i];i++)
@@ -68,12 +43,12 @@ void startmacro(const char * line_)
 	new(thisone) macrodata;
 	if (*startpar)
 	{
-		thisone->arguments=(const char**)qpsplit(strdup(startpar), ",", &thisone->numargs);
+		thisone->arguments=(const char* const*)qpsplit(duplicate_string(startpar), ",", &thisone->numargs);
 	}
 	else
 	{
 		const char ** noargs=(const char**)malloc(sizeof(const char**));
-		*noargs=NULL;
+		*noargs=nullptr;
 		thisone->arguments=noargs;
 		thisone->numargs=0;
 	}
@@ -85,7 +60,7 @@ void startmacro(const char * line_)
 			if (!strcmp(thisone->arguments[i], thisone->arguments[j])) asar_throw_error(0, error_type_block, error_id_macro_param_redefined, thisone->arguments[i]);
 		}
 	}
-	thisone->fname=strdup(thisfilename);
+	thisone->fname= duplicate_string(thisfilename);
 	thisone->startline=thisline;
 	numlines=0;
 }
@@ -105,10 +80,6 @@ void endmacro(bool insert)
 }
 
 
-extern autoarray<int>* macroposlabels;
-extern autoarray<int>* macroneglabels;
-extern autoarray<string>* macrosublabels;
-
 void callmacro(const char * data)
 {
 	int numcm=reallycalledmacros++;
@@ -126,9 +97,9 @@ void callmacro(const char * data)
 	char * endpar=strqrchr(startpar, ')');
 	if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	*endpar=0;
-	autoptr<const char **> args;
+	autoptr<const char * const*> args;
 	int numargs=0;
-	if (*startpar) args=(const char**)qpsplit(strdup(startpar), ",", &numargs);
+	if (*startpar) args=(const char* const*)qpsplit(duplicate_string(startpar), ",", &numargs);
 	if (numargs != thismacro->numargs) asar_throw_error(0, error_type_block, error_id_macro_wrong_num_params);
 	macrorecursion++;
 	int startif=numif;
@@ -151,7 +122,7 @@ void callmacro(const char * data)
 		{
 			thisfilename= thismacro->fname;
 			thisline= thismacro->startline+i+1;
-			thisblock=NULL;
+			thisblock= nullptr;
 			string out;
 			string connectedline;
 			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, connectedline);
@@ -212,13 +183,13 @@ void callmacro(const char * data)
 	macrorecursion--;
 	if (repeatnext!=1)
 	{
-		thisblock=NULL;
+		thisblock= nullptr;
 		repeatnext=1;
 		asar_throw_error(0, error_type_block, error_id_rep_at_macro_end);
 	}
 	if (numif!=startif)
 	{
-		thisblock=NULL;
+		thisblock= nullptr;
 		numif=startif;
 		numtrue=startif;
 		asar_throw_error(0, error_type_block, error_id_unclosed_if);

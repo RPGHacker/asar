@@ -2,9 +2,12 @@
 #include "assocarr.h"
 #include "libstr.h"
 #include "libsmw.h"
-#include "virtualfile.hpp"
+#include "virtualfile.h"
 #include "warnings.h"
 #include "platform/file-helpers.h"
+#include "interface-shared.h"
+#include "assembleblock.h"
+#include "asar_math.h"
 
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -14,27 +17,9 @@
 #define EXPORT extern "C" __attribute__ ((visibility ("default")))
 #endif
 
-extern bool errored;
-
-extern bool checksum;
-
-string getdecor();
-
-void assemblefile(const char * filename, bool toplevel);
-
-extern string thisfilename;
-extern int thisline;
-extern const char * thisblock;
-extern const char * callerfilename;
-extern int callerline;
-
-extern virtual_filesystem* filesystem;
-
-extern assocarr<string> clidefines;
-
-autoarray<const char *> prints;
-string symbolsfile;
-int numprint;
+static autoarray<const char *> prints;
+static string symbolsfile;
+static int numprint;
 
 struct errordata {
 	const char * fullerrdata;
@@ -46,44 +31,40 @@ struct errordata {
 	int callerline;
 	int errid;
 };
-autoarray<errordata> errors;
-int numerror;
+static  autoarray<errordata> errors;
+static int numerror;
 
-autoarray<errordata> warnings;
-int numwarn;
+static autoarray<errordata> warnings;
+static int numwarn;
 
 struct labeldata {
 	const char * name;
 	int location;
 };
-extern assocarr<unsigned int> labels;
 
 struct definedata {
 	const char * name;
 	const char * contents;
 };
-extern assocarr<string> defines;
 
 struct warnsetting {
 	const char * warnid;
 	bool enabled;
 };
 
-extern autoarray<writtenblockdata> writtenblocks;
-
 void print(const char * str)
 {
-	prints[numprint++]=strdup(str);
+	prints[numprint++]= duplicate_string(str);
 }
 
-void fillerror(errordata& myerr, int errid, const char * type, const char * str)
+static void fillerror(errordata& myerr, int errid, const char * type, const char * str)
 {
-	myerr.filename=strdup(thisfilename);
+	myerr.filename= duplicate_string(thisfilename);
 	myerr.line=thisline;
-	if (thisblock) myerr.block=strdup(thisblock);
-	else myerr.block=strdup("");
-	myerr.rawerrdata=strdup(str);
-	myerr.fullerrdata=strdup(S getdecor()+type+str+(thisblock?(S" ["+thisblock+"]"):""));
+	if (thisblock) myerr.block= duplicate_string(thisblock);
+	else myerr.block= duplicate_string("");
+	myerr.rawerrdata= duplicate_string(str);
+	myerr.fullerrdata= duplicate_string(S getdecor()+type+str+(thisblock?(S" ["+thisblock+"]"):""));
 	myerr.callerline=callerline;
 	myerr.callerfilename=callerfilename;
 	myerr.errid = errid;
@@ -100,48 +81,41 @@ void error_interface(int errid, int whichpass, const char * e_)
 	else {}//ignore anything else
 }
 
-void initmathcore();
-
-void initstuff();
-void finishpass();
-
 void warn(int errid, const char * str)
 {
 	fillerror(warnings[numwarn++], errid, S "warning: (W" + string(errid) + "): ", str);
 }
 
-void reseteverything();
-
-void resetdllstuff()
+static void resetdllstuff()
 {
-#define free(x) free((void*)x); x = NULL
+#define free_and_null(x) free((void*)x); x = nullptr
 	for (int i=0;i<numprint;i++)
 	{
-		free(prints[i]);
+		free_and_null(prints[i]);
 	}
 	prints.reset();
 	numprint=0;
 
 	for (int i=0;i<numerror;i++)
 	{
-		free(errors[i].filename);
-		free(errors[i].rawerrdata);
-		free(errors[i].fullerrdata);
-		free(errors[i].block);
+		free_and_null(errors[i].filename);
+		free_and_null(errors[i].rawerrdata);
+		free_and_null(errors[i].fullerrdata);
+		free_and_null(errors[i].block);
 	}
 	errors.reset();
 	numerror=0;
 
 	for (int i=0;i<numwarn;i++)
 	{
-		free(warnings[i].filename);
-		free(warnings[i].rawerrdata);
-		free(warnings[i].fullerrdata);
-		free(warnings[i].block);
+		free_and_null(warnings[i].filename);
+		free_and_null(warnings[i].rawerrdata);
+		free_and_null(warnings[i].fullerrdata);
+		free_and_null(warnings[i].block);
 	}
 	warnings.reset();
 	numwarn=0;
-#undef free
+#undef free_and_null
 
 	clidefines.reset();
 	reset_warnings_to_default();
@@ -149,108 +123,21 @@ void resetdllstuff()
 	reseteverything();
 }
 
-static bool expectsNewAPI=false;
-EXPORT bool asar_init()
-{
-	if (!expectsNewAPI) return false;
-	initmathcore();
-	return true;
-}
-
-int get_version_int();
-
-EXPORT int asar_version()
-{
-	return get_version_int();
-}
-
-EXPORT int asar_apiversion()
-{
-	expectsNewAPI=true;
-	return 303;
-}
-
-EXPORT bool asar_reset()
-{
-	resetdllstuff();
-	pass=0;
-	return true;
-}
-
-EXPORT void asar_close()
-{
-	resetdllstuff();
-}
-
 #define maxromsize (16*1024*1024)
-void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool should_reset)
+
+static autoarray<labeldata> ldata;
+static int labelsinldata = 0;
+static bool expectsNewAPI = false;
+
+static void addlabel(const string & name, unsigned int & value)
 {
-	if (buflen != maxromsize)
-	{
-		romdata_r = (unsigned char*)malloc(maxromsize);
-		memcpy((char*)romdata_r/*we just allocated this, it's safe to violate its const*/, romdata_, (size_t)*romlen_);
-	}
-	else romdata_r = (unsigned char*)romdata_;
-	romdata = (unsigned char*)malloc(maxromsize);
-	// RPG Hacker: Without this memset, freespace commands can (and probably will) fail.
-	memset((void*)romdata, 0, maxromsize);
-	memcpy((unsigned char*)romdata, romdata_, (size_t)*romlen_);
-	if (should_reset)
-		resetdllstuff();
-	romlen = *romlen_;
-	romlen_r = *romlen_;
+	labeldata label;
+	label.name = strdup(name);
+	label.location = (int)(value & 0xFFFFFF);
+	ldata[labelsinldata++] = label;
 }
 
-void asar_patch_main(const char * patchloc)
-{
-	if (!path_is_absolute(patchloc)) asar_throw_warning(pass, warning_id_relative_path_used, "patch file");
 
-	try
-	{
-		for (pass = 0;pass < 3;pass++)
-		{
-			initstuff();
-			assemblefile(patchloc, true);
-			finishpass();
-		}
-	}
-	catch (errfatal&) {}
-}
-
-bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
-{
-	if (checksum) fixchecksum();
-	if (romdata_!=(char*)romdata_r) free((char*)romdata_r);
-	if (buflen < romlen) asar_throw_error(pass, error_type_null, error_id_buffer_too_small);
-	if (errored)
-	{
-		if (buflen != maxromsize) free((unsigned char*)romdata);
-		return false;
-	}
-	if (*romlen_ != buflen)
-	{
-		*romlen_ = romlen;
-	}
-	memcpy(romdata_, romdata, (size_t)romlen);
-	free((unsigned char*)romdata);
-	return true;
-}
-
-EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int * romlen_)
-{
-	asar_patch_begin(romdata_, buflen, romlen_, true);
-
-	virtual_filesystem new_filesystem;
-	new_filesystem.initialize(nullptr, 0);
-	filesystem = &new_filesystem;
-	
-	asar_patch_main(patchloc);
-
-	new_filesystem.destroy();
-	filesystem = nullptr;
-
-	return asar_patch_end(romdata_, buflen, romlen_);
-}
 
 struct patchparams_base
 {
@@ -283,6 +170,110 @@ struct patchparams : public patchparams_v160
 {
 
 };
+
+static void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool should_reset)
+{
+	if (buflen != maxromsize)
+	{
+		romdata_r = (unsigned char*)malloc(maxromsize);
+		memcpy(const_cast<unsigned char*>(romdata_r)/*we just allocated this, it's safe to violate its const*/, romdata_, (size_t)*romlen_);
+	}
+	else romdata_r = (unsigned char*)romdata_;
+	romdata = (unsigned char*)malloc(maxromsize);
+	// RPG Hacker: Without this memset, freespace commands can (and probably will) fail.
+	memset((void*)romdata, 0, maxromsize);
+	memcpy(const_cast<unsigned char*>(romdata), romdata_, (size_t)*romlen_);
+	if (should_reset)
+		resetdllstuff();
+	romlen = *romlen_;
+	romlen_r = *romlen_;
+}
+
+static void asar_patch_main(const char * patchloc)
+{
+	if (!path_is_absolute(patchloc)) asar_throw_warning(pass, warning_id_relative_path_used, "patch file");
+
+	try
+	{
+		for (pass = 0;pass < 3;pass++)
+		{
+			initstuff();
+			assemblefile(patchloc, true);
+			finishpass();
+		}
+	}
+	catch (errfatal&) {}
+}
+
+static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
+{
+	if (checksum_fix_enabled) fixchecksum();
+	if (romdata_ != (const char*)romdata_r) free(const_cast<unsigned char*>(romdata_r));
+	if (buflen < romlen) asar_throw_error(pass, error_type_null, error_id_buffer_too_small);
+	if (errored)
+	{
+		if (buflen != maxromsize) free(const_cast<unsigned char*>(romdata));
+		return false;
+	}
+	if (*romlen_ != buflen)
+	{
+		*romlen_ = romlen;
+	}
+	memcpy(romdata_, romdata, (size_t)romlen);
+	free(const_cast<unsigned char*>(romdata));
+	return true;
+}
+
+#if defined(__clang__)
+#	pragma clang diagnostic push
+#	pragma clang diagnostic ignored "-Wmissing-prototypes"
+#endif
+
+EXPORT bool asar_init()
+{
+	if (!expectsNewAPI) return false;
+	initmathcore();
+	return true;
+}
+
+EXPORT int asar_version()
+{
+	return get_version_int();
+}
+
+EXPORT int asar_apiversion()
+{
+	expectsNewAPI=true;
+	return 303;
+}
+
+EXPORT bool asar_reset()
+{
+	resetdllstuff();
+	pass=0;
+	return true;
+}
+
+EXPORT void asar_close()
+{
+	resetdllstuff();
+}
+
+EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int * romlen_)
+{
+	asar_patch_begin(romdata_, buflen, romlen_, true);
+
+	virtual_filesystem new_filesystem;
+	new_filesystem.initialize(nullptr, 0);
+	filesystem = &new_filesystem;
+	
+	asar_patch_main(patchloc);
+
+	new_filesystem.destroy();
+	filesystem = nullptr;
+
+	return asar_patch_end(romdata_, buflen, romlen_);
+}
 
 EXPORT bool asar_patch_ex(const patchparams_base* params)
 {
@@ -378,13 +369,6 @@ EXPORT int asar_maxromsize()
 	return maxromsize;
 }
 
-// randomdude999: this is not exposed in any of the wrappers, why does it even exist?
-extern chartabledata table;
-EXPORT const unsigned int * asar_gettable()
-{
-	return table.table;
-}
-
 EXPORT const errordata * asar_geterrors(int * count)
 {
 	*count=numerror;
@@ -403,16 +387,6 @@ EXPORT const char * const * asar_getprints(int * count)
 	return prints;
 }
 
-autoarray<labeldata> ldata;
-int labelsinldata=0;
-static void addlabel(const string & name, unsigned int & value)
-{
-	labeldata label;
-	label.name=strdup(name);
-	label.location=(int)(value&0xFFFFFF);
-	ldata[labelsinldata++]=label;
-}
-
 EXPORT const labeldata * asar_getalllabels(int * count)
 {
 	for (int i=0;i<labelsinldata;i++) free((void*)ldata[i].name);
@@ -422,7 +396,6 @@ EXPORT const labeldata * asar_getalllabels(int * count)
 	return ldata;
 }
 
-extern int numopcodes;
 EXPORT int asar_getlabelval(const char * name)
 {
 	if (!stricmp(name, ":$:opcodes:$:")) return numopcodes;//aaah, you found me
@@ -437,7 +410,6 @@ EXPORT const char * asar_getdefine(const char * name)
 	return defines.find(name);
 }
 
-void resolvedefines(string& out, const char * start);
 EXPORT const char * asar_resolvedefines(const char * data)
 {
 	static string out;
@@ -449,13 +421,14 @@ EXPORT const char * asar_resolvedefines(const char * data)
 	return out;
 }
 
-autoarray<definedata> ddata;
-int definesinddata=0;
+static autoarray<definedata> ddata;
+static int definesinddata=0;
+
 static void adddef(const string& name, string& value)
 {
 	definedata define;
-	define.name=strdup(name);
-	define.contents=strdup(value);
+	define.name= duplicate_string(name);
+	define.contents= duplicate_string(value);
 	ddata[definesinddata++]=define;
 }
 
@@ -471,11 +444,6 @@ EXPORT const definedata * asar_getalldefines(int * count)
 	*count=definesinddata;
 	return ddata;
 }
-
-double math(const char * mystr);
-extern autoarray<string> sublabels;
-extern string ns;
-extern autoarray<string> namespace_list;
 
 EXPORT double asar_math(const char * str, const char ** e)
 {
@@ -512,3 +480,7 @@ EXPORT const char * asar_getsymbolsfile(const char* type){
 	symbolsfile = create_symbols_file(type);
 	return symbolsfile;
 }
+
+#if defined(__clang__)
+#	pragma clang diagnostic pop
+#endif
