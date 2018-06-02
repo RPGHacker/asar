@@ -195,6 +195,9 @@ asarfunc enum mappertype (*asar_getmapper)(void);
 // Generates the contents of a symbols file for in a specific format.
 asarfunc const char * (*asar_getsymbolsfile)(const char * format);
 
+//Add a virtual memory file to the file system which can be assembled just as regular files.
+asarfunc void (*asar_add_virtual_memory_file)(const char* path, void* buffer, size_t length);
+
 #ifdef __cplusplus
 	}
 #endif

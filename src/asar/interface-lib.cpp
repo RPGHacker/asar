@@ -481,6 +481,13 @@ EXPORT const char * asar_getsymbolsfile(const char* type){
 	return symbolsfile;
 }
 
+EXPORT void asar_add_virtual_memory_file(const char* path, void* buffer, size_t length)
+{
+	if(filesystem) {
+		filesystem->add_memory_file(path, buffer, length);
+	}
+}
+
 #if defined(__clang__)
 #	pragma clang diagnostic pop
 #endif
