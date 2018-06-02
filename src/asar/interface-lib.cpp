@@ -54,7 +54,7 @@ struct warnsetting {
 
 struct memoryfile {
 	const char* path;
-	void* buffer; // why does this have to be mutable?
+	const void* buffer;
 	size_t length;
 };
 

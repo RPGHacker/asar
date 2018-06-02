@@ -24,7 +24,7 @@ enum virtual_file_error
 
 struct memory_buffer
 {
-    void*  data;
+    const void* data;
     size_t length;
 };
 
@@ -45,7 +45,7 @@ public:
 
 	string create_absolute_path(const char* base, const char* target);
 
-	void add_memory_file(const char* name, void* buffer, size_t length);
+	void add_memory_file(const char* name, const void* buffer, size_t length);
 
 	inline virtual_file_error get_last_error()
 	{

@@ -20,7 +20,7 @@ public:
 class memory_file : public virtual_file
 {
 public:
-	memory_file(void* data, size_t length)
+	memory_file(const void* data, size_t length)
 		: m_data(data), m_length(length)
 	{		
 	}
@@ -41,7 +41,7 @@ public:
 		int diff = (int)(pos + num_bytes) - (int)m_length;
 		num_bytes -= diff < 0 ? 0 : (unsigned int)diff;
 
-		memcpy(out_buffer, (char*)m_data + pos, num_bytes);
+		memcpy(out_buffer, (const char*)m_data + pos, num_bytes);
 		return num_bytes;
 	}
 
@@ -51,7 +51,7 @@ public:
 	}
 
 private:
-	void*  m_data;
+	const void* m_data;
 	size_t m_length;
 };
 
@@ -281,7 +281,7 @@ virtual_filesystem::virtual_file_type virtual_filesystem::get_file_type_from_pat
 	}
 }
 
-void virtual_filesystem::add_memory_file(const char* name, void* buffer, size_t length) {
+void virtual_filesystem::add_memory_file(const char* name, const void* buffer, size_t length) {
 	memory_buffer mem_buf = { buffer, length };
 	m_memory_files.remove(name);
 	m_memory_files.create(name) = mem_buf;
