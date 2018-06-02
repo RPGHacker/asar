@@ -13,6 +13,7 @@
 #define expectedapiversion 303
 
 #include <stdbool.h>
+#include <stddef.h> // for size_t
 
 //These structures are returned from various functions.
 struct errordata {
@@ -59,7 +60,11 @@ struct warnsetting {
 	bool enabled;
 };
 
-
+struct memoryfile {
+	const char* path;
+	void* buffer; // why does this have to be mutable?
+	size_t length;
+};
 
 struct patchparams
 {
@@ -98,6 +103,10 @@ struct patchparams
 	// Specify warnings in the format "WXXXX" where XXXX = warning ID.
 	const struct warnsetting * warning_settings;
 	int warning_setting_count;
+
+	// List of memory files to create on the virtual filesystem.
+	const struct memoryfile * memory_files;
+	int memory_file_count;
 };
 
 #endif
@@ -194,9 +203,6 @@ asarfunc enum mappertype (*asar_getmapper)(void);
 
 // Generates the contents of a symbols file for in a specific format.
 asarfunc const char * (*asar_getsymbolsfile)(const char * format);
-
-//Add a virtual memory file to the file system which can be assembled just as regular files.
-asarfunc void (*asar_add_virtual_memory_file)(const char* path, void* buffer, size_t length);
 
 #ifdef __cplusplus
 	}

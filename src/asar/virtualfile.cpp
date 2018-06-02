@@ -39,7 +39,7 @@ public:
 		if(pos > m_length) return 0;
 
 		int diff = (int)(pos + num_bytes) - (int)m_length;
-		num_bytes -= diff < 0 ? 0 : diff;
+		num_bytes -= diff < 0 ? 0 : (unsigned int)diff;
 
 		memcpy(out_buffer, (char*)m_data + pos, num_bytes);
 		return num_bytes;
@@ -216,8 +216,8 @@ virtual_file_handle virtual_filesystem::open_file(const char* path, const char* 
 
 		case vft_memory_file:
 		{
-			if(m_memory_files.exists(base_path)) {
-				memory_buffer mem_buf = m_memory_files.find(base_path);
+			if(m_memory_files.exists(path)) {
+				memory_buffer mem_buf = m_memory_files.find(path);
 				memory_file* new_file = new memory_file(mem_buf.data, mem_buf.length);
 				return static_cast<virtual_file_handle>(new_file);
 			} else {

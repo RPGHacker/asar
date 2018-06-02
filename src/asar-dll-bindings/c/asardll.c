@@ -92,7 +92,6 @@ static bool asar_init_shared(void)
 	load(getwrittenblocks);
 	load(getmapper);
 	load(getsymbolsfile);
-	load(add_virtual_memory_file);
 	if (asar_apiversion() < expectedapiversion || (asar_apiversion() / 100) > (expectedapiversion / 100)) return false;
 	require(asar_i_init());
 	return true;
