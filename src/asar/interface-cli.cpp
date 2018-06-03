@@ -139,10 +139,12 @@ int main(int argc, char * argv[])
 			" --symbols-path=<filename>\n"
 			"                   Override the default path to the symbols output file. The default is the ROM's base name with an\n"
 			"                   extension of '.sym'.\n\n"
-			" --no-title-check  \n"
-			"                   Disable verifying ROM title. (Note that irresponsible use will likely corrupt your ROM)\n"
-			" --pause-mode=<never/on-error/on-warning/always>\n\n"
-			"                   Specify when Asar should pause the application. (Never, on error, on warning or always)\n"
+			" --no-title-check\n"
+			"                   Disable verifying ROM title. (Note that irresponsible use will likely corrupt your ROM)\n\n"
+			" --pause-mode=<never/on-error/on-warning/always>\n"
+			"                   Specify when Asar should pause the application. (Never, on error, on warning or always)\n\n"
+			" --fix-checksum=<on/off>\n"
+			"                   Override Asar's checksum generation, allowing you to manually enable/disable generating a checksum\n\n"
 			" -I<path>          \n"
 			" --include <path>  \n"
 			"                   Add an include search path to Asar.\n\n"
@@ -203,6 +205,15 @@ int main(int argc, char * argv[])
 				else if (par=="--pause-mode=on-warning") pause=pause_warn;
 				else if (par=="--pause-mode=always") pause=pause_yes;
 				else libcon_badusage();
+			}
+			else if(checkstartmatch(par, "--fix-checksum=")) {
+				if(par=="--fix-checksum=on") {
+					force_checksum_fix = true;
+					checksum_fix_enabled = true;
+				} else if(par=="--fix-checksum=off") {
+					force_checksum_fix = true;
+					checksum_fix_enabled = false;
+				} else libcon_badusage();
 			}
 			else if (checkstartmatch(par, "-I"))
 			{

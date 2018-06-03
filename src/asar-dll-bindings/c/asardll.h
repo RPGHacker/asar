@@ -98,6 +98,11 @@ struct patchparams
 	// Specify warnings in the format "WXXXX" where XXXX = warning ID.
 	const struct warnsetting * warning_settings;
 	int warning_setting_count;
+
+	// Set override_checksum_gen to true and generate_checksum to true/false
+	// to force generating/not generating a checksum.
+	bool override_checksum_gen;
+	bool generate_checksum;
 };
 
 #endif
