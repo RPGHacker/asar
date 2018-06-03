@@ -1115,7 +1115,8 @@ void assembleblock(const char * block)
 		asar_throw_warning(0, warning_id_xkas_deprecated);
 		emulatexkas=true;
 		optimizeforbank=0x100;
-		checksum_fix_enabled =false;
+		if(!force_checksum_fix)
+			checksum_fix_enabled = false;
 		sublabels[0]=":xkasdefault:";
 	}
 	else if (is0("include") || is1("includefrom"))
@@ -1939,7 +1940,13 @@ void assembleblock(const char * block)
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
 		if (!stricmp(par, "spc700-inline")) { arch=arch_spc700_inline; return; }
-		if (!stricmp(par, "spc700-raw")) { arch=arch_spc700; mapper=norom; checksum_fix_enabled =false; return; }
+		if (!stricmp(par, "spc700-raw")) {
+			arch=arch_spc700;
+			mapper=norom;
+			if(!force_checksum_fix)
+				checksum_fix_enabled = false;
+			return;
+		}
 		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
 	}
 	else if (is2("math"))
@@ -2020,7 +2027,8 @@ bool assemblemapper(char** word, int numwords)
 		//$000000 would be the best snespos for this, but I don't care
 		mapper=norom;
 		//fastrom=false;
-		checksum_fix_enabled =false;//we don't know where the header is, so don't set the checksum
+		if(!force_checksum_fix)
+			checksum_fix_enabled = false;//we don't know where the header is, so don't set the checksum
 	}
 	else if (is0("fullsa1rom"))
 	{

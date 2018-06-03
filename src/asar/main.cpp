@@ -752,7 +752,8 @@ void parse_std_defines(const char* textfile)
 	builtindefines.create("assembler_ver") = get_version_int();
 }
 
-bool checksum_fix_enabled =true;
+bool checksum_fix_enabled = true;
+bool force_checksum_fix = false;
 
 #define cfree(x) free((void*)x)
 static void clearmacro(const string & key, macrodata* & macro)
@@ -835,6 +836,7 @@ void reseteverything()
 	incsrcdepth=0;
 	errored = false;
 	checksum_fix_enabled = true;
+	force_checksum_fix = false;
 	
 	lastspecialline = -1;
 #undef free
