@@ -107,6 +107,11 @@ struct patchparams
 	// List of memory files to create on the virtual filesystem.
 	const struct memoryfile * memory_files;
 	int memory_file_count;
+
+	// Set override_checksum_gen to true and generate_checksum to true/false
+	// to force generating/not generating a checksum.
+	bool override_checksum_gen;
+	bool generate_checksum;
 };
 
 #endif

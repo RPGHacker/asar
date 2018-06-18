@@ -74,6 +74,7 @@ extern bool istoplevel;
 extern bool moreonline;
 
 extern bool checksum_fix_enabled;
+extern bool force_checksum_fix;
 
 extern const char * callerfilename;
 extern int callerline;

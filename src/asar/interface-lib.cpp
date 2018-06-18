@@ -173,6 +173,9 @@ struct patchparams_v160 : public patchparams_base
 
 	const struct memoryfile * memory_files;
 	int memory_file_count;
+
+	bool override_checksum_gen;
+	bool generate_checksum;
 };
 
 struct patchparams : public patchparams_v160
@@ -368,6 +371,11 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 		{
 			asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "asar_patch_ex() warning_settings", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
 		}
+	}
+
+	if(paramscurrent.override_checksum_gen) {
+		checksum_fix_enabled = paramscurrent.generate_checksum;
+		force_checksum_fix = true;
 	}
 
 	asar_patch_main(paramscurrent.patchloc);
