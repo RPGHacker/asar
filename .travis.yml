@@ -1,4 +1,5 @@
 language: cpp
+sudo: false
 compiler:
   - clang
   - gcc
@@ -27,3 +28,29 @@ addons:
   apt:
     packages:
       - lcov
+
+# MinGW cross-builds (make only)
+matrix:
+  include:
+    - os: linux
+      compiler: i686-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - binutils-mingw-w64-i686
+            - gcc-mingw-w64-i686
+            - g++-mingw-w64-i686
+      script:
+        - cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-x86.cmake $CMAKE_EXTRA_OPTS ../src
+        - make
+    - os: linux
+      compiler: x86_64-w64-mingw32-gcc
+      addons:
+        apt:
+          packages:
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - g++-mingw-w64-x86-64
+      script:
+        - cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-x64.cmake $CMAKE_EXTRA_OPTS ../src
+        - make
