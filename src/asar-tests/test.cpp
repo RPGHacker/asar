@@ -22,7 +22,7 @@
 #	include <string.h>
 #	include <stdlib.h>
 #	include <sys/stat.h>
-#	include <Windows.h>
+#	include <windows.h>
 #	include <vector>
 #	include <string>
 #	include <algorithm>
