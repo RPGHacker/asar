@@ -6,6 +6,11 @@ compiler:
 os:
   - linux
   - osx
+cache:
+  directories:
+    - $HOME/.cache/pip
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
 before_install:
   # pip is annoying on osx and the coverage tool can't parse clang's output, so only run it on linux gcc
   - if [ $TRAVIS_OS_NAME == linux -a $CC == gcc ]; then GEN_COVERAGE=1; fi
