@@ -522,7 +522,7 @@ void assemblefile(const char * filename, bool toplevel)
 		char * temp= readfile(absolutepath, "");
 		if (!temp)
 		{
-			asar_throw_error(0, error_type_null, error_id_failed_to_open_file, absolutepath.str);
+			asar_throw_error(0, error_type_null, error_id_failed_to_open_file, filename);
 			return;
 		}
 		file.contents =split(temp, "\n");
