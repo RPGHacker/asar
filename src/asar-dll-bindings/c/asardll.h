@@ -13,6 +13,7 @@
 #define expectedapiversion 303
 
 #include <stdbool.h>
+#include <stddef.h> // for size_t
 
 //These structures are returned from various functions.
 struct errordata {
@@ -59,7 +60,11 @@ struct warnsetting {
 	bool enabled;
 };
 
-
+struct memoryfile {
+	const char* path;
+	const void* buffer;
+	size_t length;
+};
 
 struct patchparams
 {
@@ -98,6 +103,10 @@ struct patchparams
 	// Specify warnings in the format "WXXXX" where XXXX = warning ID.
 	const struct warnsetting * warning_settings;
 	int warning_setting_count;
+
+	// List of memory files to create on the virtual filesystem.
+	const struct memoryfile * memory_files;
+	int memory_file_count;
 
 	// Set override_checksum_gen to true and generate_checksum to true/false
 	// to force generating/not generating a checksum.

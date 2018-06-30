@@ -52,6 +52,12 @@ struct warnsetting {
 	bool enabled;
 };
 
+struct memoryfile {
+	const char* path;
+	const void* buffer;
+	size_t length;
+};
+
 void print(const char * str)
 {
 	prints[numprint++]= duplicate_string(str);
@@ -164,6 +170,9 @@ struct patchparams_v160 : public patchparams_base
 
 	const warnsetting * warning_settings;
 	int warning_setting_count;
+
+	const struct memoryfile * memory_files;
+	int memory_file_count;
 
 	bool override_checksum_gen;
 	bool generate_checksum;
@@ -322,6 +331,11 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	virtual_filesystem new_filesystem;
 	new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
 	filesystem = &new_filesystem;
+
+	for(int i = 0; i < paramscurrent.memory_file_count; ++i) {
+		memoryfile f = paramscurrent.memory_files[i];
+		filesystem->add_memory_file(f.path, f.buffer, f.length);
+	}
 
 	clidefines.reset();
 	for (int i = 0; i < paramscurrent.definecount; ++i)
