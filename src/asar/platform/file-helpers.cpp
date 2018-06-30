@@ -124,7 +124,7 @@ string normalize_path(const char* path)
 		}
 
 		size_t length = (size_t)(current_dir_end_pos - current_dir_start_pos);
-		if (strncmp(current_dir_start_pos, ".", length) == 0)
+		if (length > 0 && strncmp(current_dir_start_pos, ".", length) == 0)
 		{
 			// Found a . path component - remove it.
 			while (current_dir_start_pos != current_dir_end_pos)
@@ -139,7 +139,7 @@ string normalize_path(const char* path)
 				++current_dir_end_pos;
 			}
 		}
-		else if (strncmp(current_dir_start_pos, "..", length) == 0)
+		else if (length > 0 && strncmp(current_dir_start_pos, "..", length) == 0)
 		{
 			// Found a .. path component - if we have any known
 			// folder before it, remove them both.
