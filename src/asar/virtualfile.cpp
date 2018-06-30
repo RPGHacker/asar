@@ -68,13 +68,11 @@ public:
 		close();
 	}
 
-	virtual_file_error open(const char* path, const char* base_path, const autoarray<string>& include_paths)
+	virtual_file_error open(const string& path)
 	{
-		string path_to_use = create_final_path(path, base_path, include_paths);
-
-		if (path_to_use != "")
+		if (path != "")
 		{
-			m_file_handle = fopen((const char*)path_to_use, "rb");
+			m_file_handle = fopen((const char*)path, "rb");
 
 			if (m_file_handle == nullptr)
 			{
@@ -125,61 +123,6 @@ public:
 private:
 	friend class virtual_filesystem;
 
-	static string create_final_path(const char* path, const char* base_path, const autoarray<string>& include_paths)
-	{
-		string path_to_use = "";
-		string test_path = "";
-
-		test_path = normalize_path(path);
-
-		// First check if path is absolute
-		if (path_is_absolute(test_path))
-		{
-			if (file_exists(test_path))
-			{
-				path_to_use = test_path;
-			}
-		}
-		else
-		{
-			// Now check if path exists relative to the base path
-			if (base_path != nullptr)
-			{
-				test_path = create_combined_path(dir(base_path), path);
-			}
-
-			if (test_path != "" && file_exists(test_path))
-			{
-				path_to_use = test_path;
-			}
-			else
-			{
-				// Finally check if path exists relative to any include path
-				bool found = false;
-				for (int i = 0; i < include_paths.count; ++i)
-				{
-					test_path = create_combined_path(include_paths[i], path);
-
-					if (file_exists(test_path))
-					{
-						found = true;
-						path_to_use = test_path;
-						break;
-					}
-				}
-
-				if (!found)
-				{
-					// Reset our path so that we don't return an empty one
-					// (that will do some weird shit and fuck up error messages)
-					path_to_use = path;
-				}
-			}
-		}
-
-		return path_to_use;
-	}
-
 	FILE* m_file_handle;
 };
 
@@ -208,7 +151,9 @@ virtual_file_handle virtual_filesystem::open_file(const char* path, const char* 
 {
 	m_last_error = vfe_none;
 
-	virtual_file_type vft = get_file_type_from_path(path);
+	string absolutepath = create_absolute_path(base_path, path);
+
+	virtual_file_type vft = get_file_type_from_path(absolutepath);
 
 	switch (vft)
 	{
@@ -222,7 +167,7 @@ virtual_file_handle virtual_filesystem::open_file(const char* path, const char* 
 				return INVALID_VIRTUAL_FILE_HANDLE;
 			}
 
-			virtual_file_error error = new_file->open(path, base_path, m_include_paths);
+			virtual_file_error error = new_file->open(absolutepath);
 
 			if (error != vfe_none)
 			{
@@ -236,8 +181,8 @@ virtual_file_handle virtual_filesystem::open_file(const char* path, const char* 
 
 		case vft_memory_file:
 		{
-			if(m_memory_files.exists(path)) {
-				memory_buffer mem_buf = m_memory_files.find(path);
+			if(m_memory_files.exists(absolutepath)) {
+				memory_buffer mem_buf = m_memory_files.find(absolutepath);
 				memory_file* new_file = new memory_file(mem_buf.data, mem_buf.length);
 				return static_cast<virtual_file_handle>(new_file);
 			} else {
@@ -310,44 +255,65 @@ void virtual_filesystem::add_memory_file(const char* name, const void* buffer, s
 
 bool virtual_filesystem::is_path_absolute(const char* path)
 {
-	virtual_file_type vft = get_file_type_from_path(path);
-
-	switch (vft)
-	{
-	case vft_memory_file:
-		return true;
-
-	case vft_physical_file:
-		return path_is_absolute(path);
-
-	default:
-		// We should not get here
-		return true;
-	}
+	return path_is_absolute(path);
 }
 
 string virtual_filesystem::create_absolute_path(const char* base, const char* target)
 {
 	if (is_path_absolute(target) || base == nullptr || base[0] == '\0')
 	{
-		return target;
+		return normalize_path(target);
 	}
 
-	virtual_file_type base_type = get_file_type_from_path(base);
+	string path_to_use = "";
+	string test_path = "";
 
-	switch (base_type)
+	test_path = normalize_path(target);
+
+	// First check if path is absolute
+	if (path_is_absolute(test_path))
 	{
-	case vft_physical_file:
-		return physical_file::create_final_path(target, base, m_include_paths);
-
-	case vft_memory_file:
+		if (m_memory_files.exists(test_path) || file_exists(test_path))
 		{
-			// TODO
-			return "";
+			path_to_use = test_path;
+		}
+	}
+	else
+	{
+		// Now check if path exists relative to the base path
+		if (base != nullptr)
+		{
+			test_path = create_combined_path(dir(base), target);
 		}
 
-	default:
-		// We should not get here
-		return "";
+		if (test_path != "" && (m_memory_files.exists(test_path) || file_exists(test_path)))
+		{
+			path_to_use = test_path;
+		}
+		else
+		{
+			// Finally check if path exists relative to any include path
+			bool found = false;
+			for (int i = 0; i < m_include_paths.count; ++i)
+			{
+				test_path = create_combined_path(m_include_paths[i], target);
+
+				if (m_memory_files.exists(test_path) || file_exists(test_path))
+				{
+					found = true;
+					path_to_use = test_path;
+					break;
+				}
+			}
+
+			if (!found)
+			{
+				// Reset our path so that we don't return an empty one
+				// (that will do some weird shit and fuck up error messages)
+				path_to_use = target;
+			}
+		}
 	}
+
+	return path_to_use;
 }
