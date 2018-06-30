@@ -182,7 +182,10 @@ string normalize_path(const char* path)
 				++current_dir_end_pos;
 			}
 
-			previous_dir_start_pos = current_dir_start_pos;
+			if (length > 0)
+			{
+				previous_dir_start_pos = current_dir_start_pos;
+			}
 		}
 
 		current_dir_start_pos = current_dir_end_pos;
