@@ -78,7 +78,18 @@ public:
 
 			if (m_file_handle == nullptr)
 			{
-				return vfe_access_denied;
+				if (errno == ENOENT)
+				{
+					return vfe_doesnt_exist;
+				}
+				else if (errno == EACCES)
+				{
+					return vfe_access_denied;
+				}
+				else
+				{
+					return vfe_unknown;
+				}
 			}
 
 			return vfe_none;
@@ -144,15 +155,24 @@ private:
 			else
 			{
 				// Finally check if path exists relative to any include path
+				bool found = false;
 				for (int i = 0; i < include_paths.count; ++i)
 				{
 					test_path = create_combined_path(include_paths[i], path);
 
 					if (file_exists(test_path))
 					{
+						found = true;
 						path_to_use = test_path;
 						break;
 					}
+				}
+
+				if (!found)
+				{
+					// Reset our path so that we don't return an empty one
+					// (that will do some weird shit and fuck up error messages)
+					path_to_use = path;
 				}
 			}
 		}

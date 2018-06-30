@@ -47,6 +47,10 @@ bool file_included_once(const char* file);
 
 string getdecor();
 
+asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error);
+
+virtual_file_error asar_get_last_io_error();
+
 extern volatile int recursioncount;
 extern int pass;
 

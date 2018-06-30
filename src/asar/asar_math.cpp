@@ -129,7 +129,7 @@ static cachedfile * opencachedfile(string fname, bool should_error)
 
 	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) && should_error)
 	{
-		asar_throw_error(1, error_type_block, error_id_failed_to_open_file, fname.str);
+		asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.str);
 	}
 
 	return cachedfilehandle;
@@ -315,7 +315,7 @@ static double readfilefunc(const funcparam& fname, const funcparam& offset, long
 	validateparam(offset, 1, Type_Double);
 	if (numbytes <= 0 || numbytes > 4) asar_throw_error(1, error_type_block, error_id_readfile_1_to_4_bytes);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, true);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, error_id_failed_to_open_file, fname.value.stringvalue);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.value.stringvalue);
 	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) asar_throw_error(1, error_type_block, error_id_file_offset_out_of_bounds, dec((int)offset.value.longdoublevalue).str, fname.value.stringvalue);
 	unsigned char readdata[4] = { 0, 0, 0, 0 };
 	filesystem->read_file(fhandle->filehandle, readdata, (size_t)offset.value.longdoublevalue, (size_t)numbytes);
@@ -380,7 +380,7 @@ static double filesizefunc(const funcparam& fname)
 {
 	validateparam(fname, 0, Type_String);
 	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, error_id_file_not_found, fname.value.stringvalue);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.value.stringvalue);
 	return (double)fhandle->filesize;
 }
 

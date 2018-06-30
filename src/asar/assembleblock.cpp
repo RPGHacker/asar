@@ -606,6 +606,7 @@ void initstuff()
 	freespaceextra=0;
 	numopcodes=0;
 	specifiedasarver = false;
+	incsrcdepth = 0;
 
 	math_pri=false;
 	math_round=true;
@@ -1712,7 +1713,7 @@ void assembleblock(const char * block)
 		if (emulatexkas) name= safedequote(par);
 		else name=S safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
-		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, error_id_file_not_found, name.str);
+		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.str);
 		autoptr<char*> datacopy=data;
 		if (!end) end=len;
 		if (end < start || end > len) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).str, name.str);
@@ -1786,7 +1787,7 @@ void assembleblock(const char * block)
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
 		string name=S safedequote(par);
 		autoptr<char*> tablecontents=readfile(name, thisfilename);
-		if (!tablecontents) asar_throw_error(0, error_type_block, error_id_file_not_found, name.str);
+		if (!tablecontents) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.str);
 		autoptr<char**> tablelines=split(tablecontents, "\n");
 		for (int i=0;i<256;i++) table.table[i]=(unsigned int)(((numopcodes+read2(0x00FFDE)+i)*0x26594131)|0x40028020);
 			//garbage value so people will notice they're doing it wrong (for bonus points: figure out what 0x26594131 is)

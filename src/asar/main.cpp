@@ -111,6 +111,33 @@ string getdecor()
 	return e;
 }
 
+asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error)
+{
+	switch (vfile_error)
+	{
+	case vfe_doesnt_exist:
+		return error_id_file_not_found;
+	case vfe_access_denied:
+		return error_id_failed_to_open_file_access_denied;
+	case vfe_unknown:
+	case vfe_none:
+	case vfe_num_errors:
+		return error_id_failed_to_open_file;
+	}
+
+	return error_id_failed_to_open_file;
+}
+
+virtual_file_error asar_get_last_io_error()
+{
+	if (filesystem != nullptr)
+	{
+		return filesystem->get_last_error();
+	}
+
+	return vfe_unknown;
+}
+
 static bool freespaced;
 static int getlenforlabel(int insnespos, int thislabel, bool exists)
 {
@@ -510,7 +537,9 @@ void assemblefile(const char * filename, bool toplevel)
 		return;
 	}
 
+	string prevthisfilename = thisfilename;
 	thisfilename = absolutepath;
+	int prevline = thisline;
 	thisline=-1;
 	thisblock= nullptr;
 	sourcefile file;
@@ -522,7 +551,13 @@ void assemblefile(const char * filename, bool toplevel)
 		char * temp= readfile(absolutepath, "");
 		if (!temp)
 		{
-			asar_throw_error(0, error_type_null, error_id_failed_to_open_file, filename);
+			// RPG Hacker: This is so that we hopefully always end up with a proper decor
+			// and get better error messages.
+			thisfilename = prevthisfilename;
+			thisline = prevline;
+
+			asar_throw_error(0, error_type_null, vfile_error_to_error_id(asar_get_last_io_error()), filename);
+
 			return;
 		}
 		file.contents =split(temp, "\n");
