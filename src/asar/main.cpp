@@ -541,6 +541,7 @@ void assemblefile(const char * filename, bool toplevel)
 	thisfilename = absolutepath;
 	int prevline = thisline;
 	thisline=-1;
+	const char* prevthisblock = thisblock;
 	thisblock= nullptr;
 	sourcefile file;
 	file.contents = nullptr;
@@ -555,6 +556,7 @@ void assemblefile(const char * filename, bool toplevel)
 			// and get better error messages.
 			thisfilename = prevthisfilename;
 			thisline = prevline;
+			thisblock = prevthisblock;
 
 			asar_throw_error(0, error_type_null, vfile_error_to_error_id(asar_get_last_io_error()), filename);
 
