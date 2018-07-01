@@ -2676,6 +2676,13 @@ elseif !mode == 3
 else
 	error "Unsupported mode! Please choose 0, 1, 2 or 3!"
 endif</code></pre>
+		Alternatively, if conditionals can also be constructed on a single line via the following syntax:
+		<pre><code class="65c816_asar">if {condition} : {codeblock}[ : codeblock...]</code></pre>
+		Note that no endif needs to be used here and that else or elseif are unsupported when using this syntax.
+		<pre><code class="65c816_asar">PressedY:
+	if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball
+	rtl
+		</code></pre>
 		<h4 id="while">while</h4>
 		A special variation of if conditionals are while loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to <code>&lt;= 0</code>. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.
 		<pre><code class="65c816_asar">!counter = 0
