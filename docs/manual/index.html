@@ -3141,6 +3141,10 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 				<td><code>W1013</code></td>
 				<td>Thrown when opcodes are sized implicitly and Asar has to assume a size. An opcode is considered to be sized explicitly when either a length specifier is used or a simple hex constant that can be assumed to be of a specific size (that is, a hex constant with either two or four digits). Opcodes that don't support multiple sizes are always considered to be sized explicitly. Everything else is considered to be sized implicitly and will throw this warning when enabled.</td>
 			</tr>
+			<tr>
+				<td><code>W1024</code></td>
+				<td>Only relevant for the DLL API. Thrown when a file is accessed that was either not provided as a memory file or that isn't found in memory. Mainly intended for debugging purposes and can be used to assure that files are actually read from the correct location.</td>
+			</tr>
 		</table>
 		<h4 id="warnings-push-pull">warnings {push/pull}</h4>
 		<pre><code class="65c816_asar">warnings {push/pull}</code></pre>
