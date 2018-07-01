@@ -41,13 +41,13 @@ class errordata(ctypes.Structure):
 
 
 # for internal use only. getalllabels() returns a dict.
-class labeldata(ctypes.Structure):
+class _labeldata(ctypes.Structure):
     _fields_ = [("name", c_char_p),
                 ("location", c_int)]
 
 
 # for internal use only. getalldefines() returns a dict.
-class definedata(ctypes.Structure):
+class _definedata(ctypes.Structure):
     _fields_ = [("name", c_char_p),
                 ("contents", c_char_p)]
 
@@ -63,20 +63,20 @@ class writtenblockdata(ctypes.Structure):
 
 
 # internal use only. patch() accepts a dict.
-class memoryfile(ctypes.Structure):
+class _memoryfile(ctypes.Structure):
     _fields_ = [("path", c_char_p),
                 ("buffer", c_char_p),
                 ("length", ctypes.c_size_t)]
 
 
 # internal use only. patch() accepts a dict.
-class warnsetting(ctypes.Structure):
+class _warnsetting(ctypes.Structure):
     _fields_ = [("warnid", c_char_p),
                 ("enabled", ctypes.c_bool)]
 
 
 # For internal use only.
-class patchparams(ctypes.Structure):
+class _patchparams(ctypes.Structure):
     _fields_ = [("structsize", c_int),
                 ("patchloc", c_char_p),
                 ("romdata", c_char_p),
@@ -85,13 +85,13 @@ class patchparams(ctypes.Structure):
                 ("includepaths", POINTER(c_char_p)),
                 ("numincludepaths", c_int),
                 ("should_reset", ctypes.c_bool),
-                ("additional_defines", POINTER(definedata)),
+                ("additional_defines", POINTER(_definedata)),
                 ("additional_define_count", c_int),
                 ("stdincludesfile", c_char_p),
                 ("stddefinesfile", c_char_p),
-                ("warning_settings", POINTER(warnsetting)),
+                ("warning_settings", POINTER(_warnsetting)),
                 ("warning_setting_count", c_int),
-                ("memory_files", POINTER(memoryfile)),
+                ("memory_files", POINTER(_memoryfile)),
                 ("memory_file_count", c_int),
                 ("override_checksum_gen", ctypes.c_bool),
                 ("generate_checksum", ctypes.c_bool)]
@@ -135,16 +135,16 @@ class _AsarDLL:
             self.setup_func("reset", (), ctypes.c_bool)
             self.setup_func("patch", (c_char_p, c_char_p, c_int, c_int_ptr),
                             ctypes.c_bool)
-            self.setup_func("patch_ex", (POINTER(patchparams),), ctypes.c_bool)
+            self.setup_func("patch_ex", (POINTER(_patchparams),), ctypes.c_bool)
             self.setup_func("maxromsize", (), c_int)
             self.setup_func("close", (), None)
             self.setup_func("geterrors", (c_int_ptr,), POINTER(errordata))
             self.setup_func("getwarnings", (c_int_ptr,), POINTER(errordata))
             self.setup_func("getprints", (c_int_ptr,), POINTER(c_char_p))
-            self.setup_func("getalllabels", (c_int_ptr,), POINTER(labeldata))
+            self.setup_func("getalllabels", (c_int_ptr,), POINTER(_labeldata))
             self.setup_func("getlabelval", (c_char_p,), c_int)
             self.setup_func("getdefine", (c_char_p,), c_char_p)
-            self.setup_func("getalldefines", (c_int_ptr,), POINTER(definedata))
+            self.setup_func("getalldefines", (c_int_ptr,), POINTER(_definedata))
             self.setup_func("resolvedefines", (c_char_p, ctypes.c_bool),
                             c_char_p)
             self.setup_func("math", (c_char_p, POINTER(c_char_p)),
@@ -283,8 +283,8 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
     """
     romlen = c_int(len(rom_data))
     rom_ptr = ctypes.create_string_buffer(rom_data, maxromsize())
-    pp = patchparams()
-    pp.structsize = ctypes.sizeof(patchparams)
+    pp = _patchparams()
+    pp.structsize = ctypes.sizeof(_patchparams)
     pp.patchloc = patch_name.encode()
     pp.romdata = ctypes.cast(rom_ptr, c_char_p)
     pp.buflen = maxromsize()
@@ -295,7 +295,7 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
     pp.includepaths = (c_char_p*len(includepaths))(*includepaths)
     pp.numincludepaths = len(includepaths)
 
-    defines = (definedata * len(additional_defines))()
+    defines = (_definedata * len(additional_defines))()
     for i, (k, v) in enumerate(additional_defines.items()):
         defines[i].name = k.encode()
         defines[i].contents = v.encode()
@@ -307,14 +307,14 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
     pp.stdincludesfile = std_include_file.encode() if std_include_file else None
     pp.stddefinesfile = std_define_file.encode() if std_define_file else None
 
-    warnsettings = (warnsetting * len(warning_overrides))()
+    warnsettings = (_warnsetting * len(warning_overrides))()
     for i, (k, v) in enumerate(warning_overrides.items()):
         warnsettings[i].warnid = k.encode()
         warnsettings[i].enabled = v
     pp.warning_settings = warnsettings
     pp.warning_setting_count = len(warnsettings)
 
-    memoryfiles = (memoryfile * len(memory_files))()
+    memoryfiles = (_memoryfile * len(memory_files))()
     for i, (k, v) in enumerate(memory_files.items()):
         memoryfiles[i].path = k.encode()
         memoryfiles[i].buffer = v
