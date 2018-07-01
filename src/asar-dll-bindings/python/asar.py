@@ -18,7 +18,7 @@ __all__ = ["errordata", "writtenblockdata", "mappertype", "version",
            "geterrors", "getwarnings", "getprints", "getalllabels",
            "getlabelval", "getdefine", "getalldefines", "resolvedefines",
            "math", "getwrittenblocks", "getmapper", "getsymbolsfile"]
-_target_api_ver = 302
+_target_api_ver = 303
 _asar = None
 
 
@@ -33,7 +33,8 @@ class errordata(ctypes.Structure):
                 ("filename", c_char_p),
                 ("line", c_int),
                 ("callerfilename", c_char_p),
-                ("callerline", c_int)]
+                ("callerline", c_int),
+                ("errid", c_int)]
 
     def __repr__(self):
         return "<asar error: {!r}>".format(self.fullerrdata.decode())
@@ -61,6 +62,20 @@ class writtenblockdata(ctypes.Structure):
             self.snesoffset, self.pcoffset, self.numbytes)
 
 
+# internal use only. patch() accepts a dict.
+class memoryfile(ctypes.Structure):
+    _fields_ = [("path", c_char_p),
+                ("buffer", c_char_p),
+                ("length", ctypes.c_size_t)]
+
+
+# internal use only. patch() accepts a dict.
+class warnsetting(ctypes.Structure):
+    _fields_ = [("warnid", c_char_p),
+                ("enabled", ctypes.c_bool)]
+
+
+# For internal use only.
 class patchparams(ctypes.Structure):
     _fields_ = [("structsize", c_int),
                 ("patchloc", c_char_p),
@@ -73,7 +88,13 @@ class patchparams(ctypes.Structure):
                 ("additional_defines", POINTER(definedata)),
                 ("additional_define_count", c_int),
                 ("stdincludesfile", c_char_p),
-                ("stddefinesfile", c_char_p)]
+                ("stddefinesfile", c_char_p),
+                ("warning_settings", POINTER(warnsetting)),
+                ("warning_setting_count", c_int),
+                ("memory_files", POINTER(memoryfile)),
+                ("memory_file_count", c_int),
+                ("override_checksum_gen", ctypes.c_bool),
+                ("generate_checksum", ctypes.c_bool)]
 
 
 class mappertype(enum.Enum):
@@ -230,7 +251,8 @@ def reset():
 
 
 def patch(patch_name, rom_data, includepaths=[], should_reset=True,
-          additional_defines={}, std_include_file=None, std_define_file=None):
+          additional_defines={}, std_include_file=None, std_define_file=None,
+          warning_overrides={}, memory_files={}, override_checksum=None):
     """Applies a patch.
 
     Returns (success, new_rom_data). If success is False you should call
@@ -248,6 +270,16 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
 
     std_include_file and std_define_file specify files where to look for extra
     include paths and defines, respectively.
+
+    warning_overrides is a dict of str (warning ID) -> bool. It overrides
+    enabling/disabling specific warnings.
+
+    memory_files is a dict of str (file name) -> bytes (file contents). It
+    specifies memory files to use.
+
+    override_checksum specifies whether to override checksum generation. True
+    forces Asar to update the ROM's checksum, False forces Asar to not update
+    it.
     """
     romlen = c_int(len(rom_data))
     rom_ptr = ctypes.create_string_buffer(rom_data, maxromsize())
@@ -257,19 +289,46 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
     pp.romdata = ctypes.cast(rom_ptr, c_char_p)
     pp.buflen = maxromsize()
     pp.romlen = ctypes.pointer(romlen)
+
     # construct an array type of len(includepaths) elements and initialize
     # it with elements from includepaths
     pp.includepaths = (c_char_p*len(includepaths))(*includepaths)
     pp.numincludepaths = len(includepaths)
+
     defines = (definedata * len(additional_defines))()
     for i, (k, v) in enumerate(additional_defines.items()):
         defines[i].name = k.encode()
         defines[i].contents = v.encode()
     pp.additional_defines = defines
     pp.additional_define_count = len(additional_defines)
+
     pp.should_reset = should_reset
+
     pp.stdincludesfile = std_include_file.encode() if std_include_file else None
     pp.stddefinesfile = std_define_file.encode() if std_define_file else None
+
+    warnsettings = (warnsetting * len(warning_overrides))()
+    for i, (k, v) in enumerate(warning_overrides.items()):
+        warnsettings[i].warnid = k.encode()
+        warnsettings[i].enabled = v
+    pp.warning_settings = warnsettings
+    pp.warning_setting_count = len(warnsettings)
+
+    memoryfiles = (memoryfile * len(memory_files))()
+    for i, (k, v) in enumerate(memory_files.items()):
+        memoryfiles[i].path = k.encode()
+        memoryfiles[i].buffer = v
+        memoryfiles[i].length = len(v)
+    pp.memory_files = memoryfiles
+    pp.memory_file_count = len(memory_files)
+
+    if override_checksum is not None:
+        pp.override_checksum_gen = True
+        pp.generate_checksum = override_checksum
+    else:
+        pp.override_checksum_gen = False
+        pp.generate_checksum = False
+
     result = _asar.dll.asar_patch_ex(ctypes.byref(pp))
     return result, rom_ptr.raw[:romlen.value]
 
