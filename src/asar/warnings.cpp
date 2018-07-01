@@ -72,6 +72,8 @@ static asar_warning_mapping asar_warnings[] =
 	{ warning_id_fixed_deprecated, "the 'fixed' parameter on freespace/freecode/freedata is deprecated - please use 'static' instead." },
 
 	{ warning_id_autoclear_deprecated, "'autoclear' is deprecated - please use 'autoclean' instead." },
+
+	{ warning_id_check_memory_file, "Accessing file '%s' which is not in memory while W%d is enabled.", false },
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

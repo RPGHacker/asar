@@ -1,6 +1,7 @@
 #include <errno.h>
 #include "virtualfile.h"
 #include "platform/file-helpers.h"
+#include "warnings.h"
 
 
 
@@ -155,6 +156,11 @@ virtual_file_handle virtual_filesystem::open_file(const char* path, const char* 
 	string absolutepath = create_absolute_path(base_path, path);
 
 	virtual_file_type vft = get_file_type_from_path(absolutepath);
+
+	if (vft != vft_memory_file)
+	{
+		asar_throw_warning(0, warning_id_check_memory_file, path, (int)warning_id_check_memory_file);
+	}
 
 	switch (vft)
 	{
