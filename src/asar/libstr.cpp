@@ -185,7 +185,8 @@ string& string::qreplace(const char * instr, const char * outstr, bool all)
 					return thisstring;
 				}
 			}
-			else out+= thisstring[i++];
+			// randomdude999: prevent appending the null terminator to the output
+			else if(thisstring[i]) out+= thisstring[i++];
 		}
 		thisstring =out;
 	}
