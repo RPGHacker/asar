@@ -74,6 +74,8 @@ static asar_warning_mapping asar_warnings[] =
 	{ warning_id_autoclear_deprecated, "'autoclear' is deprecated - please use 'autoclean' instead." },
 
 	{ warning_id_check_memory_file, "Accessing file '%s' which is not in memory while W%d is enabled.", false },
+
+	{ warning_id_if_not_condition_deprecated, "'if !condition' is deprecated - please use 'if not(condition)' instead." },
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

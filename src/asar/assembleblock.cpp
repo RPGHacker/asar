@@ -824,9 +824,19 @@ void assembleblock(const char * block)
 			bool thiscond = false;
 			if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
 			{
-				unsigned int val = getnum(nextword[0]);
-				if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
-				thiscond = (val > 0);
+				if (nextword[0][0] == '!')
+				{
+					asar_throw_warning(0, warning_id_if_not_condition_deprecated);
+					unsigned int val = getnum(nextword[0]+1);
+					if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+					thiscond = !(val > 0);
+				}
+				else
+				{
+					unsigned int val = getnum(nextword[0]);
+					if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+					thiscond = (val > 0);
+				}
 
 				if (condstr && nextword[1])
 				{
