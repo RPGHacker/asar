@@ -20,7 +20,7 @@ else
 	db $06
 endif
 
-if !assembler_ver >= 10600
+if !assembler_ver >= 10602
 	db $07
 else
 	db $08
