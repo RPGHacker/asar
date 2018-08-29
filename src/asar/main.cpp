@@ -404,7 +404,7 @@ void resolvedefines(string& out, const char * start)
 					}
 					case append:
 					{
-						if (!defines.exists(defname)) asar_throw_error(0, error_type_null, error_id_define_not_found, defname.str);
+						if (!defines.exists(defname)) asar_throw_error(0, error_type_line, error_id_define_not_found, defname.str);
 						string oldval = defines.find(defname);
 						val=oldval+val;
 						defines.create(defname) = val;

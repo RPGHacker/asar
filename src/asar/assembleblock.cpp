@@ -321,7 +321,7 @@ static string labelname(const char ** rawname, bool define=false)
 		if (emulatexkas && i>1) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (i)
 		{
-			if (!(*sublabellist)[i - 1]) asar_throw_error(0, error_type_block, error_id_label_missing_parent);
+			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(0, error_type_block, error_id_label_missing_parent);
 			name+=S(*sublabellist)[i-1]+"_";
 			issublabel = true;
 		}
