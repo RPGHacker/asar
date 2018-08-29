@@ -608,6 +608,9 @@ void initstuff()
 	specifiedasarver = false;
 	incsrcdepth = 0;
 
+	in_struct = false;
+	in_sub_struct = false;
+
 	math_pri=false;
 	math_round=true;
 
