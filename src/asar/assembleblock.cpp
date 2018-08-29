@@ -1251,25 +1251,31 @@ void assembleblock(const char * block)
 		old_startpos = startpos;
 		old_optimizeforbank = optimizeforbank;
 
+		bool old_in_struct = in_struct;
+		bool old_in_sub_struct = in_sub_struct;
 		in_struct = numwords == 2 || numwords == 3;
 		in_sub_struct = numwords == 4;
+
+#define ret_error_cleanup(errid) { in_struct = old_in_struct; in_sub_struct = old_in_sub_struct; asar_throw_error(0, error_type_block, errid); return; }
+#define ret_error_params_cleanup(errid, ...) { in_struct = old_in_struct; in_sub_struct = old_in_sub_struct; asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
 
 		if (numwords == 3)
 		{
 			int base = (int)getnum(word[2]);
-			if (base&~0xFFFFFF) ret_error_params(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).str);
+			if (base&~0xFFFFFF) ret_error_params_cleanup(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).str);
 			snespos = base;
 			startpos = base;
 		}
 		else if (numwords == 4)
 		{
-			if (strcasecmp(word[2], "extends")) ret_error(error_id_missing_extends);
-			if (!confirmname(word[3])) ret_error(error_id_struct_invalid_parent_name);
-			struct_parent = word[3];
+			if (strcasecmp(word[2], "extends")) ret_error_cleanup(error_id_missing_extends);
+			if (!confirmname(word[3])) ret_error_cleanup(error_id_struct_invalid_parent_name);
+			string tmp_struct_parent = word[3];
 
-			if (!structs.exists(struct_parent)) ret_error_params(error_id_struct_not_found, struct_parent.str);
-			snes_struct structure = structs.find(struct_parent);
+			if (!structs.exists(tmp_struct_parent)) ret_error_params_cleanup(error_id_struct_not_found, tmp_struct_parent.str);
+			snes_struct structure = structs.find(tmp_struct_parent);
 
+			struct_parent = tmp_struct_parent;
 			snespos = structure.base_end;
 			startpos = structure.base_end;
 		}
@@ -1280,6 +1286,8 @@ void assembleblock(const char * block)
 
 		struct_name = word[1];
 		struct_base = snespos;
+#undef ret_error_cleanup
+#undef ret_error_params_cleanup
 	}
 	else if (is("endstruct"))
 	{
