@@ -220,12 +220,6 @@ int main(int argc, char * argv[])
 				postprocess_param = cmdlparam_addincludepath;
 				postprocess_arg = ((const char*)par) + strlen("-I");
 			}
-                        else if (checkstartmatch(par, "-o"))
-                        {
-                                puts("TESTING\n");
-//                                postprocess_param = cmdlparam_addincludepath;
-//                                postprocess_arg = ((const char*)par) + strlen("-I");
-                        }
 			else if (checkstartmatch(par, "-D"))
 			{
 				postprocess_param = cmdlparam_adddefine;
