@@ -351,6 +351,11 @@ int main(int argc, char * argv[])
                     FILE* source = fopen(romname, "rb");
                     FILE* dest = fopen(outname, "wb");
 
+                    if(!dest)
+                    {
+                        asar_throw_error(pass, error_type_fatal, error_id_create_rom_failed);
+                    }
+
                     while ((size = fread(buf, 1, BUFSIZ, source))) {
                         fwrite(buf, 1, size, dest);
                     }
