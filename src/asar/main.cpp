@@ -10,6 +10,7 @@
 #include "assembleblock.h"
 #include "asar_math.h"
 #include "macro.h"
+#include "sys/stat.h"
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
@@ -547,6 +548,21 @@ void assemblefile(const char * filename, bool toplevel)
 	file.contents = nullptr;
 	file.numlines = 0;
 	int startif=numif;
+
+        struct stat finfo;
+        if( stat(absolutepath,&finfo) == 0 )
+        {
+            if( !(finfo.st_mode & S_IFREG) )
+            {
+               asar_throw_error(0, error_type_null, vfile_error_to_error_id(asar_get_last_io_error()), filename);
+               return;
+
+            }
+        } else {
+            asar_throw_error(0, error_type_null, vfile_error_to_error_id(asar_get_last_io_error()), filename);
+            return;
+        }
+
 	if (!filecontents.exists(absolutepath))
 	{
 		char * temp= readfile(absolutepath, "");
