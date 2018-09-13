@@ -353,7 +353,7 @@ int main(int argc, char * argv[])
 
                     if(!dest)
                     {
-                        asar_throw_error(pass, error_type_fatal, error_id_create_rom_failed);
+                        asar_throw_error(pass, error_type_fatal, error_id_outputfile_cannot_open);
                     }
 
                     while ((size = fread(buf, 1, BUFSIZ, source))) {
