@@ -1,3 +1,4 @@
+#include "addr2line.h"
 #include "asar.h"
 #include "libstr.h"
 #include "libsmw.h"

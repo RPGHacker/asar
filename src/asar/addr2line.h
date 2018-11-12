@@ -27,7 +27,11 @@ public:
 	// Adds information of what source file and line number an output rom address is at
 	void includeMapping(const char* filename, int line, int addr);
 
+	// While the virtual filesystem is available, calculate the crc's of the entire filelist
+	void calculateFileListCrcs();
+
 	const autoarray<string>& getFileList() const { return m_fileList; }
+	const autoarray<unsigned long>& getFileListCrcs() const { return m_fileListCrcs; }
 	const autoarray<AddrToLineInfo>& getAddrToLineInfo() const { return m_addrToLineInfo; }
 
 private:
@@ -36,6 +40,7 @@ private:
 	int getFileIndex(const char* filename);
 
 	autoarray<string> m_fileList;
+	autoarray<unsigned long> m_fileListCrcs;
 
 	autoarray<AddrToLineInfo> m_addrToLineInfo;
 };

@@ -1,4 +1,6 @@
 #include "addr2line.h"
+#include "crc32.h"
+#include "libstr.h"
 
 //////////////////////////////////////////////////////////////////////////
 // Class to store address-to-line mappings for richer symbolic information
@@ -22,6 +24,24 @@ void AddressToLineMapping::includeMapping(const char* filename, int line, int ad
 	newInfo.addr = addr;
 
 	m_addrToLineInfo.append(newInfo);
+}
+
+// While the virtual filesystem is available, calculate the crc's of the entire filelist
+void AddressToLineMapping::calculateFileListCrcs()
+{
+	m_fileListCrcs.reset();
+	m_fileListCrcs[m_fileList.count] = 0;
+
+	for (int i = 0; i < m_fileList.count; ++i)
+	{
+		char* data = nullptr;
+		int len = 0;
+		if (readfile(m_fileList[i].str, "", &data, &len))
+		{
+			m_fileListCrcs[i] = crc32((unsigned char*)data, (unsigned int)len);
+		}
+		delete data;
+	}
 }
 
 // Helper to add file to list, and get the index of that file

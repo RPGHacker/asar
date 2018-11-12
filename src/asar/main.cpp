@@ -1,5 +1,6 @@
 // "because satanism is best defeated by summoning a bigger satan"
 //   ~Alcaro, 2019 (discussing Asar)
+#include "addr2line.h"
 #include "std-includes.h"
 #include "libsmw.h"
 #include "libstr.h"
@@ -852,12 +853,13 @@ string create_symbols_file(string format, unsigned int romCrc){
 
 		symbolfile += "\n[source files]\n";
 		const autoarray<string>& addrToLineFileList = addressToLineMapping.getFileList();
+		const autoarray<unsigned long>& addrToLineFileListCrcs = addressToLineMapping.getFileListCrcs();
 		for (int i = 0; i < addrToLineFileList.count; ++i)
 		{
 			char addrToFileListStr[32];
-			snprintf(addrToFileListStr, 32, "%.4x %.8x ",
+			snprintf(addrToFileListStr, 32, "%.4x %.8lx ",
 				i,
-				0 // dcrooks-todo crc!
+				addrToLineFileListCrcs[i]
 			);
 			symbolfile += addrToFileListStr;
 

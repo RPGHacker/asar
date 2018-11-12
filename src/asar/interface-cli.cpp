@@ -1,3 +1,4 @@
+#include "addr2line.h"
 #include "asar.h"
 #include "assocarr.h"
 #include "crc32.h"
@@ -431,6 +432,13 @@ int main(int argc, char * argv[])
 			assemblefile(asmname, true);
 			finishpass();
 		}
+		
+		// after assembling the output, but before we tear down the virtualfilesystem,
+		// do a final processing of the crc32's of every file included
+		{
+			extern AddressToLineMapping addressToLineMapping;
+			addressToLineMapping.calculateFileListCrcs();
+		}
 
 		new_filesystem.destroy();
 		filesystem = nullptr;
@@ -472,7 +480,7 @@ int main(int argc, char * argv[])
 			pause(yes);
 		}
 
-		unsigned int romCrc = crc32(romdata, romlen);
+		unsigned int romCrc = crc32(romdata, (unsigned int)romlen);
 		closerom();
 		if (symbols)
 		{
