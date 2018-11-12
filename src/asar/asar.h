@@ -27,7 +27,7 @@ bool is_hex_constant(const char * str);
 
 bool validatedefinename(const char * name);
 
-string create_symbols_file(string format);
+string create_symbols_file(string format, unsigned int romCrc);
 
 void parse_std_includes(const char* textfile, autoarray<string>& outarray);
 void parse_std_defines(const char* textfile);

@@ -1,5 +1,6 @@
 #include "asar.h"
 #include "assocarr.h"
+#include "crc32.h"
 #include "libstr.h"
 #include "libcon.h"
 #include "libsmw.h"
@@ -470,11 +471,13 @@ int main(int argc, char * argv[])
 			if (verbose) puts("Assembling completed without problems.");
 			pause(yes);
 		}
+
+		unsigned int romCrc = crc32(romdata, romlen);
 		closerom();
 		if (symbols)
 		{
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";
-			string contents = create_symbols_file(symbols);
+			string contents = create_symbols_file(symbols, romCrc);
 			FILE * symfile = fopen(symfilename, "wt");
 			fputs(contents, symfile);
 			fclose(symfile);

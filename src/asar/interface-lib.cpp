@@ -505,7 +505,7 @@ EXPORT mapper_t asar_getmapper()
 }
 
 EXPORT const char * asar_getsymbolsfile(const char* type){
-	symbolsfile = create_symbols_file(type);
+	symbolsfile = create_symbols_file(type, 0);
 	return symbolsfile;
 }
 
