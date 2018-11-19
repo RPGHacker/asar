@@ -160,9 +160,6 @@ inline void write1_65816(unsigned int num)
 			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).str);
 		}
 		writeromdata_byte(pcpos, (unsigned char)num);
-
-		extern AddressToLineMapping addressToLineMapping;
-		addressToLineMapping.includeMapping(thisfilename.str, thisline+1, realsnespos&0xFFFFFFF);
 		
 		if (pcpos>=romlen) romlen=pcpos+1;
 	}
@@ -793,6 +790,9 @@ void assembleblock(const char * block)
 	int numwords;
 	char ** word = qsplit(tmp.str, " ", &numwords);
 	string resolved;
+	// when writing out the data for the addrToLine mapping,
+	// we want to write out the snespos we had before writing opcodes
+	int addrToLinePos = realsnespos & 0xFFFFFF;
 
 #define is(test) (!stricmp(word[0], test))
 #define is0(test) (!stricmp(word[0], test) && numwords==1)
@@ -1026,7 +1026,12 @@ void assembleblock(const char * block)
 		}
 	}
 	else if (numif!=numtrue) return;
-	else if (asblock_pick(word, numwords)) { numopcodes++; }
+	else if (asblock_pick(word, numwords))
+	{
+		extern AddressToLineMapping addressToLineMapping;
+		addressToLineMapping.includeMapping(thisfilename.str, thisline + 1, addrToLinePos);
+		numopcodes++;
+	}
 	else if (is0("error"))
 	{
 		asar_throw_error(0, error_type_block, error_id_error_command, ".");
