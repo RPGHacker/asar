@@ -852,19 +852,16 @@ string create_symbols_file(string format, unsigned int romCrc){
 		labels.each(printsymbol_wla);
 
 		symbolfile += "\n[source files]\n";
-		const autoarray<string>& addrToLineFileList = addressToLineMapping.getFileList();
-		const autoarray<unsigned long>& addrToLineFileListCrcs = addressToLineMapping.getFileListCrcs();
+		const autoarray<AddressToLineMapping::FileInfo>& addrToLineFileList = addressToLineMapping.getFileList();
 		for (int i = 0; i < addrToLineFileList.count; ++i)
 		{
-			char addrToFileListStr[32];
-			snprintf(addrToFileListStr, 32, "%.4x %.8lx ",
+			char addrToFileListStr[256];
+			snprintf(addrToFileListStr, 256, "%.4x %.8lx %s\n",
 				i,
-				addrToLineFileListCrcs[i]
+				addrToLineFileList[i].fileCrc,
+				addrToLineFileList[i].filename.str
 			);
 			symbolfile += addrToFileListStr;
-
-			symbolfile += addrToLineFileList[i];
-			symbolfile += "\n";
 		}
 
 		symbolfile += "\n[rom checksum]\n";

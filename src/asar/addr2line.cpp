@@ -1,4 +1,5 @@
 #include "addr2line.h"
+#include "asar.h"
 #include "crc32.h"
 #include "libstr.h"
 
@@ -12,6 +13,7 @@
 void AddressToLineMapping::reset()
 {
 	m_fileList.reset();
+	m_filenameCrcs.reset();
 	m_addrToLineInfo.reset();
 }
 
@@ -26,38 +28,31 @@ void AddressToLineMapping::includeMapping(const char* filename, int line, int ad
 	m_addrToLineInfo.append(newInfo);
 }
 
-// While the virtual filesystem is available, calculate the crc's of the entire filelist
-void AddressToLineMapping::calculateFileListCrcs()
-{
-	m_fileListCrcs.reset();
-	m_fileListCrcs[m_fileList.count] = 0;
-
-	for (int i = 0; i < m_fileList.count; ++i)
-	{
-		char* data = nullptr;
-		int len = 0;
-		if (readfile(m_fileList[i].str, "", &data, &len))
-		{
-			m_fileListCrcs[i] = crc32((unsigned char*)data, (unsigned int)len);
-		}
-		delete data;
-	}
-}
-
 // Helper to add file to list, and get the index of that file
 int AddressToLineMapping::getFileIndex(const char* filename)
 {
 	// check if the file exists first
-	for (int i = 0; i < m_fileList.count; ++i)
+	unsigned long filenameCrc = crc32((const unsigned char*)filename, strlen(filename));
+	for (int i = 0; i < m_filenameCrcs.count; ++i)
 	{
-		if (strcmp(filename, m_fileList[i].str) == 0)
+		if (m_filenameCrcs[i] == filenameCrc)
 		{
 			return i;
 		}
 	}
 
-	// file doesn't exist, so append it
-	m_fileList.append(string(filename));
+	// file doesn't exist, so start tracking it
+	char* data = nullptr;
+	int len = 0;
+	unsigned long fileCrc = 0;
+	if (readfile(filename, "", &data, &len))
+	{
+		fileCrc = crc32((const unsigned char*)data, (unsigned int)len);
+	}
+	delete data;
+
+	m_fileList.append({ string(filename), fileCrc });
+	m_filenameCrcs.append(filenameCrc);
 
 	return m_fileList.count - 1;
 }

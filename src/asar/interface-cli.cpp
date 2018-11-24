@@ -432,13 +432,9 @@ int main(int argc, char * argv[])
 			assemblefile(asmname, true);
 			finishpass();
 		}
-		
-		// after assembling the output, but before we tear down the virtualfilesystem,
-		// do a final processing of the crc32's of every file included
-		{
-			extern AddressToLineMapping addressToLineMapping;
-			addressToLineMapping.calculateFileListCrcs();
-		}
+
+		// calculate the final crc of the target rom itself, to include in the symbols
+		unsigned int romCrc = crc32(romdata, (unsigned int)romlen);
 
 		new_filesystem.destroy();
 		filesystem = nullptr;
@@ -479,8 +475,6 @@ int main(int argc, char * argv[])
 			if (verbose) puts("Assembling completed without problems.");
 			pause(yes);
 		}
-
-		unsigned int romCrc = crc32(romdata, (unsigned int)romlen);
 		closerom();
 		if (symbols)
 		{

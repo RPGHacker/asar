@@ -27,11 +27,12 @@ public:
 	// Adds information of what source file and line number an output rom address is at
 	void includeMapping(const char* filename, int line, int addr);
 
-	// While the virtual filesystem is available, calculate the crc's of the entire filelist
-	void calculateFileListCrcs();
-
-	const autoarray<string>& getFileList() const { return m_fileList; }
-	const autoarray<unsigned long>& getFileListCrcs() const { return m_fileListCrcs; }
+	struct FileInfo
+	{
+		string filename;
+		unsigned long fileCrc;
+	};
+	const autoarray<FileInfo>& getFileList() const { return m_fileList; }
 	const autoarray<AddrToLineInfo>& getAddrToLineInfo() const { return m_addrToLineInfo; }
 
 private:
@@ -39,8 +40,10 @@ private:
 	// Helper to add file to list, and get the index of that file
 	int getFileIndex(const char* filename);
 
-	autoarray<string> m_fileList;
-	autoarray<unsigned long> m_fileListCrcs;
+	autoarray<FileInfo> m_fileList;
+	// parallel list of crcs of the filenames in fileList, to speed up lookups
+	autoarray<unsigned long> m_filenameCrcs;
+
 
 	autoarray<AddrToLineInfo> m_addrToLineInfo;
 };

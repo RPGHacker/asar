@@ -160,7 +160,6 @@ inline void write1_65816(unsigned int num)
 			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).str);
 		}
 		writeromdata_byte(pcpos, (unsigned char)num);
-		
 		if (pcpos>=romlen) romlen=pcpos+1;
 	}
 	step(1);
@@ -1028,8 +1027,11 @@ void assembleblock(const char * block)
 	else if (numif!=numtrue) return;
 	else if (asblock_pick(word, numwords))
 	{
-		extern AddressToLineMapping addressToLineMapping;
-		addressToLineMapping.includeMapping(thisfilename.str, thisline + 1, addrToLinePos);
+		if (pass == 2)
+		{
+			extern AddressToLineMapping addressToLineMapping;
+			addressToLineMapping.includeMapping(thisfilename.str, thisline + 1, addrToLinePos);
+		}
 		numopcodes++;
 	}
 	else if (is0("error"))
