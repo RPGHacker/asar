@@ -432,7 +432,7 @@ unsigned int closerom(bool save)
 				fseek(thisfile, 0, SEEK_SET);
 				fread(filedata, sizeof(unsigned char), 512, thisfile);
 			}
-			memcpy(filedata + (header * 512), romdata, romlen);
+			memcpy(filedata + (header * 512), romdata, (size_t)romlen);
 			romCrc = crc32(filedata, (unsigned int)(romlen + header * 512));
 			delete filedata;
 		}
