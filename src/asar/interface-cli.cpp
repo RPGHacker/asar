@@ -1,6 +1,5 @@
 #include "asar.h"
 #include "assocarr.h"
-#include "crc32.h"
 #include "libstr.h"
 #include "libcon.h"
 #include "libsmw.h"
@@ -432,12 +431,8 @@ int main(int argc, char * argv[])
 			finishpass();
 		}
 
-		// calculate the final crc of the target rom itself, to include in the symbols
-		unsigned int romCrc = crc32(romdata, (unsigned int)romlen);
-
 		new_filesystem.destroy();
 		filesystem = nullptr;
-
 
 		if (werror && warned) asar_throw_error(pass, error_type_null, error_id_werror);
 		if (checksum_fix_enabled) fixchecksum();
@@ -474,7 +469,7 @@ int main(int argc, char * argv[])
 			if (verbose) puts("Assembling completed without problems.");
 			pause(yes);
 		}
-		closerom();
+		unsigned int romCrc = closerom();
 		if (symbols)
 		{
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";
