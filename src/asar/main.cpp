@@ -473,6 +473,8 @@ void assembleline(const char * fname, int linenum, const char * line)
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);
 		else out=tmp;
+		// recheck quotes - defines can mess those up sometimes
+		if (!confirmquotes(out)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
 		out.qreplace(": :", ":  :", true);
 //puts(out);
 		autoptr<char**> blocks=qsplit(out.str, " : ");
