@@ -119,6 +119,8 @@ asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error)
 		return error_id_file_not_found;
 	case vfe_access_denied:
 		return error_id_failed_to_open_file_access_denied;
+	case vfe_not_regular_file:
+		return error_id_failed_to_open_not_regular_file;
 	case vfe_unknown:
 	case vfe_none:
 	case vfe_num_errors:

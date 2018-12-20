@@ -74,6 +74,8 @@ public:
 	{
 		if (path != "")
 		{
+			if(!check_is_regular_file((const char*)path)) return vfe_not_regular_file;
+
 			m_file_handle = fopen((const char*)path, "rb");
 
 			if (m_file_handle == nullptr)

@@ -234,6 +234,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_pullwarnings_without_pushwarnings, "warnings pull without matching warnings push." },
 
 	{ error_id_failed_to_open_file_access_denied, "Failed to open file '%s'. Access denied." },
+	{ error_id_failed_to_open_not_regular_file, "Failed to open file '%s'. Not a regular file (did you try to use a directory?)" },
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

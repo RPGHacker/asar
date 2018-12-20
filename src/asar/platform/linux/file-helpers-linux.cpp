@@ -16,3 +16,15 @@ char get_native_path_separator()
 {
 	return '/';
 }
+
+bool check_is_regular_file(const char* path)
+{
+	struct stat finfo;
+	if (stat(path, &finfo) == 0)
+	{
+		// either regular file or symlink
+		if (finfo.st_mode & (S_IFREG | S_IFLNK))
+			return true;
+	}
+	return false;
+}

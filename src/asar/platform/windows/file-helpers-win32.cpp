@@ -35,3 +35,8 @@ char get_native_path_separator()
 {
 	return '\\';
 }
+
+bool check_is_regular_file(const char* path)
+{
+	return !(GetFileAttributes(path) & FILE_ATTRIBUTE_DIRECTORY);
+}
