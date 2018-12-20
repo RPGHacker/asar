@@ -14,6 +14,7 @@ environment:
       CMAKE_PLATFORM_TOOLSET: "-T v140_xp"
     # needs to be VS2017 because the LLVM toolset only exists there
     - CMAKE_TARGET: "Visual Studio 15 2017"
+      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       PLATFORM: "Win32"
       CMAKE_PLATFORM_TOOLSET: "-T llvm"
 
