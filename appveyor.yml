@@ -14,7 +14,7 @@ environment:
       CMAKE_PLATFORM_TOOLSET: "-T v140_xp"
     - CMAKE_TARGET: "Visual Studio 14 2015"
       PLATFORM: "Win32"
-      CMAKE_PLATFORM_TOOLSET: "-T LLVM-vs2014"
+      CMAKE_PLATFORM_TOOLSET: "-T llvm"
 
 install:
 - cmd: >-
