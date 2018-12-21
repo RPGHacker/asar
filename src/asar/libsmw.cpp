@@ -434,7 +434,7 @@ unsigned int closerom(bool save)
 			}
 			memcpy(filedata + (header * 512), romdata, (size_t)romlen);
 			romCrc = crc32(filedata, (unsigned int)(romlen + header * 512));
-			delete filedata;
+			free(filedata);
 		}
 	}
 	if (thisfile) fclose(thisfile);
