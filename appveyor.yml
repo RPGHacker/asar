@@ -26,7 +26,16 @@ install:
 
     set PATH=C:\MinGW\bin;%PATH%
 
+    vcpkg integrate remove
+    
     cmake %CMAKE_EXTRA_FLAGS% -G "%CMAKE_TARGET%" %CMAKE_PLATFORM_TOOLSET% ..\src
+
+on_failure:
+- cmd: >-
+
+    type C:\projects\asar\build\CMakeFiles\CMakeOutput.log
+
+    type C:\projects\asar\build\CMakeFiles\CMakeError.log
 
 build:
   verbosity: minimal
