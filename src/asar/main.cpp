@@ -463,7 +463,9 @@ void assembleline(const char * fname, int linenum, const char * line)
 {
 	recurseblock rec;
 	bool moreonlinetmp=moreonline;
-	string absolutepath = filesystem->create_absolute_path("", fname);
+	// randomdude999: redundant, assemblefile already converted the path to absolute
+	//string absolutepath = filesystem->create_absolute_path("", fname);
+	string absolutepath = fname;
 	thisfilename = absolutepath;
 	thisline=linenum;
 	thisblock= nullptr;
