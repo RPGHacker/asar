@@ -830,13 +830,13 @@ void assembleblock(const char * block)
 				if (nextword[0][0] == '!')
 				{
 					asar_throw_warning(0, warning_id_if_not_condition_deprecated);
-					unsigned int val = getnum(nextword[0]+1);
+					double val = getnumdouble(nextword[0]+1);
 					if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 					thiscond = !(val > 0);
 				}
 				else
 				{
-					unsigned int val = getnum(nextword[0]);
+					double val = getnumdouble(nextword[0]);
 					if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 					thiscond = (val > 0);
 				}
@@ -851,9 +851,9 @@ void assembleblock(const char * block)
 			else
 			{
 				if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-				unsigned int par1=getnum(nextword[0]);
+				double par1=getnumdouble(nextword[0]);
 				if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
-				unsigned int par2=getnum(nextword[2]);
+				double par2=getnumdouble(nextword[2]);
 				if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 				if(0);
 				else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
@@ -1226,15 +1226,15 @@ void assembleblock(const char * block)
 	else if (is1("org"))
 	{
 		freespaceend();
-		int num=(int)getnum(par);
+		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
-		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
+		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).str);
 		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000) asar_throw_warning(0, warning_id_set_middle_byte);
 		//if (fastrom) num|=0x800000;
-		snespos=num;
-		realsnespos=num;
-		startpos=num;
-		realstartpos=num;
+		snespos=(int)num;
+		realsnespos=(int)num;
+		startpos=(int)num;
+		realstartpos=(int)num;
 	}
 #define ret_error(errid) { asar_throw_error(0, error_type_block, errid); return; }
 #define ret_error_params(errid, ...) { asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
@@ -1261,10 +1261,10 @@ void assembleblock(const char * block)
 
 		if (numwords == 3)
 		{
-			int base = (int)getnum(word[2]);
+			unsigned int base = getnum(word[2]);
 			if (base&~0xFFFFFF) ret_error_params_cleanup(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).str);
-			snespos = base;
-			startpos = base;
+			snespos = (int)base;
+			startpos = (int)base;
 		}
 		else if (numwords == 4)
 		{
@@ -1336,11 +1336,11 @@ void assembleblock(const char * block)
 			startpos=realstartpos;
 			return;
 		}
-		int num=(int)getnum(par);
+		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
 		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
-		snespos=num;
-		startpos=num;
+		snespos=(int)num;
+		startpos=(int)num;
 		optimizeforbank=-1;
 	}
 	else if (is1("bank"))
@@ -1355,11 +1355,11 @@ void assembleblock(const char * block)
 			optimizeforbank=0x100;
 			return;
 		}
-		int num=(int)getnum(par);
+		unsigned int num=getnum(par);
 		//if (forwardlabel) error(0, "bank Label is not valid");
 		//if (foundlabel) num>>=16;
 		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
-		optimizeforbank=num;
+		optimizeforbank=(int)num;
 	}
 	else if (is("freespace") || is("freecode") || is("freedata"))
 	{
@@ -1644,16 +1644,16 @@ void assembleblock(const char * block)
 	}
 	else if (is1("warnpc"))
 	{
-		int maxpos=(int)getnum(par);
+		unsigned int maxpos=getnum(par);
 		if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
 		if ((unsigned int)maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);
-		if (snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
-		if (warnxkas && snespos == maxpos) asar_throw_warning(0, warning_id_xkas_warnpc_relaxed);
-		if (emulatexkas && snespos==maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed_equal, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
+		if ((unsigned int)snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
+		if (warnxkas && (unsigned int)snespos == maxpos) asar_throw_warning(0, warning_id_xkas_warnpc_relaxed);
+		if (emulatexkas && (unsigned int)snespos==maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed_equal, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
 	}
 	else if (is1("rep"))
 	{
-		int rep=(int)getnum(par);
+		int rep = (int)getnum64(par);
 		if (foundlabel) asar_throw_error(0, error_type_block, error_id_rep_label);
 		if (rep<=1)
 		{
@@ -1782,7 +1782,7 @@ void assembleblock(const char * block)
 	}
 	else if (is1("skip"))//nobody ever uses this, but whatever
 	{
-		int skip=(int)getnum(par);
+		int skip=(int)getnum64(par);
 		if (foundlabel) asar_throw_error(0, error_type_block, error_id_skip_label_invalid);
 		step(skip);
 	}
@@ -1866,8 +1866,8 @@ void assembleblock(const char * block)
 			else if (!stricmp(pars[i], "bytes")) out+=dec(bytes);
 			else if (!stricmp(pars[i], "freespaceuse")) out+=dec(freespaceuse);
 			else if (!stricmp(pars[i], "pc")) out+=hex6((unsigned int)(snespos&0xFFFFFF));
-			else if (!strncasecmp(pars[i], "dec(", strlen("dec("))) out+=dec((int)getnum(pars[i]+strlen("dec")));
-			else if (!strncasecmp(pars[i], "hex(", strlen("hex("))) out+=hex0(getnum(pars[i]+strlen("hex")));
+			else if (!strncasecmp(pars[i], "dec(", strlen("dec("))) out+=dec(getnum64(pars[i]+strlen("dec")));
+			else if (!strncasecmp(pars[i], "hex(", strlen("hex("))) out+=hex0(getnum64(pars[i]+strlen("hex")));
 			else if (!strncasecmp(pars[i], "double(", strlen("double(")))
 			{
 				char * arg1pos = pars[i] + strlen("double(");
@@ -1953,8 +1953,8 @@ void assembleblock(const char * block)
 	}
 	else if (is1("fill"))
 	{
-		int num=(int)getnum(par);
-		for (int i=0;i<num;i++) write1(fillbyte[i%12]);
+		unsigned int num=getnum(par);
+		for (unsigned int i=0;i<num;i++) write1(fillbyte[i%12]);
 	}
 	else if (is1("arch"))
 	{

@@ -1,9 +1,11 @@
 #pragma once
+#include <cstdint> // for int64_t
 
 void initmathcore();
 void deinitmathcore();
 
 unsigned int getnum(const char * str);
+int64_t getnum64(const char * str);
 double getnumdouble(const char * str);
 
 void createuserfunc(const char * name, const char * arguments, const char * content);
