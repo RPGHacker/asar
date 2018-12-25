@@ -8,7 +8,7 @@
 #	pragma warning(disable : 4987)
 #endif
 
-#include <Windows.h>
+#include <windows.h>
 #include <ctype.h>
 
 #if defined(_MSC_VER)

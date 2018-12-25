@@ -1,14 +1,22 @@
 language: cpp
+sudo: false
 compiler:
   - clang
   - gcc
 os:
   - linux
   - osx
+cache:
+  directories:
+    - $HOME/.cache/pip
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
 before_install:
   # pip is annoying on osx and the coverage tool can't parse clang's output, so only run it on linux gcc
   - if [ $TRAVIS_OS_NAME == linux -a $CC == gcc ]; then GEN_COVERAGE=1; fi
-  - if [ $GEN_COVERAGE ]; then pip install --user cpp-coveralls; CMAKE_EXTRA_OPTS="-DASAR_COVERAGE=ON"; fi
+  - if [ $TRAVIS_OS_NAME == linux -a $COMPILER == i686-w64-mingw32-gcc ]; then GEN_COVERAGE=1 CMAKE_EXTRA_OPTS="-DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-x86.cmake"; fi
+  - if [ $TRAVIS_OS_NAME == linux -a $COMPILER == x86_64-w64-mingw32-gcc ]; then GEN_COVERAGE=1 CMAKE_EXTRA_OPTS="-DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-x64.cmake"; fi
+  - if [ $GEN_COVERAGE ]; then pip install --user cpp-coveralls; CMAKE_EXTRA_OPTS="$CMAKE_EXTRA_OPTS -DASAR_COVERAGE=ON"; fi
 install: # misc setup that I didn't want to put in script
   - mkdir build tests_dll_tmp tests_app_tmp
   - cd build
@@ -17,9 +25,9 @@ script:
   - make
   # run dll test suite
   # We need to pass the DLL path as an absolute path because it is used to calculate the std defines location, which will throw a warning when it's a relative path
-  - asar-tests/asar-dll-test $TRAVIS_BUILD_DIR/build/asar/libasar.* $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
+  - asar-tests/asar-dll-test$EXE_SUFFIX $TRAVIS_BUILD_DIR/build/asar/libasar.* $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_dll_tmp
   # run app test suite
-  - asar-tests/asar-app-test asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
+  - asar-tests/asar-app-test$EXE_SUFFIX asar/asar-standalone $TRAVIS_BUILD_DIR/tests ../dummy_rom.sfc $TRAVIS_BUILD_DIR/tests_app_tmp
 after_success:
   - cd ..
   - if [ $GEN_COVERAGE ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file coverage.info; fi
@@ -27,3 +35,35 @@ addons:
   apt:
     packages:
       - lcov
+
+# MinGW cross-builds (make only)
+matrix:
+  include:
+    - os: linux
+      compiler: i686-w64-mingw32-gcc
+      sudo: true # Wine requires a lot of disk spaces. Therefore, use "Ubuntu Trusty VM" environment.
+      env:
+        - COMPILER=i686-w64-mingw32-gcc # $CC will overwritten by Travis.
+        - EXE_SUFFIX=.exe
+      addons:
+        apt:
+          packages:
+            - binutils-mingw-w64-i686
+            - gcc-mingw-w64-i686
+            - g++-mingw-w64-i686
+            - lcov
+            - wine
+    - os: linux
+      compiler: x86_64-w64-mingw32-gcc
+      sudo: true # Wine requires a lot of disk spaces. Therefore, use "Ubuntu Trusty VM" environment.
+      env:
+        - COMPILER=x86_64-w64-mingw32-gcc # $CC will overwritten by Travis.
+        - EXE_SUFFIX=.exe
+      addons:
+        apt:
+          packages:
+            - binutils-mingw-w64-x86-64
+            - gcc-mingw-w64-x86-64
+            - g++-mingw-w64-x86-64
+            - lcov
+            - wine
