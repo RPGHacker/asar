@@ -74,6 +74,8 @@ public:
 	{
 		if (path != "")
 		{
+			// randomdude999: checking this before file regularity to improve error messages
+			if(!file_exists((const char*)path)) return vfe_doesnt_exist;
 			if(!check_is_regular_file((const char*)path)) return vfe_not_regular_file;
 
 			m_file_handle = fopen((const char*)path, "rb");
