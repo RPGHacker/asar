@@ -17,3 +17,9 @@ char get_native_path_separator()
 {
 	return '/';
 }
+
+bool check_is_regular_file(const char* path)
+{
+	// no really universal way to check this
+	return true;
+}

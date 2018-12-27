@@ -17,6 +17,7 @@ enum virtual_file_error
 
 	vfe_doesnt_exist,
 	vfe_access_denied,
+	vfe_not_regular_file,
 	vfe_unknown,
 
 	vfe_num_errors

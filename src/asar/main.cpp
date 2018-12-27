@@ -119,6 +119,8 @@ asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error)
 		return error_id_file_not_found;
 	case vfe_access_denied:
 		return error_id_failed_to_open_file_access_denied;
+	case vfe_not_regular_file:
+		return error_id_failed_to_open_not_regular_file;
 	case vfe_unknown:
 	case vfe_none:
 	case vfe_num_errors:
@@ -461,7 +463,9 @@ void assembleline(const char * fname, int linenum, const char * line)
 {
 	recurseblock rec;
 	bool moreonlinetmp=moreonline;
-	string absolutepath = filesystem->create_absolute_path("", fname);
+	// randomdude999: redundant, assemblefile already converted the path to absolute
+	//string absolutepath = filesystem->create_absolute_path("", fname);
+	string absolutepath = fname;
 	thisfilename = absolutepath;
 	thisline=linenum;
 	thisblock= nullptr;
@@ -473,6 +477,8 @@ void assembleline(const char * fname, int linenum, const char * line)
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);
 		else out=tmp;
+		// recheck quotes - defines can mess those up sometimes
+		if (!confirmquotes(out)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
 		out.qreplace(": :", ":  :", true);
 //puts(out);
 		autoptr<char**> blocks=qsplit(out.str, " : ");

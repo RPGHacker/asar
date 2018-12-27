@@ -8,7 +8,7 @@
 #	pragma warning(disable : 4987)
 #endif
 
-#include <Windows.h>
+#include <windows.h>
 #include <ctype.h>
 
 #if defined(_MSC_VER)
@@ -34,4 +34,9 @@ bool path_is_absolute(const char* path)
 char get_native_path_separator()
 {
 	return '\\';
+}
+
+bool check_is_regular_file(const char* path)
+{
+	return !(GetFileAttributes(path) & FILE_ATTRIBUTE_DIRECTORY);
 }

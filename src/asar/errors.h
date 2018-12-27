@@ -210,6 +210,7 @@ enum asar_error_id : int
 	error_id_pullwarnings_without_pushwarnings,
 
 	error_id_failed_to_open_file_access_denied,
+	error_id_failed_to_open_not_regular_file,
 
         error_id_outputfile_cannot_open,
 
