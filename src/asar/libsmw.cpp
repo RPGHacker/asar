@@ -166,7 +166,8 @@ void removerats(int snesaddr, unsigned char clean_byte)
 {
 	int addr=ratsstart(snesaddr);
 	if (addr<0) return;
-	WalkMetadata(addr+8, handleprot);
+	// randomdude999: don't forget bank borders
+	WalkMetadata(pctosnes(snestopc(addr)+8), handleprot);
 	addr=snestopc(addr);
 	for (int i=(romdata[addr+4]|(romdata[addr+5]<<8))+8;i>=0;i--) writeromdata_byte(addr+i, clean_byte);
 }
