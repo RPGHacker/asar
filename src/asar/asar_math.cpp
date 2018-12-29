@@ -803,20 +803,45 @@ static double getnum()
 	return sanitize(getnumcore());
 }
 
-unsigned int getnum(const char * instr)
+uint32_t getnum(const char* instr)
 {
-	// RPG Hacker: this was originally an int - changed it into an unsigned int since I found
-	// that to yield the more predictable results when converting from a double
-	// (e.g.: $FFFFFFFF was originally converted to $80000000, whereas now it remains $FFFFFFFF
-	unsigned int num = (unsigned int)math(instr);
-	return num;
+	// randomdude999: perform manual bounds-checking and 2's complement,
+	// to prevent depending on UB
+	double num = math(instr);
+	if(num < 0) {
+		// manual 2's complement
+		if((-num) > (double)UINT32_MAX) {
+			// out of bounds, return closest inbounds value
+			// (this value is the most negative value possible)
+			return ((uint32_t)INT32_MAX)+1;
+		}
+		return ~((uint32_t)(-num))+1;
+	} else {
+		if(num > (double)UINT32_MAX) {
+			// out of bounds, return closest inbounds value
+			return UINT32_MAX;
+		}
+		return (uint32_t)num;
+	}
+}
+
+int64_t getnum64(const char* instr)
+{
+	// randomdude999: perform manual bounds-checking
+	// to prevent depending on UB
+	double num = math(instr);
+	if(num < (double)INT64_MIN) {
+		return INT64_MIN;
+	} else if(num > (double)INT64_MAX) {
+		return INT64_MAX;
+	}
+	return (int64_t)num;
 }
 
 // RPG Hacker: Same function as above, but doesn't truncate our number via int conversion
 double getnumdouble(const char * instr)
 {
-	double num = math(instr);
-	return num;
+	return math(instr);
 }
 
 
@@ -849,7 +874,8 @@ notposneglabel:
 	while (*str && *str != ')' && *str != ','&& *str != ']')
 	{
 		while (*str==' ') str++;
-		if (math_round) left=(int)left;
+		// why was this an int cast
+		if (math_round) left=trunc(left);
 #define oper(name, thisdepth, contents)      \
 			if (!strncmp(str, name, strlen(name))) \
 			{                                      \
@@ -876,11 +902,11 @@ notposneglabel:
 		oper("%", 3, right != 0.0 ? fmod((double)left, (double)right) : oper_wrapped_throw(error_id_modulo_by_zero));
 		oper("+", 2, left+right);
 		oper("-", 2, left-right);
-		oper("<<", 1, (unsigned int)left<<(unsigned int)right);
-		oper(">>", 1, (unsigned int)left>>(unsigned int)right);
-		oper("&", 0, (unsigned int)left&(unsigned int)right);
-		oper("|", 0, (unsigned int)left|(unsigned int)right);
-		oper("^", 0, (unsigned int)left^(unsigned int)right);
+		oper("<<", 1, (uint64_t)left<<(uint64_t)right);
+		oper(">>", 1, (uint64_t)left>>(uint64_t)right);
+		oper("&", 0, (uint64_t)left&(uint64_t)right);
+		oper("|", 0, (uint64_t)left|(uint64_t)right);
+		oper("^", 0, (uint64_t)left^(uint64_t)right);
 		asar_throw_error(1, error_type_block, error_id_unknown_operator);
 #undef oper
 	}
