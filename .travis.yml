@@ -16,7 +16,7 @@ before_install:
   - if [ $TRAVIS_OS_NAME == linux -a $CC == gcc ]; then GEN_COVERAGE=1; fi
   - if [ $TRAVIS_OS_NAME == linux -a $COMPILER == i686-w64-mingw32-gcc ]; then GEN_COVERAGE=1 CMAKE_EXTRA_OPTS="-DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-x86.cmake"; fi
   - if [ $TRAVIS_OS_NAME == linux -a $COMPILER == x86_64-w64-mingw32-gcc ]; then GEN_COVERAGE=1 CMAKE_EXTRA_OPTS="-DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-x64.cmake"; fi
-  - if [ $TRAVIS_OS_NAME == osx ]; then LIB_SUFFIX=dylib; else LIB_SUFFIX=so; fi
+  - if [ $TRAVIS_OS_NAME == osx ]; then LIB_SUFFIX=dylib; elif [ $EXE_SUFFIX == ".exe" ]; then LIB_SUFFIX=dll; else LIB_SUFFIX=so; fi
   - if [ $GEN_COVERAGE ]; then pip install --user cpp-coveralls; CMAKE_EXTRA_OPTS="$CMAKE_EXTRA_OPTS -DASAR_COVERAGE=ON"; fi
 install: # misc setup that I didn't want to put in script
   - mkdir build tests_dll_tmp tests_app_tmp
@@ -33,7 +33,7 @@ after_success:
   - cd ..
   - if [ $GEN_COVERAGE ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file coverage.info; fi
   # upload binaries to FTP server (only if not a PR and on master branch)
-  - if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then curl --ftp-create-dirs -T "asar/{asar-standalone,libasar."$LIB_SUFFIX"}" sftp://asar_ftp:${DEPLOY_PASSWORD}@random.muncher.se/asar/${TRAVIS_OS_NAME}/; fi
+  - if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then curl --ftp-create-dirs -T "build/asar/{asar-standalone,libasar."$LIB_SUFFIX"}" sftp://asar_ftp:${DEPLOY_PASSWORD}@random.muncher.se/asar/${TRAVIS_OS_NAME}/; fi
 env:
   global:
     # DEPLOY_PASSWORD
