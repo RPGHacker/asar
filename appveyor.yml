@@ -62,7 +62,7 @@ test_script:
 deploy:
   provider: FTP
   protocol: ftps
-  host: 2001:7d0:8314:b980:edad:8212:2eca:14dd
+  host: "[2001:7d0:8314:b980:edad:8212:2eca:14dd]"
   username: asar_ftp
   password:
     secure: 2O8zpJfSlxa28ibgfgXNsca2OJhU4TAbOfpLaFcjf1BLqkLsjYHNlQ8p6PkI3Rki
