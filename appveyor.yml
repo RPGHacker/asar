@@ -59,14 +59,9 @@ test_script:
 
       asar-tests\%CONFIGURATION%\asar-app-test.exe asar\%CONFIGURATION%\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
 
-before_deploy:
-  # add the ssh fingerprint so the deployment can access it
-  - cmd: >-
-      echo random.muncher.se ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBMT1DjsE+683W5Eph/DunMmq4zekwQoz92fLJTWaFzJcchsqo1W08O2ujHpb5fwETbgFymHidadNaJLBfI3ad+o=>>%USERPROFILE%\.ssh\known_hosts
-
 deploy:
   provider: FTP
-  protocol: sftp
+  protocol: ftps
   host: random.muncher.se
   username: asar_ftp
   password:
