@@ -2,18 +2,24 @@ version: '{build}'
 image: Visual Studio 2015
 environment:
   matrix:
-    - CMAKE_TARGET: "MinGW Makefiles"
-    - CMAKE_TARGET: "Visual Studio 14 2015"
+    # job names are used for FTP uploads, try to not change them!
+    - JOB_NAME: "mingw"
+      CMAKE_TARGET: "MinGW Makefiles"
+    - JOB_NAME: "win32"
+      CMAKE_TARGET: "Visual Studio 14 2015"
       PLATFORM: "Win32"
       CMAKE_PLATFORM_TOOLSET: "-T v140"
-    - CMAKE_TARGET: "Visual Studio 14 2015 Win64"
+    - JOB_NAME: "win64"
+      CMAKE_TARGET: "Visual Studio 14 2015 Win64"
       PLATFORM: "x64"
       CMAKE_PLATFORM_TOOLSET: "-T v140"
-    - CMAKE_TARGET: "Visual Studio 14 2015"
+    - JOB_NAME: "xp_compat"
+      CMAKE_TARGET: "Visual Studio 14 2015"
       PLATFORM: "Win32"
       CMAKE_PLATFORM_TOOLSET: "-T v140_xp"
     # needs to be VS2017 because the LLVM toolset only exists there
-    - CMAKE_TARGET: "Visual Studio 15 2017"
+    - JOB_NAME: "clang"
+      CMAKE_TARGET: "Visual Studio 15 2017"
       APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
       PLATFORM: "Win32"
       CMAKE_PLATFORM_TOOLSET: "-T llvm"
@@ -52,6 +58,15 @@ test_script:
       asar-tests\%CONFIGURATION%\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\%CONFIGURATION%\asar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
 
       asar-tests\%CONFIGURATION%\asar-app-test.exe asar\%CONFIGURATION%\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
+
+deploy:
+  provider: FTP
+  protocol: sftp
+  host: random.muncher.se
+  username: asar_ftp
+  password:
+    secure: 5MCbo8Rwh8QybtN1JRM0T9+5ZUvA8xu2DIT3q441rJUr8AGhbZhotb76GZ2RGiqU
+  folder: asar/windows/$(JOB_NAME)/
 
 for:
 -
