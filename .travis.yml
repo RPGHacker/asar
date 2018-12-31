@@ -33,7 +33,7 @@ after_success:
   - cd ..
   - if [ $GEN_COVERAGE ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file coverage.info; fi
   # upload binaries to FTP server (only if not a PR and on master branch)
-  - if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then cd build/asar; curl --ftp-ssl -T "{asar-standalone$EXE_SUFFIX,libasar.$LIB_SUFFIX}" ftp://asar_ftp:${DEPLOY_PASSWORD}@random.muncher.se/asar/${TRAVIS_OS_NAME}/; fi
+  - if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then cd build/asar; curl --ftp-ssl -T "{asar-standalone$EXE_SUFFIX,libasar.$LIB_SUFFIX}" ftp://asar_ftp:${DEPLOY_PASSWORD}@random.muncher.se:21/asar/${TRAVIS_OS_NAME}/; fi
 env:
   global:
     # DEPLOY_PASSWORD
