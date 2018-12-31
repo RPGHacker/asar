@@ -65,7 +65,7 @@ deploy:
   host: random.muncher.se
   username: asar_ftp
   password:
-    secure: 5MCbo8Rwh8QybtN1JRM0T9+5ZUvA8xu2DIT3q441rJUr8AGhbZhotb76GZ2RGiqU
+    secure: 2O8zpJfSlxa28ibgfgXNsca2OJhU4TAbOfpLaFcjf1BLqkLsjYHNlQ8p6PkI3Rki
   folder: asar/windows/$(JOB_NAME)/
 
 for:
