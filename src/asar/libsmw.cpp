@@ -227,7 +227,7 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 }
 
 //This function finds a block of freespace. -1 means "no freespace found", anything else is a PC address.
-//isforcode=true tells it to favor banks 40+, false tells it to avoid them entirely.
+//isforcode=false tells it to favor banks 40+, true tells it to avoid them entirely.
 //It automatically adds a RATS tag.
 
 int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte)
@@ -326,7 +326,7 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 			int pos=trypcfreespace(0x400000, 0x800000, size, 0xFFFF, align?0xFFFF:0, freespacebyte);
 			if(pos>=0) return pos;
 		}
-		int pos=trypcfreespace(0x000000, 0x400000, size, 0x7FFF, align?0x7FFF:0, freespacebyte);
+		int pos=trypcfreespace(0x080000, 0x400000, size, 0x7FFF, align?0x7FFF:0, freespacebyte);
 		if(pos>=0) return pos;
 	}
 	return -1;
