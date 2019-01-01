@@ -1709,11 +1709,25 @@ void assembleblock(const char * block)
 			*lengths=0;
 			lengths++;
 			if (strchr(lengths, '"')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			start=(int)strtoul(lengths, &lengths, 16);
+			if(*lengths=='(') {
+				char* tmp = strqpchr(lengths, '-');
+				if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+				start = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+				lengths = tmp;
+			} else {
+				start=(int)strtoul(lengths, &lengths, 16);
+			}
 			if (*lengths!='-') asar_throw_error(0, error_type_block, error_id_broken_incbin);
 			lengths++;
-			end=(int)strtoul(lengths, &lengths, 16);
-			if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			if(*lengths=='(') {
+				char* tmp = strchr(lengths, '\0');
+				if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
+				end = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+				// no need to check end-of-string here
+			} else {
+				end=(int)strtoul(lengths, &lengths, 16);
+				if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			}
 		}
 		string name;
 		if (warnxkas && (strchr(thisfilename, '/') || strchr(thisfilename, '\\')))
@@ -1737,7 +1751,8 @@ void assembleblock(const char * block)
 		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.str);
 		autoptr<char*> datacopy=data;
 		if (!end) end=len;
-		if (end < start || end > len) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).str, name.str);
+		if(start < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(start).str, name.str);
+		if (end < start || end > len || end < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).str, name.str);
 		if (numwords==4)
 		{
 			if (!confirmname(word[3]))
