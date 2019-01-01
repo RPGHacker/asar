@@ -76,6 +76,7 @@ macro(set_asar_shared_properties target)
 		target_compile_options(${target} PRIVATE -Wall -pedantic
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
 			-Wno-unused-result # ignoring return value
+			-Wno-class-memaccess # clearing/moving a non-trivially copyable type
 		)
 
 		# Static link for MinGW
