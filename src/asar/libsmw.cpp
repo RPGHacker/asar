@@ -319,6 +319,16 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 			goto rebootsa1rom;
 		}
 	}
+	if (mapper==bigsa1rom)
+	{
+		if(!isforcode && romlen > 0x400000)
+		{
+			int pos=trypcfreespace(0x400000, 0x800000, size, 0xFFFF, align?0xFFFF:0, freespacebyte);
+			if(pos>=0) return pos;
+		}
+		int pos=trypcfreespace(0x000000, 0x400000, size, 0x7FFF, align?0x7FFF:0, freespacebyte);
+		if(pos>=0) return pos;
+	}
 	return -1;
 }
 
