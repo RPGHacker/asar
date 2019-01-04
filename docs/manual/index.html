@@ -2807,7 +2807,7 @@ pad $008004</code></pre>
 		It's also possible to write 16-bit, 24-bit or 32-bit values with the pad command by using <code>padword</code>, <code>padlong</code> or <code>paddword</code> instead of padbyte. Note that the <code>snes_address</code> parameter of pad still specifies the end offset of the write in those cases. Values might get truncated as needed to exactly reach the specified end offset.
 		<h4 id="incbin">incbin</h4>
 		<pre><code class="65c816_asar">incbin {filename}[:range_start-range_end][ -> label_identifier_or_sness_address]</code></pre>
-		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are hexadecimal number literals (without a prefix) which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file).
+		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are hexadecimal number literals (without a prefix) which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file). If you surround <code>range_start</code> or <code>range_end</code> in parentheses, Asar will interpret it as math, not a hex literal.
 		<pre><code class="65c816_asar">; datafile.bin contains the following bytes:
 ; $00 $01 $02 $03 $04 $05 $06 $07 $08 $09 $0A $0B $0C $0D $0E $0F
 
@@ -2815,7 +2815,10 @@ pad $008004</code></pre>
 incbin "datafile.bin"
 
 ; This writes $09 $0A $0B $0C $0D $0E
-incbin "datafile.bin":9-F</code></pre>
+incbin "datafile.bin":9-F
+
+; This writes $01 $02 $03 $04
+incbin "datafile.bin":($F-$E)-(2+3)</code></pre>
 		When <code>label_name_or_sness_address</code> is specified, the contents of the file are written to another location in the ROM. When set to a label identifier, this code behaves identically to
 		<pre><code class="65c816_asar">pushpc
 freedata align
