@@ -35,6 +35,38 @@
 	<body>
 		
 		<h1>Asar Changelog</h1>
+
+		<hr />
+
+		<div><h2>v1.70</h2>
+		<b>Release:</b> January 4, 2019
+
+		<h3>Contributors:</h3>
+		<ul>
+			<li>randomdude999</li>
+			<li>boldowa</li>
+		</ul>
+
+		<h3>New features:</h3>
+		<ul>
+			<li>The <code>fullsa1rom</code> mapper now supports automatic freespace searching. (randomdude999)</li>
+			<li><code>incbin</code> ranges can now use math as an alternative to unprefixed hex. To use this, surround the math with parentheses. For example, <code>incbin file:(4+2)-($F+$10)</code>. Note that in math statements, unprefixed numbers are decimal, not hex! (randomdude999)</li>
+		</ul>
+
+		<h3>Bug fixes:</h3>
+		<ul>
+			<li>Fixed quite a few crashes in Asar: <ul>
+				<li>Fixed a crash when including a directory (randomdude999, found by <a href="http://smwc.me/u/x10A94">Selicre</a>)</li>
+				<li>Fixed a crash when using a macro sublabel outside of a macro (randomdude999)</li>
+				<li>Fixed a crash when having unmatched structs in a weird way (randomdude999)</li>
+				<li>Fixed a crash when appending to a non-existent define (randomdude999, found by Selicre)</li>
+				<li>Fixed a crash when Asar encountered mismatched quotes after define evaluation (randomdude999, found by Alcaro)</li>
+			</ul></li>
+			<li>Made Asar about 2x faster than before (randomdude999)</li>
+			<li>Values larger than $80000000 in things like <code>dd</code> should work better (randomdude999)</li>
+			<li>Fixed a freespace leak when using <code>prot</code> (randomdude999, found by WhiteYoshiEgg)</li>
+			<li>Fixed Windows header includes, to make cross-compilation of Asar on Linux work better (boldowa)</li>
+		</ul>
 		
 		<hr />
 

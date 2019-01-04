@@ -402,3 +402,14 @@ char * itrim(char * str, const char * left, const char * right, bool multi)
 	return str;
 }
 
+char* strqpchr(const char* str, char key)
+{
+	while (*str)
+	{
+		skippar(*str, str++, return nullptr);
+		else if (*str == key) return const_cast<char*>(str);
+		else if (!*str) return nullptr;
+		else str++;
+	}
+	return nullptr;
+}

@@ -27,6 +27,7 @@
 #	include <string>
 #	include <algorithm>
 #	include <set>
+#	include <list>
 
 #	if defined(_MSC_VER)
 #		pragma warning(pop)
@@ -41,13 +42,14 @@
 #	include <algorithm>
 #	include <sys/stat.h>
 #	include <set>
+#	include <list>
 #endif
 
 #if defined(ASAR_TEST_DLL)
 #	include "asardll.h"
 #endif
 
-#define die() { numfailed++; free(expectedrom); free(truerom); printf("\nFailure!\n\n\n"); continue; }
+#define die() { numfailed++; free(expectedrom); free(truerom); printf("Failure!\n\n"); continue; }
 #define dief(...) { printf(__VA_ARGS__); die(); }
 
 #define min(a, b) ((a)<(b)?(a):(b))
@@ -606,7 +608,7 @@ int main(int argc, char * argv[])
 		fseek(rom, 0, SEEK_SET);
 		fread(truerom, 1, (size_t)truelen, rom);
 		fclose(rom);
-		printf("Patching:\n > %s\n", fname);
+		printf("Patching: %s\n", fname);
 		FILE * err = fopen(log_name, "wt");
 
 		{
@@ -645,20 +647,20 @@ int main(int argc, char * argv[])
 			asar_patch_params.warning_setting_count = 0;
 			
 			for (int i = 0;i < numiter;i++)
-			{			
-				printf("\n");
+			{
 				
 				if (numiter > 1)
 				{
-					printf("Iteration %d of %d\n\n", i+1, numiter);
+					printf("Iteration %d of %d\n", i+1, numiter);
 				}
 				
 				if (!asar_patch_ex(&asar_patch_params))
 				{
-					printf("asar_patch_ex() failed on file '%s':\n", fname);
+					//printf("asar_patch_ex() failed on file '%s':\n", fname);
 				}
 				else
 				{
+					/*
 					// Applying patch via DLL succeeded; print some stuff (mainly to verify most of our functions)
 					mappertype mapper = asar_getmapper();
 
@@ -701,7 +703,7 @@ int main(int argc, char * argv[])
 						{
 							printf("  %u bytes at %X\n", (unsigned int)writtenblocks[j].numbytes, (unsigned int)writtenblocks[j].pcoffset);
 						}
-					}
+					}*/
 				}
 
 				{
@@ -737,7 +739,7 @@ int main(int argc, char * argv[])
 			snprintf(cmd, sizeof(cmd), "\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \" \"%s\" \"%s\"", asar_exe_path, base_path, fname, out_rom_name);
 			for (int i = 0;i < numiter;i++)
 			{
-				printf("Executing:\n > %s\n", cmd);
+				printf("Executing: %s\n", cmd);
 				if (!execute_command_line(cmd, log_name))
 				{
 					dief("Failed executing command line:\n    %s\n", cmd);
@@ -755,10 +757,9 @@ int main(int argc, char * argv[])
 		fread(buf, 1, fsize, err);
 		fclose(err);
 
-		printf("\n");
-
 		std::set<int> actual_errors;
 		std::set<int> actual_warnings;
+		std::list<std::string> lines_to_print;
 
 		std::string log_line;
 
@@ -780,7 +781,7 @@ int main(int argc, char * argv[])
 
 					actual_errors.insert(num);
 
-					printf("%s\n", log_line.c_str());
+					lines_to_print.push_back(log_line);
 				}
 
 				token = ": warning: (W";
@@ -797,7 +798,7 @@ int main(int argc, char * argv[])
 
 					actual_warnings.insert(num);
 
-					printf("%s\n", log_line.c_str());
+					lines_to_print.push_back(log_line);
 				}
 
 				log_line.clear();
@@ -813,50 +814,45 @@ int main(int argc, char * argv[])
 
 		free(buf);
 
-
-		if (actual_errors.size() > 0 || actual_warnings.size() > 0)
-		{
-			printf("\n");
-		}
-
-
-		printf("Expected errors: ");
-		for (auto it = expected_errors.begin(); it != expected_errors.end(); ++it)
-		{
-			printf("%sE%d", (it != expected_errors.begin() ? "," : ""), *it);
-		}
-		printf("\n");
-
-		printf("Actual errors: ");
-		for (auto it = actual_errors.begin(); it != actual_errors.end(); ++it)
-		{
-			printf("%sE%d", (it != actual_errors.begin() ? "," : ""), *it);
-		}
-		printf("\n");
-		printf("\n");
-
-
-		printf("Expected warnings: ");
-		for (auto it = expected_warnings.begin(); it != expected_warnings.end(); ++it)
-		{
-			printf("%sW%d", (it != expected_warnings.begin() ? "," : ""), *it);
-		}
-		printf("\n");
-
-		printf("Actual warnings: ");
-		for (auto it = actual_warnings.begin(); it != actual_warnings.end(); ++it)
-		{
-			printf("%sW%d", (it != actual_warnings.begin() ? "," : ""), *it);
-		}
-		printf("\n");
-		printf("\n");
-
-
+		bool did_fail = false;
 		if (expected_errors.size() != actual_errors.size()
 			|| expected_warnings.size() != actual_warnings.size()
 			|| !std::equal(expected_errors.begin(), expected_errors.end(), actual_errors.begin())
 			|| !std::equal(expected_warnings.begin(), expected_warnings.end(), actual_warnings.begin()))
-		{
+			did_fail = true;
+
+		if(did_fail) {
+			// this thing depends on c++11 already, right?
+			for(std::string line : lines_to_print) {
+				printf("%s\n", line.c_str());
+			}
+			printf("Expected errors: ");
+			for (auto it = expected_errors.begin(); it != expected_errors.end(); ++it)
+			{
+				printf("%sE%d", (it != expected_errors.begin() ? "," : ""), *it);
+			}
+			printf("\n");
+
+			printf("Actual errors: ");
+			for (auto it = actual_errors.begin(); it != actual_errors.end(); ++it)
+			{
+				printf("%sE%d", (it != actual_errors.begin() ? "," : ""), *it);
+			}
+			printf("\n");
+
+			printf("Expected warnings: ");
+			for (auto it = expected_warnings.begin(); it != expected_warnings.end(); ++it)
+			{
+				printf("%sW%d", (it != expected_warnings.begin() ? "," : ""), *it);
+			}
+			printf("\n");
+
+			printf("Actual warnings: ");
+			for (auto it = actual_warnings.begin(); it != actual_warnings.end(); ++it)
+			{
+				printf("%sW%d", (it != actual_warnings.begin() ? "," : ""), *it);
+			}
+			printf("\n");
 			dief("Mismatch!\n");
 		}
 
@@ -884,7 +880,7 @@ int main(int argc, char * argv[])
 		free(expectedrom);
 		free(truerom);
 
-		printf("Success!\n\n\n");
+		printf("Success!\n\n");
 	}
 
 	free(smwrom);

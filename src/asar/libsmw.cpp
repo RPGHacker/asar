@@ -166,7 +166,8 @@ void removerats(int snesaddr, unsigned char clean_byte)
 {
 	int addr=ratsstart(snesaddr);
 	if (addr<0) return;
-	WalkMetadata(addr+8, handleprot);
+	// randomdude999: don't forget bank borders
+	WalkMetadata(pctosnes(snestopc(addr)+8), handleprot);
 	addr=snestopc(addr);
 	for (int i=(romdata[addr+4]|(romdata[addr+5]<<8))+8;i>=0;i--) writeromdata_byte(addr+i, clean_byte);
 }
@@ -226,7 +227,7 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 }
 
 //This function finds a block of freespace. -1 means "no freespace found", anything else is a PC address.
-//isforcode=true tells it to favor banks 40+, false tells it to avoid them entirely.
+//isforcode=false tells it to favor banks 40+, true tells it to avoid them entirely.
 //It automatically adds a RATS tag.
 
 int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte)
@@ -317,6 +318,16 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 			autoexpand=false;
 			goto rebootsa1rom;
 		}
+	}
+	if (mapper==bigsa1rom)
+	{
+		if(!isforcode && romlen > 0x400000)
+		{
+			int pos=trypcfreespace(0x400000, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte);
+			if(pos>=0) return pos;
+		}
+		int pos=trypcfreespace(0x080000, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte);
+		if(pos>=0) return pos;
 	}
 	return -1;
 }

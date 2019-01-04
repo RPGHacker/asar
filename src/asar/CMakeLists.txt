@@ -23,7 +23,7 @@ macro(set_asar_shared_properties target)
 		target_compile_definitions(${target} PRIVATE "_CRT_NONSTDC_NO_WARNINGS")
 		target_compile_definitions(${target} PRIVATE "_ALLOW_KEYWORD_MACROS")
 
-		if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$")
+		if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "llvm")
 			target_compile_options(${target} PRIVATE
 				-Wno-old-style-cast # use of old-style-cast
 				-Wno-unknown-argument # unknown argument ignored in clang-cl
@@ -76,6 +76,7 @@ macro(set_asar_shared_properties target)
 		target_compile_options(${target} PRIVATE -Wall -pedantic
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
 			-Wno-unused-result # ignoring return value
+			-Wno-class-memaccess # clearing/moving a non-trivially copyable type
 		)
 
 		# Static link for MinGW
