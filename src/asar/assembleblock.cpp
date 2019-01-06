@@ -75,7 +75,7 @@ static int fixsnespos(int inaddr, int step)
 		}
 		return inaddr+step;
 	} else if (mapper == hirom) {
-		if (inaddr&0x400000 == 0) {
+		if ((inaddr&0x400000) == 0) {
 			// system pages, need to account for low pages and stuff
 			if ((inaddr&0xFFFF)+step > 0xFFFF) {
 				return inaddr+step+0x8000;
@@ -87,7 +87,7 @@ static int fixsnespos(int inaddr, int step)
 		return pctosnes(snestopc(inaddr)+step);
 	} else if (mapper == exhirom) {
 		// apparently exhirom is pretty similar to hirom after all
-		if (inaddr&0x400000 == 0) {
+		if ((inaddr&0x400000) == 0) {
 			// system pages, need to account for low pages and stuff
 			if ((inaddr&0xFFFF)+step > 0xFFFF) {
 				return inaddr+step+0x8000;
@@ -95,7 +95,7 @@ static int fixsnespos(int inaddr, int step)
 		}
 		return inaddr+step;
 	} else if (mapper == sa1rom) {
-		if(inaddr&0x400000 == 0) {
+		if((inaddr&0x400000) == 0) {
 			// lorom area
 			if ((inaddr&0xFFFF)+step > 0xFFFF) {
 				return inaddr+step+0x8000;
@@ -106,7 +106,7 @@ static int fixsnespos(int inaddr, int step)
 			return inaddr+step;
 		}
 	} else if (mapper == sfxrom) {
-		if (inaddr&0x400000 == 0) {
+		if ((inaddr&0x400000) == 0) {
 			// lorom area
 			if ((inaddr&0xFFFF)+step > 0xFFFF) {
 				return inaddr+step+0x8000;
@@ -121,6 +121,7 @@ static int fixsnespos(int inaddr, int step)
 	} else if (mapper == norom) {
 		return inaddr+step;
 	}
+	return -1;
 }
 
 inline void step(int num)
