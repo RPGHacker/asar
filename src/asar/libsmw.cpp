@@ -292,7 +292,7 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 	}
 	if (mapper==sfxrom)
 	{
-		if (isforcode) return -1;
+		if (!isforcode) return -1;
 		return trypcfreespace(0, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte);
 	}
 	if (mapper==sa1rom)
