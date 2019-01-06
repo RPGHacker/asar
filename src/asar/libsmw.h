@@ -81,6 +81,7 @@ inline int snestopc(int addr)
 	}
 	if (mapper==sfxrom)
 	{
+		// Asar emulates GSU1, because apparently emulators don't support the extra ROM data from GSU2
 		if ((addr&0x600000)==0x600000 ||//wram, sram, open bus
 			(addr&0x408000)==0x000000 ||//hardware regs, ram mirrors, rom mirrors, other strange junk
 			(addr&0x800000)==0x800000)//fastrom isn't valid either in superfx
@@ -179,6 +180,11 @@ inline int pctosnes(int addr)
 			return 0x800000|((addr<<1)&0x3F0000)|0x8000|(addr&0x7FFF);
 		}
 		return -1;
+	}
+	if (mapper==sfxrom)
+	{
+		if (addr>=0x200000) return -1;
+		return ((addr<<1)&0x7F0000)|(addr&0x7FFF)|0x8000;
 	}
 	if (mapper==norom)
 	{
