@@ -63,14 +63,14 @@ void print(const char * str)
 	prints[numprint++]= duplicate_string(str);
 }
 
-static void fillerror(errordata& myerr, int errid, const char * type, const char * str)
+static void fillerror(errordata& myerr, int errid, const char * type, const char * str, bool show_block)
 {
 	myerr.filename= duplicate_string(thisfilename);
 	myerr.line=thisline;
 	if (thisblock) myerr.block= duplicate_string(thisblock);
 	else myerr.block= duplicate_string("");
 	myerr.rawerrdata= duplicate_string(str);
-	myerr.fullerrdata= duplicate_string(S getdecor()+type+str+(thisblock?(S" ["+thisblock+"]"):""));
+	myerr.fullerrdata= duplicate_string(S getdecor()+type+str+((thisblock&&show_block)?(S" ["+thisblock+"]"):""));
 	myerr.callerline=callerline;
 	myerr.callerfilename=callerfilename;
 	myerr.errid = errid;
@@ -83,13 +83,19 @@ void error_interface(int errid, int whichpass, const char * e_)
 {
 	errored = true;
 	if (ismath) matherror = e_;
-	else if (pass == whichpass) fillerror(errors[numerror++], errid, S "error: (E" + string(errid) + "): ", e_);
+	else if (pass == whichpass) {
+		// don't show current block if the error came from an error command
+		bool show_block = (errid != error_id_error_command);
+		fillerror(errors[numerror++], errid, S "error: (E" + string(errid) + "): ", e_, show_block);
+	}
 	else {}//ignore anything else
 }
 
 void warn(int errid, const char * str)
 {
-	fillerror(warnings[numwarn++], errid, S "warning: (W" + string(errid) + "): ", str);
+	// don't show current block if the warning came from a warn command
+	bool show_block = (errid != warning_id_warn_command);
+	fillerror(warnings[numwarn++], errid, S "warning: (W" + string(errid) + "): ", str, show_block);
 }
 
 static void resetdllstuff()
