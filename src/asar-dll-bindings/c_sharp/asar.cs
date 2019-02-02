@@ -10,7 +10,7 @@ namespace AsarCLR
     /// </summary>
     public static unsafe class Asar
     {
-        const int expectedapiversion=302;
+        const int expectedapiversion=303;
 
         [DllImport("asar", EntryPoint = "asar_init", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         [return:MarshalAs(UnmanagedType.I1)]
@@ -247,6 +247,7 @@ namespace AsarCLR
             public int line;
             public IntPtr callerfilename;
             public int callerline;
+            public int errid;
         };
         
         private static Asarerror[] cleanerrors(Rawasarerror* ptr, int length)
@@ -264,6 +265,7 @@ namespace AsarCLR
                 output[i].Line = ptr[i].line;
                 output[i].Callerfilename = Marshal.PtrToStringAnsi(ptr[i].callerfilename);
                 output[i].Callerline = ptr[i].callerline;
+                output[i].ErrorId = ptr[i].errid;
             }
 
             return output;
@@ -480,6 +482,7 @@ namespace AsarCLR
         public int Line;
         public String Callerfilename;
         public int Callerline;
+        public int ErrorId;
     }
 
     /// <summary>
