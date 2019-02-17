@@ -4,6 +4,7 @@
 #include "errors.h"
 #include "asar.h"
 #include "crc32.h"
+#include <cstdint>
 
 mapper_t mapper=lorom;
 int sa1banks[8]={0<<20, 1<<20, -1, -1, 2<<20, 3<<20, -1, -1};
@@ -416,9 +417,9 @@ bool openrom(const char * filename, bool confirm)
 	return true;
 }
 
-unsigned int closerom(bool save)
+uint32_t closerom(bool save)
 {
-	unsigned int romCrc = 0;
+	uint32_t romCrc = 0;
 	if (thisfile && save && romlen)
 	{
 		fseek(thisfile, header*512, SEEK_SET);
@@ -426,13 +427,13 @@ unsigned int closerom(bool save)
 
 		// do a quick re-read of the header, and include that in the crc32 calculation if necessary
 		{
-			unsigned char* filedata = (unsigned char*)malloc(sizeof(unsigned char) * (romlen + header * 512));
+      uint8_t* filedata = (uint8_t*)malloc(sizeof(uint8_t) * (romlen + header * 512));
 			if (header)
 			{
 				fseek(thisfile, 0, SEEK_SET);
-				fread(filedata, sizeof(unsigned char), 512, thisfile);
+				fread(filedata, sizeof(uint8_t), 512, thisfile);
 			}
-			memcpy(filedata + (header * 512), romdata, (size_t)romlen);
+			memcpy(filedata + (header * 512), romdata, sizeof(uint8_t) * (size_t)romlen);
 			romCrc = crc32(filedata, (unsigned int)(romlen + header * 512));
 			free(filedata);
 		}

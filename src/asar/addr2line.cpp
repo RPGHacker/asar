@@ -2,6 +2,7 @@
 #include "asar.h"
 #include "crc32.h"
 #include "libstr.h"
+#include <cstdint>
 
 //////////////////////////////////////////////////////////////////////////
 // Class to store address-to-line mappings for richer symbolic information
@@ -32,7 +33,7 @@ void AddressToLineMapping::includeMapping(const char* filename, int line, int ad
 int AddressToLineMapping::getFileIndex(const char* filename)
 {
 	// check if the file exists first
-	unsigned long filenameCrc = crc32((const unsigned char*)filename, (unsigned int)strlen(filename));
+  uint32_t filenameCrc = crc32((const uint8_t*)filename, (unsigned int)strlen(filename));
 	for (int i = 0; i < m_filenameCrcs.count; ++i)
 	{
 		if (m_filenameCrcs[i] == filenameCrc)
@@ -44,10 +45,10 @@ int AddressToLineMapping::getFileIndex(const char* filename)
 	// file doesn't exist, so start tracking it
 	char* data = nullptr;
 	int len = 0;
-	unsigned long fileCrc = 0;
+	uint32_t fileCrc = 0;
 	if (readfile(filename, "", &data, &len))
 	{
-		fileCrc = crc32((const unsigned char*)data, (unsigned int)len);
+		fileCrc = crc32((const uint8_t*)data, (unsigned int)len);
 	}
 	delete data;
 

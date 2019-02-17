@@ -4,4 +4,6 @@
 
 #pragma once
 
-extern unsigned long crc32(const unsigned char *s, unsigned int len);
+#include <cstdint>
+
+extern uint32_t crc32(const uint8_t *s, unsigned int len);

@@ -9,6 +9,7 @@
 
 #include "autoarray.h"
 #include "libstr.h"
+#include <cstdint>
 
 class AddressToLineMapping
 {
@@ -30,7 +31,7 @@ public:
 	struct FileInfo
 	{
 		string filename;
-		unsigned long fileCrc;
+		uint32_t fileCrc;
 	};
 	const autoarray<FileInfo>& getFileList() const { return m_fileList; }
 	const autoarray<AddrToLineInfo>& getAddrToLineInfo() const { return m_addrToLineInfo; }
@@ -42,7 +43,7 @@ private:
 
 	autoarray<FileInfo> m_fileList;
 	// parallel list of crcs of the filenames in fileList, to speed up lookups
-	autoarray<unsigned long> m_filenameCrcs;
+	autoarray<uint32_t> m_filenameCrcs;
 
 
 	autoarray<AddrToLineInfo> m_addrToLineInfo;

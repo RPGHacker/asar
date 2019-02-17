@@ -9,6 +9,7 @@
 #include "interface-shared.h"
 #include "assembleblock.h"
 #include "asar_math.h"
+#include <cstdint>
 
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -21,7 +22,7 @@
 static autoarray<const char *> prints;
 static string symbolsfile;
 static int numprint;
-static unsigned int romCrc;
+static uint32_t romCrc;
 
 struct errordata {
 	const char * fullerrdata;
@@ -240,7 +241,7 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 	{
 		*romlen_ = romlen;
 	}
-	romCrc = crc32(romdata, (size_t)romlen);
+	romCrc = crc32((const uint8_t*)romdata, (size_t)romlen);
 	memcpy(romdata_, romdata, (size_t)romlen);
 	free(const_cast<unsigned char*>(romdata));
 	return true;

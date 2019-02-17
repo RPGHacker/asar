@@ -13,6 +13,7 @@
 #include "assembleblock.h"
 #include "asar_math.h"
 #include "macro.h"
+#include <cstdint>
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
@@ -840,7 +841,7 @@ static void printsymbol_nocash(const string& key, unsigned int& address)
 	symbolfile += line;
 }
 
-string create_symbols_file(string format, unsigned int romCrc){
+string create_symbols_file(string format, uint32_t romCrc){
 	format = lower(format);
 	symbolfile = "";
 	if(format == "wla")
@@ -856,7 +857,7 @@ string create_symbols_file(string format, unsigned int romCrc){
 		for (int i = 0; i < addrToLineFileList.count; ++i)
 		{
 			char addrToFileListStr[256];
-			snprintf(addrToFileListStr, 256, "%.4x %.8lx %s\n",
+			snprintf(addrToFileListStr, 256, "%.4x %.8x %s\n",
 				i,
 				addrToLineFileList[i].fileCrc,
 				addrToLineFileList[i].filename.str

@@ -15,6 +15,7 @@
 #include "libsmw.h"
 #include "errors.h"
 #include "virtualfile.h"
+#include <cstdint>
 
 extern unsigned const char * romdata_r;
 extern int romlen_r;
@@ -27,7 +28,7 @@ bool is_hex_constant(const char * str);
 
 bool validatedefinename(const char * name);
 
-string create_symbols_file(string format, unsigned int romCrc);
+string create_symbols_file(string format, uint32_t romCrc);
 
 void parse_std_includes(const char* textfile, autoarray<string>& outarray);
 void parse_std_defines(const char* textfile);
