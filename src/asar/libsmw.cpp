@@ -427,7 +427,7 @@ uint32_t closerom(bool save)
 
 		// do a quick re-read of the header, and include that in the crc32 calculation if necessary
 		{
-      uint8_t* filedata = (uint8_t*)malloc(sizeof(uint8_t) * (romlen + header * 512));
+			uint8_t* filedata = (uint8_t*)malloc(sizeof(uint8_t) * (romlen + header * 512));
 			if (header)
 			{
 				fseek(thisfile, 0, SEEK_SET);

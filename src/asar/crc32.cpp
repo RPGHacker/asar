@@ -108,17 +108,17 @@ static uint32_t crc32_tab[] = {
 
 uint32_t crc32(const uint8_t *s, unsigned int len)
 {
-  unsigned int i;
-  uint32_t crc32val;
+	unsigned int i;
+	uint32_t crc32val;
 
-  crc32val = (uint32_t)~0;
-  for (i = 0;  i < len;  i ++)
-  {
-    crc32val =
-      crc32_tab[(crc32val ^ s[i]) & 0xff] ^
-      (crc32val >> 8);
-  }
-  return ~crc32val;
+	crc32val = (uint32_t)~0;
+	for (i = 0;  i < len;  i ++)
+	{
+		crc32val =
+			crc32_tab[(crc32val ^ s[i]) & 0xff] ^
+			(crc32val >> 8);
+	}
+	return ~crc32val;
 }
 
 

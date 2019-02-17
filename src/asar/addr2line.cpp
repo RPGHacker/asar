@@ -33,7 +33,7 @@ void AddressToLineMapping::includeMapping(const char* filename, int line, int ad
 int AddressToLineMapping::getFileIndex(const char* filename)
 {
 	// check if the file exists first
-  uint32_t filenameCrc = crc32((const uint8_t*)filename, (unsigned int)strlen(filename));
+	uint32_t filenameCrc = crc32((const uint8_t*)filename, (unsigned int)strlen(filename));
 	for (int i = 0; i < m_filenameCrcs.count; ++i)
 	{
 		if (m_filenameCrcs[i] == filenameCrc)
