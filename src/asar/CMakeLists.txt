@@ -102,10 +102,12 @@ set(ASAR_SHARED_SOURCE_FILES "")
 list(
 	APPEND ASAR_SHARED_SOURCE_FILES
 	
+	"${CMAKE_CURRENT_SOURCE_DIR}/addr2line.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-65816.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-spc700.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-superfx.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/assembleblock.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/crc32.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libcon.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.cpp"
@@ -119,9 +121,11 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.cpp"
 	
 	# Not required in here, but useful so they're add to your VS solution
+	"${CMAKE_CURRENT_SOURCE_DIR}/addr2line.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/asar.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/assocarr.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/autoarray.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/crc32.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libcon.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libmisc.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.h"

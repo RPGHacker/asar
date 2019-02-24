@@ -1,5 +1,6 @@
 #include "asar.h"
 #include "assocarr.h"
+#include "crc32.h"
 #include "libstr.h"
 #include "libsmw.h"
 #include "virtualfile.h"
@@ -8,6 +9,7 @@
 #include "interface-shared.h"
 #include "assembleblock.h"
 #include "asar_math.h"
+#include <cstdint>
 
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -20,6 +22,7 @@
 static autoarray<const char *> prints;
 static string symbolsfile;
 static int numprint;
+static uint32_t romCrc;
 
 struct errordata {
 	const char * fullerrdata;
@@ -129,6 +132,7 @@ static void resetdllstuff()
 	numwarn=0;
 #undef free_and_null
 
+	romCrc = 0;
 	clidefines.reset();
 	reset_warnings_to_default();
 
@@ -237,6 +241,7 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 	{
 		*romlen_ = romlen;
 	}
+	romCrc = crc32((const uint8_t*)romdata, (size_t)romlen);
 	memcpy(romdata_, romdata, (size_t)romlen);
 	free(const_cast<unsigned char*>(romdata));
 	return true;
@@ -505,7 +510,7 @@ EXPORT mapper_t asar_getmapper()
 }
 
 EXPORT const char * asar_getsymbolsfile(const char* type){
-	symbolsfile = create_symbols_file(type);
+	symbolsfile = create_symbols_file(type, romCrc);
 	return symbolsfile;
 }
 

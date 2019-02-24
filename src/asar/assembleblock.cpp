@@ -1,3 +1,4 @@
+#include "addr2line.h"
 #include "asar.h"
 #include "libstr.h"
 #include "libsmw.h"
@@ -683,6 +684,9 @@ void initstuff()
 
 	includeonce.reset();
 
+	extern AddressToLineMapping addressToLineMapping;
+	addressToLineMapping.reset();
+
 	push_warnings(false);
 }
 
@@ -785,6 +789,9 @@ void assembleblock(const char * block)
 	int numwords;
 	char ** word = qsplit(tmp.str, " ", &numwords);
 	string resolved;
+	// when writing out the data for the addrToLine mapping,
+	// we want to write out the snespos we had before writing opcodes
+	int addrToLinePos = realsnespos & 0xFFFFFF;
 
 #define is(test) (!stricmp(word[0], test))
 #define is0(test) (!stricmp(word[0], test) && numwords==1)
@@ -1018,7 +1025,15 @@ void assembleblock(const char * block)
 		}
 	}
 	else if (numif!=numtrue) return;
-	else if (asblock_pick(word, numwords)) { numopcodes++; }
+	else if (asblock_pick(word, numwords))
+	{
+		if (pass == 2)
+		{
+			extern AddressToLineMapping addressToLineMapping;
+			addressToLineMapping.includeMapping(thisfilename.str, thisline + 1, addrToLinePos);
+		}
+		numopcodes++;
+	}
 	else if (is0("error"))
 	{
 		asar_throw_error(0, error_type_block, error_id_error_command, ".");

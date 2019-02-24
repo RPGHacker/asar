@@ -3,6 +3,8 @@
 #include "autoarray.h"
 #include "errors.h"
 #include "asar.h"
+#include "crc32.h"
+#include <cstdint>
 
 mapper_t mapper=lorom;
 int sa1banks[8]={0<<20, 1<<20, -1, -1, 2<<20, 3<<20, -1, -1};
@@ -415,19 +417,33 @@ bool openrom(const char * filename, bool confirm)
 	return true;
 }
 
-void closerom(bool save)
+uint32_t closerom(bool save)
 {
+	uint32_t romCrc = 0;
 	if (thisfile && save && romlen)
 	{
 		fseek(thisfile, header*512, SEEK_SET);
 		fwrite(const_cast<unsigned char*>(romdata), 1, (size_t)romlen, thisfile);
+
+		// do a quick re-read of the header, and include that in the crc32 calculation if necessary
+		{
+			uint8_t* filedata = (uint8_t*)malloc(sizeof(uint8_t) * (romlen + header * 512));
+			if (header)
+			{
+				fseek(thisfile, 0, SEEK_SET);
+				fread(filedata, sizeof(uint8_t), 512, thisfile);
+			}
+			memcpy(filedata + (header * 512), romdata, sizeof(uint8_t) * (size_t)romlen);
+			romCrc = crc32(filedata, (unsigned int)(romlen + header * 512));
+			free(filedata);
+		}
 	}
 	if (thisfile) fclose(thisfile);
 	if (romdata) free(const_cast<unsigned char*>(romdata));
 	thisfile= nullptr;
 	romdata= nullptr;
 	romlen=0;
-	return;
+	return romCrc;
 }
 
 static unsigned int getchecksum()

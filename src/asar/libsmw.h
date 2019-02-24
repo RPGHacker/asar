@@ -2,12 +2,13 @@
 
 #include "errors.h"
 #include "autoarray.h"
+#include <cstdint>
 
 extern const unsigned char * romdata;
 extern int romlen;
 extern asar_error_id openromerror;
 bool openrom(const char * filename, bool confirm=true);
-void closerom(bool save = true);
+uint32_t closerom(bool save = true);
 
 enum mapper_t {
 	invalid_mapper,

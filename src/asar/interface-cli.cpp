@@ -434,7 +434,6 @@ int main(int argc, char * argv[])
 		new_filesystem.destroy();
 		filesystem = nullptr;
 
-
 		if (werror && warned) asar_throw_error(pass, error_type_null, error_id_werror);
 		if (checksum_fix_enabled) fixchecksum();
 		//if (pcpos>romlen) romlen=pcpos;
@@ -470,11 +469,11 @@ int main(int argc, char * argv[])
 			if (verbose) puts("Assembling completed without problems.");
 			pause(yes);
 		}
-		closerom();
+		unsigned int romCrc = closerom();
 		if (symbols)
 		{
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";
-			string contents = create_symbols_file(symbols);
+			string contents = create_symbols_file(symbols, romCrc);
 			FILE * symfile = fopen(symfilename, "wt");
 			fputs(contents, symfile);
 			fclose(symfile);
