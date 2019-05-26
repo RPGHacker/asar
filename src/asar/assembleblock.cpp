@@ -1,3 +1,4 @@
+#include "addr2line.h"
 #include "asar.h"
 #include "libstr.h"
 #include "libsmw.h"
@@ -64,9 +65,64 @@ inline void verifysnespos()
 
 static int fixsnespos(int inaddr, int step)
 {
-	// RPG Hacker: No idea how reliable this is.
-	// Might not work with some of the more exotic mappers.
-	return pctosnes(snestopc(inaddr) + step);
+	// randomdude999: turns out it wasn't very reliable at all.
+	/* // RPG Hacker: No idea how reliable this is.
+	 // Might not work with some of the more exotic mappers.
+	 return pctosnes(snestopc(inaddr) + step); */
+	if (mapper == lorom) {
+		if ((inaddr&0xFFFF)+step > 0xFFFF) {
+			// bank crossed
+			return inaddr+step+0x8000;
+		}
+		return inaddr+step;
+	} else if (mapper == hirom) {
+		if ((inaddr&0x400000) == 0) {
+			// system pages, need to account for low pages and stuff
+			if ((inaddr&0xFFFF)+step > 0xFFFF) {
+				return inaddr+step+0x8000;
+			}
+		}
+		return inaddr+step;
+	} else if (mapper == exlorom) {
+		// exlorom has no mirroring so this should work fine
+		return pctosnes(snestopc(inaddr)+step);
+	} else if (mapper == exhirom) {
+		// apparently exhirom is pretty similar to hirom after all
+		if ((inaddr&0x400000) == 0) {
+			// system pages, need to account for low pages and stuff
+			if ((inaddr&0xFFFF)+step > 0xFFFF) {
+				return inaddr+step+0x8000;
+			}
+		}
+		return inaddr+step;
+	} else if (mapper == sa1rom) {
+		if((inaddr&0x400000) == 0) {
+			// lorom area
+			if ((inaddr&0xFFFF)+step > 0xFFFF) {
+				return inaddr+step+0x8000;
+			}
+			return inaddr+step;
+		} else {
+			// hirom area
+			return inaddr+step;
+		}
+	} else if (mapper == sfxrom) {
+		if ((inaddr&0x400000) == 0) {
+			// lorom area
+			if ((inaddr&0xFFFF)+step > 0xFFFF) {
+				return inaddr+step+0x8000;
+			}
+		} else {
+			// hirom area
+			return inaddr+step;
+		}
+	} else if (mapper == bigsa1rom) {
+		// no mirrors here, so this should work
+		return pctosnes(snestopc(inaddr)+step);
+	} else if (mapper == norom) {
+		return inaddr+step;
+	}
+	return -1;
 }
 
 inline void step(int num)
@@ -628,6 +684,9 @@ void initstuff()
 
 	includeonce.reset();
 
+	extern AddressToLineMapping addressToLineMapping;
+	addressToLineMapping.reset();
+
 	push_warnings(false);
 }
 
@@ -730,6 +789,9 @@ void assembleblock(const char * block)
 	int numwords;
 	char ** word = qsplit(tmp.str, " ", &numwords);
 	string resolved;
+	// when writing out the data for the addrToLine mapping,
+	// we want to write out the snespos we had before writing opcodes
+	int addrToLinePos = realsnespos & 0xFFFFFF;
 
 #define is(test) (!stricmp(word[0], test))
 #define is0(test) (!stricmp(word[0], test) && numwords==1)
@@ -963,7 +1025,15 @@ void assembleblock(const char * block)
 		}
 	}
 	else if (numif!=numtrue) return;
-	else if (asblock_pick(word, numwords)) { numopcodes++; }
+	else if (asblock_pick(word, numwords))
+	{
+		if (pass == 2)
+		{
+			extern AddressToLineMapping addressToLineMapping;
+			addressToLineMapping.includeMapping(thisfilename.str, thisline + 1, addrToLinePos);
+		}
+		numopcodes++;
+	}
 	else if (is0("error"))
 	{
 		asar_throw_error(0, error_type_block, error_id_error_command, ".");

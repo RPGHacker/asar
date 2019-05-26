@@ -42,7 +42,9 @@ void error_interface(int errid, int whichpass, const char * e_)
 	if (pass == whichpass)
 	{
 		errnum++;
-		fputs(S getdecor() + "error: (E" + string(errid) + "): " + e_ + (thisblock ? (S" [" + thisblock + "]") : "") + "\n", errloc);
+		// don't show current block if the error came from an error command
+		bool show_block = (thisblock && (errid != error_id_error_command));
+		fputs(S getdecor() + "error: (E" + string(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
 		static const int max_num_errors = 20;
 		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
@@ -53,7 +55,9 @@ static bool warned=false;
 
 void warn(int errid, const char * e_)
 {
-	fputs(S getdecor()+"warning: (W" + string(errid) + "): " + e_ + "\n", errloc);
+	// don't show current block if the warning came from a warn command
+	bool show_block = (thisblock && (errid != warning_id_warn_command));
+	fputs(S getdecor()+"warning: (W" + string(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
 	warned=true;
 }
 
@@ -458,7 +462,6 @@ int main(int argc, char * argv[])
 		new_filesystem.destroy();
 		filesystem = nullptr;
 
-
 		if (werror && warned) asar_throw_error(pass, error_type_null, error_id_werror);
 		if (checksum_fix_enabled) fixchecksum();
 		//if (pcpos>romlen) romlen=pcpos;
@@ -494,11 +497,11 @@ int main(int argc, char * argv[])
 			if (verbose) puts("Assembling completed without problems.");
 			pause(yes);
 		}
-		closerom();
+		unsigned int romCrc = closerom();
 		if (symbols)
 		{
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";
-			string contents = create_symbols_file(symbols);
+			string contents = create_symbols_file(symbols, romCrc);
 			FILE * symfile = fopen(symfilename, "wt");
 			fputs(contents, symfile);
 			fclose(symfile);

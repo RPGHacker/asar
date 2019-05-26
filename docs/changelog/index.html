@@ -38,6 +38,22 @@
 
 		<hr />
 
+		<div><h2>v1.71</h2>
+		<b>Release:</b> January 6, 2019
+
+		<h3>Contributors:</h3>
+		<ul><li>randomdude999</li></ul>
+
+		<h3>Bug fixes:</h3>
+		<ul>
+			<li>The Super FX ROM mapping should now properly support freespace.</li>
+			<li>The <code>canread()</code> functions returned true for the first byte after the end of the ROM. That has been fixed.</li>
+			<li>Using <code>check bankcross off</code> now should mess with the PC less (i.e. no forced fastrom addressing).</li>
+			<li>Using the <code>error</code> command now doesn't print the line of code that caused the error. All warnings except for the one from the <code>warn</code> command should now print the line of code that caused the warning. (note that not all warnings or errors are associated with a specific line of code.)</li>
+		</ul>
+
+		<hr />
+
 		<div><h2>v1.70</h2>
 		<b>Release:</b> January 4, 2019
 

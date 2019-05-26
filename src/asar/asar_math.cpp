@@ -205,7 +205,7 @@ static double validaddr(const funcparam& in, const funcparam& len)
 	validateparam(in, 0, Type_Double);
 	validateparam(len, 1, Type_Double);
 	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0 || addr+len.value.longdoublevalue-1>romlen_r) return 0;
+	if (addr<0 || addr+len.value.longdoublevalue-1>=romlen_r) return 0;
 	else return 1;
 }
 

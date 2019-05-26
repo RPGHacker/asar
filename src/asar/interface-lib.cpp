@@ -1,5 +1,6 @@
 #include "asar.h"
 #include "assocarr.h"
+#include "crc32.h"
 #include "libstr.h"
 #include "libsmw.h"
 #include "virtualfile.h"
@@ -8,6 +9,7 @@
 #include "interface-shared.h"
 #include "assembleblock.h"
 #include "asar_math.h"
+#include <cstdint>
 
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -20,6 +22,7 @@
 static autoarray<const char *> prints;
 static string symbolsfile;
 static int numprint;
+static uint32_t romCrc;
 
 struct errordata {
 	const char * fullerrdata;
@@ -63,14 +66,14 @@ void print(const char * str)
 	prints[numprint++]= duplicate_string(str);
 }
 
-static void fillerror(errordata& myerr, int errid, const char * type, const char * str)
+static void fillerror(errordata& myerr, int errid, const char * type, const char * str, bool show_block)
 {
 	myerr.filename= duplicate_string(thisfilename);
 	myerr.line=thisline;
 	if (thisblock) myerr.block= duplicate_string(thisblock);
 	else myerr.block= duplicate_string("");
 	myerr.rawerrdata= duplicate_string(str);
-	myerr.fullerrdata= duplicate_string(S getdecor()+type+str+(thisblock?(S" ["+thisblock+"]"):""));
+	myerr.fullerrdata= duplicate_string(S getdecor()+type+str+((thisblock&&show_block)?(S" ["+thisblock+"]"):""));
 	myerr.callerline=callerline;
 	myerr.callerfilename=callerfilename;
 	myerr.errid = errid;
@@ -83,13 +86,19 @@ void error_interface(int errid, int whichpass, const char * e_)
 {
 	errored = true;
 	if (ismath) matherror = e_;
-	else if (pass == whichpass) fillerror(errors[numerror++], errid, S "error: (E" + string(errid) + "): ", e_);
+	else if (pass == whichpass) {
+		// don't show current block if the error came from an error command
+		bool show_block = (errid != error_id_error_command);
+		fillerror(errors[numerror++], errid, S "error: (E" + string(errid) + "): ", e_, show_block);
+	}
 	else {}//ignore anything else
 }
 
 void warn(int errid, const char * str)
 {
-	fillerror(warnings[numwarn++], errid, S "warning: (W" + string(errid) + "): ", str);
+	// don't show current block if the warning came from a warn command
+	bool show_block = (errid != warning_id_warn_command);
+	fillerror(warnings[numwarn++], errid, S "warning: (W" + string(errid) + "): ", str, show_block);
 }
 
 static void resetdllstuff()
@@ -123,6 +132,7 @@ static void resetdllstuff()
 	numwarn=0;
 #undef free_and_null
 
+	romCrc = 0;
 	clidefines.reset();
 	reset_warnings_to_default();
 
@@ -231,6 +241,7 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 	{
 		*romlen_ = romlen;
 	}
+	romCrc = crc32((const uint8_t*)romdata, (size_t)romlen);
 	memcpy(romdata_, romdata, (size_t)romlen);
 	free(const_cast<unsigned char*>(romdata));
 	return true;
@@ -499,7 +510,7 @@ EXPORT mapper_t asar_getmapper()
 }
 
 EXPORT const char * asar_getsymbolsfile(const char* type){
-	symbolsfile = create_symbols_file(type);
+	symbolsfile = create_symbols_file(type, romCrc);
 	return symbolsfile;
 }
 
