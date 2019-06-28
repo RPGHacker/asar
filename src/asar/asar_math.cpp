@@ -10,11 +10,15 @@
 #include "assembleblock.h"
 #include "asar_math.h"
 #include <math.h>
+#include <functional>
+#include <algorithm>
 
 bool math_pri=true;
 bool math_round=false;
 
 static const char * str;
+//save before calling eval if needed after
+static const char * current_user_function_name;
 
 static double getnumcore();
 static double getnum();
@@ -25,43 +29,6 @@ static double eval(int depth);
 
 bool foundlabel;
 bool forwardlabel;
-
-
-struct funcdat {
-	autoptr<char*> name;
-	int numargs;
-	autoptr<char*> argbuf;//this one isn't used, it's just to free it up
-	autoptr<char**> arguments;
-	autoptr<char*> content;
-};
-static autoarray<funcdat> userfunc;
-static int numuserfunc=0;
-
-void createuserfunc(const char * name, const char * arguments, const char * content)
-{
-	if (!confirmqpar(content)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
-	for (int i=0;i<numuserfunc;i++)
-	{
-		if (!strcmp(name, userfunc[i].name))
-		{
-			asar_throw_error(0, error_type_block, error_id_function_redefined, name);
-		}
-	}
-	funcdat& thisone=userfunc[numuserfunc];
-	thisone.name= duplicate_string(name);
-	thisone.argbuf= duplicate_string(arguments);
-	thisone.arguments=qsplit(thisone.argbuf, ",", &(thisone.numargs));
-	thisone.content= duplicate_string(content);
-	for (int i=0;thisone.arguments[i];i++)
-	{
-		if (!confirmname(thisone.arguments[i]))
-		{
-			userfunc.remove(numuserfunc);
-			asar_throw_error(0, error_type_block, error_id_invalid_param_name);
-		}
-	}
-	numuserfunc++;
-}
 
 struct cachedfile {
 	string filename;
@@ -156,262 +123,6 @@ void closecachedfiles()
 }
 
 
-// Some helpers so that we can pass variable parameter types to functions
-
-enum funcparamtype {
-	Type_String,
-	Type_Double
-};
-
-struct funcparam {
-	funcparamtype type;
-	union valueunion {
-		const char * stringvalue;
-		double longdoublevalue;
-	} value;
-
-	funcparam()
-	{
-		type = Type_Double;
-		value.longdoublevalue = 0.0;
-	}
-
-	funcparam(const char * in)
-	{
-		type = Type_String;
-		value.stringvalue = in;
-	}
-
-	funcparam(double in)
-	{
-		type = Type_Double;
-		value.longdoublevalue = in;
-	}
-};
-
-
-static char ** funcargnames;
-static funcparam * funcargvals;
-static int numuserfuncargs;
-
-#define validateparam(inparam, paramindex, expectedtype)     \
-	if (inparam.type != expectedtype)            \
-	{                                             \
-		asar_throw_error(1, error_type_block, error_id_math_invalid_type, #paramindex, #expectedtype);   \
-	}
-
-static double validaddr(const funcparam& in, const funcparam& len)
-{
-	validateparam(in, 0, Type_Double);
-	validateparam(len, 1, Type_Double);
-	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0 || addr+len.value.longdoublevalue-1>=romlen_r) return 0;
-	else return 1;
-}
-
-static double read1(const funcparam& in)
-{
-	validateparam(in, 0, Type_Double);
-	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)in.value.longdoublevalue) + " in read1()").str);
-	else if (addr+1>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6((unsigned int)in.value.longdoublevalue) + " in read1()").str);
-	else return
-			 romdata_r[addr  ]     ;
-	return 0.0;
-}
-
-static double read2(const funcparam& in)
-{
-	validateparam(in, 0, Type_Double);
-	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)in.value.longdoublevalue) + " in read2()").str);
-	else if (addr+2>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6((unsigned int)in.value.longdoublevalue) + " in read2()").str);
-	else return
-			 romdata_r[addr  ]    |
-			(romdata_r[addr+1]<< 8);
-	return 0.0;
-}
-
-static double read3(const funcparam& in)
-{
-	validateparam(in, 0, Type_Double);
-	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)in.value.longdoublevalue) + " in read3()").str);
-	else if (addr+3>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6((unsigned int)in.value.longdoublevalue) + " in read3()").str);
-	else return
-			 romdata_r[addr  ]     |
-			(romdata_r[addr+1]<< 8)|
-			(romdata_r[addr+2]<<16);
-	return 0.0;
-}
-
-static double read4(const funcparam& in)
-{
-	validateparam(in, 0, Type_Double);
-	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)in.value.longdoublevalue) + " in read4()").str);
-	else if (addr+4>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6((unsigned int)in.value.longdoublevalue) + " in read4()").str);
-	else return
-			 romdata_r[addr  ]     |
-			(romdata_r[addr+1]<< 8)|
-			(romdata_r[addr+2]<<16)|
-			(romdata_r[addr+3]<<24);
-	return 0.0;
-}
-
-static double read1s(const funcparam& in, const funcparam& def)
-{
-	validateparam(in, 0, Type_Double);
-	validateparam(def, 1, Type_Double);
-	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) return def.value.longdoublevalue;
-	else if (addr+0>romlen_r) return def.value.longdoublevalue;
-	else return
-			 romdata_r[addr  ]     ;
-}
-
-static double read2s(const funcparam& in, const funcparam& def)
-{
-	validateparam(in, 0, Type_Double);
-	validateparam(def, 1, Type_Double);
-	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) return def.value.longdoublevalue;
-	else if (addr+1>romlen_r) return def.value.longdoublevalue;
-	else return
-			 romdata_r[addr  ]    |
-			(romdata_r[addr+1]<< 8);
-}
-
-static double read3s(const funcparam& in, const funcparam& def)
-{
-	validateparam(in, 0, Type_Double);
-	validateparam(def, 1, Type_Double);
-	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) return def.value.longdoublevalue;
-	else if (addr+2>romlen_r) return def.value.longdoublevalue;
-	else return
-			 romdata_r[addr  ]     |
-			(romdata_r[addr+1]<< 8)|
-			(romdata_r[addr+2]<<16);
-}
-
-static double read4s(const funcparam& in, const funcparam& def)
-{
-	validateparam(in, 0, Type_Double);
-	validateparam(def, 1, Type_Double);
-	int addr=snestopc_pick((int)in.value.longdoublevalue);
-	if (addr<0) return def.value.longdoublevalue;
-	else if (addr+3>romlen_r) return def.value.longdoublevalue;
-	else return
-			 romdata_r[addr  ]     |
-			(romdata_r[addr+1]<< 8)|
-			(romdata_r[addr+2]<<16)|
-			(romdata_r[addr+3]<<24);
-}
-
-static double readfilefunc(const funcparam& fname, const funcparam& offset, long numbytes)
-{
-	validateparam(fname, 0, Type_String);
-	validateparam(offset, 1, Type_Double);
-	if (numbytes <= 0 || numbytes > 4) asar_throw_error(1, error_type_block, error_id_readfile_1_to_4_bytes);
-	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, true);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.value.stringvalue);
-	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) asar_throw_error(1, error_type_block, error_id_file_offset_out_of_bounds, dec((int)offset.value.longdoublevalue).str, fname.value.stringvalue);
-	unsigned char readdata[4] = { 0, 0, 0, 0 };
-	filesystem->read_file(fhandle->filehandle, readdata, (size_t)offset.value.longdoublevalue, (size_t)numbytes);
-	return
-		 readdata[0]       |
-		(readdata[1] << 8) |
-		(readdata[2] << 16)|
-		(readdata[3] << 24);
-}
-
-static double readfilefuncs(const funcparam& fname, const funcparam& offset, const funcparam& def, long numbytes)
-{
-	validateparam(fname, 0, Type_String);
-	validateparam(offset, 1, Type_Double);
-	validateparam(def, 2, Type_Double);
-	if (numbytes <= 0 || numbytes > 4) asar_throw_error(1, error_type_block, error_id_readfile_1_to_4_bytes);
-	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return def.value.longdoublevalue;
-	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes > fhandle->filesize) return def.value.longdoublevalue;
-	unsigned char readdata[4] = { 0, 0, 0, 0 };
-	filesystem->read_file(fhandle->filehandle, readdata, (size_t)offset.value.longdoublevalue, (size_t)numbytes);
-	return
-		readdata[0] |
-		(readdata[1] << 8) |
-		(readdata[2] << 16) |
-		(readdata[3] << 24);
-}
-
-static double canreadfilefunc(const funcparam& fname, const funcparam& offset, const funcparam& numbytes)
-{
-	validateparam(fname, 0, Type_String);
-	validateparam(offset, 1, Type_Double);
-	validateparam(numbytes, 2, Type_Double);
-	if ((long)numbytes.value.longdoublevalue <= 0) asar_throw_error(1, error_type_block, error_id_canreadfile_0_bytes);
-	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return 0;
-	if ((long)offset.value.longdoublevalue < 0 || (size_t)offset.value.longdoublevalue + (size_t)numbytes.value.longdoublevalue > fhandle->filesize) return 0;
-	return 1;
-}
-
-// returns 0 if the file is OK, 1 if the file doesn't exist, 2 if it couldn't be opened for some other reason
-static double getfilestatus(const funcparam& fname)
-{
-	validateparam(fname, 0, Type_String);
-	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE)
-	{
-		if (filesystem->get_last_error() == vfe_doesnt_exist)
-		{
-			return 1;
-		}
-		else
-		{
-			return 2;
-		}
-	}
-	return 0;
-}
-
-// Returns the size of the specified file.
-static double filesizefunc(const funcparam& fname)
-{
-	validateparam(fname, 0, Type_String);
-	cachedfile * fhandle = opencachedfile(fname.value.stringvalue, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.value.stringvalue);
-	return (double)fhandle->filesize;
-}
-
-// Checks whether the specified define is defined.
-static double isdefinedfunc(const funcparam& definename)
-{
-	validateparam(definename, 0, Type_String);
-	return defines.exists(definename.value.stringvalue);
-}
-
-// RPG Hacker: What exactly makes this function overly complicated, you ask?
-// Well, it converts a double to a string and then back to a double.
-// It was the quickest reliable solution I could find, though, so there's that.
-static double overlycomplicatedround(const funcparam& number, const funcparam& decimalplaces)
-{
-	validateparam(number, 0, Type_Double);
-	validateparam(decimalplaces, 1, Type_Double);
-
-	// Hue hue hue... ass!
-	// OK, sorry, I apologize.
-	string asstring = ftostrvar(number.value.longdoublevalue, (int)decimalplaces.value.longdoublevalue);
-
-	// Some hacky shenanigans with variables going on here
-	const char * strbackup = str;
-	str = asstring;
-	double asdouble = (double)getnum();
-	str = strbackup;
-
-	return asdouble;
-}
-
 static int struct_size(const char *name)
 {
 	snes_struct structure;
@@ -428,61 +139,517 @@ static int object_size(const char *name)
 	return structure.object_size;
 }
 
-static double structsizefunc(const funcparam& structname)
+
+//only returns alphanumeric (and _) starting with alpha or _
+string get_symbol_argument()
 {
-	validateparam(structname, 0, Type_String);
-	return (double)struct_size(structname.value.stringvalue);
-}
-
-static double objectsizefunc(const funcparam& structname)
-{
-	validateparam(structname, 0, Type_String);
-	return (double)object_size(structname.value.stringvalue);
-}
-
-static double stringsequalfunc(const funcparam& string1, const funcparam& string2)
-{
-	validateparam(string1, 0, Type_String);
-	validateparam(string1, 1, Type_String);
-	return (strcmp(string1.value.stringvalue, string2.value.stringvalue) == 0 ? 1.0 : 0.0);
-}
-
-static double stringsequalinsensitivefunc(const funcparam& string1, const funcparam& string2)
-{
-	validateparam(string1, 0, Type_String);
-	validateparam(string1, 1, Type_String);
-	return (stricmp(string1.value.stringvalue, string2.value.stringvalue) == 0 ? 1.0 : 0.0);
-}
-
-
-#define maxint(a, b) ((unsigned int)a > (unsigned int)b ? (unsigned int)a : (unsigned int)b)
-
-// Check if the argument is simply a parent function parameter being passed through.
-// If so return the index of the parameter, otherwise return -1.
-// Update source if it is a parameter being pass through.
-static int check_passthough_argument(const char** source)
-{
-	const char * current=str;
-	while (isalnum(*current) || *current == '_' || *current == '.') current++;
+	while (*str==' ') str++;	//is this proper?  Dunno yet.
+	const char * strpos = str;
+	if(isalpha(*str) || *str == '_') str++;
+	while (isalnum(*str) || *str == '_' || *str == '.') str++;
+	if(strpos == str){
+		//error nothing was read, this is a placeholder error
+		asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+	}
 	
-	size_t len=(size_t)(current-*source);
-	for (int i=0;i<numuserfuncargs;i++)
+	string symbol = string(strpos, (int)(str - strpos));
+	while (*str==' ') str++;	//eat spaces
+	return symbol;
+}
+
+string get_string_argument()
+{
+	while (*str==' ') str++;
+	if (*str=='"')
 	{
-		if (!strncmp(*source, funcargnames[i], (size_t)maxint(len, strlen(funcargnames[i]))))
+		const char * strpos = str;
+		str++;
+		while (*str!='"' && *str!='\0' && *str!='\n') str++;
+		if (*str == '"')
 		{
-			const char* pos= *source+len;
-			while (*pos==' ') pos++;
-			if(*pos == ',' || *pos == ')')
-			{
-				*source = pos;
-				return i;
-			}
-			break;				
+			string tempname(strpos, (int)(str - strpos + 1));
+			str++;
+			while (*str==' ') str++;	//eat space
+			return string(safedequote(&tempname[0]));
+		}
+		// RPG Hacker: AFAIK, this is never actually triggered, since unmatched quotes are already detected earlier,
+		// but since it does no harm here, I'll keep it in, just to be safe
+		else asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+	}//make this error a better one later
+	
+	asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+	return ""; //never actually called, but I don't feel like figuring out __attribute__ ((noreturn)) on MSVC
+}
+
+double get_double_argument()
+{
+	while (*str==' ') str++;
+	double result = eval(0);
+	while (*str==' ') str++; //eat spaces
+	return result;
+}
+
+//will eat the comma
+bool has_next_parameter()
+{
+	if (*str==',')
+	{
+		str++;
+		return true;
+	}
+	return false;
+}
+
+void require_next_parameter()
+{
+	if (*str==',')
+	{
+		str++;
+		return;
+	}
+	asar_throw_error(1, error_type_block, error_id_require_parameter);
+}
+
+template <typename F> double asar_unary_wrapper()
+{
+	return F()(get_double_argument());
+}
+
+template <double (*F)(double)> double asar_unary_wrapper()
+{
+	return F(get_double_argument());
+}
+
+//possibly restrict type T in the future....
+//first a case for functors
+template <typename F> double asar_binary_wrapper()
+{
+	double first = get_double_argument();
+	require_next_parameter();
+	return F()(first, get_double_argument());
+}
+//this could be DRY with if constexpr....oh well
+template <double (*F)(double, double)> double asar_binary_wrapper()
+{
+	double first = get_double_argument();
+	require_next_parameter();
+	return F(first, get_double_argument());
+}
+
+double asar_logical_nand(double a, double b)
+{
+	return !(a && b);
+}
+
+
+double asar_logical_nor(double a, double b)
+{
+	return !(a || b);
+}
+
+
+double asar_logical_xor(double a, double b)
+{
+	return !!a ^ !!b;
+}
+
+double asar_max(double a, double b)
+{
+	return a > b ? a : b;
+}
+
+double asar_min(double a, double b)
+{
+	return a < b ? a : b;
+}
+
+double asar_clamp()
+{
+	double value = get_double_argument();
+	require_next_parameter();
+	double low = get_double_argument();
+	require_next_parameter();
+	double high = get_double_argument();
+	
+	return asar_max(low, asar_min(high, value));
+}
+
+double asar_safediv()
+{
+	double dividend = get_double_argument();
+	require_next_parameter();
+	double divisor = get_double_argument();
+	require_next_parameter();
+	double default_value = get_double_argument();
+	
+	return divisor == 0.0 ? default_value : dividend / divisor;
+}
+
+double asar_select()
+{
+	double selector = get_double_argument();
+	require_next_parameter();
+	double a = get_double_argument();
+	require_next_parameter();
+	double b = get_double_argument();
+	
+	return selector == 0.0 ? b : a;
+}
+
+double asar_snestopc_wrapper()
+{
+	return snestopc(get_double_argument());
+}
+
+double asar_pctosnes_wrapper()
+{
+	return pctosnes(get_double_argument());
+}
+
+template <int count> double asar_read()
+{
+	int target = get_double_argument();
+	int addr=snestopc_pick(target);
+	if(has_next_parameter())
+	{
+		double default_value = get_double_argument();
+		if (addr<0) return default_value;
+		else if (addr+count>romlen_r) return default_value;		
+	}
+	else
+	{
+		if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)target) + " in read function").str);
+		else if (addr+count>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6(target) + " in read function").str);
+	}
+	
+	unsigned int value = 0;
+	for(int i = 0; i < count; i++)
+	{
+		value |= romdata_r[addr+i] << (8 * i);
+	}
+	return value;
+}
+
+template <int count> double asar_canread()
+{
+	int length = count;
+	if(!length)
+	{
+		length = get_double_argument();
+	}
+	int addr=snestopc_pick(get_double_argument());
+	if (addr<0 || addr+length-1>=romlen_r) return 0;
+	else return 1;
+}
+
+template <size_t count> double asar_readfile()
+{
+	static_assert(count && count <= 4, "invalid count"); //1-4 inclusive
+	
+	string name = get_string_argument();
+	require_next_parameter();
+	size_t offset = get_double_argument();
+	bool should_error = !has_next_parameter();
+	cachedfile * fhandle = opencachedfile(name, should_error);
+	if(!should_error)
+	{
+		double default_value = get_double_argument();
+		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return default_value;
+		if (offset < 0 || offset + count > fhandle->filesize) return default_value;
+	}
+	else
+	{		
+		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.str);
+		if (offset < 0 || offset + count > fhandle->filesize) asar_throw_error(1, error_type_block, error_id_file_offset_out_of_bounds, dec(offset).str, name.str);
+	}
+	
+	unsigned char data[4] = { 0, 0, 0, 0 };
+	filesystem->read_file(fhandle->filehandle, data, offset, count);
+	
+	unsigned int value = 0;
+	for(size_t i = 0; i < count; i++)
+	{
+		value |= data[i] << (8 * i);
+	}
+	
+	return value;
+}
+
+template <size_t count> double asar_canreadfile()
+{
+	string name = get_string_argument();
+	require_next_parameter();
+	size_t offset = get_double_argument();
+	size_t length = count;
+	if(!count)
+	{
+		require_next_parameter();
+		length = get_double_argument();
+	}
+	cachedfile * fhandle = opencachedfile(name, false);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return 0;
+	if (offset < 0 || offset + length > fhandle->filesize) return 0;
+	return 1;
+}
+
+// returns 0 if the file is OK, 1 if the file doesn't exist, 2 if it couldn't be opened for some other reason
+static double asar_filestatus()
+{
+	cachedfile * fhandle = opencachedfile(get_string_argument(), false);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE)
+	{
+		if (filesystem->get_last_error() == vfe_doesnt_exist)
+		{
+			return 1;
+		}
+		else
+		{
+			return 2;
 		}
 	}
-	return -1;
+	return 0;
 }
 
+// Returns the size of the specified file.
+static double asar_filesize()
+{
+	string name = get_string_argument();
+	cachedfile * fhandle = opencachedfile(name, false);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.str);
+	return (double)fhandle->filesize;
+}
+
+// Checks whether the specified define is defined.
+static double asar_isdefined()
+{
+	return defines.exists(get_string_argument());
+}
+
+// RPG Hacker: What exactly makes this function overly complicated, you ask?
+// Well, it converts a double to a string and then back to a double.
+// It was the quickest reliable solution I could find, though, so there's that.
+static double asar_round()
+{
+	double number = get_double_argument();
+	require_next_parameter();
+
+	// Hue hue hue... ass!
+	// OK, sorry, I apologize.
+	string asstring = ftostrvar(number, get_double_argument());
+
+	// Some hacky shenanigans with variables going on here
+	const char * strbackup = str;
+	str = asstring;
+	double asdouble = (double)getnum();
+	str = strbackup;
+
+	return asdouble;
+}
+
+static double asar_structsize_wrapper()
+{
+	return (double)struct_size(get_symbol_argument());
+}
+
+static double asar_objectsize_wrapper()
+{
+	return (double)object_size(get_symbol_argument());
+}
+
+static double asar_stringsequal()
+{
+	string string1 = get_string_argument();
+	require_next_parameter();
+	return (strcmp(string1, get_string_argument()) == 0 ? 1.0 : 0.0);
+}
+
+static double asar_stringsequalnocase()
+{
+	string string1 = get_string_argument();
+	require_next_parameter();
+	return (stricmp(string1, get_string_argument()) == 0 ? 1.0 : 0.0);
+}
+
+string copy_arg()
+{
+	if(*str == '"')
+	{
+		string t = "\"";
+		return (t += get_string_argument() + "\"");
+	}
+	
+	string result;
+	while(*str != ',' && *str != ')') result += *str++;
+	return result;
+}
+
+assocarr<double (*)()> functions = 
+{
+	{"sqrt", asar_unary_wrapper<sqrt>},
+	{"sin", asar_unary_wrapper<sin>},
+	{"cos", asar_unary_wrapper<cos>},
+	{"tan", asar_unary_wrapper<tan>},
+	{"asin", asar_unary_wrapper<asin>},
+	{"acos", asar_unary_wrapper<acos>},
+	{"atan", asar_unary_wrapper<atan>},
+	{"arcsin", asar_unary_wrapper<asin>},
+	{"arccos", asar_unary_wrapper<acos>},
+	{"arctan", asar_unary_wrapper<atan>},
+	{"log", asar_unary_wrapper<log>},
+	{"log10", asar_unary_wrapper<log10>},
+	{"log2", asar_unary_wrapper<log2>},
+
+	{"read1", asar_read<1>},	//This handles the safe and unsafe variant
+	{"read2", asar_read<2>},
+	{"read3", asar_read<3>},
+	{"read4", asar_read<4>},			
+	{"canread", asar_canread<0>},
+	{"canread1", asar_canread<1>},
+	{"canread2", asar_canread<2>},
+	{"canread3", asar_canread<3>},
+	{"canread4", asar_canread<4>},
+	
+	{"readfile1", asar_readfile<1>},
+	{"readfile2", asar_readfile<2>},
+	{"readfile3", asar_readfile<3>},
+	{"readfile4", asar_readfile<4>},
+	{"canreadfile", asar_canreadfile<0>},
+	{"canreadfile1", asar_canreadfile<1>},
+	{"canreadfile2", asar_canreadfile<2>},
+	{"canreadfile3", asar_canreadfile<3>},
+	{"canreadfile4", asar_canreadfile<4>},
+	
+	{"filesize", asar_filesize},
+	{"getfilestatus", asar_filestatus},
+	
+	{"defined", asar_isdefined},
+	
+	{"snestopc", asar_snestopc_wrapper},
+	{"pctosnes", asar_pctosnes_wrapper},
+	
+	{"max", asar_binary_wrapper<asar_max>},
+	{"min", asar_binary_wrapper<asar_min>},
+	{"clamp", asar_clamp},
+	
+	{"safediv", asar_safediv},
+	
+	{"select", asar_select},
+	{"not", asar_unary_wrapper<std::logical_not<unsigned int>>},
+	{"equal", asar_binary_wrapper<std::equal_to<double>>},
+	{"notequal", asar_binary_wrapper<std::not_equal_to<double>>},
+	{"less", asar_binary_wrapper<std::less<double>>},
+	{"lessequal", asar_binary_wrapper<std::less_equal<double>>},
+	{"greater", asar_binary_wrapper<std::greater<double>>},
+	{"greaterequal", asar_binary_wrapper<std::greater_equal<double>>},
+	
+	{"and", asar_binary_wrapper<std::logical_and<unsigned int>>},
+	{"or", asar_binary_wrapper<std::logical_or<unsigned int>>},
+	{"nand", asar_binary_wrapper<asar_logical_nand>},
+	{"nor", asar_binary_wrapper<asar_logical_nor>},
+	{"xor", asar_binary_wrapper<asar_logical_xor>},
+	
+	{"round", asar_round},
+	
+	{"sizeof", asar_structsize_wrapper},
+	{"objectsize", asar_objectsize_wrapper},
+	
+	{"stringsequal", asar_stringsequal},
+	{"stringsequalnocase", asar_stringsequalnocase}
+};
+
+struct funcdat {
+	autoptr<char*> name;
+	int numargs;
+	autoptr<char*> argbuf;//this one isn't used, it's just to free it up
+	autoptr<char**> arguments;
+	autoptr<char*> content;
+};
+static assocarr<funcdat> user_functions;
+
+static double asar_call_user_function()
+{
+	autoarray<string> args;
+	funcdat &user_function = user_functions[current_user_function_name];
+	string real_content;
+	
+	while (*str==' ') str++;
+	bool has_next = *str != ')';
+	
+	for (int i=0;i<user_function.numargs;i++)
+	{
+		if(!has_next)
+		{
+			asar_throw_error(0, error_type_block, error_id_expected_parameter, current_user_function_name);
+		}
+		args[i] = copy_arg();
+		has_next = has_next_parameter();
+	}
+	
+	if(has_next)
+	{
+		asar_throw_error(0, error_type_block, error_id_unexpected_parameter, current_user_function_name);
+	}
+	
+	for(int i=0; user_function.content[i]; i++)
+	{
+		if(!isalpha(user_function.content[i]) && user_function.content[i] != '_')
+		{
+			real_content += user_function.content[i];
+			continue;
+		}
+		bool found = false;
+		for (int j=0;user_function.arguments[j];j++)
+		{
+			//this should *always* have a null term or another character after 
+			bool potential_arg = stribegin(user_function.content+i, user_function.arguments[j]);
+			int next_char = i+strlen(user_function.arguments[j]);
+			if(potential_arg && (!isalnum(user_function.content[next_char]) && user_function.content[next_char] != '_'))
+			{
+				real_content += args[j];
+				i = next_char - 1;
+				found = true;
+			}
+		}
+		
+		if(!found) real_content += user_function.content[i];
+	}
+	const char * oldstr=str;
+	str = (const char *)real_content;
+	double result = eval(0);
+	str = oldstr;
+	return result;
+}
+
+void createuserfunc(const char * name, const char * arguments, const char * content)
+{
+	if (!confirmqpar(content)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
+	if(functions.exists(name)) //functions holds both types.
+	{		
+		asar_throw_error(0, error_type_block, error_id_function_redefined, name);
+	}
+	funcdat& user_function=user_functions[name];
+	user_function.name= duplicate_string(name);
+	user_function.argbuf= duplicate_string(arguments);
+	user_function.arguments=qsplit(user_function.argbuf, ",", &(user_function.numargs));
+	user_function.content= duplicate_string(content);
+	for (int i=0;user_function.arguments[i];i++)
+	{
+		for(int j=0;user_function.arguments[j];j++)
+		{
+			if(i!=j && !stricmp(user_function.arguments[i], user_function.arguments[j]))
+			{
+				asar_throw_error(0, error_type_block, error_id_duplicate_param_name, user_function.arguments[i], name);
+			}
+		}
+		if (!confirmname(user_function.arguments[i]))
+		{
+			user_functions.remove(name);
+			asar_throw_error(0, error_type_block, error_id_invalid_param_name);
+		}
+	}
+	
+	functions[name] = asar_call_user_function;
+}
 
 static double getnumcore()
 {
@@ -534,220 +701,40 @@ static double getnumcore()
 
 			// RPG Hacker: This is only here to assure that all strings are still
 			// alive in memory when we call our functions further down
-			autoarray<string> stringparams;
-			int numstrings = 0;
-			autoarray<funcparam> params;
-			int numparams=0;
+			double result;
 			if (*str!=')')
 			{
 				while (true)
 				{
 					while (*str==' ') str++;
-					int pass_arg = check_passthough_argument(&str);
-					if (pass_arg != -1)
+					string function_name = lower(string(start, len));
+					if(functions.exists(function_name))
 					{
-						params[numparams++] = funcargvals[pass_arg];
-					}
-					else if (*str=='"')
-					{
-						const char * strpos = str;
-						str++;
-						while (*str!='"' && *str!='\0' && *str!='\n') str++;
-						if (*str == '"')
-						{
-							params[numparams].type = Type_String;
-							string tempname(strpos, (int)(str - strpos + 1));
-							stringparams[numstrings] = string(safedequote(&tempname[0]));
-							params[numparams++].value.stringvalue = stringparams[numstrings];
-							numstrings++;
-							str++;
-						}
-						// RPG Hacker: AFAIK, this is never actually triggered, since unmatched quotes are already detected earlier,
-						// but since it does no harm here, I'll keep it in, just to be safe
-						else asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+						current_user_function_name = function_name;
+						result = functions[function_name]();
 					}
 					else
 					{
-						params[numparams].type = Type_Double;
-						params[numparams++].value.longdoublevalue = eval(0);
-					}
-					while (*str==' ') str++;
-					if (*str==',')
-					{
 						str++;
-						continue;
+						break;
 					}
+					
 					if (*str==')')
 					{
 						str++;
+						return result;
 						break;
 					}
 					asar_throw_error(1, error_type_block, error_id_malformed_function_call);
 				}
 			}
-			double rval;
-			for (int i=0;i<numuserfunc;i++)
-			{
-				if ((int)strlen(userfunc[i].name)==len && !strncmp(start, userfunc[i].name, (size_t)len))
-				{
-					if (userfunc[i].numargs != numparams) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters);
-					char ** oldfuncargnames=funcargnames;
-					funcparam * oldfuncargvals=funcargvals;
-					const char * oldstr=str;
-					int oldnumuserfuncargs=numuserfuncargs;
-					funcargnames=userfunc[i].arguments;
-					funcargvals=params;
-					str=userfunc[i].content;
-					numuserfuncargs=numparams;
-					rval=eval(0);
-					funcargnames=oldfuncargnames;
-					funcargvals=oldfuncargvals;
-					str=oldstr;
-					numuserfuncargs=oldnumuserfuncargs;
-					return rval;
-				}
-			}
-			if (*str=='_') str++;
 
-			// RPG Hacker: Originally, these macros used "len" in place of "maxint(len, strlen(name))"
-			// This caused Asar to recognize "canread()" as "canread1()", for example, so I changed it to this
-#define func(name, numpar, code, hasfurtheroverloads)                                   \
-					if (!strncasecmp(start, name, maxint(len, strlen(name))))                      \
-					{                                                        \
-						if (numparams==numpar) return (code);                  \
-						else if (!hasfurtheroverloads) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters); \
-					}
-#define wrappedfunc1(name, inparam, code, hasfurtheroverloads)                             \
-					if (!strncasecmp(start, name, maxint(len, strlen(name))))                      \
-					{                                                        \
-						if (numparams==1)                                \
-						{                                                     \
-							validateparam(inparam, 0, Type_Double);      \
-							return (code);                                    \
-						}                                                      \
-						else if (!hasfurtheroverloads) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters); \
-					}
-#define wrappedfunc2(name, inparam1, inparam2, code, hasfurtheroverloads)                             \
-					if (!strncasecmp(start, name, maxint(len, strlen(name))))                      \
-					{                                                        \
-						if (numparams==2)                                \
-						{                                                     \
-							validateparam(inparam1, 0, Type_Double);      \
-							validateparam(inparam2, 0, Type_Double);      \
-							return (code);                                    \
-						}                                                      \
-						else if (!hasfurtheroverloads) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters); \
-					}
-#define wrappedfunc3(name, inparam1, inparam2, inparam3, code, hasfurtheroverloads)                             \
-					if (!strncasecmp(start, name, maxint(len, strlen(name))))                      \
-					{                                                        \
-						if (numparams==3)                                \
-						{                                                     \
-							validateparam(inparam1, 0, Type_Double);      \
-							validateparam(inparam2, 0, Type_Double);      \
-							validateparam(inparam3, 0, Type_Double);      \
-							return (code);                                    \
-						}                                                      \
-						else if (!hasfurtheroverloads) asar_throw_error(1, error_type_block, error_id_wrong_num_parameters); \
-					}
+			//if (*str=='_') str++; //I don't think this is needed?
 
-			wrappedfunc1("sqrt", params[0], sqrt((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("sin", params[0], sin((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("cos", params[0], cos((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("tan", params[0], tan((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("asin", params[0], asin((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("acos", params[0], acos((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("atan", params[0], atan((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("arcsin", params[0], asin((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("arccos", params[0], acos((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("arctan", params[0], atan((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("log", params[0], log((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("log10", params[0], log10((double)params[0].value.longdoublevalue), false);
-			wrappedfunc1("log2", params[0], log((double)params[0].value.longdoublevalue)/log(2.0), false);
-
-			func("read1", 1, read1(params[0]), true);
-			func("read2", 1, read2(params[0]), true);
-			func("read3", 1, read3(params[0]), true);
-			func("read4", 1, read4(params[0]), true);
-			func("read1", 2, read1s(params[0], params[1]), false);
-			func("read2", 2, read2s(params[0], params[1]), false);
-			func("read3", 2, read3s(params[0], params[1]), false);
-			func("read4", 2, read4s(params[0], params[1]), false);
-			func("canread1", 1, validaddr(params[0], funcparam(1.0)), false);
-			func("canread2", 1, validaddr(params[0], funcparam(2.0)), false);
-			func("canread3", 1, validaddr(params[0], funcparam(3.0)), false);
-			func("canread4", 1, validaddr(params[0], funcparam(4.0)), false);
-			func("canread", 2, validaddr(params[0], params[1]), false);
-			func("readfile1", 2, readfilefunc(params[0], params[1], 1), true);
-			func("readfile2", 2, readfilefunc(params[0], params[1], 2), true);
-			func("readfile3", 2, readfilefunc(params[0], params[1], 3), true);
-			func("readfile4", 2, readfilefunc(params[0], params[1], 4), true);
-			func("readfile1", 3, readfilefuncs(params[0], params[1], params[2], 1), false);
-			func("readfile2", 3, readfilefuncs(params[0], params[1], params[2], 2), false);
-			func("readfile3", 3, readfilefuncs(params[0], params[1], params[2], 3), false);
-			func("readfile4", 3, readfilefuncs(params[0], params[1], params[2], 4), false);
-			func("canreadfile1", 2, canreadfilefunc(params[0], params[1], funcparam(1.0)), false);
-			func("canreadfile2", 2, canreadfilefunc(params[0], params[1], funcparam(2.0)), false);
-			func("canreadfile3", 2, canreadfilefunc(params[0], params[1], funcparam(3.0)), false);
-			func("canreadfile4", 2, canreadfilefunc(params[0], params[1], funcparam(4.0)), false);
-			func("canreadfile", 3, canreadfilefunc(params[0], params[1], params[2]), false);
-			func("filesize", 1, filesizefunc(params[0]), false);
-			func("getfilestatus", 1, getfilestatus(params[0]), false);
-
-			func("defined", 1, isdefinedfunc(params[0]), false);
-
-			wrappedfunc1("snestopc", params[0], snestopc((int)params[0].value.longdoublevalue), false);
-			wrappedfunc1("pctosnes", params[0], pctosnes((int)params[0].value.longdoublevalue), false);
-
-			wrappedfunc2("max", params[0], params[1], (params[0].value.longdoublevalue > params[1].value.longdoublevalue ? params[0].value.longdoublevalue : params[1].value.longdoublevalue), false);
-			wrappedfunc2("min", params[0], params[1], (params[0].value.longdoublevalue < params[1].value.longdoublevalue ? params[0].value.longdoublevalue : params[1].value.longdoublevalue), false);
-			wrappedfunc3("clamp", params[0], params[1], params[2], (params[0].value.longdoublevalue < params[1].value.longdoublevalue ? params[1].value.longdoublevalue : (params[0].value.longdoublevalue > params[2].value.longdoublevalue ? params[2].value.longdoublevalue : params[0].value.longdoublevalue)), false);
-
-			wrappedfunc3("safediv", params[0], params[1], params[2], (params[1].value.longdoublevalue == 0.0 ? params[2].value.longdoublevalue : params[0].value.longdoublevalue / params[1].value.longdoublevalue), false);
-
-			wrappedfunc3("select", params[0], params[1], params[2], (params[0].value.longdoublevalue == 0.0 ? params[2].value.longdoublevalue : params[1].value.longdoublevalue), false);
-			wrappedfunc1("not", params[0], (params[0].value.longdoublevalue == 0.0 ? 1.0 : 0.0), false);
-			wrappedfunc2("equal", params[0], params[1], (params[0].value.longdoublevalue == params[1].value.longdoublevalue ? 1.0 : 0.0), false);
-			wrappedfunc2("notequal", params[0], params[1], (params[0].value.longdoublevalue != params[1].value.longdoublevalue ? 1.0 : 0.0), false);
-			wrappedfunc2("less", params[0], params[1], (params[0].value.longdoublevalue < params[1].value.longdoublevalue ? 1.0 : 0.0), false);
-			wrappedfunc2("lessequal", params[0], params[1], (params[0].value.longdoublevalue <= params[1].value.longdoublevalue ? 1.0 : 0.0), false);
-			wrappedfunc2("greater", params[0], params[1], (params[0].value.longdoublevalue > params[1].value.longdoublevalue ? 1.0 : 0.0), false);
-			wrappedfunc2("greaterequal", params[0], params[1], (params[0].value.longdoublevalue >= params[1].value.longdoublevalue ? 1.0 : 0.0), false);
-			
-			wrappedfunc2("and", params[0], params[1], ((params[0].value.longdoublevalue != 0 && params[1].value.longdoublevalue != 0) ? 1.0 : 0.0), false);
-			wrappedfunc2("or", params[0], params[1], ((params[0].value.longdoublevalue != 0 || params[1].value.longdoublevalue != 0) ? 1.0 : 0.0), false);
-			wrappedfunc2("nand", params[0], params[1], (!(params[0].value.longdoublevalue != 0 && params[1].value.longdoublevalue != 0) ? 1.0 : 0.0), false);
-			wrappedfunc2("nor", params[0], params[1], (!(params[0].value.longdoublevalue != 0 || params[1].value.longdoublevalue != 0) ? 1.0 : 0.0), false);
-			wrappedfunc2("xor", params[0], params[1], (((params[0].value.longdoublevalue != 0 && params[1].value.longdoublevalue == 0) || (params[0].value.longdoublevalue == 0 && params[1].value.longdoublevalue != 0)) ? 1.0 : 0.0), false);
-			
-			func("round", 2, overlycomplicatedround(params[0], params[1]), false);
-
-			func("sizeof", 1, structsizefunc(params[0]), false);
-			func("objectsize", 1, objectsizefunc(params[0]), false);
-
-			func("stringsequal", 2, stringsequalfunc(params[0], params[1]), false);
-			func("stringsequalnocase", 2, stringsequalinsensitivefunc(params[0], params[1]), false);
-
-#undef func
-#undef wrappedfunc1
-#undef wrappedfunc2
-#undef wrappedfunc3
 			asar_throw_error(1, error_type_block, error_id_function_not_found, start);
 		}
 		else
 		{
-			for (int i=0;i<numuserfuncargs;i++)
-			{
-				if (!strncmp(start, funcargnames[i], (size_t)maxint(len, strlen(funcargnames[i]))))
-				{
-					if (funcargvals[i].type == Type_Double)
-						return funcargvals[i].value.longdoublevalue;
-					else
-					{
-						asar_throw_error(1, error_type_block, error_id_math_invalid_type, string(i).str, "Type_Double");
-					}
-				}
-			}
 			foundlabel=true;
 
 			const char *old_start = start;
@@ -938,6 +925,8 @@ void initmathcore()
 
 void deinitmathcore()
 {
-	userfunc.reset();
-	numuserfunc = 0;
+	user_functions.each([](const char *key, funcdat &F){
+		functions.remove(key);
+	});
+	user_functions.reset();
 }

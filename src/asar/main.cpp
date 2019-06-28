@@ -35,6 +35,9 @@ int romlen_r;
 int pass;
 
 int optimizeforbank=-1;
+int optimize_dp = optimize_dp_flag::NONE;
+int dp_base = 0;
+int optimize_address = optimize_address_flag::DEFAULT;
 
 string thisfilename;
 int thisline;
@@ -151,33 +154,43 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 {
 	if (warnxkas && (((unsigned int)(thislabel^insnespos)&0xFFFF0000)==0))
 		asar_throw_warning(1, warning_id_xkas_label_access);
+	unsigned int bank = thislabel>>16;
+	unsigned int word = thislabel&0xFFFF;
 	if (!exists)
 	{
 		if (!freespaced) freespaceextra++;
 		freespaced=true;
 		return 2;
 	}
-	else if (optimizeforbank>=0)
-	{
-		if ((unsigned int)thislabel&0xFF000000) return 3;
-		else if ((thislabel>>16)==optimizeforbank) return 2;
-		else return 3;
-	}
-	else if((thislabel >> 16) == 0x7E && (thislabel & 0xFFFF) < 0x100)
+	else if((optimize_dp == optimize_dp_flag::RAM) && bank == 0x7E && (word-dp_base < 0x100))
 	{
 		return 1;
 	}
-	else if ((thislabel >> 16) == 0x7E && (thislabel & 0xFFFF) < 0x2000)
+	else if(optimize_dp == optimize_dp_flag::ALWAYS && (bank == 0x7E || !(bank & 0x40)) && (word-dp_base < 0x100))
+	{
+		return 1;
+	}
+	else if (optimize_address == optimize_address_flag::RAM && bank == 0x7E && word < 0x2000)
 	{
 		return 2;
+	}
+	else if (optimize_address == optimize_address_flag::MIRRORS && (bank == 0x7E || !(bank & 0x40)) && word < 0x8000)
+	{
+		return 2;
+	}
+	else if (optimizeforbank>=0)
+	{
+		if ((unsigned int)thislabel&0xFF000000) return 3;
+		else if (bank==(unsigned int)optimizeforbank) return 2;
+		else return 3;
 	}
 	else if ((unsigned int)(thislabel|insnespos)&0xFF000000)
 	{
 		if ((unsigned int)(thislabel^insnespos)&0xFF000000) return 3;
 		else return 2;
 	}
-	else if ((thislabel^insnespos)&0xFF0000) return 3;
-	else return 2;
+	else if ((thislabel^insnespos)&0xFF0000){ return 3; }
+	else { return 2;}
 }
 
 
@@ -917,6 +930,9 @@ void reseteverything()
 	writtenblocks.reset();
 
 	optimizeforbank=-1;
+	optimize_dp = optimize_dp_flag::NONE;
+	dp_base = 0;
+	optimize_address = optimize_address_flag::DEFAULT;
 
 	closecachedfiles();
 

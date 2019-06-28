@@ -36,8 +36,15 @@
 
 #pragma once
 
+#include <initializer_list>
 #include "std-includes.h"
 #include "libmisc.h"//bitround
+
+//just a helper for initializer list
+template<typename T1, typename T2> struct pair{
+	T1 first;
+	T2 second;
+};
 
 template<typename right> class assocarr {
 public:
@@ -247,6 +254,20 @@ assocarr()
 	bufferlen=0;
 	lastid=-1;
 }
+
+assocarr(std::initializer_list<pair<const char *, right>> list)
+{
+	indexes= nullptr;
+	ptr= nullptr;
+	num=0;
+	bufferlen=0;
+	lastid=-1;
+	
+	for(auto &item : list){
+		rawadd(item.first, true) = item.second;
+	}
+}
+
 ~assocarr()
 {
 	reset();
