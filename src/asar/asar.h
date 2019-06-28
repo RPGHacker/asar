@@ -96,6 +96,29 @@ extern int repeatnext;
 
 extern int optimizeforbank;
 
+//this is a trick to namespace an enum to avoid name collision without too much verbosity
+//could technically name the enum too but this is fine for now.
+namespace optimize_dp_flag {
+	enum : int {
+		NONE,	//don't optimize
+		RAM,	//bank 7E only (always uses dp base)
+		ALWAYS	//bank 00-3F[|80] and 7E (always uses dp base)
+	};
+}
+
+extern int optimize_dp;
+extern int dp_base;
+
+namespace optimize_address_flag {
+	enum : int {
+		DEFAULT,//simply use optimizeforbank
+		RAM,	//default+bank 7E only RAM address < $2000
+		MIRRORS	//ram+if optimizeforbank is 00-3F[|80] and address < $8000
+	};
+}
+
+extern int optimize_address;
+
 extern bool errored;
 
 extern assocarr<string> clidefines;
