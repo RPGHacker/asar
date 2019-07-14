@@ -51,6 +51,10 @@ macro(set_asar_shared_properties target)
 		target_compile_definitions(${target} PRIVATE "stricmp=strcasecmp")
 	endif()
 	
+	# link against dl on non-windows - needed for freeram lib loading
+	if(NOT WIN32)
+		target_link_libraries(${target} PRIVATE dl)
+	endif()
 	
 	# Enable maximum warning level
 	
@@ -78,8 +82,6 @@ macro(set_asar_shared_properties target)
 			-Wno-unused-result # ignoring return value
 			-Wno-class-memaccess # clearing/moving a non-trivially copyable type
 		)
-
-		target_link_libraries(${target} PRIVATE dl)
 
 		# Static link for MinGW
 		if(MINGW)

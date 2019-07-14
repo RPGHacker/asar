@@ -1,7 +1,7 @@
 // loader for the freeram library
 // most of this code is adapted from Asar's asardll.c
 #if defined(_WIN32)
-#	include <Windows.h>
+#	include <windows.h>
 
 #	define getlib() LoadLibrary("freeram.dll")
 #	define getptr(name) GetProcAddress((HINSTANCE)freeramdll, name)
@@ -40,17 +40,19 @@ static int (*dll_getramfunc)(freeram_handle, int, const char*, const char*);
 static int (*dll_unclaimfunc)(freeram_handle, const char*);
 
 int freeram_loadlib() {
+#define checkerr(funcptr) if(!dll_openfunc) {closelib(); freeramdll = NULL; return 0;}
 	freeramdll = getlib();
 	if(freeramdll == NULL) return 0;
-	dll_openfunc = getptr("freeram_open");
-	if(!dll_openfunc) {closelib(); freeramdll = NULL; return 0;}
-	dll_closefunc = getptr("freeram_close");
-	if(!dll_closefunc) {closelib(); freeramdll = NULL; return 0;}
-	dll_getramfunc = getptr("freeram_get_ram");
-	if(!dll_getramfunc) {closelib(); freeramdll = NULL; return 0;}
-	dll_unclaimfunc = getptr("freeram_unclaim_ram");
-	if(!dll_unclaimfunc) {closelib(); freeramdll = NULL; return 0;}
+	dll_openfunc = (freeram_handle(*)(const char *, char **))getptr("freeram_open");
+	checkerr(dll_openfunc);
+	dll_closefunc = (int(*)(freeram_handle))getptr("freeram_close");
+	checkerr(dll_closefunc);
+	dll_getramfunc = (int(*)(freeram_handle, int, const char*, const char*))getptr("freeram_get_ram");
+	checkerr(dll_getramfunc);
+	dll_unclaimfunc = (int(*)(freeram_handle, const char*))getptr("freeram_unclaim_ram");
+	checkerr(dll_unclaimfunc);
 	return 1;
+#undef checkerr
 }
 int freeram_unloadlib() {
 	return closelib();
