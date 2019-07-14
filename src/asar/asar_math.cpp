@@ -9,6 +9,7 @@
 #include "virtualfile.h"
 #include "assembleblock.h"
 #include "asar_math.h"
+#include "freeram.h"
 #include <math.h>
 
 bool math_pri=true;
@@ -165,6 +166,9 @@ enum funcparamtype {
 
 struct funcparam {
 	funcparamtype type;
+	// if the value is a double, whether computing it used a label
+	// (and thus is prone to change between passes)
+	bool containslabel;
 	union valueunion {
 		const char * stringvalue;
 		double longdoublevalue;
@@ -454,6 +458,38 @@ static double stringsequalinsensitivefunc(const funcparam& string1, const funcpa
 	return (stricmp(string1.value.stringvalue, string2.value.stringvalue) == 0 ? 1.0 : 0.0);
 }
 
+bool freeram_lib_loaded;
+freeram_handle rom_freeram_handle;
+static double handle_freeram(const funcparam& identifier, const funcparam& size, const funcparam& flags) {
+	validateparam(identifier, 0, Type_String);
+	validateparam(size, 1, Type_Double);
+	if(size.containslabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+	validateparam(flags, 2, Type_String);
+	if(!freeram_lib_loaded) {
+		if(!freeram_loadlib()) {
+			asar_throw_error(0, error_type_block, error_id_freeram_failed_to_open, "Failed to load freeram library.");
+		}
+		char* open_error;
+		rom_freeram_handle = freeram_open(romfilename, &open_error);
+		if(!rom_freeram_handle) {
+			asar_throw_error(0, error_type_block, error_id_freeram_failed_to_open, open_error);
+		}
+	}
+	int realsize = (int)size.value.longdoublevalue;
+	int freeram_address = freeram_get_ram(rom_freeram_handle, realsize, identifier.value.stringvalue, flags.value.stringvalue);
+	if(freeram_address >= 0) return freeram_address;
+	asar_error_id err;
+	switch(freeram_address) {
+		case -1: err = error_id_freeram_not_found; break;
+		// case -2 should never happen, let it throw an unknown error
+		case -3: err = error_id_freeram_invalid_identifier; break;
+		case -4: err = error_id_freeram_invalid_flags; break;
+		case -5: err = error_id_freeram_conflicting_claim; break;
+		default: err = error_id_freeram_unknown_error;
+	}
+	asar_throw_error(0, error_type_block, err);
+}
+
 
 #define maxint(a, b) ((unsigned int)a > (unsigned int)b ? (unsigned int)a : (unsigned int)b)
 
@@ -568,8 +604,12 @@ static double getnumcore()
 					}
 					else
 					{
+						bool oldfoundlabel = foundlabel;
+						foundlabel = false;
 						params[numparams].type = Type_Double;
-						params[numparams++].value.longdoublevalue = eval(0);
+						params[numparams].value.longdoublevalue = eval(0);
+						params[numparams++].containslabel = foundlabel;
+						foundlabel = oldfoundlabel || foundlabel;
 					}
 					while (*str==' ') str++;
 					if (*str==',')
@@ -727,6 +767,8 @@ static double getnumcore()
 
 			func("stringsequal", 2, stringsequalfunc(params[0], params[1]), false);
 			func("stringsequalnocase", 2, stringsequalinsensitivefunc(params[0], params[1]), false);
+
+			func("freeram", 3, handle_freeram(params[0], params[1], params[2]), false);
 
 #undef func
 #undef wrappedfunc1

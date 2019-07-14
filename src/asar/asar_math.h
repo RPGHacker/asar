@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h> // for int64_t
+#include "freeram.h" // for freeram_handle
 
 void initmathcore();
 void deinitmathcore();
@@ -19,3 +20,6 @@ extern bool forwardlabel;
 
 extern bool math_pri;
 extern bool math_round;
+
+extern bool freeram_lib_loaded;
+extern freeram_handle rom_freeram_handle;

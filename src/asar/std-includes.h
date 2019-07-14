@@ -20,6 +20,7 @@
 #include <ctype.h>
 #include <math.h>
 #include <cstdio>
+#include <cerrno>
 
 inline char * duplicate_string(const char * str)
 {

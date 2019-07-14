@@ -364,6 +364,7 @@ int main(int argc, char * argv[])
 			pause(err);
 			return 1;
 		}
+		romfilename = romname;
 		//check if the ROM title and checksum looks sane
 		if (romlen>=32768 && !ignoretitleerrors)
 		{
@@ -468,6 +469,12 @@ int main(int argc, char * argv[])
 		{
 			if (verbose) puts("Assembling completed without problems.");
 			pause(yes);
+		}
+		if (rom_freeram_handle) {
+			if(!freeram_close(rom_freeram_handle)) {
+				asar_throw_error(pass, error_type_fatal, error_id_freeram_failed_to_write, strerror(errno));
+			}
+			rom_freeram_handle = nullptr;
 		}
 		unsigned int romCrc = closerom();
 		if (symbols)

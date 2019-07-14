@@ -79,6 +79,8 @@ macro(set_asar_shared_properties target)
 			-Wno-class-memaccess # clearing/moving a non-trivially copyable type
 		)
 
+		target_link_libraries(${target} PRIVATE dl)
+
 		# Static link for MinGW
 		if(MINGW)
 			target_compile_options(${target} PRIVATE -static -static-libgcc -s)
@@ -108,6 +110,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-superfx.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/assembleblock.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/crc32.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/freeram.c"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libcon.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.cpp"
@@ -126,6 +129,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/assocarr.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/autoarray.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/crc32.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/freeram.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libcon.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libmisc.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libsmw.h"

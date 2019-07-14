@@ -31,6 +31,7 @@ extern char blockreleasedebug[(asarver_beta)?1:-1];
 
 unsigned const char * romdata_r;
 int romlen_r;
+string romfilename;
 
 int pass;
 

@@ -235,6 +235,14 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_failed_to_open_file_access_denied, "Failed to open file '%s'. Access denied." },
 	{ error_id_failed_to_open_not_regular_file, "Failed to open file '%s'. Not a regular file (did you try to use a directory?)" },
+
+	{ error_id_freeram_failed_to_open, "Failed to open freeram file: %s" },
+	{ error_id_freeram_not_found, "No matching freeram found." },
+	{ error_id_freeram_invalid_identifier, "Invalid freeram identifier." },
+	{ error_id_freeram_invalid_flags, "Invalid flag specification." },
+	{ error_id_freeram_conflicting_claim, "A freeram claim with the same ID, but different size/flags exists." },
+	{ error_id_freeram_unknown_error, "Unknown error when claiming freeram." },
+	{ error_id_freeram_failed_to_write, "Failed to write freeram file: %s" },
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

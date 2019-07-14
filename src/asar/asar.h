@@ -20,6 +20,8 @@
 extern unsigned const char * romdata_r;
 extern int romlen_r;
 
+extern string romfilename;
+
 #define clean(string) do { string.qreplace("\t", " ", true); string.qreplace(", ", ",", true); string.qreplace("  ", " ", true); \
 											itrim(string.str, " ", " ", true); } while(0)
 

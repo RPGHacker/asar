@@ -212,6 +212,14 @@ enum asar_error_id : int
 	error_id_failed_to_open_file_access_denied,
 	error_id_failed_to_open_not_regular_file,
 
+	error_id_freeram_failed_to_open,
+	error_id_freeram_not_found,
+	error_id_freeram_invalid_identifier,
+	error_id_freeram_invalid_flags,
+	error_id_freeram_conflicting_claim,
+	error_id_freeram_unknown_error,
+	error_id_freeram_failed_to_write,
+
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
 };

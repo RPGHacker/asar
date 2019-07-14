@@ -188,10 +188,12 @@ struct patchparams_v160 : public patchparams_base
 	bool generate_checksum;
 };
 
-struct patchparams : public patchparams_v160
+struct patchparams_v180 : public patchparams_v160
 {
-
+	const char* rom_name;
 };
+
+struct patchparams : public patchparams_v180 {};
 
 static void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool should_reset)
 {
@@ -236,6 +238,16 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 	{
 		if (buflen != maxromsize) free(const_cast<unsigned char*>(romdata));
 		return false;
+	}
+	if (rom_freeram_handle) {
+		if(!freeram_close(rom_freeram_handle)) {
+			asar_throw_error(pass, error_type_null, error_id_freeram_failed_to_write, strerror(errno));
+		}
+		rom_freeram_handle = nullptr;
+	}
+	if(freeram_lib_loaded) {
+		freeram_unloadlib();
+		freeram_lib_loaded = false;
 	}
 	if (*romlen_ != buflen)
 	{
@@ -388,6 +400,10 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 		checksum_fix_enabled = paramscurrent.generate_checksum;
 		force_checksum_fix = true;
 	}
+
+	if(paramscurrent.rom_name != nullptr) {
+		romfilename = paramscurrent.rom_name;
+	} else romfilename = "";
 
 	asar_patch_main(paramscurrent.patchloc);
 
