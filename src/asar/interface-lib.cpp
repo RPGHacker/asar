@@ -279,7 +279,7 @@ EXPORT int asar_version()
 EXPORT int asar_apiversion()
 {
 	expectsNewAPI=true;
-	return 303;
+	return 304;
 }
 
 EXPORT bool asar_reset()

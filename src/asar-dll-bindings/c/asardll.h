@@ -10,7 +10,7 @@
 
 #define asarfunc extern
 
-#define expectedapiversion 303
+#define expectedapiversion 304
 
 #include <stdbool.h>
 #include <stddef.h> // for size_t
@@ -112,6 +112,12 @@ struct patchparams
 	// to force generating/not generating a checksum.
 	bool override_checksum_gen;
 	bool generate_checksum;
+
+	// The file path of the ROM being operated on.
+	// This is currently only used for interacting with the FreeRAM library,
+	// so if you don't need that, then this is optional. It's still recommended
+	// to set this when you are in fact reading the ROM from a file.
+	const char* rom_name;
 };
 
 #endif
