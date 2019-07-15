@@ -18,7 +18,7 @@ __all__ = ["errordata", "writtenblockdata", "mappertype", "version",
            "geterrors", "getwarnings", "getprints", "getalllabels",
            "getlabelval", "getdefine", "getalldefines", "resolvedefines",
            "math", "getwrittenblocks", "getmapper", "getsymbolsfile"]
-_target_api_ver = 303
+_target_api_ver = 304
 _asar = None
 
 
@@ -77,24 +77,27 @@ class _warnsetting(ctypes.Structure):
 
 # For internal use only.
 class _patchparams(ctypes.Structure):
-    _fields_ = [("structsize", c_int),
-                ("patchloc", c_char_p),
-                ("romdata", c_char_p),
-                ("buflen", c_int),
-                ("romlen", c_int_ptr),
-                ("includepaths", POINTER(c_char_p)),
-                ("numincludepaths", c_int),
-                ("should_reset", ctypes.c_bool),
-                ("additional_defines", POINTER(_definedata)),
-                ("additional_define_count", c_int),
-                ("stdincludesfile", c_char_p),
-                ("stddefinesfile", c_char_p),
-                ("warning_settings", POINTER(_warnsetting)),
-                ("warning_setting_count", c_int),
-                ("memory_files", POINTER(_memoryfile)),
-                ("memory_file_count", c_int),
-                ("override_checksum_gen", ctypes.c_bool),
-                ("generate_checksum", ctypes.c_bool)]
+    _fields_ = [
+        ("structsize", c_int),
+        ("patchloc", c_char_p),
+        ("romdata", c_char_p),
+        ("buflen", c_int),
+        ("romlen", c_int_ptr),
+        ("includepaths", POINTER(c_char_p)),
+        ("numincludepaths", c_int),
+        ("should_reset", ctypes.c_bool),
+        ("additional_defines", POINTER(_definedata)),
+        ("additional_define_count", c_int),
+        ("stdincludesfile", c_char_p),
+        ("stddefinesfile", c_char_p),
+        ("warning_settings", POINTER(_warnsetting)),
+        ("warning_setting_count", c_int),
+        ("memory_files", POINTER(_memoryfile)),
+        ("memory_file_count", c_int),
+        ("override_checksum_gen", ctypes.c_bool),
+        ("generate_checksum", ctypes.c_bool),
+        ("rom_name", c_char_p),
+    ]
 
 
 class mappertype(enum.Enum):
@@ -252,7 +255,8 @@ def reset():
 
 def patch(patch_name, rom_data, includepaths=[], should_reset=True,
           additional_defines={}, std_include_file=None, std_define_file=None,
-          warning_overrides={}, memory_files={}, override_checksum=None):
+          warning_overrides={}, memory_files={}, override_checksum=None,
+          rom_name=None):
     """Applies a patch.
 
     Returns (success, new_rom_data). If success is False you should call
@@ -280,6 +284,11 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
     override_checksum specifies whether to override checksum generation. True
     forces Asar to update the ROM's checksum, False forces Asar to not update
     it.
+
+    rom_name is file path of the ROM being operated on. This is currently only
+    used for interacting with the FreeRAM library, so if you don't need that,
+    then this is optional. It's still recommended to set this when you are in
+    fact reading the ROM from a file.
     """
     romlen = c_int(len(rom_data))
     rom_ptr = ctypes.create_string_buffer(rom_data, maxromsize())
@@ -328,6 +337,8 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
     else:
         pp.override_checksum_gen = False
         pp.generate_checksum = False
+    
+    pp.rom_name = rom_name.encode() if rom_name else None
 
     result = _asar.dll.asar_patch_ex(ctypes.byref(pp))
     return result, rom_ptr.raw[:romlen.value]
