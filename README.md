@@ -24,7 +24,9 @@ Asar can also be built as a DLL. This makes it easier and faster to use in other
 * `tests` contains tests to verify Asar works correctly
 
 ## Test format
-At the beginning of your asm files, you can write tests to ensure the correct values were written to the ROM after patching is complete. (Intended for SMW, but there's also a dummy ROM included that should work with all tests.)
+*Please note that these tests are intended for use with Asar's test suite. Only contributers will need to use this functionality - people who just want to create and apply patches don't need to worry about it.*
+
+At the beginning of your ASM files, you can write tests to ensure the correct values were written to the ROM after patching is complete. (It's common to use a SMW ROM, but there's also a dummy ROM included that should work with all tests.)
 
 These two characters should precede each test line, so that Asar sees them as comments and ignores them.
 ```
