@@ -426,7 +426,6 @@ inline string ftostr(double value)
 	// randomdude999: With 100 digits of precision, the buffer needs to be approx. 311+100,
 	// but let's be safe here https://stackoverflow.com/questions/7235456
 	char rval[512];
-	printf("fuck you wine %f\n", value);
 	// RPG Hacker: Ridiculously high precision, I know, but we're working with doubles
 	// here and can afford it, so no need to waste any precision
 	sprintf(rval, "%.100f", value);
@@ -452,7 +451,6 @@ inline string ftostrvar(double value, int precision)
 	
 	// see above
 	char rval[512];
-	printf("fuck you wine 2 %f\n", value);
 	sprintf(rval, "%.*f", clampedprecision, (double)value);
 	if (strchr(rval, '.'))//nuke useless zeroes
 	{
