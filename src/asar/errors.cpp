@@ -248,6 +248,7 @@ void asar_error_template(asar_error_id errid, int whichpass, const char* message
 	try
 	{
 		error_interface((int)errid, whichpass, message);
+		printf("Throw error id %d: %s\n",errid, message);
 		t err;
 		throw err;
 	}
