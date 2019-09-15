@@ -596,7 +596,7 @@ void assemblefile(const char * filename, bool toplevel)
 			while (strqchr(line, '\t')) *strqchr(line, '\t')=' ';
 			if (!confirmquotes(line)) { thisline = i; thisblock = line; asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
 			itrim(line, " ", " ", true);
-			for (int j=1;strqchr(line, ',') && !strqchr(line, ',')[1] && file.contents[i+j];j++)
+			for (int j=1;strqrchr(line, ',') && !strqrchr(line, ',')[1] && file.contents[i+j];j++)
 			{
 				strcat(line, file.contents[i+j]);
 				static char nullstr[]="";
