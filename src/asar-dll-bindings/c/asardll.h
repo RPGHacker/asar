@@ -140,6 +140,7 @@ bool asar_init(void);
 
 // Same as above, but instead of automatically looking for and trying to load asar.dll, takes
 // a path to the Asar DLL and tries to load it.
+// The path is expected to be UTF-8-encoded, even on Windows.
 bool asar_init_with_dll_path(const char * dllpath);
 
 //Clears out all errors, warnings and printed statements, and clears the file cache. Not really

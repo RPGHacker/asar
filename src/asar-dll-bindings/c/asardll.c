@@ -9,13 +9,60 @@
 #	endif
 
 #	include <windows.h>
+#	include <stdio.h>
 
 #	if defined(_MSC_VER)
 #		pragma warning(pop)
 #	endif
 
-#	define getlib() LoadLibrary("asar.dll")
-#	define getlibfrompath(path) LoadLibrary(path)
+inline static void * getlib(void)
+{
+	void * ret_val = LoadLibraryW(L"asar.dll");
+
+	if (ret_val == NULL)
+	{
+		// TODO: Add a better method of error checking? This won't do much for people who are using
+		// Asar with a GUI application, they probably won't see this error output.
+		char buf[1024];
+		sprintf(buf, "Failed to load Asar DLL! HRESULT: 0x%08x\n", (unsigned int)HRESULT_FROM_WIN32(GetLastError()));
+		printf("%s", buf);
+		OutputDebugStringA(buf);
+	}
+
+	return ret_val;
+}
+
+inline static void * getlibfrompath(const char * path)
+{
+	int required_size = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
+	if (required_size <= 0) return NULL;
+
+	wchar_t* path_buf = malloc((size_t)required_size * sizeof(wchar_t));
+	if (path_buf == NULL) return NULL;
+
+	int converted_size = MultiByteToWideChar(CP_UTF8, 0, path, -1, path_buf, required_size);
+
+	if (converted_size == 0)
+	{
+		return NULL;
+	}
+
+	void * ret_val = LoadLibraryW(path_buf);
+	free(path_buf);
+
+	if (ret_val == NULL)
+	{
+		// TODO: Add a better method of error checking? This won't do much for people who are using
+		// Asar with a GUI application, they probably won't see this error output.
+		char buf[1024];
+		sprintf(buf, "Failed to load Asar DLL! HRESULT: 0x%08x\n", (unsigned int)HRESULT_FROM_WIN32(GetLastError()));
+		printf("%s", buf);
+		OutputDebugStringA(buf);
+	}
+
+	return ret_val;
+}
+
 #	define loadraw(name, target) *((int(**)(void))&target)=(int(*)(void))GetProcAddress((HINSTANCE)asardll, name); require(target)
 #	define closelib(var) FreeLibrary((HINSTANCE)var)
 #else
