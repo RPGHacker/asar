@@ -48,7 +48,7 @@ bool asblock_65816(char** word, int numwords)
 																					 else { write1((unsigned int)byte); write2(num); } return true; }
 #define as_xy(  op, byte) if (is(op)) { if(!explicitlen && !hexconstant) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { write1(byte); write1(num); } \
 																					 else {  write1((unsigned int)byte); write2(num); } return true; }
-#define as_rep( op, byte) if (is(op)) { if (pass==0) num=getnum(par); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
+#define as_rep( op, byte) if (is(op)) { if (pass==0) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
 #define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
 													if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
 													return true; }
