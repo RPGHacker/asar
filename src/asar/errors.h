@@ -212,6 +212,8 @@ enum asar_error_id : int
 	error_id_failed_to_open_file_access_denied,
 	error_id_failed_to_open_not_regular_file,
 
+        error_id_outputfile_cannot_open,
+
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
 };

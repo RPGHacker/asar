@@ -132,7 +132,7 @@ int main(int argc, char * argv[])
 		}
 		//if (dot) *dot='.';
 		libcon_init(argc, argv,
-			"[options] asm_file [rom_file]\n\n"
+			"[options] asm_file [input_rom_file] [optional_output_rom_file]\n\n"
 			"Supported options:\n\n"
 			" --version         \n"
 			"                   Display version information.\n\n"
@@ -332,10 +332,37 @@ int main(int argc, char * argv[])
 			printed_version = true;
 		}
 		string asmname=libcon_require_filename("Enter patch name:");
-		string romname=libcon_optional_filename("Enter ROM name:", nullptr);
-		//char * outname=libcon_optional_filename("Enter output ROM name:", nullptr);
+		string romname=libcon_optional_filename("Enter input ROM name:", nullptr);
+                string outname=libcon_optional_filename("Enter optional output ROM name:", nullptr);
 		libcon_end();
 		if (!strchr(asmname, '.') && !file_exists(asmname)) asmname+=".asm";
+
+                // Optional copy and work on outname instead of romname. This can be useful for auto build processes of final ROMs based on others
+                if(outname) { // Outname was set, so we create a copy of the file
+                    if (!file_exists(romname))
+                    {
+                        asar_throw_error(pass, error_type_fatal, error_id_create_rom_failed);
+                    }
+
+                    char buf[BUFSIZ];
+                    size_t size;
+                    FILE* source = fopen(romname, "rb");
+                    FILE* dest = fopen(outname, "wb");
+
+                    if(!dest)
+                    {
+                        asar_throw_error(pass, error_type_fatal, error_id_outputfile_cannot_open);
+                    }
+
+                    while ((size = fread(buf, 1, BUFSIZ, source))) {
+                        fwrite(buf, 1, size, dest);
+                    }
+                    fclose(source);
+                    fclose(dest);
+
+                    romname = outname;
+                }
+
 		if (!romname)
 		{
 			string romnametmp = get_base_name(asmname);
@@ -364,6 +391,7 @@ int main(int argc, char * argv[])
 			pause(err);
 			return 1;
 		}
+
 		//check if the ROM title and checksum looks sane
 		if (romlen>=32768 && !ignoretitleerrors)
 		{
