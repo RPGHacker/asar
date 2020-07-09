@@ -663,6 +663,11 @@ void initstuff()
 	numopcodes=0;
 	specifiedasarver = false;
 	incsrcdepth = 0;
+	
+	optimizeforbank = -1;
+	optimize_dp = optimize_dp_flag::NONE;
+	dp_base = 0;
+	optimize_address = optimize_address_flag::DEFAULT;
 
 	in_struct = false;
 	in_sub_struct = false;
@@ -1412,6 +1417,55 @@ void assembleblock(const char * block)
 		snespos=(int)num;
 		startpos=(int)num;
 		optimizeforbank=-1;
+	}
+	else if (is1("dpbase"))		
+	{		
+		unsigned int num=(int)getnum(par);		
+		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);		
+		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex6((unsigned int)num).str);		
+		dp_base = (int)num;		
+	}		
+	else if (is2("optimize"))		
+	{		
+		if (!stricmp(par, "dp"))		
+		{		
+			if (!stricmp(word[2], "none"))		
+			{		
+				optimize_dp = optimize_dp_flag::NONE;		
+				return;		
+			}		
+			if (!stricmp(word[2], "ram"))		
+			{		
+				optimize_dp = optimize_dp_flag::RAM;		
+				return;		
+			}		
+			if (!stricmp(word[2], "always"))		
+			{		
+				optimize_dp = optimize_dp_flag::ALWAYS;		
+				return;		
+			}		
+			asar_throw_error(1, error_type_block, error_id_bad_dp_optimize, word[2]);		
+		}		
+		if (!stricmp(par, "address"))		
+		{		
+			if (!stricmp(word[2], "default"))		
+			{		
+				optimize_address = optimize_address_flag::DEFAULT;		
+				return;		
+			}		
+			if (!stricmp(word[2], "ram"))		
+			{		
+				optimize_address = optimize_address_flag::RAM;		
+				return;		
+			}		
+			if (!stricmp(word[2], "mirrors"))		
+			{		
+				optimize_address = optimize_address_flag::MIRRORS;		
+				return;		
+			}		
+			asar_throw_error(1, error_type_block, error_id_bad_address_optimize, word[2]);		
+		}		
+		asar_throw_error(1, error_type_block, error_id_bad_optimize, par);		
 	}
 	else if (is1("bank"))
 	{

@@ -52,9 +52,9 @@ endstruct align $10
 lda #$0040
 sta DMA[2].size
 
-db sizeof("test")
-db sizeof("test.test2")
-db sizeof("test.test3")
-db objectsize("test")
-db objectsize("test.test2")
-db objectsize("test.test3")
+db sizeof(test)
+db sizeof(test.test2)
+db sizeof(test.test3)
+db objectsize(test)
+db objectsize(test.test2)
+db objectsize(test.test3)

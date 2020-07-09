@@ -235,6 +235,16 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_failed_to_open_file_access_denied, "Failed to open file '%s'. Access denied." },
 	{ error_id_failed_to_open_not_regular_file, "Failed to open file '%s'. Not a regular file (did you try to use a directory?)" },
+	
+	{ error_id_bad_dp_base, "The dp base should be page aligned (asar limitation, sorry)"},
+	{ error_id_bad_dp_optimize, "Bad dp optimize value %s expected: [none, ram, always]"},
+	{ error_id_bad_address_optimize, "Bad dp optimize value %s expected: [default, ram, mirrors]"},
+	{ error_id_bad_optimize, "Bad optimize value %s expected[dp, address]"},
+	
+	{ error_id_require_parameter, "Missing required function parameter"},
+	{ error_id_expected_parameter, "Not enough parameters in calling of function %s"},
+	{ error_id_unexpected_parameter, "Too many parameters in calling of function %s"},
+	{ error_id_duplicate_param_name, "Duplicated parameter name: %s in creation of function %s"}
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

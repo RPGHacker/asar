@@ -211,6 +211,16 @@ enum asar_error_id : int
 
 	error_id_failed_to_open_file_access_denied,
 	error_id_failed_to_open_not_regular_file,
+	
+	error_id_bad_dp_base,
+	error_id_bad_dp_optimize,
+	error_id_bad_address_optimize,
+	error_id_bad_optimize,
+	
+	error_id_require_parameter,
+	error_id_expected_parameter,
+	error_id_unexpected_parameter,
+	error_id_duplicate_param_name,
 
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
