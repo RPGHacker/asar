@@ -847,7 +847,7 @@ void assembleblock(const char * block)
 		whiletracker& addedwstatus = (whilestatus[numif] = wstatus);
 		if (is("assert"))
 		{
-			char * rawerrmsg=strchr(word[numwords-1], ',');
+			char * rawerrmsg=strqrchr(word[numwords-1], ',');
 			if (rawerrmsg)
 			{
 				*rawerrmsg=0;
