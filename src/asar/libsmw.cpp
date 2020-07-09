@@ -463,7 +463,7 @@ static unsigned int getchecksum()
 		int repeatcount = firstpart / secondpart;
 		unsigned int secondpart_sum = 0;
 		for(int i = 0; i < firstpart; i++) checksum += romdata[i];
-		for(int i = firstpart; i < secondpart; i++) secondpart_sum += romdata[i];
+		for(int i = firstpart; i < romlen; i++) secondpart_sum += romdata[i];
 		checksum += secondpart_sum * repeatcount;
 	}
 	return checksum&0xFFFF;
