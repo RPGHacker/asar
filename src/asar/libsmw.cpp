@@ -449,7 +449,23 @@ uint32_t closerom(bool save)
 static unsigned int getchecksum()
 {
 	unsigned int checksum=0;
-	for (int i=0;i<romlen;i++) checksum+=romdata[i];//this one is correct for most cases, and I don't care about the rest.
+	if((romlen & (romlen-1)) == 0)
+	{
+		// romlen is a power of 2, just add up all the bytes
+		for (int i=0;i<romlen;i++) checksum+=romdata[i];
+	}
+	else
+	{
+		// assume romlen is the sum of 2 powers of 2 - i haven't seen any real rom that isn't,
+		// and if you make such a rom, fixing its checksum is your problem.
+		int firstpart = bitround(romlen) >> 1;
+		int secondpart = romlen - firstpart;
+		int repeatcount = firstpart / secondpart;
+		unsigned int secondpart_sum = 0;
+		for(int i = 0; i < firstpart; i++) checksum += romdata[i];
+		for(int i = firstpart; i < secondpart; i++) secondpart_sum += romdata[i];
+		checksum += secondpart_sum * repeatcount;
+	}
 	return checksum&0xFFFF;
 }
 
