@@ -1078,7 +1078,7 @@ void assembleblock(const char * block)
 			}
 			else
 			{
-				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "warnings enable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+				asar_throw_error(0, error_type_null, error_id_invalid_warning_id, "warnings enable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
 			}
 		}
 		else if (stricmp(word[1], "disable") == 0)
@@ -1091,7 +1091,7 @@ void assembleblock(const char * block)
 			}
 			else
 			{
-				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "warnings disable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+				asar_throw_error(0, error_type_null, error_id_invalid_warning_id, "warnings disable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
 			}
 		}
 	}
