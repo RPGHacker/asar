@@ -723,6 +723,15 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 
 void parse_std_defines(const char* textfile)
 {
+
+	// RPG Hacker: add built-in defines.
+	// (They're not really standard defines, but I was lazy and this was
+	// one convenient place for doing it).
+	builtindefines.create("assembler") = "asar";
+	builtindefines.create("assembler_ver") = get_version_int();
+
+	if(textfile == nullptr) return;
+
 	char* content = readfilenative(textfile);
 
 	if (content != nullptr)
@@ -806,12 +815,6 @@ void parse_std_defines(const char* textfile)
 		}
 		free(content);
 	}
-
-	// RPG Hacker: add built-in defines.
-	// (They're not really standard defines, but I was lazy and this was
-	// one convenient place for doing it).
-	builtindefines.create("assembler") = "asar";
-	builtindefines.create("assembler_ver") = get_version_int();
 }
 
 bool checksum_fix_enabled = true;

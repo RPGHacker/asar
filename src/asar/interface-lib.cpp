@@ -368,6 +368,8 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 		if (!path_is_absolute(paramscurrent.stddefinesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std defines file");
 		string stddefinespath = paramscurrent.stddefinesfile;
 		parse_std_defines(stddefinespath);
+	} else {
+		parse_std_defines(nullptr); // needed to populate builtin defines
 	}
 
 	for (int i = 0; i < paramscurrent.warning_setting_count; ++i)
