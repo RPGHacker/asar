@@ -262,7 +262,7 @@ notposneglabel:
 			if (val>=65536) thislen=3;
 			if (val>=16777216) thislen=4;
 		}
-		else if (isalpha(*str) || *str=='.' || *str=='?')
+		else if (isalpha(*str) || *str=='_' || *str=='.' || *str=='?')
 		{
 			unsigned int thislabel;
 			bool exists=labelval(&str, &thislabel);
