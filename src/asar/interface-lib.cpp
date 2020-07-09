@@ -255,7 +255,6 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 EXPORT bool asar_init()
 {
 	if (!expectsNewAPI) return false;
-	initmathcore();
 	return true;
 }
 
@@ -487,6 +486,7 @@ EXPORT double asar_math(const char * str, const char ** e)
 	sublabels.reset();
 	errored=false;
 	ismath=true;
+	initmathcore();
 	double rval=0;
 	try
 	{
@@ -497,6 +497,7 @@ EXPORT double asar_math(const char * str, const char ** e)
 		*e=matherror;
 	}
 	ismath=false;
+	deinitmathcore();
 	return rval;
 }
 

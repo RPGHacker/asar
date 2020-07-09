@@ -939,8 +939,6 @@ void reseteverything()
 
 	closecachedfiles();
 
-	deinitmathcore();
-
 	incsrcdepth=0;
 	errored = false;
 	checksum_fix_enabled = true;

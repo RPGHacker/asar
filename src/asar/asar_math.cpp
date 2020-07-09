@@ -9,6 +9,7 @@
 #include "virtualfile.h"
 #include "assembleblock.h"
 #include "asar_math.h"
+#include "warnings.h"
 #include <math.h>
 #include <functional>
 #include <algorithm>
@@ -483,7 +484,7 @@ string copy_arg()
 	return result;
 }
 
-assocarr<double (*)()> functions = 
+assocarr<double (*)()> builtin_functions =
 {
 	{"sqrt", asar_unary_wrapper<sqrt>},
 	{"sin", asar_unary_wrapper<sin>},
@@ -557,6 +558,8 @@ assocarr<double (*)()> functions =
 	{"stringsequalnocase", asar_stringsequalnocase}
 };
 
+assocarr<double (*)()> functions;
+
 struct funcdat {
 	autoptr<char*> name;
 	int numargs;
@@ -624,8 +627,9 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 {
 	if (!confirmqpar(content)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 	if(functions.exists(name)) //functions holds both types.
-	{		
-		asar_throw_error(0, error_type_block, error_id_function_redefined, name);
+	{
+		//asar_throw_error(0, error_type_block, error_id_function_redefined, name);
+		asar_throw_warning(0, warning_id_function_redefined, name);
 	}
 	funcdat& user_function=user_functions[name];
 	user_function.name= duplicate_string(name);
@@ -920,13 +924,14 @@ double math(const char * s)
 
 void initmathcore()
 {
-	//not needed
+	functions.reset();
+	builtin_functions.each([](const char* key, double (*val)()) {
+		functions[key] = val;
+	});
+	user_functions.reset();
 }
 
 void deinitmathcore()
 {
-	user_functions.each([](const char *key, funcdat &F){
-		functions.remove(key);
-	});
-	user_functions.reset();
+	//not needed
 }

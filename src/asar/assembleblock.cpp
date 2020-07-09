@@ -693,6 +693,8 @@ void initstuff()
 	addressToLineMapping.reset();
 
 	push_warnings(false);
+
+	initmathcore();
 }
 
 
@@ -711,6 +713,8 @@ void finishpass()
 	if (arch==arch_spc700) asend_spc700();
 	if (arch==arch_spc700_inline) asend_spc700();
 	if (arch==arch_superfx) asend_superfx();
+
+	deinitmathcore();
 }
 
 static bool addlabel(const char * label, int pos=-1)
@@ -1975,8 +1979,8 @@ void assembleblock(const char * block)
 	}
 	else if (is3("function"))
 	{
-		if (!pass)
-		{
+		//if (!pass)
+		//{
 			if (stricmp(word[2], "=")) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			if (!confirmqpar(word[1])) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			string line=word[1];
@@ -1991,7 +1995,7 @@ void assembleblock(const char * block)
 			if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			*endpar=0;
 			createuserfunc(line, startpar, word[3]);
-		}
+		//}
 	}
 	else if (is1("print"))
 	{
