@@ -835,31 +835,7 @@ void assembleblock(const char * block)
 		}
 		return;
 	}
-	if (is1("undef"))
-	{
-		string def;
-		// RPG Hacker: Not sure if we should allow this?
-		// Currently, the manual states that we should not include the
-		// exclamation mark, and I believe that this is for the better
-		// because I can see this leading to ambiguities or causing
-		// problems. If we add this back in, we should definitely
-		// also added it to the defined() function for consistency, though.
-		// Well, actually I just check and we can't support this in
-		// defined() (the defined is already replaced at that point), so
-		// I think we should not support it here, either.
-		/*if (*par == '!') def = S safedequote(par) + 1;
-		else*/ def = S safedequote(par);
-
-		if (defines.exists(def))
-		{
-			defines.remove(def);
-		}
-		else
-		{
-			asar_throw_error(0, error_type_block, error_id_define_not_found, def.str);
-		}
-	}
-	else if (is("if") || is("elseif") || is("assert") || is("while"))
+	if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		const char * errmsg= nullptr;
@@ -1038,6 +1014,30 @@ void assembleblock(const char * block)
 			addressToLineMapping.includeMapping(thisfilename.str, thisline + 1, addrToLinePos);
 		}
 		numopcodes++;
+	}
+	else if (is1("undef"))
+	{
+		string def;
+		// RPG Hacker: Not sure if we should allow this?
+		// Currently, the manual states that we should not include the
+		// exclamation mark, and I believe that this is for the better
+		// because I can see this leading to ambiguities or causing
+		// problems. If we add this back in, we should definitely
+		// also added it to the defined() function for consistency, though.
+		// Well, actually I just check and we can't support this in
+		// defined() (the defined is already replaced at that point), so
+		// I think we should not support it here, either.
+		/*if (*par == '!') def = S safedequote(par) + 1;
+		else*/ def = S safedequote(par);
+
+		if (defines.exists(def))
+		{
+			defines.remove(def);
+		}
+		else
+		{
+			asar_throw_error(0, error_type_block, error_id_define_not_found, def.str);
+		}
 	}
 	else if (is0("error"))
 	{
