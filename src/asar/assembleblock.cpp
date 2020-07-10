@@ -1311,7 +1311,7 @@ void assembleblock(const char * block)
 		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
 		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).str);
-		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000) asar_throw_warning(0, warning_id_set_middle_byte);
+		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) asar_throw_warning(0, warning_id_set_middle_byte);
 		//if (fastrom) num|=0x800000;
 		snespos=(int)num;
 		realsnespos=(int)num;
