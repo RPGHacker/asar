@@ -1790,11 +1790,11 @@ org $008000
 lda SpriteTable,x</code></pre>
 
 		<h4 id="optimize-dp">optimize dp</h4>
-		<pre><code class="65c816_asar">optimize dp {none/ram/always}</code>
+                <pre><code class="65c816_asar">optimize dp {none/ram/always}</code></pre>
 		This command changes how aggressive Asar's direct page access optimizer is. With <code class="65c816_asar">optimize dp none</code> (the default), the direct page optimizer is disabled and direct page accesses will only be done with the <code class="65c816_asar">.b</code> instruction suffix or with explicit addresses like <code class="65c816_asar">lda $42</code>. With <code class="65c816_asar">optimize dp ram</code>, direct page optimization will be performed according to the <a href="#dpbase">dpbase</a> setting, but only on labels in bank <code class="65c816_asar">$7E</code>. With <code class="65c816_asar">optimize dp always</code>, direct page optimization will be performed on all labels in banks that have RAM mirrors, i.e. 00-3F and 80-BF, and also on labels in bank 7E.
 
 		<h4 id="optimize-address">optimize address</h4>
-		<pre><code class="65c816_asar">optimize address {default/ram/mirrors}</code>
+                <pre><code class="65c816_asar">optimize address {default/ram/mirrors}</code></pre>
 		TODO: document this
 
 		<h4 id="pushpc">pushpc/pullpc</h4>
