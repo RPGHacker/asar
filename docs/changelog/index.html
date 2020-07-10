@@ -38,20 +38,42 @@
 
 		<hr />
 
-		<div><h2>v1.7x</h2>
+		<div><h2>v1.80</h2>
 		<b>Release:</b> ?
 
 		<h3>Contributors:</h3>
-		<ul><li>RPG Hacker</li></ul>
+		<ul>
+			<li>RPG Hacker</li>
+			<li>randomdude999</li>
+			<li>p4plus2</li>
+			<li>CypherSignal</li>
+			<li>LDAsuku</li>
+		</ul>
 
 		<h3>New features:</h3>
 		<ul>
 			<li>The C DLL binding for Windows should now print a few more details if loading the DLL failed. (RPG Hacker)</li>
+			<li>The <code>print</code> command has a new <code>bin()</code> function. Also, <code>bin()</code>, <code>dec()</code> and <code>hex()</code> now take an optional width argument that allows padding the number with zeroes. (randomdude999)</li>
+			<li>Labels can now be used in the condition of an <code>assert</code> command. (randomdude999)</li>
+			<li>The WLA symbol file now includes an address-to-line mapping, which can be used by some debuggers to provide source-level debugging. (CypherSignal)</li>
+			<li>The <code>sizeof()</code> and <code>objectsize()</code> functions don't need quotes around the struct name anymore. For backwards compatibilty, quotes are still allowed. (p4plus2)</li>
+			<li>There is a new label optimizer, which can convert RAM labels to direct page or word accesses where possible. For this there are 3 new commands: <code>dpbase</code>, <code>optimize dp</code> and <code>optimize address</code>. (p4plus2)</li>
+			<li>The <code>floor()</code> and <code>ceil()</code> functions have been added. (randomdude999)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
 		<ul>
 			<li>The Asar DLL can now be loaded in Windows applications that define UNICODE. (RPG Hacker)</li>
+			<li>Labels can now start with underscores. (LDAsuku)</li>
+			<li>An <code>undef</code> command inside an unexecuted <code>if</code> statement would still get executed. This is now fixed. (randomdude999)</li>
+			<li>The <code>assert</code> command would give strange errors when the condition to test contained a comma. This is now fixed. (randomdude999)</li>
+			<li>Trailing commas can now be used to join lines that contain more than one comma, and the joined lines can now have comments. (randomdude999)</li>
+			<li>An invalid warning ID in a <code>warnings enable</code> command no longer prints the error message three times. (randomdude999)</li>
+			<li>When using the Asar DLL, built-in defines (e.g. <code>!assembler_ver</code>) are now always present. Previously they were missing when the DLL was called without specifying a standard defines file. (randomdude999)</li>
+			<li>Repeatable instructions (like <code>LSR #4</code> don't accept labels in their argument anymore. (randomdude999)</li>
+			<li>Asar no longer writes an incorrect checksum for ROMs whose size isn't a power of 2, e.g. 2.5MB, 3MB, 6MB. (randomdude999)</li>
+			<li>The "It would be wise to set the 008000 bit" warning has been relaxed and isn't thrown for labels in banks 70-7F. (randomdude999)</li>
+			<li>Overwriting built-in functions now throws a warning. Overwriting user-defined functions now also throws a warning for consistency. (randomdude999)</li>
 		</ul>
 
 		<hr />
