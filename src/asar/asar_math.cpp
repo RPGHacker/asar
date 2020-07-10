@@ -141,23 +141,6 @@ static int object_size(const char *name)
 }
 
 
-//only returns alphanumeric (and _) starting with alpha or _
-string get_symbol_argument()
-{
-	while (*str==' ') str++;	//is this proper?  Dunno yet.
-	const char * strpos = str;
-	if(isalpha(*str) || *str == '_') str++;
-	while (isalnum(*str) || *str == '_' || *str == '.') str++;
-	if(strpos == str){
-		//error nothing was read, this is a placeholder error
-		asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
-	}
-	
-	string symbol = string(strpos, (int)(str - strpos));
-	while (*str==' ') str++;	//eat spaces
-	return symbol;
-}
-
 string get_string_argument()
 {
 	while (*str==' ') str++;
@@ -180,6 +163,32 @@ string get_string_argument()
 	
 	asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
 	return ""; //never actually called, but I don't feel like figuring out __attribute__ ((noreturn)) on MSVC
+}
+
+//only returns alphanumeric (and _) starting with alpha or _
+string get_symbol_argument()
+{
+	while (*str==' ') str++;	//is this proper?  Dunno yet.
+	const char * strpos = str;
+	// hack: for backwards compat, allow strings as symbols
+	if(*str=='"') {
+		string arg = get_string_argument();
+		int i = 0;
+		if(isalpha(arg[i]) || arg[i] == '_') i++;
+		while(isalnum(arg[i]) || arg[i] == '_' || arg[i] == '.') i++;
+		if(arg[i] != '\0') asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+                return arg;
+	}
+	if(isalpha(*str) || *str == '_') str++;
+	while (isalnum(*str) || *str == '_' || *str == '.') str++;
+	if(strpos == str){
+		//error nothing was read, this is a placeholder error
+		asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+	}
+	
+	string symbol = string(strpos, (int)(str - strpos));
+	while (*str==' ') str++;	//eat spaces
+	return symbol;
 }
 
 double get_double_argument()
@@ -733,8 +742,6 @@ static double getnumcore()
 				}
 			}
 
-			//if (*str=='_') str++; //I don't think this is needed?
-
 			asar_throw_error(1, error_type_block, error_id_function_not_found, start);
 		}
 		else
@@ -927,6 +934,7 @@ void initmathcore()
 	functions.reset();
 	builtin_functions.each([](const char* key, double (*val)()) {
 		functions[key] = val;
+		functions[S "_" + key] = val;
 	});
 	user_functions.reset();
 }

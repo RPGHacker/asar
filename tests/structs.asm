@@ -1,5 +1,5 @@
 ;`AD 07 00 AD 02 00 AD 02 00 DC 00 00 DC 07 00 A9 40 00 8D 25 43
-;`02 03 05 07 03 05
+;`02 03 05 07 03 05 02 05
 
 org $008000
 
@@ -58,3 +58,5 @@ db sizeof(test.test3)
 db objectsize(test)
 db objectsize(test.test2)
 db objectsize(test.test3)
+db sizeof("test")
+db objectsize("test.test3")
