@@ -866,6 +866,8 @@ void assembleblock(const char * block)
 		if ((is("if") || is("while")) && !moreonline) numif++;
 		bool cond;
 
+		bool isassert = is("assert");
+
 		char ** nextword=word+1;
 		char * condstr= nullptr;
 		while (true)
@@ -878,13 +880,13 @@ void assembleblock(const char * block)
 				{
 					asar_throw_warning(0, warning_id_if_not_condition_deprecated);
 					double val = getnumdouble(nextword[0]+1);
-					if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+					if (foundlabel && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 					thiscond = !(val > 0);
 				}
 				else
 				{
 					double val = getnumdouble(nextword[0]);
-					if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+					if (foundlabel && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 					thiscond = (val > 0);
 				}
 
@@ -899,9 +901,9 @@ void assembleblock(const char * block)
 			{
 				if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 				double par1=getnumdouble(nextword[0]);
-				if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+				if (foundlabel && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 				double par2=getnumdouble(nextword[2]);
-				if (foundlabel) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+				if (foundlabel && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 				if(0);
 				else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
 				else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
@@ -986,10 +988,11 @@ void assembleblock(const char * block)
 				elsestatus[numif]=true;
 			}
 		}
-		else if (!cond)
+		// otherwise, must be assert command
+		else if (pass == 2 && !cond)
 		{
-			if (errmsg) asar_throw_error(1, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).str);
-			else asar_throw_error(1, error_type_block, error_id_assertion_failed, ".");
+			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).str);
+			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
 	else if (is0("endif"))
