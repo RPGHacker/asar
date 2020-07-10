@@ -509,6 +509,9 @@ assocarr<double (*)()> builtin_functions =
 	{"log10", asar_unary_wrapper<log10>},
 	{"log2", asar_unary_wrapper<log2>},
 
+	{"ceil", asar_unary_wrapper<ceil>},
+	{"floor", asar_unary_wrapper<floor>},
+
 	{"read1", asar_read<1>},	//This handles the safe and unsafe variant
 	{"read2", asar_read<2>},
 	{"read3", asar_read<3>},
