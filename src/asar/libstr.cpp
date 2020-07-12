@@ -58,7 +58,7 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 	return true;
 }
 
-#define dequote(var, next, error) if (var=='"') do { next; while (var!='"') { if (!var) error; next; } next; } while(0)
+#define dequote(var, next, error) if (var=='"') do { next; while (var!='"') { if (!var) error; next; } next; } while(0); else if (var=='\'') do { next; while (var!='\'') { if (!var) error; next; } next; } while(0)
 #define skippar(var, next, error) dequote(var, next, error); else if (var=='(') { int par=1; next; while (par) { dequote(var, next, error); \
 				if (var=='(') par++; if (var==')') par--; if (!var) error; next; } } else if (var==')') error
 
@@ -160,7 +160,7 @@ string& string::qreplace(const char * instr, const char * outstr, bool all)
 {
 	string& thisstring =*this;
 	if (!strstr(thisstring, instr)) return thisstring;
-	if (!strchr(thisstring, '"'))
+	if (!strchr(thisstring, '"') && !strchr(thisstring, '\''))
 	{
 		thisstring.replace(instr, outstr, all);
 		return thisstring;
@@ -257,7 +257,7 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 
 char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 {
-	if (!strchr(str, '"')) return nsplit(str, key, maxlen, len);
+	if (!strchr(str, '"') && !strchr(str, '\'')) return nsplit(str, key, maxlen, len);
 	int keylen=(int)strlen(key);
 	int count=1;
 	char * thisentry=str;
