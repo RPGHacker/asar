@@ -626,7 +626,10 @@ static double asar_call_user_function()
 			int next_char = i+strlen(user_function.arguments[j]);
 			if(potential_arg && (!isalnum(user_function.content[next_char]) && user_function.content[next_char] != '_'))
 			{
-				real_content += args[j];
+				if(args[j][0] == '"')
+					real_content += args[j];
+				else
+					real_content += (S"(" + args[j] + ")");
 				i = next_char - 1;
 				found = true;
 			}
