@@ -223,6 +223,7 @@ enum asar_error_id : int
 	error_id_duplicate_param_name,
 
 	error_id_invalid_alignment,
+	error_id_alignment_too_big,
 
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,

@@ -1943,6 +1943,8 @@ void assembleblock(const char * block)
 				offset = getnum64(word[4]);
 				if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 			}
+			if(alignment > 0x800000) asar_throw_error(0, error_type_block, error_id_alignment_too_big);
+			if(alignment < 1) asar_throw_error(0, error_type_block, error_id_alignment_too_small);
 			if(alignment & (alignment-1)) asar_throw_error(0, error_type_block, error_id_invalid_alignment);
 			// i just guessed this formula but it seems to work
 			amount = (alignment - ((snespos - offset) & (alignment-1))) & (alignment-1);
