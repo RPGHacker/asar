@@ -58,6 +58,7 @@ jobs:
             - gcc-mingw-w64-i686
             - g++-mingw-w64-i686
             - lcov
+            - wine32
             - wine-stable
     - os: linux
       compiler: x86_64-w64-mingw32-gcc
@@ -71,4 +72,5 @@ jobs:
             - gcc-mingw-w64-x86-64
             - g++-mingw-w64-x86-64
             - lcov
+            - wine64
             - wine-stable
