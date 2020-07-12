@@ -77,9 +77,10 @@ string& operator=(string newstr)
 string& operator+=(const string& newstr)
 {
 	fixlen();
-	resize(len+newstr.truelen());
-	memmove(str+len, newstr.str, (size_t)newstr.len);
-	len+=newstr.len;
+	int newstrlen = newstr.truelen();
+	resize(len+newstrlen);
+	memmove(str+len, newstr.str, (size_t)newstrlen);
+	len+=newstrlen;
 	str[len] = '\0';
 	return *this;
 }
