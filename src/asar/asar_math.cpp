@@ -489,7 +489,13 @@ string copy_arg()
 	}
 	
 	string result;
-	while(*str != ',' && *str != ')') result += *str++;
+	int parlevel=0;
+	while(parlevel > 0 || (*str != ',' && *str != ')'))
+	{
+		if(*str == '(') parlevel++;
+		else if(*str == ')') parlevel--;
+		result += *str++;
+	}
 	return result;
 }
 
