@@ -1,5 +1,5 @@
 language: cpp
-sudo: false
+dist: bionic
 compiler:
   - clang
   - gcc
@@ -44,11 +44,10 @@ addons:
       - lcov
 
 # MinGW cross-builds (make only)
-matrix:
+jobs:
   include:
     - os: linux
       compiler: i686-w64-mingw32-gcc
-      sudo: true # Wine requires a lot of disk spaces. Therefore, use "Ubuntu Trusty VM" environment.
       env:
         - COMPILER=i686-w64-mingw32-gcc # $CC will overwritten by Travis.
         - EXE_SUFFIX=.exe
@@ -59,10 +58,9 @@ matrix:
             - gcc-mingw-w64-i686
             - g++-mingw-w64-i686
             - lcov
-            - wine
+            - wine-stable
     - os: linux
       compiler: x86_64-w64-mingw32-gcc
-      sudo: true # Wine requires a lot of disk spaces. Therefore, use "Ubuntu Trusty VM" environment.
       env:
         - COMPILER=x86_64-w64-mingw32-gcc # $CC will overwritten by Travis.
         - EXE_SUFFIX=.exe
@@ -73,4 +71,4 @@ matrix:
             - gcc-mingw-w64-x86-64
             - g++-mingw-w64-x86-64
             - lcov
-            - wine
+            - wine-stable
