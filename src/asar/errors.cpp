@@ -244,7 +244,9 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_require_parameter, "Missing required function parameter"},
 	{ error_id_expected_parameter, "Not enough parameters in calling of function %s"},
 	{ error_id_unexpected_parameter, "Too many parameters in calling of function %s"},
-	{ error_id_duplicate_param_name, "Duplicated parameter name: %s in creation of function %s"}
+	{ error_id_duplicate_param_name, "Duplicated parameter name: %s in creation of function %s"},
+
+	{ error_id_invalid_alignment, "Invalid alignment. Expected a power of 2." }
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

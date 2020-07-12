@@ -1927,11 +1927,34 @@ void assembleblock(const char * block)
 			for (int i=start;i<end;i++) write1((unsigned int)data[i]);
 		}
 	}
-	else if (is1("skip"))//nobody ever uses this, but whatever
+	else if (is("skip") || is("fill"))
 	{
-		int skip=(int)getnum64(par);
-		if (foundlabel) asar_throw_error(0, error_type_block, error_id_skip_label_invalid);
-		step(skip);
+		if(numwords != 2 && numwords != 3 && numwords != 5) asar_throw_error(0, error_type_block, error_id_unknown_command);
+		if(numwords > 2 && stricmp(word[1], "align")) asar_throw_error(0, error_type_block, error_id_unknown_command);
+		if(numwords == 5 && stricmp(word[3], "offset")) asar_throw_error(0, error_type_block, error_id_unknown_command);
+		int amount;
+		if(numwords > 2)
+		{
+			int alignment = getnum64(word[2]);
+			if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			int offset = 0;
+			if(numwords==5)
+			{
+				offset = getnum64(word[4]);
+				if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			}
+			if(alignment & (alignment-1)) asar_throw_error(0, error_type_block, error_id_invalid_alignment);
+			// i just guessed this formula but it seems to work
+			amount = (alignment - ((snespos - offset) & (alignment-1))) & (alignment-1);
+		}
+		else
+		{
+			amount = (int)getnum64(par);
+			if (foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+		}
+		if(is("skip")) step(amount);
+		else for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
+
 	}
 	else if (is0("cleartable"))
 	{
@@ -2137,11 +2160,6 @@ void assembleblock(const char * block)
 				tmpval>>=8;
 			}
 		}
-	}
-	else if (is1("fill"))
-	{
-		unsigned int num=getnum(par);
-		for (unsigned int i=0;i<num;i++) write1(fillbyte[i%12]);
 	}
 	else if (is1("arch"))
 	{
