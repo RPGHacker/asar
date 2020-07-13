@@ -912,11 +912,11 @@ notposneglabel:
 		oper("%", 3, right != 0.0 ? fmod((double)left, (double)right) : oper_wrapped_throw(error_id_modulo_by_zero));
 		oper("+", 2, left+right);
 		oper("-", 2, left-right);
-		oper("<<", 1, (uint64_t)left<<(uint64_t)right);
-		oper(">>", 1, (uint64_t)left>>(uint64_t)right);
-		oper("&", 0, (uint64_t)left&(uint64_t)right);
-		oper("|", 0, (uint64_t)left|(uint64_t)right);
-		oper("^", 0, (uint64_t)left^(uint64_t)right);
+		oper("<<", 1, right >= 0.0 ? (int64_t)left<<(uint64_t)right : oper_wrapped_throw(error_id_negative_shift));
+		oper(">>", 1, right >= 0.0 ? (int64_t)left>>(uint64_t)right : oper_wrapped_throw(error_id_negative_shift));
+		oper("&", 0, (int64_t)left&(int64_t)right);
+		oper("|", 0, (int64_t)left|(int64_t)right);
+		oper("^", 0, (int64_t)left^(int64_t)right);
 		asar_throw_error(1, error_type_block, error_id_unknown_operator);
 #undef oper
 	}

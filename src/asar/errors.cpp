@@ -248,6 +248,8 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_invalid_alignment, "Invalid alignment. Expected a power of 2." },
 	{ error_id_alignment_too_big, "Requested alignment too large." },
+
+	{ error_id_negative_shift, "Bitshift amount is negative." },
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
