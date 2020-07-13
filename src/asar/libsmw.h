@@ -77,7 +77,7 @@ inline int snestopc(int addr)
 		if ((addr&0xFE0000)==0x7E0000 ||//wram
 			(addr&0x408000)==0x000000)//hardware regs, ram mirrors, other strange junk
 			return -1;
-		if ((addr&0xC00000)!=0xC00000) return (addr&0x3FFFFF)|0x400000;
+		if ((addr&0x800000)==0x000000) return (addr&0x3FFFFF)|0x400000;
 		return addr&0x3FFFFF;
 	}
 	if (mapper==sfxrom)
