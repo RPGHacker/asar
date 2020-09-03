@@ -74,6 +74,7 @@
 			<li>Asar no longer writes an incorrect checksum for ROMs whose size isn't a power of 2, e.g. 2.5MB, 3MB, 6MB. (randomdude999)</li>
 			<li>The "It would be wise to set the 008000 bit" warning has been relaxed and isn't thrown for labels in banks 70-7F. (randomdude999)</li>
 			<li>Overwriting built-in functions now throws a warning. Overwriting user-defined functions now also throws a warning for consistency. (randomdude999)</li>
+			<li>Opcode length specifications were sometimes being ignored in <code>arch spc700</code>. Now <code>adc.w a, $0</code> properly assembles to <code>85 00 00</code> instead of <code>84 00</code>. (randomdude999)</li>
 		</ul>
 
 		<hr />

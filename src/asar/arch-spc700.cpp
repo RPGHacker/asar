@@ -200,7 +200,7 @@ bool asblock_spc700(char** word, int numwords)
 #define w0(hex) do { write1((unsigned int)hex); return true; } while(0)
 #define w1(hex) do { write1((unsigned int)hex); write1(getnum(math)); return true; } while(0)
 #define w2(hex) do { write1((unsigned int)hex); write2(getnum(math)); return true; } while(0)
-#define wv(hex1, hex2) do { if ((opLen== 1) || (getlen(math)==1)) { write1((unsigned int)hex1); write1(getnum(math)); } else { write1((unsigned int)hex2); write2(getnum(math)); } return true; } while(0)
+#define wv(hex1, hex2) do { if ((opLen == 1) || (opLen == 0 && getlen(math) == 1)) { write1((unsigned int)hex1); write1(getnum(math)); } else { write1((unsigned int)hex2); write2(getnum(math)); } return true; } while(0)
 #define wr(hex) do { int len=getlen(math); int num=(int)getnum64(math); int pos=(len==1)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)hex); write1((unsigned int)pos); \
 								if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
 								return true; } while(0)
@@ -326,7 +326,7 @@ bool asblock_spc700(char** word, int numwords)
 #define w1(opcode, math) do { write1((unsigned int)opcode); unsigned int val=getnum(math); \
 													if (((val&0xFF00)&&(val&0x80000000)==0)||(((val&0xFF00)!=0xFF00)&&(val&0x80000000))) asar_throw_warning(0, warning_id_spc700_assuming_8_bit); write1(val); return true; } while(0)
 #define w2(opcode, math) do { write1((unsigned int)opcode); write2(getnum(math)); return true; } while(0)
-#define wv(opcode1, opcode2, math) do { if ((opLen== 1) || (getlen(math)==1)) { write1((unsigned int)opcode1); write1(getnum(math)); } \
+#define wv(opcode1, opcode2, math) do { if ((opLen == 1) || (opLen == 0 && getlen(math)==1)) { write1((unsigned int)opcode1); write1(getnum(math)); } \
 																	 else { write1((unsigned int)opcode2); write2(getnum(math)); } return true; } while(0)
 #define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1(getnum(math1)); write1(getnum(math2)); return true; } while(0)
 #define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum64(math); int pos=(len==1)?num:num-(snespos+2); \

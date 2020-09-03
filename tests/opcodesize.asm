@@ -42,6 +42,26 @@
 ;`2B 00 2C 00 00
 ;`6B 00 6C 00 00
 ;`A4 00 A5 00 00 B4 00 B5 00 00
+;`84 00 85 00 00 94 00 95 00 00
+;`24 00 25 00 00 34 00 35 00 00
+;`0B 00 0C 00 00
+;`64 00 65 00 00 74 00 75 00 00
+;`3E 00 1E 00 00
+;`7E 00 5E 00 00
+;`8B 00 8C 00 00
+;`44 00 45 00 00 54 00 55 00 00
+;`AB 00 AC 00 00
+;`4B 00 4C 00 00
+;`E4 00 E5 00 00 F4 00 F5 00 00
+;`F8 00 E9 00 00
+;`EB 00 EC 00 00
+;`C4 00 C5 00 00 D4 00 D5 00 00
+;`D8 00 C9 00 00
+;`CB 00 CC 00 00
+;`04 00 05 00 00 14 00 15 00 00
+;`2B 00 2C 00 00
+;`6B 00 6C 00 00
+;`A4 00 A5 00 00 B4 00 B5 00 00
 
 arch 65816
 org $008000
@@ -270,3 +290,80 @@ sbc.b A, $0000
 sbc.w A, $0000
 sbc.b A, $0000+X
 sbc.w A, $0000+X
+
+
+adc.b A, $00
+adc.w A, $00
+adc.b A, $00+X
+adc.w A, $00+X
+
+and.b A, $00
+and.w A, $00
+and.b A, $00+X
+and.w A, $00+X
+
+asl.b $00
+asl.w $00
+
+cmp.b A, $00
+cmp.w A, $00
+cmp.b A, $00+X
+cmp.w A, $00+X
+
+cmp.b X, $00
+cmp.w X, $00
+
+cmp.b Y, $00
+cmp.w Y, $00
+
+dec.b $00
+dec.w $00
+
+eor.b A, $00
+eor.w A, $00
+eor.b A, $00+X
+eor.w A, $00+X
+
+inc.b $00
+inc.w $00
+
+lsr.b $00
+lsr.w $00
+
+mov.b A, $00
+mov.w A, $00
+mov.b A, $00+X
+mov.w A, $00+X
+
+mov.b X, $00
+mov.w X, $00
+
+mov.b Y, $00
+mov.w Y, $00
+
+mov.b $00, A
+mov.w $00, A
+mov.b $00+X, A
+mov.w $00+X, A
+
+mov.b $00, X
+mov.w $00, X
+
+mov.b $00, Y
+mov.w $00, Y
+
+or.b A, $00
+or.w A, $00
+or.b A, $00+X
+or.w A, $00+X
+
+rol.b $00
+rol.w $00
+
+ror.b $00
+ror.w $00
+
+sbc.b A, $00
+sbc.w A, $00
+sbc.b A, $00+X
+sbc.w A, $00+X
