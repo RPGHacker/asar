@@ -16,6 +16,45 @@ void asend_65816()
 {
 }
 
+// TODO: maybe rehome this to a less CPU-specific place, if it's the same for other arch's like spc
+//
+// is_long: if true, 16bit mode (i.e. BRL). if false, 8bit mode (i.e. BRA)
+void relative_addr(const unsigned int instruction, const unsigned int num, const bool is_long)
+{
+	int delta = (int)num;
+	if (foundlabel)
+		delta -= snespos + (is_long ? 3 : 2);
+
+	if (pass == 2) {
+		// TODO: need to check if we need to do any of this stuff on passes other than 2 -Dom
+		
+		if (!foundlabel) {
+			if (delta & ~(is_long ? 0xFFFF : 0xFF))
+				asar_throw_error(pass, error_type_block, error_id_invalid_input, 
+					"Relative address operand too large: " + hex4((unsigned)delta));
+
+			// Tricky:
+			// 1. Interpret our hex literal as a signed value, either 1 or 2 bytes based on is_long
+			// 2. Then, always store that result as signed 2 byte value
+			delta = (signed short)(is_long ? delta : (signed char)delta);
+		} else {
+			if (unsigned(snespos & ~0xFFFF) != (num & ~0xFFFF))
+				asar_throw_error(pass, error_type_block, error_id_bank_border_crossed, 
+					"Relative address: Label {TODO} must be in the same bank.");
+
+			if (!is_long && ((signed short)delta < -128 || (signed short)delta > 127))
+				asar_throw_error(pass, error_type_block, error_id_relative_branch_out_of_bounds, 
+					dec(delta).str);
+		}
+	}
+
+	write1(instruction);
+	if (is_long)
+		write2((unsigned)delta);
+	else
+		write1((unsigned)(signed char)delta);
+}
+
 extern bool fastrom;
 
 bool asblock_65816(char** word, int numwords)
@@ -49,12 +88,8 @@ bool asblock_65816(char** word, int numwords)
 #define as_xy(  op, byte) if (is(op)) { if(!explicitlen && !hexconstant) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { write1(byte); write1(num); } \
 																					 else {  write1((unsigned int)byte); write2(num); } return true; }
 #define as_rep( op, byte) if (is(op)) { if (pass==0) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
-#define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
-													if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
-													return true; }
-#define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+3); write1((unsigned int)byte); write2((unsigned int)pos);\
-											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
-											return true; }
+#define as_rel1(op, byte) if (is(op)) { relative_addr(byte, num, false); return true; }
+#define as_rel2(op, byte) if (is(op)) { relative_addr(byte, num, true);  return true; }
 #define the8(offset, len) as##len("ORA", offset+0x00); as##len("AND", offset+0x20); as##len("EOR", offset+0x40); as##len("ADC", offset+0x60); \
 													as##len("STA", offset+0x80); as##len("LDA", offset+0xA0); as##len("CMP", offset+0xC0); as##len("SBC", offset+0xE0)
 #define thenext8(offset, len) as##len("ASL", offset+0x00); as##len("BIT", offset+0x1E); as##len("ROL", offset+0x20); as##len("LSR", offset+0x40); \
