@@ -155,7 +155,7 @@ void callmacro(const char * data)
 							if (args[j][0]=='"')
 							{
 								string s=args[j];
-								out+=dequote(s.str);
+								out+=safedequote(s.str);
 							}
 							else out+=args[j];
 							break;
