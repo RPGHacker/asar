@@ -59,6 +59,8 @@
 			<li>The <code>sizeof()</code> and <code>objectsize()</code> functions don't need quotes around the struct name anymore. For backwards compatibilty, quotes are still allowed. (p4plus2)</li>
 			<li>There is a new label optimizer, which can convert RAM labels to direct page or word accesses where possible. For this there are 3 new commands: <code>dpbase</code>, <code>optimize dp</code> and <code>optimize address</code>. (p4plus2)</li>
 			<li>The <code>floor()</code> and <code>ceil()</code> functions have been added. (randomdude999)</li>
+			<li>The <code>bank()</code> and <code><:</code> function and math operator have been added (p4plus2)</li>
+			<li>The <code>datasize()</code> function has been added. (p4plus2)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
@@ -75,6 +77,7 @@
 			<li>The "It would be wise to set the 008000 bit" warning has been relaxed and isn't thrown for labels in banks 70-7F. (randomdude999)</li>
 			<li>Overwriting built-in functions now throws a warning. Overwriting user-defined functions now also throws a warning for consistency. (randomdude999)</li>
 			<li>Opcode length specifications were sometimes being ignored in <code>arch spc700</code>. Now <code>adc.w a, $0</code> properly assembles to <code>85 00 00</code> instead of <code>84 00</code>. (randomdude999)</li>
+			<li>Fixed case sensitivity problem in function calls. (p4plus2)</li>
 		</ul>
 
 		<hr />

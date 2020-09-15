@@ -1859,8 +1859,8 @@ lda #5+6*2	; the same as &quot;lda #17&quot;
 lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 		Math statements in Asar support the following operators:<br/><br/>
 		
-		<code>+  : Addition
--  : Subtraction
+		<code>+  : Addition (Also valid as prefix, but a no-op)
+-  : Subtraction (Or negation prefix)
 *  : Multiplication
 /  : Division
 %  : Modulo (the remainder of a division, fmod() in C)
@@ -1869,7 +1869,8 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 &amp;  : Bitwise AND
 |  : Bitwise OR
 ^  : Bitwise XOR (Note: not exponentials)
-~  : Bitwise NOT
+~  : Bitwise NOT (Prefix)
+&lt;:  : Bitshift right 16, shorthand for isolating address bank (Prefix)
 ** : Exponentials (2**4 = 2*2*2*2 = pow(2, 4) in C)</code><br/><br/>
 		
 		Note that whitespace is not supported inside math statements, but the <a href="#multiline">multi-line operator \</a> can be used to split them into multiple lines. Using math in labels can be useful when you want to apply an offset to the label:
@@ -2543,6 +2544,11 @@ max(a, b)</code></td>
 				<td><pre><code class="65c816_asar">function required_sprite_memory(num_sprites) = not(!sprites_disabled)*sprite_size()*num_sprites</code></pre></td>
 			</tr>
 			<tr>
+				<td><code class="65c816_asar">bank(value)</code></td>
+				<td>Returns <code>value>>16 </code></td>
+				<td><pre><code class="65c816_asar">lda #bank(some_label)</code></pre></td>
+			</tr>
+			<tr>
 				<td><code class="65c816_asar">equal(value, comparand)
 notequal(value, comparand)
 less(value, comparand)
@@ -2609,6 +2615,22 @@ endstruct
 
 db objectsize(parent)         ; db 5
 db objectsize(parent.child)   ; db 3</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">datasize(label)</code></td>
+				<td>Takes a given label and calculates the distance between it and the next label.  It will throw a warning if the distance exceeds 0xFFFF or is the last label in the targeted assembly.</td>
+				<td><pre><code class="65c816_asar">org $008000
+main:
+
+lda #datasize(my_table)		;3
+lda #datasize(other_label)	;0x7FF3 (last label, throws a warning. calculated as $FFFFFF-$00800C)
+lda #datasize(main)		;9
+
+
+my_table:
+	db $00, $00, $02
+other_label:
+</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">stringsequal(string1, string2)</code></td>
