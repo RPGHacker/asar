@@ -1562,7 +1562,8 @@ rep 16 : %memset($00, 16)</code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="mappers"><h3>Mapping Modes</h3>
-		Asar supports a number of different mapping modes. They control the address translation used by Asar during compilation (aka where in the output file Asar writes to). Historically, SNES cartridges used a number of different mappers to address data in ROM. Those mappers can be supported by using the respective mapping mode in Asar. It's possible, but not recommended, to use different mapping modes on the same ROM. Detailed explanations on each mapping mode are beyond the scope of this manual, so please check the SNES Dev Manual or other specialized resources for that.<br/><br/>
+		Asar supports a number of different mapping modes. They control the address translation used by Asar during compilation (aka where in the output file Asar writes to). Historically, SNES cartridges used a number of different mappers to address data in ROM. Those mappers can be supported by using the respective mapping mode in Asar. It's possible, but not recommended, to use different mapping modes on the same ROM. Detailed explanations on each mapping mode are beyond the scope of this manual, so please check the SNES Dev Manual or other specialized resources for that.<br/>
+		NOTE: Changing the mapper after having previously set it will generate warning <code>W1029</code>.<br/><br/>
 		<table>
 			<tr>
 				<th style="width:150px">Command</th>

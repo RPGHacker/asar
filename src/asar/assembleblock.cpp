@@ -22,6 +22,7 @@ int startpos;
 int realstartpos;
 
 bool emulatexkas;
+bool mapper_set = false;
 static bool specifiedasarver = false;
 
 static int old_snespos;
@@ -632,6 +633,7 @@ void initstuff()
 	}
 	arch=arch_65816;
 	mapper=lorom;
+	mapper_set = false;
 	reallycalledmacros=0;
 	calledmacros=0;
 	macrorecursion=0;
@@ -2172,6 +2174,7 @@ void assembleblock(const char * block)
 		if (!stricmp(par, "spc700-raw")) {
 			arch=arch_spc700;
 			mapper=norom;
+			mapper_set = false;
 			if(!force_checksum_fix)
 				checksum_fix_enabled = false;
 			return;
@@ -2227,6 +2230,7 @@ void assembleblock(const char * block)
 
 bool assemblemapper(char** word, int numwords)
 {
+	auto previous_mapper = mapper;
 	if(0);
 	else if (is0("lorom"))
 	{
@@ -2296,5 +2300,11 @@ bool assemblemapper(char** word, int numwords)
 		//headers are detected elsewhere; ignoring for familiarity
 	}
 	else return false;
+	
+	if(!mapper_set){
+		mapper_set = true;
+	}else if(previous_mapper != mapper){
+		asar_throw_warning(1, warning_id_mapper_already_set);
+	}
 	return true;
 }

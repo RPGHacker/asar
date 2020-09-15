@@ -80,7 +80,9 @@ static asar_warning_mapping asar_warnings[] =
 	{ warning_id_function_redefined, "Function '%s' redefined." },
 	
 	{ warning_id_datasize_last_label, "Datasize used on last detected label '%s'." },
-	{ warning_id_datasize_exceeds_size, "Datasize exceeds 0xFFFF for label '%s'." }
+	{ warning_id_datasize_exceeds_size, "Datasize exceeds 0xFFFF for label '%s'." },
+	
+	{ warning_id_mapper_already_set, "A mapper has already been selected." }
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
