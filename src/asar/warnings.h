@@ -50,6 +50,9 @@ enum asar_warning_id : int
 	warning_id_if_not_condition_deprecated,
 
 	warning_id_function_redefined,
+	
+	warning_id_datasize_last_label,
+	warning_id_datasize_exceeds_size,
 
 	warning_id_end,
 	warning_id_count = warning_id_end - warning_id_start - 1
