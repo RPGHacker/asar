@@ -1335,6 +1335,11 @@ void assembleblock(const char * block)
 		old_snespos = snespos;
 		old_startpos = startpos;
 		old_optimizeforbank = optimizeforbank;
+		unsigned int base = 0;
+		if (numwords == 3)
+		{
+			base = getnum(word[2]);
+		}
 
 		bool old_in_struct = in_struct;
 		bool old_in_sub_struct = in_sub_struct;
@@ -1346,7 +1351,6 @@ void assembleblock(const char * block)
 
 		if (numwords == 3)
 		{
-			unsigned int base = getnum(word[2]);
 			if (base&~0xFFFFFF) ret_error_params_cleanup(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).str);
 			snespos = (int)base;
 			startpos = (int)base;
