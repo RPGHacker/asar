@@ -375,11 +375,11 @@ static string labelname(const char ** rawname, bool define=false)
 	else if (!in_struct && !in_sub_struct)
 	{
 		for (i=0;(*deref_rawname =='.');i++) deref_rawname++;
-		if (!isualnum(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
-		if (emulatexkas && i>1) asar_throw_warning(0, warning_id_convert_to_asar);
+		if (!isualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+		if (emulatexkas && i>1) asar_throw_warning(1, warning_id_convert_to_asar);
 		if (i)
 		{
-			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(0, error_type_block, error_id_label_missing_parent);
+			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(1, error_type_block, error_id_label_missing_parent);
 			name+=S(*sublabellist)[i-1]+"_";
 			issublabel = true;
 		}
