@@ -1562,7 +1562,8 @@ rep 16 : %memset($00, 16)</code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="mappers"><h3>Mapping Modes</h3>
-		Asar supports a number of different mapping modes. They control the address translation used by Asar during compilation (aka where in the output file Asar writes to). Historically, SNES cartridges used a number of different mappers to address data in ROM. Those mappers can be supported by using the respective mapping mode in Asar. It's possible, but not recommended, to use different mapping modes on the same ROM. Detailed explanations on each mapping mode are beyond the scope of this manual, so please check the SNES Dev Manual or other specialized resources for that.<br/><br/>
+		Asar supports a number of different mapping modes. They control the address translation used by Asar during compilation (aka where in the output file Asar writes to). Historically, SNES cartridges used a number of different mappers to address data in ROM. Those mappers can be supported by using the respective mapping mode in Asar. It's possible, but not recommended, to use different mapping modes on the same ROM. Detailed explanations on each mapping mode are beyond the scope of this manual, so please check the SNES Dev Manual or other specialized resources for that.<br/>
+		NOTE: Changing the mapper after having previously set it will generate warning <code>W1029</code>.<br/><br/>
 		<table>
 			<tr>
 				<th style="width:150px">Command</th>
@@ -1859,8 +1860,8 @@ lda #5+6*2	; the same as &quot;lda #17&quot;
 lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 		Math statements in Asar support the following operators:<br/><br/>
 		
-		<code>+  : Addition
--  : Subtraction
+		<code>+  : Addition (Also valid as prefix, but a no-op)
+-  : Subtraction (Or negation prefix)
 *  : Multiplication
 /  : Division
 %  : Modulo (the remainder of a division, fmod() in C)
@@ -1869,7 +1870,8 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 &amp;  : Bitwise AND
 |  : Bitwise OR
 ^  : Bitwise XOR (Note: not exponentials)
-~  : Bitwise NOT
+~  : Bitwise NOT (Prefix)
+&lt;:  : Bitshift right 16, shorthand for isolating address bank (Prefix)
 ** : Exponentials (2**4 = 2*2*2*2 = pow(2, 4) in C)</code><br/><br/>
 		
 		Note that whitespace is not supported inside math statements, but the <a href="#multiline">multi-line operator \</a> can be used to split them into multiple lines. Using math in labels can be useful when you want to apply an offset to the label:
@@ -2543,6 +2545,11 @@ max(a, b)</code></td>
 				<td><pre><code class="65c816_asar">function required_sprite_memory(num_sprites) = not(!sprites_disabled)*sprite_size()*num_sprites</code></pre></td>
 			</tr>
 			<tr>
+				<td><code class="65c816_asar">bank(value)</code></td>
+				<td>Returns <code>value>>16 </code></td>
+				<td><pre><code class="65c816_asar">lda #bank(some_label)</code></pre></td>
+			</tr>
+			<tr>
 				<td><code class="65c816_asar">equal(value, comparand)
 notequal(value, comparand)
 less(value, comparand)
@@ -2609,6 +2616,22 @@ endstruct
 
 db objectsize(parent)         ; db 5
 db objectsize(parent.child)   ; db 3</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">datasize(label)</code></td>
+				<td>Takes a given label and calculates the distance between it and the next label.  It will throw a warning if the distance exceeds 0xFFFF or is the last label in the targeted assembly.</td>
+				<td><pre><code class="65c816_asar">org $008000
+main:
+
+lda #datasize(my_table)		;3
+lda #datasize(other_label)	;0x7FF3 (last label, throws a warning. calculated as $FFFFFF-$00800C)
+lda #datasize(main)		;9
+
+
+my_table:
+	db $00, $00, $02
+other_label:
+</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">stringsequal(string1, string2)</code></td>

@@ -1,5 +1,5 @@
-
-#define NULL 0
+#include <stdbool.h>
+#include <stddef.h>
 
 #if defined(_WIN32)
 #	if defined(_MSC_VER)
@@ -63,7 +63,12 @@ inline static void * getlibfrompath(const char * path)
 	return ret_val;
 }
 
-#	define loadraw(name, target) *((int(**)(void))&target)=(int(*)(void))GetProcAddress((HINSTANCE)asardll, name); require(target)
+inline static bool setfunction(void* target, FARPROC fn)
+{
+	memcpy(target, &fn, sizeof(fn));
+	return fn;
+}
+#	define loadraw(name, target) require(setfunction(&target, GetProcAddress((HINSTANCE)asardll, name)))
 #	define closelib(var) FreeLibrary((HINSTANCE)var)
 #else
 #	include <dlfcn.h>
@@ -102,7 +107,7 @@ inline static void * getlibfrompath(const char * path)
 #endif
 
 #include "asardll.h"
-	
+
 #undef asarfunc
 #undef ASAR_DLL_H_INCLUDED
 
