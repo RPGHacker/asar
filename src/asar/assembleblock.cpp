@@ -366,7 +366,7 @@ static string labelname(const char ** rawname, bool define=false)
 		sublabellist = macrosublabels;
 	}
 
-	if (isdigit(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+	if (isdigit(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 	if (*deref_rawname ==':')
 	{
 		deref_rawname++;
@@ -405,7 +405,7 @@ static string labelname(const char ** rawname, bool define=false)
 		deref_rawname++;
 	}
 
-	if (!isualnum(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+	if (!isualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 
 	while (isualnum(*deref_rawname) || *deref_rawname == '.' || *deref_rawname == '[')
 	{
@@ -422,12 +422,12 @@ static string labelname(const char ** rawname, bool define=false)
 			}
 			if (invalid)
 			{
-				asar_throw_error(0, error_type_block, error_id_invalid_label_missing_closer);
+				asar_throw_error(1, error_type_block, error_id_invalid_label_missing_closer);
 			}
 		}
 		else if (*deref_rawname == '{')
 		{
-			asar_throw_error(0, error_type_block, error_id_array_invalid_inside_structs);
+			asar_throw_error(1, error_type_block, error_id_array_invalid_inside_structs);
 		}
 
 		name+=*(deref_rawname++);
