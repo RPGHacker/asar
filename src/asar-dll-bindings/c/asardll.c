@@ -37,7 +37,7 @@ inline static void * getlibfrompath(const char * path)
 	int required_size = MultiByteToWideChar(CP_UTF8, 0, path, -1, NULL, 0);
 	if (required_size <= 0) return NULL;
 
-	wchar_t* path_buf = malloc((size_t)required_size * sizeof(wchar_t));
+	wchar_t* path_buf = (wchar_t*)malloc((size_t)required_size * sizeof(wchar_t));
 	if (path_buf == NULL) return NULL;
 
 	int converted_size = MultiByteToWideChar(CP_UTF8, 0, path, -1, path_buf, required_size);
