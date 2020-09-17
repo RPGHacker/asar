@@ -36,6 +36,9 @@
 ;`037FF8
 ;`42 42 42 42 42 42 42 42
 
+;disabling mapper change warning as a bonus test instead
+;of requiring the warning like other tests
+warnings disable W1029
 check bankcross off
 
 org $00FFFF

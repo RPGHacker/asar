@@ -22,6 +22,7 @@ int startpos;
 int realstartpos;
 
 bool emulatexkas;
+bool mapper_set = false;
 static bool specifiedasarver = false;
 
 static int old_snespos;
@@ -365,7 +366,7 @@ static string labelname(const char ** rawname, bool define=false)
 		sublabellist = macrosublabels;
 	}
 
-	if (isdigit(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+	if (isdigit(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 	if (*deref_rawname ==':')
 	{
 		deref_rawname++;
@@ -374,11 +375,11 @@ static string labelname(const char ** rawname, bool define=false)
 	else if (!in_struct && !in_sub_struct)
 	{
 		for (i=0;(*deref_rawname =='.');i++) deref_rawname++;
-		if (!isualnum(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
-		if (emulatexkas && i>1) asar_throw_warning(0, warning_id_convert_to_asar);
+		if (!isualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+		if (emulatexkas && i>1) asar_throw_warning(1, warning_id_convert_to_asar);
 		if (i)
 		{
-			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(0, error_type_block, error_id_label_missing_parent);
+			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(1, error_type_block, error_id_label_missing_parent);
 			name+=S(*sublabellist)[i-1]+"_";
 			issublabel = true;
 		}
@@ -404,7 +405,7 @@ static string labelname(const char ** rawname, bool define=false)
 		deref_rawname++;
 	}
 
-	if (!isualnum(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+	if (!isualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 
 	while (isualnum(*deref_rawname) || *deref_rawname == '.' || *deref_rawname == '[')
 	{
@@ -421,12 +422,12 @@ static string labelname(const char ** rawname, bool define=false)
 			}
 			if (invalid)
 			{
-				asar_throw_error(0, error_type_block, error_id_invalid_label_missing_closer);
+				asar_throw_error(1, error_type_block, error_id_invalid_label_missing_closer);
 			}
 		}
 		else if (*deref_rawname == '{')
 		{
-			asar_throw_error(0, error_type_block, error_id_array_invalid_inside_structs);
+			asar_throw_error(1, error_type_block, error_id_array_invalid_inside_structs);
 		}
 
 		name+=*(deref_rawname++);
@@ -632,6 +633,7 @@ void initstuff()
 	}
 	arch=arch_65816;
 	mapper=lorom;
+	mapper_set = false;
 	reallycalledmacros=0;
 	calledmacros=0;
 	macrorecursion=0;
@@ -1333,6 +1335,11 @@ void assembleblock(const char * block)
 		old_snespos = snespos;
 		old_startpos = startpos;
 		old_optimizeforbank = optimizeforbank;
+		unsigned int base = 0;
+		if (numwords == 3)
+		{
+			base = getnum(word[2]);
+		}
 
 		bool old_in_struct = in_struct;
 		bool old_in_sub_struct = in_sub_struct;
@@ -1344,7 +1351,6 @@ void assembleblock(const char * block)
 
 		if (numwords == 3)
 		{
-			unsigned int base = getnum(word[2]);
 			if (base&~0xFFFFFF) ret_error_params_cleanup(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).str);
 			snespos = (int)base;
 			startpos = (int)base;
@@ -2172,6 +2178,7 @@ void assembleblock(const char * block)
 		if (!stricmp(par, "spc700-raw")) {
 			arch=arch_spc700;
 			mapper=norom;
+			mapper_set = false;
 			if(!force_checksum_fix)
 				checksum_fix_enabled = false;
 			return;
@@ -2227,6 +2234,7 @@ void assembleblock(const char * block)
 
 bool assemblemapper(char** word, int numwords)
 {
+	auto previous_mapper = mapper;
 	if(0);
 	else if (is0("lorom"))
 	{
@@ -2296,5 +2304,11 @@ bool assemblemapper(char** word, int numwords)
 		//headers are detected elsewhere; ignoring for familiarity
 	}
 	else return false;
+	
+	if(!mapper_set){
+		mapper_set = true;
+	}else if(previous_mapper != mapper){
+		asar_throw_warning(1, warning_id_mapper_already_set);
+	}
 	return true;
 }

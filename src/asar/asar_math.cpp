@@ -140,6 +140,23 @@ static int object_size(const char *name)
 	return structure.object_size;
 }
 
+static int data_size(const char *name)
+{
+	unsigned int label;
+	unsigned int next_label = 0xFFFFFF;
+	if(!labels.exists(name)) asar_throw_error(1, error_type_block, error_id_label_not_found, name);
+	label = labels.find(name) & 0xFFFFFF;
+	labels.each([&next_label, label](const char *key, unsigned int current_label){
+		current_label &= 0xFFFFFF;
+		if(label < current_label && current_label < next_label){
+			next_label = current_label;
+		}
+	});
+	if(next_label == 0xFFFFFF) asar_throw_warning(1, warning_id_datasize_last_label, name);
+	if(next_label-label > 0xFFFF) asar_throw_warning(1, warning_id_datasize_exceeds_size, name);
+	return next_label-label;
+}
+
 
 string get_string_argument()
 {
@@ -245,6 +262,12 @@ template <double (*F)(double, double)> double asar_binary_wrapper()
 	require_next_parameter();
 	return F(first, get_double_argument());
 }
+
+double asar_bank(double a)
+{
+	return (int)a >> 16;
+}
+
 
 double asar_logical_nand(double a, double b)
 {
@@ -466,6 +489,11 @@ static double asar_objectsize_wrapper()
 	return (double)object_size(get_symbol_argument());
 }
 
+static double asar_datasize_wrapper()
+{
+	return (double)data_size(get_symbol_argument());
+}
+
 static double asar_stringsequal()
 {
 	string string1 = get_string_argument();
@@ -553,6 +581,7 @@ assocarr<double (*)()> builtin_functions =
 	{"safediv", asar_safediv},
 	
 	{"select", asar_select},
+	{"bank", asar_unary_wrapper<asar_bank>},
 	{"not", asar_unary_wrapper<std::logical_not<unsigned int>>},
 	{"equal", asar_binary_wrapper<std::equal_to<double>>},
 	{"notequal", asar_binary_wrapper<std::not_equal_to<double>>},
@@ -571,6 +600,7 @@ assocarr<double (*)()> builtin_functions =
 	
 	{"sizeof", asar_structsize_wrapper},
 	{"objectsize", asar_objectsize_wrapper},
+	{"datasize", asar_datasize_wrapper},
 	
 	{"stringsequal", asar_stringsequal},
 	{"stringsequalnocase", asar_stringsequalnocase}
@@ -732,7 +762,7 @@ static double getnumcore()
 				while (true)
 				{
 					while (*str==' ') str++;
-					string function_name = lower(string(start, len));
+					string function_name = string(start, len);
 					if(functions.exists(function_name))
 					{
 						current_user_function_name = function_name;
@@ -807,6 +837,7 @@ static double getnum()
 #define prefix(name, func) if (!strncasecmp(str, name, strlen(name))) { str+=strlen(name); double val=getnum(); return sanitize(func); }
 	prefix("-", -val);
 	prefix("~", ~(int)val);
+	prefix("<:", (int)val>>16);
 	prefix("+", val);
 	if (emulatexkas) prefix("#", val);
 #undef prefix
