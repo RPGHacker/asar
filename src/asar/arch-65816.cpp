@@ -31,7 +31,7 @@ void relative_addr(const unsigned int instruction, const unsigned int num, const
 		if (!foundlabel) {
 			if (delta & ~(is_long ? 0xFFFF : 0xFF))
 				asar_throw_error(pass, error_type_block, error_id_invalid_input, 
-					"Relative address operand too large: " + hex4((unsigned)delta));
+					string("Relative address operand too large: ") + hex4((unsigned)delta));
 
 			// Tricky:
 			// 1. Interpret our hex literal as a signed value, either 1 or 2 bytes based on is_long
