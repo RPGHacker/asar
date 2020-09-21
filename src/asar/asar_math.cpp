@@ -516,15 +516,18 @@ string copy_arg()
 		return (t += get_string_argument() + "\"");
 	}
 	
-	string result;
+	string result = "(";
 	int parlevel=0;
-	while(parlevel > 0 || (*str != ',' && *str != ')'))
+	int i = 0;
+	while(parlevel > 0 || (str[i] != ',' && str[i] != ')'))
 	{
 		if(*str == '(') parlevel++;
 		else if(*str == ')') parlevel--;
-		result += *str++;
+		i++;
 	}
-	return result;
+	result += string(str, i);
+	str += i;
+	return result + ")";
 }
 
 assocarr<double (*)()> builtin_functions =
@@ -656,10 +659,7 @@ static double asar_call_user_function()
 			int next_char = i+strlen(user_function.arguments[j]);
 			if(potential_arg && (!isalnum(user_function.content[next_char]) && user_function.content[next_char] != '_'))
 			{
-				if(args[j][0] == '"')
-					real_content += args[j];
-				else
-					real_content += (S"(" + args[j] + ")");
+				real_content += args[j];
 				i = next_char - 1;
 				found = true;
 			}
