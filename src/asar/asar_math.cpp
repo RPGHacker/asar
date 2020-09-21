@@ -521,8 +521,8 @@ string copy_arg()
 	int i = 0;
 	while(parlevel > 0 || (str[i] != ',' && str[i] != ')'))
 	{
-		if(*str == '(') parlevel++;
-		else if(*str == ')') parlevel--;
+		if(str[i] == '(') parlevel++;
+		else if(str[i] == ')') parlevel--;
 		i++;
 	}
 	result += string(str, i);
