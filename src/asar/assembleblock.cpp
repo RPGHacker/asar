@@ -927,8 +927,9 @@ void assembleblock(const char * block)
 			}
 			if (condstr)
 			{
-				if (!strcmp(condstr, "&&") && thiscond) continue;
-				if (!strcmp(condstr, "||") && !thiscond) continue;
+				if (!strcmp(condstr, "&&")) { if(thiscond) continue; }
+				else if (!strcmp(condstr, "||")) { if(!thiscond) continue; }
+				else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 			}
 			cond=thiscond;
 			break;
