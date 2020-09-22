@@ -4,6 +4,7 @@
 #include "asar.h"
 
 #define typed_malloc(type, count) (type*)malloc(sizeof(type)*(count))
+#define typed_realloc(type, ptr, count) (type*)realloc(ptr, sizeof(type)*(count))
 
 char * readfile(const char * fname, const char * basepath)
 {
@@ -224,34 +225,26 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 		return out;
 	}
 	int keylen=(int)strlen(key);
-	int count=1;
-	char * thisentry=str;
-	while (*thisentry)
-	{
-		if (!memcmp(thisentry, key, (size_t)keylen))
-		{
-			count++;
-			thisentry+=keylen;
-		}
-		else thisentry++;
-	}
+	int count=7; //makes the default alloc 8 elements, sounds fair.
 	if (maxlen && count>maxlen) count=maxlen;
 	char ** outdata= typed_malloc(char*, (size_t)count+1);
-	if (len) *len=count;
+	
 	int newcount=0;
-	thisentry=str;
+	char *thisentry=str;
 	outdata[newcount++]=thisentry;
-	while (newcount<count)
-	{
-		if (!memcmp(thisentry, key, (size_t)keylen))
+	while((thisentry = strstr(thisentry, key))){
+		*thisentry = 0;
+		thisentry += keylen;
+		outdata[newcount++]=thisentry;
+		if(newcount >= count)
 		{
-			*thisentry=0;
-			thisentry+=keylen;
-			outdata[newcount++]=thisentry;
+			outdata = typed_realloc(char *, outdata, count * 2);
+			count *= 2;
 		}
-		else thisentry++;
 	}
+	
 	outdata[newcount]= nullptr;
+	if (len) *len=newcount;
 	return outdata;
 }
 
@@ -259,25 +252,13 @@ char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 {
 	if (!strchr(str, '"') && !strchr(str, '\'')) return nsplit(str, key, maxlen, len);
 	int keylen=(int)strlen(key);
-	int count=1;
-	char * thisentry=str;
-	while (*thisentry)
-	{
-		dequote(*thisentry, thisentry++, return nullptr);
-		else if (!memcmp(thisentry, key, (size_t)keylen))
-		{
-			count++;
-			thisentry+=keylen;
-		}
-		else thisentry++;
-	}
+	int count=7;
 	if (maxlen && count>maxlen) count=maxlen;
 	char ** outdata= typed_malloc(char*, (size_t)count+1);
-	if (len) *len=count;
 	int newcount=0;
-	thisentry=str;
+	char * thisentry=str;
 	outdata[newcount++]=thisentry;
-	while (newcount<count)
+	while (*thisentry)
 	{
 		dequote(*thisentry, thisentry++, return nullptr);
 		else if (!memcmp(thisentry, key, (size_t)keylen))
@@ -285,35 +266,30 @@ char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 			*thisentry=0;
 			thisentry+=keylen;
 			outdata[newcount++]=thisentry;
+			if(newcount >= count)
+			{
+				outdata = typed_realloc(char *, outdata, count * 2);
+				count *= 2;
+			}
 		}
 		else thisentry++;
 	}
 	outdata[newcount]= nullptr;
+	if (len) *len=newcount;
 	return outdata;
 }
 
 char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 {
 	int keylen=(int)strlen(key);
-	int count=1;
-	char * thisentry=str;
-	while (*thisentry)
-	{
-		skippar(*thisentry, thisentry++, return nullptr);
-		else if (!memcmp(thisentry, key, (size_t)keylen))
-		{
-			count++;
-			thisentry+=keylen;
-		}
-		else thisentry++;
-	}
+	int count=7;
 	if (maxlen && count>maxlen) count=maxlen;
 	char ** outdata= typed_malloc(char*, (size_t)count+1);
-	if (len) *len=count;
+	
 	int newcount=0;
-	thisentry=str;
+	char * thisentry=str;
 	outdata[newcount++]=thisentry;
-	while (newcount<count)
+	while (*thisentry)
 	{
 		skippar(*thisentry, thisentry++, return nullptr);
 		else if (!memcmp(thisentry, key, (size_t)keylen))
@@ -321,10 +297,16 @@ char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 			*thisentry=0;
 			thisentry+=keylen;
 			outdata[newcount++]=thisentry;
+			if(newcount >= count)
+			{
+				outdata = typed_realloc(char *, outdata, count * 2);
+				count *= 2;
+			}
 		}
 		else thisentry++;
 	}
 	outdata[newcount]= nullptr;
+	if (len) *len=newcount;
 	return outdata;
 }
 
