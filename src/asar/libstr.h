@@ -8,7 +8,7 @@ inline char *copy(const char *source, int copy_length, char *dest)
 	return dest;
 }
 
-inline int min(int a, int b)
+inline int min_val(int a, int b)
 {
 	return a > b ? b : a;
 }
@@ -227,7 +227,7 @@ void resize(int new_length)
 	if(new_length > max_inline_length_ && (is_inlined() || allocated.bufferlen <= new_length)){ //SSO or big to big
 		int new_size = bit_round(new_length + 1);
 		if(old_data == inlined.str){
-			allocated.str = copy(old_data, min(length(), new_length), (char *)malloc(new_size));
+			allocated.str = copy(old_data, min_val(length(), new_length), (char *)malloc(new_size));
 		}else{
 			allocated.str = (char *)realloc(allocated.str, new_size);
 			old_data = inlined.str;	//this will prevent freeing a dead realloc ptr
