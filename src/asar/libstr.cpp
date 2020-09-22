@@ -310,43 +310,6 @@ char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 	return outdata;
 }
 
-char * trim(char * str, const char * left, const char * right, bool multi)
-{
-	bool nukeright=true;
-	int totallen=(int)strlen(str);
-	int rightlen=(int)strlen(right);
-	if (rightlen<=totallen)
-	{
-		do
-		{
-			const char * rightend=right+rightlen;
-			char * strend=str+totallen;
-			while (right!=rightend)
-			{
-				rightend--;
-				strend--;
-				if (*strend!=*rightend) nukeright=false;
-			}
-			if (nukeright)
-			{
-				totallen-=rightlen;
-				str[totallen]=0;
-			}
-		} while (multi && nukeright && rightlen<=totallen);
-	}
-	bool nukeleft=true;
-	do
-	{
-		int leftlen;
-		for (leftlen=0;left[leftlen];leftlen++)
-		{
-			if (str[leftlen]!=left[leftlen]) nukeleft=false;
-		}
-		if (nukeleft) memmove(str, str+leftlen, (size_t)(totallen-leftlen+1));
-	} while (multi && nukeleft);
-	return str;
-}
-
 char * itrim(char * str, const char * left, const char * right, bool multi)
 {
 	string tmp(str);
@@ -354,12 +317,12 @@ char * itrim(char * str, const char * left, const char * right, bool multi)
 }
 
 //todo merge above with this
-string itrim(string &input, const char * left, const char * right, bool multi)
+string &itrim(string &input, const char * left, const char * right, bool multi)
 {
 	bool nukeright=true;
 	int totallen=input.length();
 	int rightlen=(int)strlen(right);
-	if (rightlen<=totallen)
+	if (rightlen && rightlen<=totallen)
 	{
 		do
 		{
@@ -379,15 +342,23 @@ string itrim(string &input, const char * left, const char * right, bool multi)
 		} while (multi && nukeright && rightlen<=totallen);
 	}
 	bool nukeleft=true;
-	do
+	int leftlen = strlen(left);
+	if(!multi && leftlen == 1 && input.data()[0] == left[0])
 	{
-		int leftlen;
-		for (leftlen=0;left[leftlen];leftlen++)
+		return input = string(input.data()+1, (input.length()-1));
+	}
+	else
+	{
+		do
 		{
-			if (tolower(input.data()[leftlen])!=tolower(left[leftlen])) nukeleft=false;
-		}
-		if (nukeleft) input = string(input.data()+leftlen, (input.length()-leftlen));
-	} while (multi && nukeleft);
+			
+			for (int i = 0; i < leftlen; i++)
+			{
+				if (tolower(input.data()[i])!=tolower(left[i])) nukeleft=false;
+			}
+			if (nukeleft) input = string(input.data()+leftlen, (input.length()-leftlen));
+		} while (multi && nukeleft);
+	}
 	return input;
 }
 

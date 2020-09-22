@@ -483,9 +483,8 @@ inline string substr(const char * str, int len)
 	return string(str, len);
 }
 
-char * trim(char * str, const char * left, const char * right, bool multi=false);
 char * itrim(char * str, const char * left, const char * right, bool multi=false);
-string itrim(string &str, const char * left, const char * right, bool multi=false);
+string &itrim(string &str, const char * left, const char * right, bool multi=false);
 
 inline string upper(const char * old)
 {
