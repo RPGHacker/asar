@@ -172,7 +172,7 @@ string(const string& old) : string()
 {
 	assign(old.data());
 }
-
+/*
 string(string &&move)
 {
 	if(!move.is_inlined()){
@@ -182,14 +182,15 @@ string(string &&move)
 		move.allocated.str = nullptr;
 		move.set_length(0);
 	}else{
-		assign(move.inlined.str);
+		inlined.len = move.inlined.len;
+		copy(move.inlined.str, inlined.len, inlined.str);
 	}
 }
-
+*/
 ~string()
 {
 	if(!is_inlined()){
-		delete []allocated.str;
+		free(allocated.str);
 	}
 }
 
@@ -206,7 +207,8 @@ void serialize(serializer & s)
 #define SERIALIZER_BANNED
 
 private:
-static const int max_inline_length_ = sizeof(char *) + sizeof(int) * 2 - 2;
+static const int scale_factor = 3; //scale sso
+static const int max_inline_length_ = ((sizeof(char *) + sizeof(int) * 2) * scale_factor) - 2;
 union{
 	struct{
 		char str[max_inline_length_ + 1];
@@ -223,20 +225,23 @@ union{
 void resize(int new_length)
 {
 	const char *old_data = data();
-
-	if(new_length > max_inline_length_ && (is_inlined() || allocated.bufferlen < new_length)){ //SSO or big to big
+	if(new_length > max_inline_length_ && (is_inlined() || allocated.bufferlen <= new_length)){ //SSO or big to big
 		int new_size = bit_round(new_length + 1);
-		allocated.str = copy(old_data, min(length(), new_length), new char[new_size]);
+		if(old_data == inlined.str){
+			allocated.str = copy(old_data, min(length(), new_length), (char *)malloc(new_size));
+		}else{
+			allocated.str = (char *)realloc(allocated.str, new_size);
+			old_data = inlined.str;	//this will prevent freeing a dead realloc ptr
+		}
 		allocated.bufferlen = new_size;
-	}else if(length() >= max_inline_length_){ //big to SSO
+	}else if(length() >= max_inline_length_ && new_length < max_inline_length_){ //big to SSO
 		copy(old_data, new_length, inlined.str);
 	}
 	set_length(new_length);
 	
 	if(old_data != inlined.str && old_data != data()){
-		delete []old_data;
+		free((char *)old_data);
 	}
-
 	raw()[new_length] = 0; //always ensure null terminator
 }
 
