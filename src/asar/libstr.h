@@ -8,7 +8,7 @@ inline char *copy(const char *source, int copy_length, char *dest)
 	return dest;
 }
 
-template <typename T> T min(T a, T b)
+inline int min(int a, int b)
 {
 	return a > b ? b : a;
 }
