@@ -54,7 +54,7 @@ static bool getreg(const char * par, int * reg, reg_t type)
 //for LMS and SMS short addressing forms, check range & evenness
 static bool check_short_addr(int num) {
 	if (num % 2 > 0 || num < 0 || num > 0x1FE) {
-		asar_throw_error(0, error_type_block, error_id_superfx_invalid_short_address, hex((unsigned int)num).str);
+		asar_throw_error(0, error_type_block, error_id_superfx_invalid_short_address, hex((unsigned int)num).data());
 		return false;
 	}
 	return true;
@@ -205,7 +205,7 @@ bool asblock_superfx(char** word, int numwords)
 					write1((unsigned int)byte); write1((unsigned int)pos);
 					if (pass==2 && (pos<-128 || pos>127))
 					{
-						asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str);
+						asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data());
 					}
 				}
 			}

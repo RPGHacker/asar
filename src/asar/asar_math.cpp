@@ -54,7 +54,7 @@ static cachedfile * opencachedfile(string fname, bool should_error)
 	// fname could be a relative path, which isn't guaranteed to be unique.
 	// Note that this does not affect how we open the file - this is
 	// handled by the filesystem and uses our include paths etc.
-	string combinedname = S filesystem->create_absolute_path(dir(thisfilename), fname);
+	string combinedname = filesystem->create_absolute_path(dir(thisfilename), fname);
 
 	for (int i = 0; i < numcachedfiles; i++)
 	{
@@ -97,7 +97,7 @@ static cachedfile * opencachedfile(string fname, bool should_error)
 
 	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) && should_error)
 	{
-		asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.str);
+		asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.data());
 	}
 
 	return cachedfilehandle;
@@ -171,7 +171,7 @@ string get_string_argument()
 			string tempname(strpos, (int)(str - strpos + 1));
 			str++;
 			while (*str==' ') str++;	//eat space
-			return string(safedequote(&tempname[0]));
+			return string(safedequote(tempname.temp_raw()));
 		}
 		// RPG Hacker: AFAIK, this is never actually triggered, since unmatched quotes are already detected earlier,
 		// but since it does no harm here, I'll keep it in, just to be safe
@@ -351,8 +351,8 @@ template <int count> double asar_read()
 	}
 	else
 	{
-		if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)target) + " in read function").str);
-		else if (addr+count>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6(target) + " in read function").str);
+		if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)target) + " in read function").data());
+		else if (addr+count>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6(target) + " in read function").data());
 	}
 	
 	unsigned int value = 0;
@@ -392,8 +392,8 @@ template <size_t count> double asar_readfile()
 	}
 	else
 	{		
-		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.str);
-		if (offset < 0 || offset + count > fhandle->filesize) asar_throw_error(1, error_type_block, error_id_file_offset_out_of_bounds, dec(offset).str, name.str);
+		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
+		if (offset < 0 || offset + count > fhandle->filesize) asar_throw_error(1, error_type_block, error_id_file_offset_out_of_bounds, dec(offset).data(), name.data());
 	}
 	
 	unsigned char data[4] = { 0, 0, 0, 0 };
@@ -448,7 +448,7 @@ static double asar_filesize()
 {
 	string name = get_string_argument();
 	cachedfile * fhandle = opencachedfile(name, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.str);
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 	return (double)fhandle->filesize;
 }
 
@@ -897,7 +897,7 @@ static double eval(int depth)
 	const char* posneglabel = str;
 	string posnegname = posneglabelname(&posneglabel, false);
 
-	if (posnegname.truelen() > 0)
+	if (posnegname.length() > 0)
 	{
 		if (*posneglabel != '\0' && *posneglabel != ')') goto notposneglabel;
 

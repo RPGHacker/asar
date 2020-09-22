@@ -2,107 +2,108 @@
 
 #include "std-includes.h"
 
+inline char *copy(const char *source, int copy_length, char *dest)
+{
+	memmove(dest, source, copy_length*sizeof(char));
+	return dest;
+}
+
+template <typename T>
+inline constexpr T min(T a, T b)
+{
+	return a > b ? b : a;
+}
+
+inline constexpr int bit_round(int v)
+{
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	v++;
+	return v;
+}
+
 class string {
 public:
-char * str;
-int len;
-
-int truelen() const
+const char *data() const
 {
-	return len?len:(int)strlen(str);
+	return is_inlined() ? inlined.str : allocated.str;
 }
 
-void fixlen()
+char *temp_raw() const	//things to cleanup and take a look at
 {
-	if (!len) len=(int)strlen(str);
+	return is_inlined() ? (char *)inlined.str : allocated.str;
 }
 
-private:
-//char shortbuf[32];
-int bufferlen;
-
-void resize(int inlen)
+char *raw() const
 {
-	if (inlen >=bufferlen-4)
-	{
-		while (inlen >=bufferlen-4) bufferlen*=2;
-		str=(char*)realloc(str, sizeof(char)*(size_t)bufferlen);
-		memset(str+ inlen, 0, (size_t)(bufferlen- inlen));
+	return is_inlined() ? (char *)inlined.str : allocated.str;
+}
+
+int length() const
+{
+	return is_inlined() ? inlined.len : allocated.len;
+}
+
+void set_length(int length)
+{
+	if(length > max_inline_length_){
+		inlined.len = (unsigned char)-1;
+		allocated.len = length;
+	}else{
+		inlined.len = length;
 	}
 }
 
-void init()
-{
-	bufferlen=32;
-	str=(char*)malloc(sizeof(char)*(size_t)bufferlen);
-	memset(str, 0, (size_t)bufferlen);
-	len=0;
-}
-
-public:
-
 void assign(const char * newstr)
 {
-	if (!newstr) newstr="";
-	len=(int)strlen(newstr);
-	resize(len);
-	memmove(str, newstr, (size_t)len);
-	str[len] = '\0';
+	if (!newstr) newstr = "";	//todo is this proper?
+	assign(newstr, strlen(newstr));
 }
 
-void assign(const char * newstr, int newlen)
+void assign(const char * newstr, int end)
 {
-	if (!newstr) return;
-	len=newlen;
-	resize(len);
-	memmove(str, newstr, (size_t)len);
-	str[len] = '\0';
-	len=(int)strlen(str);
+	resize(end);
+	copy(newstr, length(), raw());
 }
+
 
 string& operator=(const char * newstr)
 {
-	if (bufferlen == 0) init();
 	assign(newstr);
 	return *this;
 }
 
 string& operator=(string newstr)
 {
-	if (bufferlen == 0) init();
 	assign(newstr);
 	return *this;
 }
 
-string& operator+=(const string& newstr)
+string& operator+=(const string& other)
 {
-	fixlen();
-	int newstrlen = newstr.truelen();
-	resize(len+newstrlen);
-	memmove(str+len, newstr.str, (size_t)newstrlen);
-	len+=newstrlen;
-	str[len] = '\0';
+	int current_end = length();
+	resize(length() + other.length());
+	copy(other.data(), other.length(), raw() + current_end);
 	return *this;
 }
 
-string& operator+=(const char * newstr)
+string& operator+=(const char *other)
 {
-	fixlen();
-	int newlen=(int)strlen(newstr);
-	resize(len+newlen);
-	memmove(str+len, newstr, (size_t)newlen);
-	len+=newlen;
-	str[len] = '\0';
+	int current_end = length();
+	int otherlen=(int)strlen(other);
+	resize(length() + otherlen);
+	copy(other, otherlen, raw() + current_end);
 	return *this;
 }
 
 string& operator+=(char c)
 {
-	fixlen();
-	resize(len);
-	str[len]=c;
-	str[len+1]='\0';
-	len++;
+	resize(length() + 1);
+	raw()[length() - 1] = c;
 	return *this;
 }
 
@@ -113,11 +114,6 @@ string operator+(char right) const
 	return ret;
 }
 
-const char * operator+(int right) const
-{
-	return str+right;
-}
-
 string operator+(const char * right) const
 {
 	string ret=*this;
@@ -125,97 +121,76 @@ string operator+(const char * right) const
 	return ret;
 }
 
-string operator+(const string& right) const
-{
-	string ret=*this;
-	ret+=right;
-	return ret;
-}
-
-char& operator*()
-{
-	len=0;
-	return str[0];
-}
-
 bool operator==(const char * right) const
 {
-	return !strcmp(str, right);
+	return !strcmp(data(), right);
 }
 
 bool operator==(string& right) const
 {
-	return !strcmp(str, right.str);
+	return !strcmp(data(), right.data());
 }
 
 bool operator!=(const char * right) const
 {
-	return (strcmp(str, right) != 0);
+	return (strcmp(data(), right) != 0);
 }
 
 bool operator!=(string& right) const
 {
-	return (strcmp(str, right.str) != 0);
-}
-
-bool operator<(string& right) const
-{
-	return strcmp(str, right.str)<0;
-}
-
-char& operator[](int id)
-{
-	static char nul;
-	nul='\0';
-	if (id<0) return nul;
-	len=0;
-	resize(id);
-	return str[id];
+	return (strcmp(data(), right.data()) != 0);
 }
 
 operator const char*() const
 {
-	return str;
+	return data();
 }
 
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
-explicit
-#endif
-operator bool() const
+explicit operator bool() const
 {
-	return (str[0] != 0);
+	return length();
 }
 
 string()
 {
-	init();
+	//todo reduce I know this isn't all needed
+	allocated.bufferlen = 0;
+	allocated.str = 0;
+	allocated.len = 0;
+	inlined.len = 0;
+
 }
-string(const char * newstr)
+string(const char * newstr) : string()
 {
-	init();
 	assign(newstr);
 }
-string(const char * newstr, int newlen)
+string(const char * newstr, int newlen) : string()
 {
-	init();
 	assign(newstr, newlen);
 }
-string(const string& old)
+string(const string& old) : string()
 {
-	init();
-	assign(old.str);
+	assign(old.data());
 }
-string(int intval)
+
+string(string &&move)
 {
-	init();
-	char buf[16];
-	memset(buf, 0, sizeof(buf));
-	sprintf(buf, "%i", intval);
-	assign(buf);
+	if(!move.is_inlined()){
+		allocated.str = move.allocated.str;
+		allocated.len = move.allocated.len;
+		allocated.bufferlen = move.allocated.bufferlen;
+		move.allocated.str = nullptr;
+		move.set_length(0);
+	}else{
+		assign(move.inlined.str);
+	}
 }
+
 ~string()
 {
-	free(str);
+	if(!is_inlined()){
+		delete []allocated.str;
+	}
 }
 
 string& replace(const char * instr, const char * outstr, bool all=true);
@@ -224,111 +199,53 @@ string& qreplace(const char * instr, const char * outstr, bool all=true);
 #ifdef SERIALIZER
 void serialize(serializer & s)
 {
-	s(str, bufferlen);
-	len=strlen(str);
+	s(str, allocated.bufferlen);
+	set_length(strlen(str));
 }
 #endif
 #define SERIALIZER_BANNED
+
+private:
+static const int max_inline_length_ = sizeof(char *) + sizeof(int) * 2 - 2;
+union{
+	struct{
+		char str[max_inline_length_ + 1];
+		unsigned char len = 0;
+	}inlined;
+	struct{
+		char *str;
+		int len;
+		int bufferlen;
+	}allocated;
+};
+		
+
+void resize(int new_length)
+{
+	const char *old_data = data();
+
+	if(new_length > max_inline_length_ && (is_inlined() || allocated.bufferlen < new_length)){ //SSO or big to big
+		int new_size = bit_round(new_length + 1);
+		allocated.str = copy(old_data, min(length(), new_length), new char[new_size]);
+		allocated.bufferlen = new_size;
+	}else if(length() >= max_inline_length_){ //big to SSO
+		copy(old_data, new_length, inlined.str);
+	}
+	set_length(new_length);
+	
+	if(old_data != inlined.str && old_data != data()){
+		delete []old_data;
+	}
+
+	raw()[new_length] = 0; //always ensure null terminator
+}
+
+bool is_inlined() const
+{
+	return inlined.len != (unsigned char)-1;
+}
 };
 #define S (string)
-
-class cstring {
-public:
-const char * str;
-
-cstring& operator=(const char * newstr)
-{
-	str=newstr;
-	return *this;
-}
-
-cstring& operator=(cstring newstr)
-{
-	str=newstr.str;
-	return *this;
-}
-
-char operator*() const
-{
-	return str[0];
-}
-
-bool operator==(const char * right) const
-{
-	return !strcmp(str, right);
-}
-
-bool operator==(cstring& right) const
-{
-	return !strcmp(str, right.str);
-}
-
-bool operator!=(const char * right) const
-{
-	return (strcmp(str, right) != 0);
-}
-
-bool operator!=(cstring& right) const
-{
-	return (strcmp(str, right.str) != 0);
-}
-
-bool operator<(cstring& right) const
-{
-	return strcmp(str, right.str)<0;
-}
-
-char operator[](int id) const
-{
-	return str[id];
-}
-
-operator const char*() const
-{
-	return str;
-}
-
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
-explicit
-#endif
-operator bool() const
-{
-	return (str != nullptr);
-}
-
-cstring()
-{
-	str= nullptr;
-}
-cstring(const char * newstr)
-{
-	str=newstr;
-}
-cstring(const cstring& old)
-{
-	str=old.str;
-}
-
-string operator+(const cstring& right) const
-{
-	return (string)str+(const char*)right;
-}
-string operator+(const string& right) const
-{
-	return (string)str+(const char*)right;
-}
-string operator+(const char * right) const
-{
-	return (string)str+right;
-}
-};
-
-//string operator+(const char * left, string right)
-//{
-//	string s=left;
-//	s+=right;
-//	return s;
-//}
 
 char * readfile(const char * fname, const char * basepath);
 char * readfilenative(const char * fname);
@@ -563,25 +480,24 @@ inline char * strqrchr(const char * str, char key)
 
 inline string substr(const char * str, int len)
 {
-	string s;
-	s.assign(str, len);
-	return s;
+	return string(str, len);
 }
 
 char * trim(char * str, const char * left, const char * right, bool multi=false);
 char * itrim(char * str, const char * left, const char * right, bool multi=false);
+string itrim(string &str, const char * left, const char * right, bool multi=false);
 
 inline string upper(const char * old)
 {
 	string s=old;
-	for (int i=0;s.str[i];i++) s.str[i]=(char)toupper(s.str[i]);
+	for (int i=0;i<s.length();i++) s.raw()[i]=(char)toupper(s.data()[i]);
 	return s;
 }
 
 inline string lower(const char * old)
 {
 	string s=old;
-	for (int i=0;s.str[i];i++) s.str[i]=(char)tolower(s.str[i]);
+	for (int i=0;i<s.length();i++) s.raw()[i]=(char)tolower(s.data()[i]);
 	return s;
 }
 

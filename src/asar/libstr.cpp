@@ -69,7 +69,7 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 	{
 		const char * ptr=strstr(thisstring, instr);
 		if (!ptr) return thisstring;
-		string out=S substr(thisstring, (int)(ptr-thisstring.str))+outstr+(ptr+strlen(instr));
+		string out=S substr(thisstring, (int)(ptr-thisstring.data()))+outstr+(ptr+strlen(instr));
 		thisstring =out;
 		return thisstring;
 	}
@@ -367,15 +367,22 @@ char * trim(char * str, const char * left, const char * right, bool multi)
 
 char * itrim(char * str, const char * left, const char * right, bool multi)
 {
+	string tmp(str);
+	return strcpy(str, itrim(tmp, left, right, multi).data());
+}
+
+//todo merge above with this
+string itrim(string &input, const char * left, const char * right, bool multi)
+{
 	bool nukeright=true;
-	int totallen=(int)strlen(str);
+	int totallen=input.length();
 	int rightlen=(int)strlen(right);
 	if (rightlen<=totallen)
 	{
 		do
 		{
 			const char * rightend=right+rightlen;
-			char * strend=str+totallen;
+			const char * strend=input.data()+totallen;
 			while (right!=rightend)
 			{
 				rightend--;
@@ -385,7 +392,7 @@ char * itrim(char * str, const char * left, const char * right, bool multi)
 			if (nukeright)
 			{
 				totallen-=rightlen;
-				str[totallen]=0;
+				input = string(input.data(), totallen);
 			}
 		} while (multi && nukeright && rightlen<=totallen);
 	}
@@ -395,11 +402,11 @@ char * itrim(char * str, const char * left, const char * right, bool multi)
 		int leftlen;
 		for (leftlen=0;left[leftlen];leftlen++)
 		{
-			if (tolower(str[leftlen])!=tolower(left[leftlen])) nukeleft=false;
+			if (tolower(input.data()[leftlen])!=tolower(left[leftlen])) nukeleft=false;
 		}
-		if (nukeleft) memmove(str, str+leftlen, (size_t)(totallen-leftlen+1));
+		if (nukeleft) input = string(input.data()+leftlen, (input.length()-leftlen));
 	} while (multi && nukeleft);
-	return str;
+	return input;
 }
 
 char* strqpchr(const char* str, char key)

@@ -44,7 +44,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 		errnum++;
 		// don't show current block if the error came from an error command
 		bool show_block = (thisblock && (errid != error_id_error_command));
-		fputs(S getdecor() + "error: (E" + string(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
+		fputs(S getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
 		static const int max_num_errors = 20;
 		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
@@ -57,7 +57,7 @@ void warn(int errid, const char * e_)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (thisblock && (errid != warning_id_warn_command));
-	fputs(S getdecor()+"warning: (W" + string(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
+	fputs(S getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
 	warned=true;
 }
 
@@ -77,6 +77,15 @@ void onsigxcpu(int ignored)
 
 int main(int argc, char * argv[])
 {
+	
+	//string test = "asdassdasdasdasd";
+	//test = "asdassd";
+	//test = "asdassdjghhjkjhjhjkhghjkgjhkgjhkgjhkjghkhjg";
+	//test = "123";
+	//test = "asdassdjghhjkjhjhjkhghjkgjhkgjhkgjhkjghkhfff";
+	//
+	//printf("%s\n", test.data());
+	//return -1;
 #ifdef TIMELIMIT
 #if defined(linux)
 	rlimit lim;
@@ -294,13 +303,13 @@ int main(int argc, char * argv[])
 					const char* eq_loc = strchr(postprocess_arg, '=');
 					string name = string(postprocess_arg, (int)(eq_loc - postprocess_arg));
 					name = name.replace("\t", " ", true);
-					name = itrim(name.str, " ", " ", true);
-					name = itrim(name.str, "!", "", false); // remove leading ! if present
+					name = itrim(name, " ", " ", true);
+					name = itrim(name, "!", "", false); // remove leading ! if present
 
-					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.str);
+					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
 
 					if (clidefines.exists(name)) {
-						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.str);
+						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.data());
 						pause(err);
 						return 1;
 					}
@@ -311,13 +320,13 @@ int main(int argc, char * argv[])
 					// argument doesn't have a value, only name
 					string name = postprocess_arg;
 					name = name.replace("\t", " ", true);
-					name = itrim(name.str, " ", " ", true);
-					name = itrim(name.str, "!", "", false); // remove leading ! if present
+					name = itrim(name, " ", " ", true);
+					name = itrim(name, "!", "", false); // remove leading ! if present
 
-					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.str);
+					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
 
 					if (clidefines.exists(name)) {
-						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.str);
+						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.data());
 						pause(err);
 						return 1;
 					}

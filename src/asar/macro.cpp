@@ -21,7 +21,7 @@ void startmacro(const char * line_)
 	if (!confirmqpar(line_)) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	string line=line_;
 	clean(line);
-	char * startpar=strqchr(line.str, '(');
+	char * startpar=strqchr(line.data(), '(');
 	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	*startpar=0;
 	startpar++;
@@ -38,7 +38,7 @@ void startmacro(const char * line_)
 		if (c==',' && isdigit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	}
 	if (*startpar==',' || isdigit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
-	if (macros.exists(thisname)) asar_throw_error(0, error_type_block, error_id_macro_redefined, thisname.str);
+	if (macros.exists(thisname)) asar_throw_error(0, error_type_block, error_id_macro_redefined, thisname.data());
 	thisone=(macrodata*)malloc(sizeof(macrodata));
 	new(thisone) macrodata;
 	if (*startpar)
@@ -87,12 +87,12 @@ void callmacro(const char * data)
 	if (!confirmqpar(data)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	string line=data;
 	clean(line);
-	char * startpar=strqchr(line.str, '(');
+	char * startpar=strqchr(line.data(), '(');
 	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	*startpar=0;
 	startpar++;
 	if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
-	if (!macros.exists(line)) asar_throw_error(0, error_type_block, error_id_macro_not_found, line.str);
+	if (!macros.exists(line)) asar_throw_error(0, error_type_block, error_id_macro_not_found, line.data());
 	thismacro = macros.find(line);
 	char * endpar=strqrchr(startpar, ')');
 	if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
@@ -127,7 +127,7 @@ void callmacro(const char * data)
 			string connectedline;
 			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, connectedline);
 			string intmp = connectedline;
-			for (char * in=intmp.str;*in;)
+			for (char * in=intmp.temp_raw();*in;)
 			{
 				if (*in=='<' && in[1]=='<')
 				{
@@ -155,7 +155,7 @@ void callmacro(const char * data)
 							if (args[j][0]=='"')
 							{
 								string s=args[j];
-								out+=safedequote(s.str);
+								out+=safedequote(s.temp_raw());
 							}
 							else out+=args[j];
 							break;

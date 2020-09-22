@@ -157,7 +157,7 @@ static void handleprot(int loc, char * name, int len, const unsigned char * cont
 
 	if (!strncmp(name, "PROT", 4))
 	{
-		strncpy(name, "NULL", 4);//to block recursion, in case someone is an idiot
+		memcpy(name, "NULL", 4);//to block recursion, in case someone is an idiot
 		if (len%3) return;
 		len/=3;
 		for (int i=0;i<len;i++) removerats((contents[(i*3)+0]    )|(contents[(i*3)+1]<<8 )|(contents[(i*3)+2]<<16), 0x00);

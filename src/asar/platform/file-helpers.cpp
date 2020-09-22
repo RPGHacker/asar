@@ -22,27 +22,23 @@
 // PERFORMANCE OF THIS SOFTWARE.
 string dir(char const *name)
 {
-	string result = name;
-	for (signed i = (int)strlen(result); i >= 0; i--)
+	for (signed i = (int)strlen(name); i >= 0; i--)
 	{
-		if (result[i] == '/' || result[i] == '\\')
+		if (name[i] == '/' || name[i] == '\\')
 		{
-			result[i + 1] = 0;
-			break;
+			return string(name, i+1);
 		}
-		if (i == 0) result = "";
 	}
-	return result;
+	return "";
 }
 
 string create_combined_path(const char* path1, const char* path2)
 {
 	string combined = path1;
 
-	int length = combined.truelen();
+	int length = combined.length();
 
-	if (combined.len > 0
-		&& combined[length - 1] != '\\' && combined[length - 1] != '/')
+	if (combined.length() > 0 && path1[length - 1] != '\\' && path1[length - 1] != '/')
 	{
 		combined += get_native_path_separator();
 	}
@@ -90,11 +86,11 @@ string normalize_path(const char* path)
 	// Note: will likely break network paths on Windows,
 	// which still expect a prefix of \\, but does anyone
 	// seriously even use them with Asar?
-	for (int i = 0; i < normalized.truelen(); ++i)
+	for (int i = 0; i < normalized.length(); ++i)
 	{
 		if (normalized[i] == '\\')
 		{
-			normalized[i] = '/';
+			normalized.temp_raw()[i]= '/';
 		}
 	}
 
@@ -108,7 +104,7 @@ string normalize_path(const char* path)
 	// assumes a string to end at \0). I don't think \x01 can
 	// be used in valid paths, so this should be okay.
 	char* previous_dir_start_pos = nullptr;
-	char* current_dir_start_pos = normalized.str;
+	char* current_dir_start_pos = normalized.temp_raw();
 	while (*current_dir_start_pos == '/')
 	{
 		++current_dir_start_pos;
@@ -195,7 +191,7 @@ string normalize_path(const char* path)
 	// Now construct our new string by copying everything but the \x01 into it.
 	string copy;
 
-	for (int i = 0; i < normalized.truelen(); ++i)
+	for (int i = 0; i < normalized.length(); ++i)
 	{
 		if (normalized[i] != '\x01')
 		{
@@ -220,25 +216,22 @@ string normalize_path(const char* path)
 	// Not sure if it's a good idea and if it's needed in the first place.
 	// In theory, it could lead to some problems with files that exist
 	// only in memory.
-
 	return normalized;
 }
 
 string get_base_name(char const *name)
 {
-	string result = name;
-	for(int i = (int)strlen(result); i >= 0; --i)
+	for(int i = (int)strlen(name); i >= 0; --i)
 	{
-		if(result[i] == '/' || result[i] == '\\')
+		if(name[i] == '/' || name[i] == '\\')
 		{
 			//file has no extension
 			break;
 		}
-		if(result[i] == '.')
+		if(name[i] == '.')
 		{
-			result[i] = 0;
-			break;
+			return string(name, i);
 		}
 	}
-	return result;
+	return string(name);
 }

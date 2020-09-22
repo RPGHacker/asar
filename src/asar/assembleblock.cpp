@@ -159,7 +159,7 @@ inline void write1_65816(unsigned int num)
 		if (pcpos<0)
 		{
 			movinglabelspossible=true;
-			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).str);
+			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).data());
 		}
 		writeromdata_byte(pcpos, (unsigned char)num);
 		if (pcpos>=romlen) romlen=pcpos+1;
@@ -451,7 +451,7 @@ inline bool labelvalcore(const char ** rawname, unsigned int * rval, bool define
 	{
 		if (shouldthrow && pass)
 		{
-			asar_throw_error(1, error_type_block, error_id_label_not_found, name.str);
+			asar_throw_error(1, error_type_block, error_id_label_not_found, name.data());
 		}
 		if (rval) *rval=(unsigned int)-1;
 		return false;
@@ -515,7 +515,7 @@ static void setlabel(string name, int loc=-1)
 		if (labels.exists(name))
 		{
 			movinglabelspossible=true;
-			asar_throw_error(0, error_type_block, error_id_label_redefined, name.str);
+			asar_throw_error(0, error_type_block, error_id_label_redefined, name.data());
 		}
 		labels.create(name) = (unsigned int)loc;
 	}
@@ -727,7 +727,7 @@ static bool addlabel(const char * label, int pos=-1)
 	const char* posneglabel = label;
 	string posnegname = posneglabelname(&posneglabel, true);
 
-	if (posnegname.truelen() > 0)
+	if (posnegname.length() > 0)
 	{
 		if (*posneglabel != '\0' && *posneglabel != ':') asar_throw_error(0, error_type_block, error_id_broken_label_definition);
 		setlabel(posnegname, pos);
@@ -799,7 +799,7 @@ void assembleblock(const char * block)
 {
 	string tmp=block;
 	int numwords;
-	char ** word = qsplit(tmp.str, " ", &numwords);
+	char ** word = qsplit(tmp.temp_raw(), " ", &numwords);
 	string resolved;
 	// when writing out the data for the addrToLine mapping,
 	// we want to write out the snespos we had before writing opcodes
@@ -817,7 +817,7 @@ void assembleblock(const char * block)
 	if (is("elseif") && numtrue+1==numif)
 	{
 		resolvedefines(resolved, block);
-		word = qsplit(resolved.str, " ", &numwords);
+		word = qsplit(resolved.temp_raw(), " ", &numwords);
 	}
 
 	autoptr<char**> wordcopy=word;
@@ -995,7 +995,7 @@ void assembleblock(const char * block)
 		// otherwise, must be assert command
 		else if (pass == 2 && !cond)
 		{
-			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).str);
+			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).data());
 			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
@@ -1022,7 +1022,7 @@ void assembleblock(const char * block)
 		if (pass == 2)
 		{
 			extern AddressToLineMapping addressToLineMapping;
-			addressToLineMapping.includeMapping(thisfilename.str, thisline + 1, addrToLinePos);
+			addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos);
 		}
 		numopcodes++;
 	}
@@ -1047,7 +1047,7 @@ void assembleblock(const char * block)
 		}
 		else
 		{
-			asar_throw_error(0, error_type_block, error_id_define_not_found, def.str);
+			asar_throw_error(0, error_type_block, error_id_define_not_found, def.data());
 		}
 	}
 	else if (is0("error"))
@@ -1060,11 +1060,11 @@ void assembleblock(const char * block)
 	}
 	else if (is1("error"))
 	{
-		asar_throw_error(0, error_type_block, error_id_error_command, (string(": ") + safedequote(par)).str);
+		asar_throw_error(0, error_type_block, error_id_error_command, (string(": ") + safedequote(par)).data());
 	}
 	else if (is1("warn"))
 	{
-		asar_throw_warning(2, warning_id_warn_command, (string(": ") + safedequote(par)).str);
+		asar_throw_warning(2, warning_id_warn_command, (string(": ") + safedequote(par)).data());
 	}
 	else if (is1("warnings"))
 	{
@@ -1115,14 +1115,14 @@ void assembleblock(const char * block)
 			string expected_title = safedequote(word[2]);
 			// randomdude999: this also removes leading spaces because itrim gets stuck in an endless
 			// loop when multi is true and one argument is empty
-			//expected_title = itrim(expected_title.str, " ", " ", true); // remove trailing spaces
+			//expected_title = itrim(expected_title.data(), " ", " ", true); // remove trailing spaces
 			// in hirom the rom needs to be an entire bank for it to have a title, other modes only need 0x8000 bytes
 			if (romlen < ((mapper == hirom || mapper == exhirom) ? 0x10000 : 0x8000)) // too short
 			{
 				if (!ignoretitleerrors) // title errors shouldn't be ignored
-					asar_throw_error(0, error_type_block, error_id_rom_too_short, expected_title.str);
+					asar_throw_error(0, error_type_block, error_id_rom_too_short, expected_title.data());
 				else // title errors should be ignored, throw a warning anyways
-					asar_throw_warning(0, warning_id_rom_too_short, expected_title.str);
+					asar_throw_warning(0, warning_id_rom_too_short, expected_title.data());
 			}
 			else {
 				string actual_title;
@@ -1140,14 +1140,14 @@ void assembleblock(const char * block)
 					if (c == '\0') c = 155;
 					actual_display_title += (char)c;
 				}
-				//actual_display_title = itrim(actual_display_title.str, " ", " ", true); // remove trailing spaces
-				//actual_title = itrim(actual_title.str, " ", " ", true); // remove trailing spaces
+				//actual_display_title = itrim(actual_display_title.data(), " ", " ", true); // remove trailing spaces
+				//actual_title = itrim(actual_title.data(), " ", " ", true); // remove trailing spaces
 				if (strncmp(expected_title, actual_title, 21) != 0)
 				{
 					if (!ignoretitleerrors) // title errors shouldn't be ignored
-						asar_throw_error(0, error_type_block, error_id_rom_title_incorrect, expected_title.str, actual_display_title.str);
+						asar_throw_error(0, error_type_block, error_id_rom_title_incorrect, expected_title.data(), actual_display_title.data());
 					else // title errors should be ignored, throw a warning anyways
-						asar_throw_warning(0, warning_id_rom_title_incorrect, expected_title.str, actual_display_title.str);
+						asar_throw_warning(0, warning_id_rom_title_incorrect, expected_title.data(), actual_display_title.data());
 				}
 			}
 		}
@@ -1224,7 +1224,7 @@ void assembleblock(const char * block)
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (istoplevel)
 		{
-			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string("The main file is '") + S par + S "'.").str);
+			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string("The main file is '") + S par + S "'.").data());
 			else asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, "");
 		}
 	}
@@ -1314,7 +1314,7 @@ void assembleblock(const char * block)
 		freespaceend();
 		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
-		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).str);
+		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
 		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) asar_throw_warning(0, warning_id_set_middle_byte);
 		//if (fastrom) num|=0x800000;
 		snespos=(int)num;
@@ -1352,7 +1352,7 @@ void assembleblock(const char * block)
 
 		if (numwords == 3)
 		{
-			if (base&~0xFFFFFF) ret_error_params_cleanup(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).str);
+			if (base&~0xFFFFFF) ret_error_params_cleanup(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).data());
 			snespos = (int)base;
 			startpos = (int)base;
 		}
@@ -1362,7 +1362,7 @@ void assembleblock(const char * block)
 			if (!confirmname(word[3])) ret_error_cleanup(error_id_struct_invalid_parent_name);
 			string tmp_struct_parent = word[3];
 
-			if (!structs.exists(tmp_struct_parent)) ret_error_params_cleanup(error_id_struct_not_found, tmp_struct_parent.str);
+			if (!structs.exists(tmp_struct_parent)) ret_error_params_cleanup(error_id_struct_not_found, tmp_struct_parent.data());
 			snes_struct structure = structs.find(tmp_struct_parent);
 
 			struct_parent = tmp_struct_parent;
@@ -1428,7 +1428,7 @@ void assembleblock(const char * block)
 		}
 		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
-		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
+		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).data());
 		snespos=(int)num;
 		startpos=(int)num;
 		optimizeforbank=-1;
@@ -1437,7 +1437,7 @@ void assembleblock(const char * block)
 	{		
 		unsigned int num=(int)getnum(par);		
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);		
-		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex6((unsigned int)num).str);		
+		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex6((unsigned int)num).data());		
 		dp_base = (int)num;		
 	}		
 	else if (is2("optimize"))		
@@ -1497,7 +1497,7 @@ void assembleblock(const char * block)
 		unsigned int num=getnum(par);
 		//if (forwardlabel) error(0, "bank Label is not valid");
 		//if (foundlabel) num>>=16;
-		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
+		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).data());
 		optimizeforbank=(int)num;
 	}
 	else if (is("freespace") || is("freecode") || is("freedata"))
@@ -1509,7 +1509,7 @@ void assembleblock(const char * block)
 		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 		if (is("freecode")) parstr=S"ram,"+parstr;
 		if (is("freedata")) parstr=S"noram,"+parstr;
-		autoptr<char**> pars=split(parstr.str, ",");
+		autoptr<char**> pars=split(parstr.temp_raw(), ",");
 		unsigned char fsbyte = 0x00;
 		int useram=-1;
 		bool fixedpos=false;
@@ -1578,8 +1578,8 @@ void assembleblock(const char * block)
 			freespaceuse+=8+freespacelen[freespaceid];
 		}
 		freespacestatic[freespaceid]=fixedpos;
-		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(freespacelen[freespaceid]).str);
-		if (snespos < 0) asar_throw_error(pass, error_type_fatal, error_id_no_freespace, dec(freespacelen[freespaceid]).str);
+		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(freespacelen[freespaceid]).data());
+		if (snespos < 0) asar_throw_error(pass, error_type_fatal, error_id_no_freespace, dec(freespacelen[freespaceid]).data());
 		bytes+=8;
 		freespacestart=snespos;
 		startpos=snespos;
@@ -1607,7 +1607,7 @@ void assembleblock(const char * block)
 			const char * labeltest=pars[i];
 			string testlabel = labeltest;
 			int labelnum=(int)labelval(&labeltest);
-			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.str);
+			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
 			write3((unsigned int)labelnum);
 			if (pass==1) freespaceleak[labelnum >>24]=false;
 		}
@@ -1627,7 +1627,7 @@ void assembleblock(const char * block)
 			const char * labeltest = word[2];
 			string testlabel = labeltest;
 			int num=(int)labelval(&labeltest);
-			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.str);
+			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
 			unsigned char targetid=(unsigned char)(num>>24);
 			if (pass==1) freespaceleak[targetid]=false;
 			num&=0xFFFFFF;
@@ -1786,9 +1786,9 @@ void assembleblock(const char * block)
 		unsigned int maxpos=getnum(par);
 		if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
 		if ((unsigned int)maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);
-		if ((unsigned int)snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
+		if ((unsigned int)snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex6((unsigned int)snespos).data(), hex6((unsigned int)maxpos).data());
 		if (warnxkas && (unsigned int)snespos == maxpos) asar_throw_warning(0, warning_id_xkas_warnpc_relaxed);
-		if (emulatexkas && (unsigned int)snespos==maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed_equal, hex6((unsigned int)snespos).str, hex6((unsigned int)maxpos).str);
+		if (emulatexkas && (unsigned int)snespos==maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed_equal, hex6((unsigned int)snespos).data(), hex6((unsigned int)maxpos).data());
 	}
 	else if (is1("rep"))
 	{
@@ -1887,11 +1887,11 @@ void assembleblock(const char * block)
 		if (emulatexkas) name= safedequote(par);
 		else name=S safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
-		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.str);
+		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char*> datacopy=data;
 		if (!end) end=len;
-		if(start < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(start).str, name.str);
-		if (end < start || end > len || end < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).str, name.str);
+		if(start < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(start).data(), name.data());
+		if (end < start || end > len || end < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).data(), name.data());
 		if (numwords==4)
 		{
 			if (!confirmname(word[3]))
@@ -1910,7 +1910,7 @@ void assembleblock(const char * block)
 				{
 					if (end - start > 65536) asar_throw_error(0, error_type_block, error_id_incbin_64kb_limit);
 					pos=getpcfreespace(end-start, false, true, false);
-					if (pos < 0) asar_throw_error(0, error_type_block, error_id_no_freespace, dec(end - start).str);
+					if (pos < 0) asar_throw_error(0, error_type_block, error_id_no_freespace, dec(end - start).data());
 					int foundfreespaceid=getfreespaceid();
 					freespacepos[foundfreespaceid]=pctosnes(pos)|(/*fastrom?0x800000:*/0x000000)|(foundfreespaceid <<24);
 					setlabel(word[3], freespacepos[foundfreespaceid]);
@@ -1987,7 +1987,7 @@ void assembleblock(const char * block)
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
 		string name=S safedequote(par);
 		autoptr<char*> tablecontents=readfile(name, thisfilename);
-		if (!tablecontents) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.str);
+		if (!tablecontents) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char**> tablelines=split(tablecontents, "\n");
 		for (int i=0;i<256;i++) table.table[i]=(unsigned int)(((numopcodes+read2(0x00FFDE)+i)*0x26594131)|0x40028020);
 			//garbage value so people will notice they're doing it wrong (for bonus points: figure out what 0x26594131 is)
@@ -2000,7 +2000,7 @@ void assembleblock(const char * block)
 			{
 				if (tableline[3]=='x' || tableline[3]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 				char * end;
-				table.table[(unsigned char)tableline[0]]=(unsigned int)strtol(tableline+2, &end, 16);
+				table.table[(unsigned char)tableline[0]]=(unsigned int)strtol(tableline.data()+2, &end, 16);
 				if (*end) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 			}
 			else
@@ -2021,7 +2021,7 @@ void assembleblock(const char * block)
 			if (!confirmqpar(word[1])) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			string line=word[1];
 			clean(line);
-			char * startpar=strqchr(line.str, '(');
+			char * startpar=strqchr(line.data(), '(');
 			if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			*startpar=0;
 			startpar++;
@@ -2057,7 +2057,7 @@ void assembleblock(const char * block)
 				string paramstr = string(arg1pos, (int)(endpos-arg1pos));
 
 				int numargs;
-				autoptr<char**> params = qpsplit(paramstr.str, ",", &numargs);
+				autoptr<char**> params = qpsplit(paramstr.temp_raw(), ",", &numargs);
 				if (numargs > 2) asar_throw_error(0, error_type_block, error_id_wrong_num_parameters);
 				int precision = 0;
 				bool hasprec = numargs == 2;
@@ -2143,7 +2143,7 @@ void assembleblock(const char * block)
 	{
 		if ((unsigned int)realsnespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
 		int num=(int)getnum(par);
-		if ((unsigned int)num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)num).str);
+		if ((unsigned int)num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)num).data());
 		if (num>realsnespos)
 		{
 			int end=snestopc(num);
@@ -2231,6 +2231,7 @@ void assembleblock(const char * block)
 			asar_throw_error(1, error_type_block, error_id_unknown_command);
 		}
 	}
+	
 }
 
 bool assemblemapper(char** word, int numwords)

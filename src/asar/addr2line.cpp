@@ -50,7 +50,7 @@ int AddressToLineMapping::getFileIndex(const char* filename)
 	{
 		fileCrc = crc32((const uint8_t*)data, (unsigned int)len);
 	}
-	delete data;
+	free(data);
 
 	m_fileList.append({ string(filename), fileCrc });
 	m_filenameCrcs.append(filenameCrc);
