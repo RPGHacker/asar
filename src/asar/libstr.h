@@ -8,13 +8,12 @@ inline char *copy(const char *source, int copy_length, char *dest)
 	return dest;
 }
 
-template <typename T>
-inline constexpr T min(T a, T b)
+template <typename T> T min(T a, T b)
 {
 	return a > b ? b : a;
 }
 
-inline constexpr int bit_round(int v)
+inline int bit_round(int v)
 {
 	v--;
 	v |= v >> 1;
