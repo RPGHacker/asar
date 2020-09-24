@@ -168,6 +168,7 @@ string()
 	allocated.len = 0;
 	inlined.len = 0;
 	cached_data = inlined.str;
+	next_resize = max_inline_length_;
 
 }
 string(const char * newstr) : string()
@@ -193,10 +194,13 @@ string(string &&move)
 		move.inlined.len = 0;
 		move.inlined.str[0] = 0;
 		cached_data = allocated.str;
+		next_resize = move.next_resize;
+		
 	}else{
 		inlined.len = 0;
 		cached_data = inlined.str;
 		assign(move);
+		next_resize = max_inline_length_;
 	}
 }
 
@@ -223,6 +227,7 @@ private:
 static const int scale_factor = 3; //scale sso
 static const int max_inline_length_ = ((sizeof(char *) + sizeof(int) * 2) * scale_factor) - 2;
 char *cached_data;
+int next_resize;
 struct si{
 		char str[max_inline_length_ + 1];
 		unsigned char len;
@@ -242,25 +247,29 @@ union{
 void resize(int new_length)
 {
 	const char *old_data = data();
-	if(new_length > max_inline_length_ && (is_inlined() || allocated.bufferlen <= new_length)){ //SSO or big to big
-		int new_size = bit_round(new_length + 1);
-		if(old_data == inlined.str){
-			allocated.str = copy(old_data, min_val(length(), new_length), (char *)malloc(new_size));
-		}else{
-			allocated.str = (char *)realloc(allocated.str, new_size);
-			old_data = inlined.str;	//this will prevent freeing a dead realloc ptr
+	if(new_length >= next_resize){
+		if(new_length > max_inline_length_ && (is_inlined() || allocated.bufferlen <= new_length)){ //SSO or big to big
+			int new_size = bit_round(new_length + 1);
+			if(old_data == inlined.str){
+				allocated.str = copy(old_data, min_val(length(), new_length), (char *)malloc(new_size));
+			}else{
+				allocated.str = (char *)realloc(allocated.str, new_size);
+				old_data = inlined.str;	//this will prevent freeing a dead realloc ptr
+			}
+			allocated.bufferlen = new_size;
+			cached_data = allocated.str;
+			next_resize = allocated.bufferlen;
+		}else if(length() >= max_inline_length_ && new_length < max_inline_length_){ //big to SSO
+			copy(old_data, new_length, inlined.str);
+			cached_data = inlined.str;
+			next_resize = max_inline_length_;
 		}
-		allocated.bufferlen = new_size;
-		cached_data = allocated.str;
-	}else if(length() >= max_inline_length_ && new_length < max_inline_length_){ //big to SSO
-		copy(old_data, new_length, inlined.str);
-		cached_data = inlined.str;
+		if(old_data != inlined.str && old_data != data()){
+			free((char *)old_data);
+		}
 	}
 	set_length(new_length);
 	
-	if(old_data != inlined.str && old_data != data()){
-		free((char *)old_data);
-	}
 	raw()[new_length] = 0; //always ensure null terminator
 }
 
