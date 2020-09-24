@@ -199,8 +199,8 @@ string(string &&move)
 	}else{
 		inlined.len = 0;
 		cached_data = inlined.str;
-		assign(move);
 		next_resize = max_inline_length_;
+		assign(move);
 	}
 }
 
@@ -436,6 +436,24 @@ inline bool striend(const char * str, const char * key)
 		if (tolower(*strend)!=tolower(*keyend)) return false;
 	}
 	return true;
+}
+
+inline bool stricmpwithupper(const char *word1, const char *word2)
+{
+	while(*word2)
+	{
+		if(toupper(*word1++) != *word2++) return true;
+	}
+	return *word1;
+}
+
+inline bool stricmpwithlower(const char *word1, const char *word2)
+{
+	while(*word2)
+	{
+		if(tolower(*word1++) != *word2++) return true;
+	}
+	return *word1;
 }
 
 //function: return the string without quotes around it, if any exists

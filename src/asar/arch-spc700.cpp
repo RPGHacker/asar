@@ -59,6 +59,7 @@ static bool matchandwrite(const char * str, const char * left, const char * righ
 		str++;
 	}
 	int mainlen=(int)(strlen(str)-strlen(right));
+	if(mainlen < 0) return false;
 	for (int i=0;right[i];i++)
 	{
 		if (tolower(str[mainlen+i])!=right[i]) return false;

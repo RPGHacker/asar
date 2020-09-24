@@ -20,7 +20,7 @@ extern bool fastrom;
 
 bool asblock_65816(char** word, int numwords)
 {
-#define is(test) (!stricmp(word[0], test))
+#define is(test) (!stricmpwithupper(word[0], test))
 //#define par word[1]
 	string par;
 	if (word[1]) par = word[1];

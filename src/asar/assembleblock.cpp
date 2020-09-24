@@ -805,11 +805,11 @@ void assembleblock(const char * block)
 	// we want to write out the snespos we had before writing opcodes
 	int addrToLinePos = realsnespos & 0xFFFFFF;
 
-#define is(test) (!stricmp(word[0], test))
-#define is0(test) (!stricmp(word[0], test) && numwords==1)
-#define is1(test) (!stricmp(word[0], test) && numwords==2)
-#define is2(test) (!stricmp(word[0], test) && numwords==3)
-#define is3(test) (!stricmp(word[0], test) && numwords==4)
+#define is(test) (!stricmpwithlower(word[0], test))
+#define is0(test) (numwords==1 && !stricmpwithlower(word[0], test))
+#define is1(test) (numwords==2 && !stricmpwithlower(word[0], test))
+#define is2(test) (numwords==3 && !stricmpwithlower(word[0], test))
+#define is3(test) (numwords==4 && !stricmpwithlower(word[0], test))
 #define par word[1]
 
 	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
