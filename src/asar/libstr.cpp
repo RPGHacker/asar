@@ -144,7 +144,7 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 		int inlen=(int)strlen(instr);
 		while (*in)
 		{
-			if (!memcmp(in, instr, (size_t)inlen))
+			if (!strncmp(in, instr, (size_t)inlen))
 			{
 				replaced=true;
 				out+=outstr;
@@ -174,7 +174,7 @@ string& string::qreplace(const char * instr, const char * outstr, bool all)
 		for (int i=0;thisstring[i];)
 		{
 			dequote(thisstring[i], out+= thisstring[i++], return thisstring);
-			if (!memcmp((const char*)thisstring +i, instr, strlen(instr)))
+			if (!strncmp((const char*)thisstring +i, instr, strlen(instr)))
 			{
 				replaced=true;
 				out+=outstr;
@@ -258,10 +258,10 @@ char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 	int newcount=0;
 	char * thisentry=str;
 	outdata[newcount++]=thisentry;
-	while (*thisentry)
+	while (*thisentry) /*todo fix*/
 	{
 		dequote(*thisentry, thisentry++, return nullptr);
-		else if (!memcmp(thisentry, key, (size_t)keylen))
+		else if (!strncmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
 			thisentry+=keylen;
@@ -292,7 +292,7 @@ char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 	while (*thisentry)
 	{
 		skippar(*thisentry, thisentry++, return nullptr);
-		else if (!memcmp(thisentry, key, (size_t)keylen))
+		else if (!strncmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
 			thisentry+=keylen;

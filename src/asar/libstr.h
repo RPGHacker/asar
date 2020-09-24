@@ -59,8 +59,13 @@ void set_length(int length)
 
 void assign(const char * newstr)
 {
-	if (!newstr) newstr = "";	//todo is this proper?
+	if (!newstr) newstr = "";
 	assign(newstr, strlen(newstr));
+}
+
+void assign(const string &newstr)
+{
+	assign(newstr, newstr.length());
 }
 
 void assign(const char * newstr, int end)
@@ -76,7 +81,7 @@ string& operator=(const char * newstr)
 	return *this;
 }
 
-string& operator=(string newstr)
+string& operator=(const string &newstr)
 {
 	assign(newstr);
 	return *this;
@@ -125,7 +130,7 @@ bool operator==(const char * right) const
 	return !strcmp(data(), right);
 }
 
-bool operator==(string& right) const
+bool operator==(const string& right) const
 {
 	return !strcmp(data(), right.data());
 }
@@ -135,7 +140,7 @@ bool operator!=(const char * right) const
 	return (strcmp(data(), right) != 0);
 }
 
-bool operator!=(string& right) const
+bool operator!=(const string& right) const
 {
 	return (strcmp(data(), right.data()) != 0);
 }
@@ -171,21 +176,22 @@ string(const string& old) : string()
 {
 	assign(old.data());
 }
-/*
+
 string(string &&move)
 {
 	if(!move.is_inlined()){
 		allocated.str = move.allocated.str;
-		allocated.len = move.allocated.len;
 		allocated.bufferlen = move.allocated.bufferlen;
-		move.allocated.str = nullptr;
-		move.set_length(0);
+		set_length(move.allocated.len);
+		
+		move.inlined.len = 0;
+		move.inlined.str[0] = 0;
 	}else{
-		inlined.len = move.inlined.len;
-		copy(move.inlined.str, inlined.len, inlined.str);
+		inlined.len = 0;
+		assign(move);
 	}
 }
-*/
+
 ~string()
 {
 	if(!is_inlined()){
@@ -208,16 +214,19 @@ void serialize(serializer & s)
 private:
 static const int scale_factor = 3; //scale sso
 static const int max_inline_length_ = ((sizeof(char *) + sizeof(int) * 2) * scale_factor) - 2;
-union{
-	struct{
+struct si{
 		char str[max_inline_length_ + 1];
 		unsigned char len = 0;
-	}inlined;
-	struct{
-		char *str;
-		int len;
-		int bufferlen;
-	}allocated;
+};
+
+struct sa{
+		char *str = nullptr;
+		int len = 0;
+		int bufferlen = 0;
+};
+union{
+	si inlined;
+	sa allocated;
 };
 		
 
