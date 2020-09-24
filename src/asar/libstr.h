@@ -1,6 +1,9 @@
 #pragma once
 
 #include "std-includes.h"
+extern const  unsigned char char_props[256];
+static inline int tolow( unsigned char c) { return c|((char_props[c]&0x10)<<1);}
+static inline int toup( unsigned char c) { return c&~(char_props[c]&0x20); }
 
 inline char *copy(const char *source, int copy_length, char *dest)
 {
@@ -420,7 +423,7 @@ inline bool stribegin(const char * str, const char * key)
 {
 	for (int i=0;key[i];i++)
 	{
-		if (tolower(str[i])!=tolower(key[i])) return false;
+		if (tolow(str[i])!=tolow(key[i])) return false;
 	}
 	return true;
 }
@@ -433,7 +436,7 @@ inline bool striend(const char * str, const char * key)
 	{
 		keyend--;
 		strend--;
-		if (tolower(*strend)!=tolower(*keyend)) return false;
+		if (tolow(*strend)!=tolow(*keyend)) return false;
 	}
 	return true;
 }
@@ -442,7 +445,7 @@ inline bool stricmpwithupper(const char *word1, const char *word2)
 {
 	while(*word2)
 	{
-		if(toupper(*word1++) != *word2++) return true;
+		if(toup(*word1++) != *word2++) return true;
 	}
 	return *word1;
 }
@@ -451,7 +454,7 @@ inline bool stricmpwithlower(const char *word1, const char *word2)
 {
 	while(*word2)
 	{
-		if(tolower(*word1++) != *word2++) return true;
+		if(tolow(*word1++) != *word2++) return true;
 	}
 	return *word1;
 }
@@ -542,18 +545,18 @@ string &strip_whitespace(string &str);
 char * itrim(char * str, const char * left, const char * right, bool multi=false);
 string &itrim(string &str, const char * left, const char * right, bool multi=false);
 
-inline string upper(const char * old)
+inline string &upper(string &old)
 {
-	string s=old;
-	for (int i=0;i<s.length();i++) s.raw()[i]=(char)toupper(s.data()[i]);
-	return s;
+	int length = old.length();
+	for (int i=0;i<length;i++) old.raw()[i]=(char)toup(old.data()[i]);
+	return old;
 }
 
-inline string lower(const char * old)
+inline string &lower(string &old)
 {
-	string s=old;
-	for (int i=0;i<s.length();i++) s.raw()[i]=(char)tolower(s.data()[i]);
-	return s;
+	int length = old.length();
+	for (int i=0;i<length;i++) old.raw()[i]=(char)tolow(old.data()[i]);
+	return old;
 }
 
 inline int isualnum ( int c )
@@ -609,11 +612,11 @@ inline const char * stristr(const char * string, const char * pattern)
 	const char * start;
 	for (start=string;*start!=0;start++)
 	{
-		for (;(*start && (toupper(*start)!=toupper(*pattern)));start++);
+		for (;(*start && (tolow(*start)!=tolow(*pattern)));start++);
 		if (!*start) return nullptr;
 		pptr=pattern;
 		sptr=start;
-		while (toupper(*sptr)==toupper(*pptr))
+		while (tolow(*sptr)==tolow(*pptr))
 		{
 			sptr++;
 			pptr++;

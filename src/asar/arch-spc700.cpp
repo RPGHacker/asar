@@ -55,14 +55,14 @@ static bool matchandwrite(const char * str, const char * left, const char * righ
 {
 	for (int i=0;left[i];i++)
 	{
-		if (tolower(*str)!=left[i]) return false;
+		if (tolow(*str)!=left[i]) return false;
 		str++;
 	}
 	int mainlen=(int)(strlen(str)-strlen(right));
 	if(mainlen < 0) return false;
 	for (int i=0;right[i];i++)
 	{
-		if (tolower(str[mainlen+i])!=right[i]) return false;
+		if (tolow(str[mainlen+i])!=right[i]) return false;
 	}
 	remainder=substr(str, mainlen);
 	return true;

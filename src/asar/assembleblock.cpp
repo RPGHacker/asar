@@ -246,7 +246,7 @@ int read3(int insnespos)
 
 int getlenfromchar(char c)
 {
-	c=(char)tolower(c);
+	c=(char)tolow(c);
 	if (c=='b') return 1;
 	if (c=='w') return 2;
 	if (c=='l') return 3;

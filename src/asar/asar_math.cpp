@@ -719,7 +719,7 @@ static double getnumcore()
 	if (*str=='$')
 	{
 		if (!isxdigit(str[1])) asar_throw_error(1, error_type_block, error_id_invalid_hex_value);
-		if (tolower(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
+		if (tolow(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
 		return strtoul(str+1, const_cast<char**>(&str), 16);
 	}
 	if (*str=='%')
