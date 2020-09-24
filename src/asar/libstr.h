@@ -29,17 +29,17 @@ class string {
 public:
 const char *data() const
 {
-	return is_inlined() ? inlined.str : allocated.str;
+	return cached_data;
 }
 
 char *temp_raw() const	//things to cleanup and take a look at
 {
-	return is_inlined() ? (char *)inlined.str : allocated.str;
+	return cached_data;
 }
 
 char *raw() const
 {
-	return is_inlined() ? (char *)inlined.str : allocated.str;
+	return cached_data;
 }
 
 int length() const
@@ -167,6 +167,7 @@ string()
 	allocated.str = 0;
 	allocated.len = 0;
 	inlined.len = 0;
+	cached_data = inlined.str;
 
 }
 string(const char * newstr) : string()
@@ -191,8 +192,10 @@ string(string &&move)
 		
 		move.inlined.len = 0;
 		move.inlined.str[0] = 0;
+		cached_data = allocated.str;
 	}else{
 		inlined.len = 0;
+		cached_data = inlined.str;
 		assign(move);
 	}
 }
@@ -219,15 +222,16 @@ void serialize(serializer & s)
 private:
 static const int scale_factor = 3; //scale sso
 static const int max_inline_length_ = ((sizeof(char *) + sizeof(int) * 2) * scale_factor) - 2;
+char *cached_data;
 struct si{
 		char str[max_inline_length_ + 1];
-		unsigned char len = 0;
+		unsigned char len;
 };
 
 struct sa{
-		char *str = nullptr;
-		int len = 0;
-		int bufferlen = 0;
+		char *str;
+		int len;
+		int bufferlen ;
 };
 union{
 	si inlined;
@@ -247,8 +251,10 @@ void resize(int new_length)
 			old_data = inlined.str;	//this will prevent freeing a dead realloc ptr
 		}
 		allocated.bufferlen = new_size;
+		cached_data = allocated.str;
 	}else if(length() >= max_inline_length_ && new_length < max_inline_length_){ //big to SSO
 		copy(old_data, new_length, inlined.str);
+		cached_data = inlined.str;
 	}
 	set_length(new_length);
 	

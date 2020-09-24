@@ -351,8 +351,7 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	for (int i = 0; i < paramscurrent.definecount; ++i)
 	{
 		string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
-		name = name.replace("\t", " ", true);
-		name = strip_both(name, ' ', true);
+		name = strip_whitespace(name);
 		name = strip_prefix(name, '!', false); // remove leading ! if present
 		if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
 		if (clidefines.exists(name)) {

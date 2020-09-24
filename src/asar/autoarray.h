@@ -47,6 +47,7 @@ private:
 	int bufferlen;
 
 	T dummy;
+	static const int default_size = 128;
 
 	const T& getconst(int id) const
 	{
@@ -60,17 +61,28 @@ private:
 		if (id < 0) return dummy;
 		if (id >= bufferlen - 4)
 		{
-			int oldlen = bufferlen;
-			while (bufferlen < id + 4) bufferlen *= 2;
-			ptr = (T*)realloc(ptr, sizeof(T)*(size_t)bufferlen);
-			memset(ptr + oldlen, 0, (size_t)(bufferlen - oldlen) * sizeof(T));
+			resize(id);
 		}
 		if (id >= count)
 		{
-			for (int i = count;i <= id;i++) new(ptr + i) T;
+			for (int i = count;i <= id;i++) new(ptr + i) T();
 			count = id + 1;
 		}
 		return ptr[id];
+	}
+	
+	void resize(int size)
+	{
+		int oldlen = count;
+		while (bufferlen < size + 4) bufferlen *= 2;
+		T *old = ptr;
+		ptr = (T*)malloc(sizeof(T)*(size_t)bufferlen);
+		for(int i = 0; i < oldlen; i++){
+			new(ptr + i) T();
+			ptr[i] = static_cast<T &&>(old[i]);
+		}
+		free(old);
+		memset(ptr + oldlen, 0, (size_t)(bufferlen - oldlen) * sizeof(T));
 	}
 
 public:
@@ -83,7 +95,14 @@ public:
 		if (keep < bufferlen / 2)
 		{
 			while (keep < bufferlen / 2 && bufferlen>4) bufferlen /= 2;
-			ptr = (T*)realloc(ptr, sizeof(T)*(size_t)bufferlen);
+			T *old = ptr;
+			ptr = (T*)malloc(sizeof(T)*(size_t)bufferlen);
+			for(int i = 0; i < keep; i++){
+				new(ptr + i) T();
+				ptr[i] = static_cast<T &&>(old[i]);
+			}
+			free(old);
+		
 		}
 		count = keep;
 	}
@@ -113,19 +132,17 @@ public:
 		return (get(count) = item);
 	}
 
+	//insert is not safe for non pod types!!!
 	void insert(int pos)
 	{
 		if (pos<0 || pos>count) return;
 		if (count >= bufferlen - 4)
 		{
-			int oldlen = bufferlen;
-			while (bufferlen < count + 4) bufferlen *= 2;
-			ptr = (T*)realloc(ptr, sizeof(T)*bufferlen);
-			memset(ptr + oldlen, 0, (bufferlen - oldlen) * sizeof(T));
+			resize(pos);
 		}
 		memmove(ptr + pos + 1, ptr + pos, sizeof(T)*(count - pos));
 		memset(ptr + pos, 0, sizeof(T));
-		new(ptr + pos) T;
+		new(ptr + pos) T();
 		count++;
 	}
 
@@ -134,14 +151,11 @@ public:
 		if (pos<0 || pos>count) return;
 		if (count >= bufferlen - 4)
 		{
-			int oldlen = bufferlen;
-			while (bufferlen < count + 4) bufferlen *= 2;
-			ptr = (T*)realloc(ptr, sizeof(T)*(size_t)bufferlen);
-			memset(ptr + oldlen, 0, (size_t)(bufferlen - oldlen) * sizeof(T));
+			resize(pos);
 		}
 		memmove(ptr + pos + 1, ptr + pos, sizeof(T)*(size_t)(count - pos));
 		memset(ptr + pos, 0, sizeof(T));
-		new(ptr + pos) T;
+		new(ptr + pos) T();
 		ptr[pos] = item;
 		count++;
 	}
@@ -151,19 +165,16 @@ public:
 		if (id < 0 || id >= count) return;
 		count--;
 		ptr[id].~T();
-		memmove(ptr + id, ptr + id + 1, sizeof(T)*(size_t)(count - id));
-		if (count < bufferlen / 2)
-		{
-			bufferlen /= 2;
-			ptr = (T*)realloc(ptr, sizeof(T)*(size_t)bufferlen);
+		for(int i = id; i < count; i++){
+			ptr[i] = static_cast<T &&>(ptr[i+1]);
 		}
 	}
 
 	autoarray()
 	{
-		ptr = (T*)malloc(sizeof(T) * 1);
-		memset(ptr, 0, sizeof(T));
-		bufferlen = 1;
+		ptr = (T*)malloc(sizeof(T) * default_size);
+		memset(ptr, default_size, sizeof(T));
+		bufferlen = default_size;
 		count = 0;
 	}
 

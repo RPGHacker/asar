@@ -712,8 +712,7 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 				pos++;
 			} while (pos[0] != '\0' && pos[0] != '\n');
 
-			stdinclude = strip_both(stdinclude, ' ', true);
-			stdinclude = strip_both(stdinclude, '\t', true);
+			stdinclude = strip_whitespace(stdinclude);
 
 			if (stdinclude != "")
 			{
@@ -761,8 +760,7 @@ void parse_std_defines(const char* textfile)
 			if (*pos != 0)
 				pos++; // skip \n
 			// clean define_name
-			define_name = define_name.replace("\t", " ", true);
-			define_name = strip_both(define_name, ' ', true);
+			define_name = strip_whitespace(define_name);
 			define_name = strip_prefix(define_name, '!', false); // remove leading ! if present
 
 			if (define_name == "")

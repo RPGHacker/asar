@@ -353,7 +353,7 @@ string &strip_both(string &str, char c, bool multi)
 string &strip_whitespace(string &str)
 {
 	for(int i = str.length() - 1; i >= 0; i--){
-		if(str.data()[i] != ' ' || str.data()[i] != '\t'){
+		if(str.data()[i] != ' ' && str.data()[i] != '\t'){
 			str.truncate(i + 1);
 			break;
 		}
@@ -361,7 +361,7 @@ string &strip_whitespace(string &str)
 	
 	int length = str.length();
 	for(int i = 0; i < length; i++){
-		if(str.data()[i] != ' ' || str.data()[i] != '\t'){
+		if(str.data()[i] != ' ' && str.data()[i] != '\t'){
 			str = string(str.data() + i, str.length() - i);
 			return str;
 		}
