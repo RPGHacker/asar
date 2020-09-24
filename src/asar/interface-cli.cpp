@@ -303,8 +303,8 @@ int main(int argc, char * argv[])
 					const char* eq_loc = strchr(postprocess_arg, '=');
 					string name = string(postprocess_arg, (int)(eq_loc - postprocess_arg));
 					name = name.replace("\t", " ", true);
-					name = itrim(name, " ", " ", true);
-					name = itrim(name, "!", "", false); // remove leading ! if present
+					name = strip_both(name, ' ', true);
+					name = strip_prefix(name, '!', false); // remove leading ! if present
 
 					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
 
@@ -320,8 +320,8 @@ int main(int argc, char * argv[])
 					// argument doesn't have a value, only name
 					string name = postprocess_arg;
 					name = name.replace("\t", " ", true);
-					name = itrim(name, " ", " ", true);
-					name = itrim(name, "!", "", false); // remove leading ! if present
+					name = strip_both(name, ' ', true);
+					name = strip_prefix(name, '!', false); // remove leading ! if present
 
 					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
 

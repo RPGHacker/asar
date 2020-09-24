@@ -352,8 +352,8 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	{
 		string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
 		name = name.replace("\t", " ", true);
-		name = itrim(name, " ", " ", true);
-		name = itrim(name, "!", "", false); // remove leading ! if present
+		name = strip_both(name, ' ', true);
+		name = strip_prefix(name, '!', false); // remove leading ! if present
 		if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
 		if (clidefines.exists(name)) {
 			asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.data());

@@ -310,6 +310,65 @@ char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 	return outdata;
 }
 
+string &strip_prefix(string &str, char c, bool multi)
+{
+	if(!multi){
+		if(str.data()[0] == c){
+			str = string(str.data() + 1, str.length() - 1);
+		}
+		return str;
+	}
+	int length = str.length();
+	for(int i = 0; i < length; i++){
+		if(str.data()[i] != c){
+			str = string(str.data() + i, str.length() - i);
+			return str;
+		}
+	}
+	return str;
+}
+
+string &strip_suffix(string &str, char c, bool multi)
+{
+	if(!multi){
+		if(str.data()[str.length() - 1] == c){
+			str.truncate(str.length() - 1);
+		}
+		return str;
+	}
+	for(int i = str.length() - 1; i >= 0; i--){
+		if(str.data()[i] != c){
+			str.truncate(i + 1);
+			return str;
+		}
+	}
+	return str;
+}
+
+string &strip_both(string &str, char c, bool multi)
+{
+	return strip_suffix(strip_prefix(str, c, multi), c, multi);
+}
+
+string &strip_whitespace(string &str)
+{
+	for(int i = str.length() - 1; i >= 0; i--){
+		if(str.data()[i] != ' ' || str.data()[i] != '\t'){
+			str.truncate(i + 1);
+			break;
+		}
+	}
+	
+	int length = str.length();
+	for(int i = 0; i < length; i++){
+		if(str.data()[i] != ' ' || str.data()[i] != '\t'){
+			str = string(str.data() + i, str.length() - i);
+			return str;
+		}
+	}
+	return str;
+}
+
 char * itrim(char * str, const char * left, const char * right, bool multi)
 {
 	string tmp(str);
@@ -337,7 +396,7 @@ string &itrim(string &input, const char * left, const char * right, bool multi)
 			if (nukeright)
 			{
 				totallen-=rightlen;
-				input = string(input.data(), totallen);
+				input.truncate(totallen);
 			}
 		} while (multi && nukeright && rightlen<=totallen);
 	}

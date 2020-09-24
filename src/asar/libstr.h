@@ -57,6 +57,11 @@ void set_length(int length)
 	}
 }
 
+void truncate(int newlen)
+{
+	resize(newlen);
+}
+
 void assign(const char * newstr)
 {
 	if (!newstr) newstr = "";
@@ -495,6 +500,11 @@ inline string substr(const char * str, int len)
 {
 	return string(str, len);
 }
+
+string &strip_prefix(string &str, char c, bool multi=false);
+string &strip_suffix(string &str, char c, bool multi=false);
+string &strip_both(string &str, char c, bool multi=false);
+string &strip_whitespace(string &str);
 
 char * itrim(char * str, const char * left, const char * right, bool multi=false);
 string &itrim(string &str, const char * left, const char * right, bool multi=false);

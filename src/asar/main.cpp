@@ -511,10 +511,11 @@ void assembleline(const char * fname, int linenum, const char * line)
 			{
 				try
 				{
-					itrim(blocks[block], " ", " ", true);
-					thisfilename= absolutepath;
+					string stripped_block = blocks[block];
+					strip_both(stripped_block, ' ', true);
+					
 					thisline=linenum;//do not optimize, this one is recursive
-					thisblock = blocks[block];
+					const char *thisblock = stripped_block.data();
 					if (thisblock[0] == '@')
 					{
 						lastspecialline = thisline;
@@ -608,7 +609,7 @@ void assemblefile(const char * filename, bool toplevel)
 			}
 			while (strqchr(line, '\t')) *strqchr(line, '\t')=' ';
 			if (!confirmquotes(line)) { thisline = i; thisblock = line; asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
-			itrim(line, " ", " ", true);
+			itrim(line, " ", " ", true);	//todo make use strip
 		}
 		for(int i=0;file.contents[i];i++)
 		{
@@ -711,8 +712,8 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 				pos++;
 			} while (pos[0] != '\0' && pos[0] != '\n');
 
-			stdinclude = itrim(stdinclude, " ", " ", true);
-			stdinclude = itrim(stdinclude, "\t", "\t", true);
+			stdinclude = strip_both(stdinclude, ' ', true);
+			stdinclude = strip_both(stdinclude, '\t', true);
 
 			if (stdinclude != "")
 			{
@@ -761,8 +762,8 @@ void parse_std_defines(const char* textfile)
 				pos++; // skip \n
 			// clean define_name
 			define_name = define_name.replace("\t", " ", true);
-			define_name = itrim(define_name, " ", " ", true);
-			define_name = itrim(define_name, "!", "", false); // remove leading ! if present
+			define_name = strip_both(define_name, ' ', true);
+			define_name = strip_prefix(define_name, '!', false); // remove leading ! if present
 
 			if (define_name == "")
 			{
