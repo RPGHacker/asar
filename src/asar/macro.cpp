@@ -34,10 +34,10 @@ void startmacro(const char * line_)
 	for (int i=0;startpar[i];i++)
 	{
 		char c=startpar[i];
-		if (!isalnum(c) && c!='_' && c!=',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
-		if (c==',' && isdigit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+		if (!is_alnum(c) && c!='_' && c!=',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+		if (c==',' && is_digit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	}
-	if (*startpar==',' || isdigit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+	if (*startpar==',' || is_digit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	if (macros.exists(thisname)) asar_throw_error(0, error_type_block, error_id_macro_redefined, thisname.data());
 	thisone=(macrodata*)malloc(sizeof(macrodata));
 	new(thisone) macrodata;
@@ -134,7 +134,7 @@ void callmacro(const char * data)
 					out+="<<";
 					in+=2;
 				}
-				else if (*in=='<' && isalnum(in[1]))
+				else if (*in=='<' && is_alnum(in[1]))
 				{
 					char * end=in+1;
 					while (*end && *end!='<' && *end!='>') end++;

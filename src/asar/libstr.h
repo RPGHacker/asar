@@ -1,9 +1,20 @@
 #pragma once
 
 #include "std-includes.h"
-extern const  unsigned char char_props[256];
-static inline int tolow( unsigned char c) { return c|((char_props[c]&0x10)<<1);}
-static inline int toup( unsigned char c) { return c&~(char_props[c]&0x20); }
+//ty alcaro
+extern const unsigned char char_props[256];
+static inline int to_lower(unsigned char c) { return c|(char_props[c]&0x20); }
+static inline int to_upper(unsigned char c) { return c&~(char_props[c]&0x20); }
+
+inline bool is_space(unsigned char c) { return char_props[c] & 0x80; } // C standard says \f \v are space, but this one disagrees
+inline bool is_digit(unsigned char c) { return char_props[c] & 0x40; }
+inline bool is_alpha(unsigned char c) { return char_props[c] & 0x20; }
+inline bool is_lower(unsigned char c) { return char_props[c] & 0x04; }
+inline bool is_upper(unsigned char c) { return char_props[c] & 0x02; }
+inline bool is_alnum(unsigned char c) { return char_props[c] & 0x60; }
+inline bool is_ualpha(unsigned char c) { return char_props[c] & 0x28; }
+inline bool is_ualnum(unsigned char c) { return char_props[c] & 0x68; }
+inline bool is_xdigit(unsigned char c) { return char_props[c] & 0x01; }
 
 inline char *copy(const char *source, int copy_length, char *dest)
 {
@@ -423,7 +434,7 @@ inline bool stribegin(const char * str, const char * key)
 {
 	for (int i=0;key[i];i++)
 	{
-		if (tolow(str[i])!=tolow(key[i])) return false;
+		if (to_lower(str[i])!=to_lower(key[i])) return false;
 	}
 	return true;
 }
@@ -436,7 +447,7 @@ inline bool striend(const char * str, const char * key)
 	{
 		keyend--;
 		strend--;
-		if (tolow(*strend)!=tolow(*keyend)) return false;
+		if (to_lower(*strend)!=to_lower(*keyend)) return false;
 	}
 	return true;
 }
@@ -445,7 +456,7 @@ inline bool stricmpwithupper(const char *word1, const char *word2)
 {
 	while(*word2)
 	{
-		if(toup(*word1++) != *word2++) return true;
+		if(to_upper(*word1++) != *word2++) return true;
 	}
 	return *word1;
 }
@@ -454,7 +465,7 @@ inline bool stricmpwithlower(const char *word1, const char *word2)
 {
 	while(*word2)
 	{
-		if(tolow(*word1++) != *word2++) return true;
+		if(to_lower(*word1++) != *word2++) return true;
 	}
 	return *word1;
 }
@@ -548,61 +559,16 @@ string &itrim(string &str, const char * left, const char * right, bool multi=fal
 inline string &upper(string &old)
 {
 	int length = old.length();
-	for (int i=0;i<length;i++) old.raw()[i]=(char)toup(old.data()[i]);
+	for (int i=0;i<length;i++) old.raw()[i]=(char)to_upper(old.data()[i]);
 	return old;
 }
 
 inline string &lower(string &old)
 {
 	int length = old.length();
-	for (int i=0;i<length;i++) old.raw()[i]=(char)tolow(old.data()[i]);
+	for (int i=0;i<length;i++) old.raw()[i]=(char)to_lower(old.data()[i]);
 	return old;
 }
-
-inline int isualnum ( int c )
-{
-	return (c >= -1 && c <= 255 && (c=='_' || isalnum(c)));
-}
-
-inline int isualpha ( int c )
-{
-	return (c >= -1 && c <= 255 && (c=='_' || isalpha(c)));
-}
-
-#define ctype(type) \
-		inline bool ctype_##type(const char * str) \
-		{ \
-			while (*str) \
-			{ \
-				if (!is##type(*str)) return false; \
-				str++; \
-			} \
-			return true; \
-		} \
-		\
-		inline bool ctype_##type(const char * str, int num) \
-		{ \
-			for (int i=0;i<num;i++) \
-			{ \
-				if (!is##type(str[i])) return false; \
-			} \
-			return true; \
-		}
-		
-ctype(alnum)
-ctype(alpha)
-ctype(cntrl)
-ctype(digit)
-ctype(graph)
-ctype(lower)
-ctype(print)
-ctype(punct)
-ctype(space)
-ctype(upper)
-ctype(xdigit)
-ctype(ualnum)
-ctype(ualpha)
-#undef ctype
 
 inline const char * stristr(const char * string, const char * pattern)
 {
@@ -612,11 +578,11 @@ inline const char * stristr(const char * string, const char * pattern)
 	const char * start;
 	for (start=string;*start!=0;start++)
 	{
-		for (;(*start && (tolow(*start)!=tolow(*pattern)));start++);
+		for (;(*start && (to_lower(*start)!=to_lower(*pattern)));start++);
 		if (!*start) return nullptr;
 		pptr=pattern;
 		sptr=start;
-		while (tolow(*sptr)==tolow(*pptr))
+		while (to_lower(*sptr)==to_lower(*pptr))
 		{
 			sptr++;
 			pptr++;
@@ -644,7 +610,7 @@ inline int getconnectedlines(stringarraytype& lines, int startline, string& out)
 
 		for (int j = linestartpos; j > 0; j--)
 		{
-			if (!isspace(lines[i][j]) && lines[i][j] != '\0' && lines[i][j] != ';')
+			if (!is_space(lines[i][j]) && lines[i][j] != '\0' && lines[i][j] != ';')
 			{
 				if (lines[i][j] == '\\')
 				{

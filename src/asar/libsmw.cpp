@@ -362,12 +362,12 @@ void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsi
 	int pcoff=snestopc(loc);
 	if (strncmp((const char*)romdata+pcoff-8, "STAR", 4)) return;
 	const unsigned char * metadata=romdata+pcoff;
-	while (isupper(metadata[0]) && isupper(metadata[1]) && isupper(metadata[2]) && isupper(metadata[3]))
+	while (is_upper(metadata[0]) && is_upper(metadata[1]) && is_upper(metadata[2]) && is_upper(metadata[3]))
 	{
 		if (!strncmp((const char*)metadata, "STOP", 4))
 		{
 			metadata=romdata+pcoff;
-			while (isupper(metadata[0]) && isupper(metadata[1]) && isupper(metadata[2]) && isupper(metadata[3]))
+			while (is_upper(metadata[0]) && is_upper(metadata[1]) && is_upper(metadata[2]) && is_upper(metadata[3]))
 			{
 				if (!strncmp((const char*)metadata, "STOP", 4))
 				{

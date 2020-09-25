@@ -191,13 +191,13 @@ string get_symbol_argument()
 	if(*str=='"') {
 		string arg = get_string_argument();
 		int i = 0;
-		if(isalpha(arg[i]) || arg[i] == '_') i++;
-		while(isalnum(arg[i]) || arg[i] == '_' || arg[i] == '.') i++;
+		if(is_alpha(arg[i]) || arg[i] == '_') i++;
+		while(is_alnum(arg[i]) || arg[i] == '_' || arg[i] == '.') i++;
 		if(arg[i] != '\0') asar_throw_error(1, error_type_block, error_id_invalid_label_name);
                 return arg;
 	}
-	if(isalpha(*str) || *str == '_') str++;
-	while (isalnum(*str) || *str == '_' || *str == '.') str++;
+	if(is_alpha(*str) || *str == '_') str++;
+	while (is_alnum(*str) || *str == '_' || *str == '.') str++;
 	if(strpos == str){
 		//error nothing was read, this is a placeholder error
 		asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
@@ -646,7 +646,7 @@ static double asar_call_user_function()
 	
 	for(int i=0; user_function.content[i]; i++)
 	{
-		if(!isalpha(user_function.content[i]) && user_function.content[i] != '_')
+		if(!is_alpha(user_function.content[i]) && user_function.content[i] != '_')
 		{
 			real_content += user_function.content[i];
 			continue;
@@ -657,7 +657,7 @@ static double asar_call_user_function()
 			//this should *always* have a null term or another character after 
 			bool potential_arg = stribegin(user_function.content+i, user_function.arguments[j]);
 			int next_char = i+strlen(user_function.arguments[j]);
-			if(potential_arg && (!isalnum(user_function.content[next_char]) && user_function.content[next_char] != '_'))
+			if(potential_arg && (!is_alnum(user_function.content[next_char]) && user_function.content[next_char] != '_'))
 			{
 				real_content += args[j];
 				i = next_char - 1;
@@ -718,8 +718,8 @@ static double getnumcore()
 	}
 	if (*str=='$')
 	{
-		if (!isxdigit(str[1])) asar_throw_error(1, error_type_block, error_id_invalid_hex_value);
-		if (tolow(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
+		if (!is_xdigit(str[1])) asar_throw_error(1, error_type_block, error_id_invalid_hex_value);
+		if (to_lower(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
 		return strtoul(str+1, const_cast<char**>(&str), 16);
 	}
 	if (*str=='%')
@@ -734,19 +734,19 @@ static double getnumcore()
 		str+=3;
 		return rval;
 	}
-	if (isdigit(*str))
+	if (is_digit(*str))
 	{
 		const char* end = str;
-		while (isdigit(*end) || *end == '.') end++;
+		while (is_digit(*end) || *end == '.') end++;
 		string number;
 		number.assign(str, (int)(end - str));
 		str = end;
 		return atof(number);
 	}
-	if (isalpha(*str) || *str=='_' || *str=='.' || *str=='?')
+	if (is_alpha(*str) || *str=='_' || *str=='.' || *str=='?')
 	{
 		const char * start=str;
-		while (isalnum(*str) || *str == '_' || *str == '.') str++;
+		while (is_alnum(*str) || *str == '_' || *str == '.') str++;
 		int len=(int)(str-start);
 		while (*str==' ') str++;
 		if (*str=='(')
@@ -840,7 +840,7 @@ static double getnum()
 	prefix('~', ~(int)val);
 	prefix2('<', ':', (int)val>>16);
 	prefix('+', val);
-	if (emulatexkas) prefix('#', val);
+	prefix('#' && emulatexkas, val);
 #undef prefix
 	return sanitize(getnumcore());
 }

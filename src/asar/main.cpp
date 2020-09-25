@@ -77,10 +77,10 @@ bool setmapper()
 			unsigned char c=romdata[snestopc(0x00FFC0+i)];
 			if (foundnull && c) score-=4;//according to some documents, NUL terminated names are possible - but they shouldn't appear in the middle of the name
 			if (c>=128) highbits++;
-			else if (isupper(c)) score+=3;
+			else if (is_upper(c)) score+=3;
 			else if (c==' ') score+=2;
-			else if (isdigit(c)) score+=1;
-			else if (islower(c)) score+=1;
+			else if (is_digit(c)) score+=1;
+			else if (is_lower(c)) score+=1;
 			else if (c=='-') score+=1;
 			else if (!c) foundnull=true;
 			else score-=3;
@@ -198,7 +198,7 @@ bool is_hex_constant(const char* str){
 	if (*str=='$')
 	{
 		str++;
-		while(isxdigit(*str)) {
+		while(is_xdigit(*str)) {
 			str++;
 		}
 		if(*str=='\0'){
@@ -235,7 +235,7 @@ notposneglabel:
 		{
 			str++;
 			int i;
-			for (i=0;isxdigit(str[i]);i++);
+			for (i=0;is_xdigit(str[i]);i++);
 			//if (i&1) warn(S dec(i)+"-digit hex value");//blocked in getnum instead
 			thislen=(i+1)/2;
 			str+=i;
@@ -254,7 +254,7 @@ notposneglabel:
 			thislen=1;
 			str+=3;
 		}
-		else if (isdigit(*str))
+		else if (is_digit(*str))
 		{
 			int val=strtol(str, const_cast<char**>(&str), 10);
 			if (val>=0) thislen=1;
@@ -262,7 +262,7 @@ notposneglabel:
 			if (val>=65536) thislen=3;
 			if (val>=16777216) thislen=4;
 		}
-		else if (isalpha(*str) || *str=='_' || *str=='.' || *str=='?')
+		else if (is_alpha(*str) || *str=='_' || *str=='.' || *str=='?')
 		{
 			unsigned int thislabel;
 			bool exists=labelval(&str, &thislabel);
@@ -308,7 +308,7 @@ bool validatedefinename(const char * name)
 	if (!name[0]) return false;
 	for (int i = 0;name[i];i++)
 	{
-		if (!isualnum(name[i])) return false;
+		if (!is_ualnum(name[i])) return false;
 	}
 
 	return true;
@@ -362,7 +362,7 @@ void resolvedefines(string& out, const char * start)
 			}
 			else
 			{
-				while (isualnum(*here)) defname+=*here++;
+				while (is_ualnum(*here)) defname+=*here++;
 			}
 			if (warnxkas && here[0]=='(' && here[1]==')')
 				asar_throw_warning(0, warning_id_xkas_eat_parentheses);
@@ -491,7 +491,6 @@ void assembleline(const char * fname, int linenum, const char * line)
 	try
 	{
 		string tmp=line;
-		if (!confirmquotes(tmp)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
 		clean(tmp);
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);
@@ -520,7 +519,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 					{
 						lastspecialline = thisline;
 						thisblock++;
-						while (isspace(*thisblock))
+						while (is_space(*thisblock))
 						{
 							thisblock++;
 						}

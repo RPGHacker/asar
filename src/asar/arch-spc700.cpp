@@ -55,14 +55,14 @@ static bool matchandwrite(const char * str, const char * left, const char * righ
 {
 	for (int i=0;left[i];i++)
 	{
-		if (tolow(*str)!=left[i]) return false;
+		if (to_lower(*str)!=left[i]) return false;
 		str++;
 	}
 	int mainlen=(int)(strlen(str)-strlen(right));
 	if(mainlen < 0) return false;
 	for (int i=0;right[i];i++)
 	{
-		if (tolow(str[mainlen+i])!=right[i]) return false;
+		if (to_lower(str[mainlen+i])!=right[i]) return false;
 	}
 	remainder=substr(str, mainlen);
 	return true;
@@ -72,7 +72,7 @@ static bool bitmatch(const char * opnamein, string& opnameout, const char * str,
 {
 	const char * opnameend=strchr(opnamein, '\0');
 	const char * dot=strqrchr(str, '.');
-	if (dot && isdigit(dot[1]) && !dot[2])
+	if (dot && is_digit(dot[1]) && !dot[2])
 	{
 		bit=atoi(dot+1);
 		if (bit>=8) return false;

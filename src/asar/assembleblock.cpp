@@ -246,7 +246,7 @@ int read3(int insnespos)
 
 int getlenfromchar(char c)
 {
-	c=(char)tolow(c);
+	c=(char)to_lower(c);
 	if (c=='b') return 1;
 	if (c=='w') return 2;
 	if (c=='l') return 3;
@@ -276,10 +276,10 @@ autoarray<string> includeonce;
 bool confirmname(const char * name)
 {
 	if (!name[0]) return false;
-	if (isdigit(name[0])) return false;
+	if (is_digit(name[0])) return false;
 	for (int i=0;name[i];i++)
 	{
-		if (!isalnum(name[i]) && name[i]!='_') return false;
+		if (!is_alnum(name[i]) && name[i]!='_') return false;
 	}
 	return true;
 }
@@ -366,7 +366,7 @@ static string labelname(const char ** rawname, bool define=false)
 		sublabellist = macrosublabels;
 	}
 
-	if (isdigit(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+	if (is_digit(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 	if (*deref_rawname ==':')
 	{
 		deref_rawname++;
@@ -375,7 +375,7 @@ static string labelname(const char ** rawname, bool define=false)
 	else if (!in_struct && !in_sub_struct)
 	{
 		for (i=0;(*deref_rawname =='.');i++) deref_rawname++;
-		if (!isualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+		if (!is_ualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 		if (emulatexkas && i>1) asar_throw_warning(1, warning_id_convert_to_asar);
 		if (i)
 		{
@@ -405,9 +405,9 @@ static string labelname(const char ** rawname, bool define=false)
 		deref_rawname++;
 	}
 
-	if (!isualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+	if (!is_ualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 
-	while (isualnum(*deref_rawname) || *deref_rawname == '.' || *deref_rawname == '[')
+	while (is_ualnum(*deref_rawname) || *deref_rawname == '.' || *deref_rawname == '[')
 	{
 		if(!in_struct && !in_sub_struct && *deref_rawname == '[')
 		{
@@ -1181,7 +1181,7 @@ void assembleblock(const char * block)
 				dig=0;
 				dots++;
 			}
-			else if (isdigit(par[i])) dig++;
+			else if (is_digit(par[i])) dig++;
 			else asar_throw_error(0, error_type_block, error_id_invalid_version_number);
 		}
 		if (!dig || !dots || dots>2) asar_throw_error(0, error_type_block, error_id_invalid_version_number);
@@ -2280,10 +2280,10 @@ bool assemblemapper(char** word, int numwords)
 		if (par)
 		{
 			if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
-			if (!isdigit(par[0]) || par[1]!=',' ||
-					!isdigit(par[2]) || par[3]!=',' ||
-					!isdigit(par[4]) || par[5]!=',' ||
-					!isdigit(par[6]) || par[7]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
+			if (!is_digit(par[0]) || par[1]!=',' ||
+					!is_digit(par[2]) || par[3]!=',' ||
+					!is_digit(par[4]) || par[5]!=',' ||
+					!is_digit(par[6]) || par[7]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
 			int len;
 			autoptr<char**> pars=qpsplit(par, ",", &len);
 			if (len!=4) asar_throw_error(0, error_type_block, error_id_invalid_mapper);

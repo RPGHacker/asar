@@ -30,11 +30,11 @@ static bool getreg(const char * par, int * reg, reg_t type)
 	int ret;
 	*reg=-1;
 	if (type==reg_parr && *par++!='(') return false;
-	if (type==reg_parr && tolow(*par++)!='r') return false;
-	if (type==reg_r && tolow(*par++)!='r') return false;
+	if (type==reg_parr && to_lower(*par++)!='r') return false;
+	if (type==reg_r && to_lower(*par++)!='r') return false;
 	if (type==reg_hash && *par++!='#') return false;
-	if (!isdigit(par[0])) return false;
-	if (isdigit(par[1]))
+	if (!is_digit(par[0])) return false;
+	if (is_digit(par[1]))
 	{
 		if (par[0]!='1' || par[1]>'5') return false;
 		ret=par[1]-'0'+10;
