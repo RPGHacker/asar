@@ -138,7 +138,7 @@ public:
 		if (pos<0 || pos>count) return;
 		if (count >= bufferlen - 4)
 		{
-			resize(pos);
+			resize(count);
 		}
 		memmove(ptr + pos + 1, ptr + pos, sizeof(T)*(count - pos));
 		memset(ptr + pos, 0, sizeof(T));
@@ -151,7 +151,7 @@ public:
 		if (pos<0 || pos>count) return;
 		if (count >= bufferlen - 4)
 		{
-			resize(pos);
+			resize(count);
 		}
 		memmove(ptr + pos + 1, ptr + pos, sizeof(T)*(size_t)(count - pos));
 		memset(ptr + pos, 0, sizeof(T));
