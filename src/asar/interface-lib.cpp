@@ -234,7 +234,7 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 	if (buflen < romlen) asar_throw_error(pass, error_type_null, error_id_buffer_too_small);
 	if (errored)
 	{
-		if (buflen != maxromsize) free(const_cast<unsigned char*>(romdata));
+		free(const_cast<unsigned char*>(romdata));
 		return false;
 	}
 	if (*romlen_ != buflen)
