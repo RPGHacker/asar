@@ -950,5 +950,6 @@ void reseteverything()
 	force_checksum_fix = false;
 	
 	lastspecialline = -1;
+	free(const_cast<unsigned char*>(romdata_r));
 #undef free
 }
