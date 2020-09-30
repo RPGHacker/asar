@@ -633,7 +633,7 @@ static double asar_call_user_function()
 	{
 		if(!has_next)
 		{
-			asar_throw_error(0, error_type_block, error_id_expected_parameter, current_user_function_name);
+			asar_throw_error(1, error_type_block, error_id_expected_parameter, current_user_function_name);
 		}
 		args[i] = copy_arg();
 		has_next = has_next_parameter();
@@ -641,7 +641,7 @@ static double asar_call_user_function()
 	
 	if(has_next)
 	{
-		asar_throw_error(0, error_type_block, error_id_unexpected_parameter, current_user_function_name);
+		asar_throw_error(1, error_type_block, error_id_unexpected_parameter, current_user_function_name);
 	}
 	
 	for(int i=0; user_function.content[i]; i++)
