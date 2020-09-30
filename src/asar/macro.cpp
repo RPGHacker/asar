@@ -34,7 +34,7 @@ void startmacro(const char * line_)
 	for (int i=0;startpar[i];i++)
 	{
 		char c=startpar[i];
-		if (!is_alnum(c) && c!='_' && c!=',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+		if (!is_alnum(c) && c!='_' && c!=','&& c!='.') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 		if (c==',' && is_digit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	}
 	if (*startpar==',' || is_digit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
@@ -54,6 +54,15 @@ void startmacro(const char * line_)
 	}
 	for (int i=0;thisone->arguments[i];i++)
 	{
+		if(!strcmp(thisone->arguments[i], "...")){
+			thisone->variadic = true;
+			break;
+		}else if(!strncmp(thisone->arguments[i], "...", 3)){
+			//to do new error
+			asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
+		}else if(strchr(thisone->arguments[i], '.')){
+			asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
+		}
 		if (!confirmname(thisone->arguments[i])) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
 		for (int j=i+1;thisone->arguments[j];j++)
 		{
@@ -100,7 +109,9 @@ void callmacro(const char * data)
 	autoptr<const char * const*> args;
 	int numargs=0;
 	if (*startpar) args=(const char* const*)qpsplit(duplicate_string(startpar), ",", &numargs);
-	if (numargs != thismacro->numargs) asar_throw_error(0, error_type_block, error_id_macro_wrong_num_params);
+	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_wrong_num_params);
+	//todo make special error name
+	if (numargs < thismacro->numargs && thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_wrong_num_params);
 	macrorecursion++;
 	int startif=numif;
 
@@ -126,13 +137,52 @@ void callmacro(const char * data)
 			string out;
 			string connectedline;
 			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, connectedline);
-			string intmp = connectedline;
+			string intmp;
+			if(thismacro->variadic) resolvedefines(intmp, connectedline.data());
+			else intmp = connectedline;
 			for (char * in=intmp.temp_raw();*in;)
 			{
 				if (*in=='<' && in[1]=='<')
 				{
 					out+="<<";
 					in+=2;
+				}
+				else if (*in=='<' && !strncmp(in+1, "...", 3))
+				{
+					char * end=in+4;
+					if (*end!='>')
+					{
+						out+=*(in++);
+						continue;
+					}
+					*end=0;
+					out += dec(numargs-thismacro->numargs + 1);
+					in=end+1;
+				}
+				else if (*in=='<' && is_digit(in[1]))
+				{
+					char * end=in+1;
+					while (is_digit(*end)) end++;
+					if (*end!='>')
+					{
+						out+=*(in++);
+						continue;
+					}
+					*end=0;
+					in++;
+					int arg_num = strtol(in, nullptr, 10);
+					//todo better error
+					if(numif<=numtrue){
+						if (arg_num > numargs-thismacro->numargs) asar_throw_error(0, error_type_block, error_id_broken_macro_contents);
+						if (args[arg_num+thismacro->numargs-1][0]=='"')
+						{
+							string s=args[arg_num+thismacro->numargs-1];
+							out+=safedequote(s.temp_raw());
+						}
+						else out+=args[arg_num+thismacro->numargs-1];
+					}
+					in=end+1;
+					
 				}
 				else if (*in=='<' && is_alnum(in[1]))
 				{

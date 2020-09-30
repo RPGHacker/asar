@@ -17,6 +17,7 @@ struct macrodata
 	const char * fname;
 	const char * const* arguments;
 	int numargs;
+	bool variadic;
 };
 
 extern assocarr<macrodata*> macros;
