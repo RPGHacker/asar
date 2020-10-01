@@ -2353,7 +2353,7 @@ endif</code></pre></td>
 			<li>Macros can include parameters, which are identifiers that are replaced by a text value whenever the respective macro is called. For simplicity, you could consider parameters a macro-specific version of defines.</li>
 		</ul>
 		Use the following syntax to define a macro:
-		<pre><code class="65c816_asar">macro {identifier}([parameter1_identifier[, parameter2_identifier...]])
+		<pre><code class="65c816_asar">macro {identifier}([parameter1_identifier[, parameter2_identifier...]][variadic_token])
 	[command1]
 	[command2...]
 endmacro</code></pre>
@@ -2381,6 +2381,36 @@ endmacro
 
 %swap($01, $02)
 %use_x_safely("ldx $10 : stx $11 : ldx #10 : stx $12")
+</code></pre>
+
+In addition to named substitutions if the variadic token <code class="65c816_asar">...</code> is specified as the last parameter asar will allow an arbitrary number of parameters after all prior parameters have been satisfied.
+To access unnamed arguments of a variadic function they are declared numerically starting from 0 up to the number of provided parameters.  To access the number of provided variadic arguments one may use <code class="65c816_asar">sizeof(...)</code>.
+Lastly, it is important to note that while traditionally macros do not parse defines at their creation variadic macros will.  This is to allow iteration of arguments by using defines.
+
+<pre><code class="65c816_asar">
+macro example0(...)
+	db sizeof(...), &lt;0&gt;	;04 01
+endmacro
+	
+macro example1(...)
+	!a #= 0
+	while !a &lt; sizeof(...)
+		db &lt;!a&gt;		;01 02 03
+		!a #= !a+1
+	endif
+endmacro
+
+macro example2(named_parameter, ...)
+	!a #= 0
+	while !a &lt; sizeof(...)
+		db &lt;!a&gt;		;02 03 04 05 06 07
+		!a #= !a+1
+	endif
+	db &lt;named_parameter&gt;	;01
+endmacro
+%example0(1,2,3,4)
+%example1(1,2,3)
+%example2(1,2,3,4,5,6,7)
 </code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
@@ -2827,7 +2857,7 @@ db "ABC"
 ; Those both write $20 $21 $22
 db "ABC"
 db 'A','B','C'</code></pre>
-		Note that Asar tries to replace defines wherever possible - even inside strings. Sometimes, this might be undesired. In those cases, you can prefix the <code>!</code> with a <code>\</code> to escape it. The <code>\</code> itself can be escaped with another <code>\</code>.
+		Note that Asar tries to replace defines wherever possible - even inside strings. Sometimes, this might be undesired. In those cases, you can prefix the <code>!</code> with a <code>\</code> to escape it. The <code>\</code> itself can be escaped with another <code>\</code>. In the case of a <code>"</code> it can be escaped with an additional <code>"</code>
 		<pre><code class="65c816_asar">!define = "text"
 		
 ; This writes "text" to the ROM
@@ -2837,7 +2867,9 @@ db "!define"
 db "\!define"
 
 ; This writes "\text" to the ROM
-db "\\!define"</code></pre>
+db "\\!define"
+; This writes 'something "cool"' to the ROM
+db "something ""cool"""</code></pre>
 		<h4 id="fill">fillbyte/fill</h4>
 		<pre><code class="65c816_asar">fillbyte {byte}</code></pre>
 		<pre><code class="65c816_asar">fill {num}</code></pre>
