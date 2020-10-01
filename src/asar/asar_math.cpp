@@ -8,6 +8,7 @@
 #include "asar.h"
 #include "virtualfile.h"
 #include "assembleblock.h"
+#include "macro.h"
 #include "asar_math.h"
 #include "warnings.h"
 #include <math.h>
@@ -481,7 +482,13 @@ static double asar_round()
 
 static double asar_structsize_wrapper()
 {
-	return (double)struct_size(get_symbol_argument());
+	string symbol = get_symbol_argument();
+	if(symbol == "..."){
+		if(!inmacro) asar_throw_error(1, error_type_block, error_id_vararg_sizeof_nomacro);
+		if(numvarargs == -1) asar_throw_error(1, error_type_block, error_id_macro_not_varadic);
+		return numvarargs + 1;
+	}
+	return (double)struct_size(symbol);
 }
 
 static double asar_objectsize_wrapper()

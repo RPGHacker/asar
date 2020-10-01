@@ -14,6 +14,8 @@ static int numlines;
 int reallycalledmacros;
 int calledmacros;
 int macrorecursion;
+bool inmacro;
+int numvarargs;
 
 void startmacro(const char * line_)
 {
@@ -58,8 +60,7 @@ void startmacro(const char * line_)
 			thisone->variadic = true;
 			break;
 		}else if(!strncmp(thisone->arguments[i], "...", 3)){
-			//to do new error
-			asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
+			asar_throw_error(0, error_type_block, error_id_vararg_must_be_last);
 		}else if(strchr(thisone->arguments[i], '.')){
 			asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
 		}
@@ -91,6 +92,7 @@ void endmacro(bool insert)
 
 void callmacro(const char * data)
 {
+	inmacro=true;
 	int numcm=reallycalledmacros++;
 	macrodata * thismacro;
 	if (!confirmqpar(data)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
@@ -110,10 +112,12 @@ void callmacro(const char * data)
 	int numargs=0;
 	if (*startpar) args=(const char* const*)qpsplit(duplicate_string(startpar), ",", &numargs);
 	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_wrong_num_params);
-	//todo make special error name
-	if (numargs < thismacro->numargs && thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_wrong_num_params);
+	if (numargs < thismacro->numargs && thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_wrong_min_params);
 	macrorecursion++;
 	int startif=numif;
+	
+	if(thismacro->variadic) numvarargs = numargs-thismacro->numargs;
+	else numvarargs = -1;
 
 	autoarray<int>* oldmacroposlabels = macroposlabels;
 	autoarray<int>* oldmacroneglabels = macroneglabels;
@@ -147,19 +151,7 @@ void callmacro(const char * data)
 					out+="<<";
 					in+=2;
 				}
-				else if (*in=='<' && !strncmp(in+1, "...", 3))
-				{
-					char * end=in+4;
-					if (*end!='>')
-					{
-						out+=*(in++);
-						continue;
-					}
-					*end=0;
-					out += dec(numargs-thismacro->numargs + 1);
-					in=end+1;
-				}
-				else if (*in=='<' && is_digit(in[1]))
+				else if (thismacro->variadic && *in=='<' && is_digit(in[1]))
 				{
 					char * end=in+1;
 					while (is_digit(*end)) end++;
@@ -171,9 +163,9 @@ void callmacro(const char * data)
 					*end=0;
 					in++;
 					int arg_num = strtol(in, nullptr, 10);
-					//todo better error
 					if(numif<=numtrue){
-						if (arg_num > numargs-thismacro->numargs) asar_throw_error(0, error_type_block, error_id_broken_macro_contents);
+						if (arg_num < 0) asar_throw_error(0, error_type_block, error_id_vararg_out_of_bounds);
+						if (arg_num > numargs-thismacro->numargs) asar_throw_error(0, error_type_block, error_id_vararg_out_of_bounds);
 						if (args[arg_num+thismacro->numargs-1][0]=='"')
 						{
 							string s=args[arg_num+thismacro->numargs-1];
@@ -244,4 +236,5 @@ void callmacro(const char * data)
 		numtrue=startif;
 		asar_throw_error(0, error_type_block, error_id_unclosed_if);
 	}
+	inmacro = false;
 }

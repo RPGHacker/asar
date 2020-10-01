@@ -226,6 +226,12 @@ enum asar_error_id : int
 	error_id_alignment_too_big,
 
 	error_id_negative_shift,
+	
+	error_id_macro_not_varadic,
+	error_id_vararg_sizeof_nomacro,
+	error_id_macro_wrong_min_params,
+	error_id_vararg_out_of_bounds,
+	error_id_vararg_must_be_last,
 
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
