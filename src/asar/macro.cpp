@@ -54,6 +54,9 @@ void startmacro(const char * line_)
 		thisone->arguments=noargs;
 		thisone->numargs=0;
 	}
+	thisone->variadic = false;
+	thisone->fname= duplicate_string(thisfilename);
+	thisone->startline=thisline;
 	for (int i=0;thisone->arguments[i];i++)
 	{
 		if(!strcmp(thisone->arguments[i], "...") && !thisone->arguments[i+1]) thisone->variadic = true;
@@ -65,8 +68,6 @@ void startmacro(const char * line_)
 			if (!strcmp(thisone->arguments[i], thisone->arguments[j])) asar_throw_error(0, error_type_block, error_id_macro_param_redefined, thisone->arguments[i]);
 		}
 	}
-	thisone->fname= duplicate_string(thisfilename);
-	thisone->startline=thisline;
 	numlines=0;
 }
 
