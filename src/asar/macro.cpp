@@ -56,15 +56,10 @@ void startmacro(const char * line_)
 	}
 	for (int i=0;thisone->arguments[i];i++)
 	{
-		if(!strcmp(thisone->arguments[i], "...")){
-			thisone->variadic = true;
-			break;
-		}else if(!strncmp(thisone->arguments[i], "...", 3)){
-			asar_throw_error(0, error_type_block, error_id_vararg_must_be_last);
-		}else if(strchr(thisone->arguments[i], '.')){
-			asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
-		}
-		if (!confirmname(thisone->arguments[i])) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
+		if(!strcmp(thisone->arguments[i], "...") && !thisone->arguments[i+1]) thisone->variadic = true;
+		else if(!strcmp(thisone->arguments[i], "...")) asar_throw_error(0, error_type_block, error_id_vararg_must_be_last);
+		else if(strchr(thisone->arguments[i], '.')) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
+		else if (!confirmname(thisone->arguments[i])) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
 		for (int j=i+1;thisone->arguments[j];j++)
 		{
 			if (!strcmp(thisone->arguments[i], thisone->arguments[j])) asar_throw_error(0, error_type_block, error_id_macro_param_redefined, thisone->arguments[i]);
@@ -111,8 +106,8 @@ void callmacro(const char * data)
 	autoptr<const char * const*> args;
 	int numargs=0;
 	if (*startpar) args=(const char* const*)qpsplit(duplicate_string(startpar), ",", &numargs);
-	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_wrong_num_params);
-	if (numargs < thismacro->numargs && thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_wrong_min_params);
+	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_num_params);
+	if (numargs < thismacro->numargs && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);
 	macrorecursion++;
 	int startif=numif;
 	
@@ -151,9 +146,9 @@ void callmacro(const char * data)
 					out+="<<";
 					in+=2;
 				}
-				else if (thismacro->variadic && *in=='<' && is_digit(in[1]))
+				else if (thismacro->variadic && *in=='<' && (is_digit(in[1]) || in[1] == '-'))
 				{
-					char * end=in+1;
+					char * end=in+2;
 					while (is_digit(*end)) end++;
 					if (*end!='>')
 					{
@@ -163,9 +158,10 @@ void callmacro(const char * data)
 					*end=0;
 					in++;
 					int arg_num = strtol(in, nullptr, 10);
+					
 					if(numif<=numtrue){
-						if (arg_num < 0) asar_throw_error(0, error_type_block, error_id_vararg_out_of_bounds);
-						if (arg_num > numargs-thismacro->numargs) asar_throw_error(0, error_type_block, error_id_vararg_out_of_bounds);
+						if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
+						if (arg_num > numargs-thismacro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
 						if (args[arg_num+thismacro->numargs-1][0]=='"')
 						{
 							string s=args[arg_num+thismacro->numargs-1];
@@ -187,7 +183,7 @@ void callmacro(const char * data)
 					}
 					*end=0;
 					in++;
-					if (!confirmname(in)) asar_throw_error(0, error_type_block, error_id_broken_macro_contents);
+					if (!confirmname(in)) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
 					bool found=false;
 					for (int j=0;thismacro->arguments[j];j++)
 					{
