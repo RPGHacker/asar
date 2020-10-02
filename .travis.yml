@@ -34,11 +34,11 @@ after_success:
   - cd ..
   - if [ $GEN_COVERAGE ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file coverage.info; fi
   # upload binaries to FTP server (only if not a PR and on master branch)
-  # - if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then cd build/asar; curl --ftp-ssl -T "{asar-standalone$EXE_SUFFIX,libasar.$LIB_SUFFIX}" ftp://asar_ftp:${DEPLOY_PASSWORD}@random.muncher.se:21/asar/${TRAVIS_OS_NAME}/; fi
-# env:
-#   global:
-#     # DEPLOY_PASSWORD
-#     - secure: "F9hGxp9DP5Uy5bljYBtF5tnpNOww531WLaTTk67HdgGL9u2H1yqMVvALLAlomqxzNeG+jNXsf3+wkHo5sXxhFvvU9LVCeG2AE3T6Entn3uiJJWs0B6oUs0KO4+p8dG6KGAggSMbS21TEnWiXg9hkvZ2gUpXBS4T3qITbwd9sPQTrxXRzLA3TsviKyV2pyDdJPicNbN59TnQ5LnUR4INuq/ORkmsTb67GyRHrbU1w1BtXBb87hJMXO5BBbaZ9ZrBLKky7KUhUQLWQnO4IXA26z/RF/Zp5VBI0yMZfnLaEWXAEZ0vcCpWOgeptmPfDdZBwdOkaAINx1MJCnVL7TpuwPy2gdmbLL408W4H8ZSC8fUf6OUmz2kwD8APv62tkRiKz2cGt5DeiAY2SoaX63NqZiZ2V6mLJ2OQh0hc3NHFg/2CAlfUnmmdCiO4MTFA4fXpIs3A3wq1DdBpjh536k9zzpgErWV1eEo+GTsk85qEKkbpUQ7LrTAUitL37QFYp3ojFV1AjU8u6EP18qR7uYeWJIR5Ug9CRRRC3z2rZcHKgWmITeWCPtH3j7K2czEmxDdgl88zpoOhbiTSB+wuDCg/+Oh/Wmw2dXXAyMs9Xcj+Qi+hhg8Lu6GCwVxb7QeEC3ZpoBM0ZnkSA7hikPtJNMy97B5Sbr0t3ECQLIgLpwPl3wQo="
+  - if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then cd build/asar; curl --ftp-create-dirs -T "{asar-standalone$EXE_SUFFIX,libasar.$LIB_SUFFIX}" sftp://asar_ftp:${DEPLOY_PASSWORD}@random.muncher.se/asar/${TRAVIS_OS_NAME}/; fi
+env:
+  global:
+    # DEPLOY_PASSWORD
+    - secure: "F9hGxp9DP5Uy5bljYBtF5tnpNOww531WLaTTk67HdgGL9u2H1yqMVvALLAlomqxzNeG+jNXsf3+wkHo5sXxhFvvU9LVCeG2AE3T6Entn3uiJJWs0B6oUs0KO4+p8dG6KGAggSMbS21TEnWiXg9hkvZ2gUpXBS4T3qITbwd9sPQTrxXRzLA3TsviKyV2pyDdJPicNbN59TnQ5LnUR4INuq/ORkmsTb67GyRHrbU1w1BtXBb87hJMXO5BBbaZ9ZrBLKky7KUhUQLWQnO4IXA26z/RF/Zp5VBI0yMZfnLaEWXAEZ0vcCpWOgeptmPfDdZBwdOkaAINx1MJCnVL7TpuwPy2gdmbLL408W4H8ZSC8fUf6OUmz2kwD8APv62tkRiKz2cGt5DeiAY2SoaX63NqZiZ2V6mLJ2OQh0hc3NHFg/2CAlfUnmmdCiO4MTFA4fXpIs3A3wq1DdBpjh536k9zzpgErWV1eEo+GTsk85qEKkbpUQ7LrTAUitL37QFYp3ojFV1AjU8u6EP18qR7uYeWJIR5Ug9CRRRC3z2rZcHKgWmITeWCPtH3j7K2czEmxDdgl88zpoOhbiTSB+wuDCg/+Oh/Wmw2dXXAyMs9Xcj+Qi+hhg8Lu6GCwVxb7QeEC3ZpoBM0ZnkSA7hikPtJNMy97B5Sbr0t3ECQLIgLpwPl3wQo="
 addons:
   apt:
     packages:
