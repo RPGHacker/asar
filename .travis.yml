@@ -43,6 +43,7 @@ addons:
   apt:
     packages:
       - lcov
+      - openssh-client
 
 # MinGW cross-builds (make only)
 jobs:
