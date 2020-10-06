@@ -66,7 +66,7 @@ deploy:
   username: asar_ftp
   password:
     secure: 2O8zpJfSlxa28ibgfgXNsca2OJhU4TAbOfpLaFcjf1BLqkLsjYHNlQ8p6PkI3Rki
-  folder: asar/windows/$(JOB_NAME)/
+  folder: /var/ftp/asar/windows/$(JOB_NAME)/
 
 for:
 -

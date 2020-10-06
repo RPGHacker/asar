@@ -34,7 +34,7 @@ after_success:
   - cd ..
   - if [ $GEN_COVERAGE ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file coverage.info; fi
   # upload binaries to FTP server (only if not a PR and on master branch)
-  - if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then cd build/asar; curl --ftp-create-dirs -T "{asar-standalone$EXE_SUFFIX,libasar.$LIB_SUFFIX}" sftp://asar_ftp:${DEPLOY_PASSWORD}@random.muncher.se/asar/${TRAVIS_OS_NAME}/; fi
+  - if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then cd build/asar; RSYNC_PASWORD=$DEPLOY_PASSWORD rsync asar-standalone$EXE_SUFFIX libasar.$LIB_SUFFIX asar_ftp@random.muncher.se:/var/ftp/asar/$TRAVIS_OS_NAME/${COMPILER:-$CC}; fi
 env:
   global:
     # DEPLOY_PASSWORD
@@ -43,7 +43,6 @@ addons:
   apt:
     packages:
       - lcov
-      - openssh-client
 
 # MinGW cross-builds (make only)
 jobs:
