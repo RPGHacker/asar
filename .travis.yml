@@ -34,20 +34,21 @@ after_success:
   - cd ..
   - if [ $GEN_COVERAGE ]; then lcov -c -d build -o coverage.info; coveralls --verbose --include src/asar --lcov-file coverage.info; fi
   # upload binaries to FTP server (only if not a PR and on master branch)
-  - if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then
-      base64 -d <<EOF | openssl aes-256-cbc -K $encrypted_3f2dabfde256_key -iv $encrypted_3f2dabfde256_iv -out ssh_key -d
-    4M4CEX+TZ7U6K+6sZTIkWIXdkRwI3M0XDTDJwFcBv6NvEL48yvleSRuqiQbHy2e8Zq19T52P1lvR
-    T90sTZY/nLUyBdv3vpUGDQXRlkJNs7Fe6keX5u3z+rB5vIZGGOTO46Tzb6IMGjtxp40lXzXLzn25
-    qu9FyslfSyJPomG77Dz+4wy3kUtQF+YX9cYZqpP4/Y74sslPmJBJCRITCcYkrwbv6NpB7NJ/oaGU
-    06BWcr56mN46PAQTomHoWuJAwb1rQrzOupfqitBJ1dBUPSBNNuYgMgFBvo018MBAjFSMS8/EJL6Z
-    WuFIK/yXV5EwMdBXeo4oEa/1mkFt16nu6EfkRSYVkdxNYBbpAsUPyphRIM3dKs3sL55834Hlr86M
-    rhnSh0ouMbV4umw57cDz7udnCVR3M+H3BW0iFFfWqQuzVxlju0scAl/nRzgM8yL4hX6gh00M+TEW
-    TZCSS0rt+mxL3XjUxPXc0JadFi0lW2/JS6Bpt+AIS3c3gAc0I30hoULYED+Z8zY8atFndO5F1LYV
-    ug==
-    EOF
-      cd build/asar;
-      rsync -e "ssh -o StrictHostKeyChecking=off -i ssh_key" asar-standalone$EXE_SUFFIX libasar.$LIB_SUFFIX asar_ftp@random.muncher.se:/var/ftp/asar/$TRAVIS_OS_NAME/${COMPILER:-$CC};
-    fi
+  - |
+      if [ $TRAVIS_PULL_REQUEST == false -a $TRAVIS_BRANCH == master ]; then
+        base64 -d <<EOF | openssl aes-256-cbc -K $encrypted_3f2dabfde256_key -iv $encrypted_3f2dabfde256_iv -out ssh_key -d
+      4M4CEX+TZ7U6K+6sZTIkWIXdkRwI3M0XDTDJwFcBv6NvEL48yvleSRuqiQbHy2e8Zq19T52P1lvR
+      T90sTZY/nLUyBdv3vpUGDQXRlkJNs7Fe6keX5u3z+rB5vIZGGOTO46Tzb6IMGjtxp40lXzXLzn25
+      qu9FyslfSyJPomG77Dz+4wy3kUtQF+YX9cYZqpP4/Y74sslPmJBJCRITCcYkrwbv6NpB7NJ/oaGU
+      06BWcr56mN46PAQTomHoWuJAwb1rQrzOupfqitBJ1dBUPSBNNuYgMgFBvo018MBAjFSMS8/EJL6Z
+      WuFIK/yXV5EwMdBXeo4oEa/1mkFt16nu6EfkRSYVkdxNYBbpAsUPyphRIM3dKs3sL55834Hlr86M
+      rhnSh0ouMbV4umw57cDz7udnCVR3M+H3BW0iFFfWqQuzVxlju0scAl/nRzgM8yL4hX6gh00M+TEW
+      TZCSS0rt+mxL3XjUxPXc0JadFi0lW2/JS6Bpt+AIS3c3gAc0I30hoULYED+Z8zY8atFndO5F1LYV
+      ug==
+      EOF
+        cd build/asar
+        rsync -e "ssh -o StrictHostKeyChecking=off -i ssh_key" asar-standalone$EXE_SUFFIX libasar.$LIB_SUFFIX asar_ftp@random.muncher.se:/var/ftp/asar/$TRAVIS_OS_NAME/${COMPILER:-$CC}
+      fi
 addons:
   apt:
     packages:
