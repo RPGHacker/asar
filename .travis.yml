@@ -44,7 +44,8 @@ after_success:
         YgMgFBvo018MBAjFSMS8/EJL6ZWuFIK/yXV5EwMdBXeo4oEa/1mkFt16nu6EfkRSYVkdxNY
         BbpAsUPyphRIM3dKs3sL55834Hlr86MrhnSh0ouMbV4umw57cDz7udnCVR3M+H3BW0iFFfW
         qQuzVxlju0scAl/nRzgM8yL4hX6gh00M+TEWTZCSS0rt+mxL3XjUxPXc0JadFi0lW2/JS6B
-        pt+AIS3c3gAc0I30hoULYED+Z8zY8atFndO5F1LYVug==' | base64 -d | openssl aes-256-cbc -K $encrypted_3f2dabfde256_key -iv $encrypted_3f2dabfde256_iv -out ssh_key -d
+        pt+AIS3c3gAc0I30hoULYED+Z8zY8atFndO5F1LYVug==' | tr -d " " | base64 --decode | openssl aes-256-cbc -K $encrypted_3f2dabfde256_key -iv $encrypted_3f2dabfde256_iv -out ssh_key -d
+        chmod 600 ssh_key
         rsync -e "ssh -o StrictHostKeyChecking=off -i ssh_key" asar-standalone$EXE_SUFFIX libasar.$LIB_SUFFIX asar_ftp@random.muncher.se:/var/ftp/asar/$TRAVIS_OS_NAME/${COMPILER:-$CC}
       fi
 addons:
