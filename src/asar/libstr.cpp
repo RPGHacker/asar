@@ -4,6 +4,7 @@
 #include "asar.h"
 
 #define typed_malloc(type, count) (type*)malloc(sizeof(type)*(count))
+#define typed_realloc(type, ptr, count) (type*)realloc(ptr, sizeof(type)*(count))
 
 char * readfile(const char * fname, const char * basepath)
 {
@@ -69,7 +70,7 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 	{
 		const char * ptr=strstr(thisstring, instr);
 		if (!ptr) return thisstring;
-		string out=S substr(thisstring, (int)(ptr-thisstring.str))+outstr+(ptr+strlen(instr));
+		string out=S substr(thisstring, (int)(ptr-thisstring.data()))+outstr+(ptr+strlen(instr));
 		thisstring =out;
 		return thisstring;
 	}
@@ -143,7 +144,7 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 		int inlen=(int)strlen(instr);
 		while (*in)
 		{
-			if (!memcmp(in, instr, (size_t)inlen))
+			if (!strncmp(in, instr, (size_t)inlen))
 			{
 				replaced=true;
 				out+=outstr;
@@ -173,7 +174,7 @@ string& string::qreplace(const char * instr, const char * outstr, bool all)
 		for (int i=0;thisstring[i];)
 		{
 			dequote(thisstring[i], out+= thisstring[i++], return thisstring);
-			if (!memcmp((const char*)thisstring +i, instr, strlen(instr)))
+			if (!strncmp((const char*)thisstring +i, instr, strlen(instr)))
 			{
 				replaced=true;
 				out+=outstr;
@@ -224,34 +225,26 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 		return out;
 	}
 	int keylen=(int)strlen(key);
-	int count=1;
-	char * thisentry=str;
-	while (*thisentry)
-	{
-		if (!memcmp(thisentry, key, (size_t)keylen))
-		{
-			count++;
-			thisentry+=keylen;
-		}
-		else thisentry++;
-	}
+	int count=7; //makes the default alloc 8 elements, sounds fair.
 	if (maxlen && count>maxlen) count=maxlen;
 	char ** outdata= typed_malloc(char*, (size_t)count+1);
-	if (len) *len=count;
+	
 	int newcount=0;
-	thisentry=str;
+	char *thisentry=str;
 	outdata[newcount++]=thisentry;
-	while (newcount<count)
-	{
-		if (!memcmp(thisentry, key, (size_t)keylen))
+	while((thisentry = strstr(thisentry, key))){
+		*thisentry = 0;
+		thisentry += keylen;
+		outdata[newcount++]=thisentry;
+		if(newcount >= count)
 		{
-			*thisentry=0;
-			thisentry+=keylen;
-			outdata[newcount++]=thisentry;
+			outdata = typed_realloc(char *, outdata, count * 2);
+			count *= 2;
 		}
-		else thisentry++;
 	}
+	
 	outdata[newcount]= nullptr;
+	if (len) *len=newcount;
 	return outdata;
 }
 
@@ -259,147 +252,173 @@ char ** qnsplit(char * str, const char * key, int maxlen, int * len)
 {
 	if (!strchr(str, '"') && !strchr(str, '\'')) return nsplit(str, key, maxlen, len);
 	int keylen=(int)strlen(key);
-	int count=1;
-	char * thisentry=str;
-	while (*thisentry)
-	{
-		dequote(*thisentry, thisentry++, return nullptr);
-		else if (!memcmp(thisentry, key, (size_t)keylen))
-		{
-			count++;
-			thisentry+=keylen;
-		}
-		else thisentry++;
-	}
+	int count=7;
 	if (maxlen && count>maxlen) count=maxlen;
 	char ** outdata= typed_malloc(char*, (size_t)count+1);
-	if (len) *len=count;
 	int newcount=0;
-	thisentry=str;
+	char * thisentry=str;
 	outdata[newcount++]=thisentry;
-	while (newcount<count)
+	while (*thisentry) /*todo fix*/
 	{
 		dequote(*thisentry, thisentry++, return nullptr);
-		else if (!memcmp(thisentry, key, (size_t)keylen))
+		else if (!strncmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
 			thisentry+=keylen;
 			outdata[newcount++]=thisentry;
+			if(newcount >= count)
+			{
+				outdata = typed_realloc(char *, outdata, count * 2);
+				count *= 2;
+			}
 		}
 		else thisentry++;
 	}
 	outdata[newcount]= nullptr;
+	if (len) *len=newcount;
 	return outdata;
 }
 
 char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
 {
 	int keylen=(int)strlen(key);
-	int count=1;
+	int count=7;
+	if (maxlen && count>maxlen) count=maxlen;
+	char ** outdata= typed_malloc(char*, (size_t)count+1);
+	
+	int newcount=0;
 	char * thisentry=str;
+	outdata[newcount++]=thisentry;
 	while (*thisentry)
 	{
 		skippar(*thisentry, thisentry++, return nullptr);
-		else if (!memcmp(thisentry, key, (size_t)keylen))
-		{
-			count++;
-			thisentry+=keylen;
-		}
-		else thisentry++;
-	}
-	if (maxlen && count>maxlen) count=maxlen;
-	char ** outdata= typed_malloc(char*, (size_t)count+1);
-	if (len) *len=count;
-	int newcount=0;
-	thisentry=str;
-	outdata[newcount++]=thisentry;
-	while (newcount<count)
-	{
-		skippar(*thisentry, thisentry++, return nullptr);
-		else if (!memcmp(thisentry, key, (size_t)keylen))
+		else if (!strncmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
 			thisentry+=keylen;
 			outdata[newcount++]=thisentry;
+			if(newcount >= count)
+			{
+				outdata = typed_realloc(char *, outdata, count * 2);
+				count *= 2;
+			}
 		}
 		else thisentry++;
 	}
 	outdata[newcount]= nullptr;
+	if (len) *len=newcount;
 	return outdata;
 }
 
-char * trim(char * str, const char * left, const char * right, bool multi)
+string &strip_prefix(string &str, char c, bool multi)
 {
-	bool nukeright=true;
-	int totallen=(int)strlen(str);
-	int rightlen=(int)strlen(right);
-	if (rightlen<=totallen)
-	{
-		do
-		{
-			const char * rightend=right+rightlen;
-			char * strend=str+totallen;
-			while (right!=rightend)
-			{
-				rightend--;
-				strend--;
-				if (*strend!=*rightend) nukeright=false;
-			}
-			if (nukeright)
-			{
-				totallen-=rightlen;
-				str[totallen]=0;
-			}
-		} while (multi && nukeright && rightlen<=totallen);
-	}
-	bool nukeleft=true;
-	do
-	{
-		int leftlen;
-		for (leftlen=0;left[leftlen];leftlen++)
-		{
-			if (str[leftlen]!=left[leftlen]) nukeleft=false;
+	if(!multi){
+		if(str.data()[0] == c){
+			str = string(str.data() + 1, str.length() - 1);
 		}
-		if (nukeleft) memmove(str, str+leftlen, (size_t)(totallen-leftlen+1));
-	} while (multi && nukeleft);
+		return str;
+	}
+	int length = str.length();
+	for(int i = 0; i < length; i++){
+		if(str.data()[i] != c){
+			str = string(str.data() + i, str.length() - i);
+			return str;
+		}
+	}
+	return str;
+}
+
+string &strip_suffix(string &str, char c, bool multi)
+{
+	if(!multi){
+		if(str.data()[str.length() - 1] == c){
+			str.truncate(str.length() - 1);
+		}
+		return str;
+	}
+	for(int i = str.length() - 1; i >= 0; i--){
+		if(str.data()[i] != c){
+			str.truncate(i + 1);
+			return str;
+		}
+	}
+	return str;
+}
+
+string &strip_both(string &str, char c, bool multi)
+{
+	return strip_suffix(strip_prefix(str, c, multi), c, multi);
+}
+
+string &strip_whitespace(string &str)
+{
+	for(int i = str.length() - 1; i >= 0; i--){
+		if(str.data()[i] != ' ' && str.data()[i] != '\t'){
+			str.truncate(i + 1);
+			break;
+		}
+	}
+	
+	int length = str.length();
+	for(int i = 0; i < length; i++){
+		if(str.data()[i] != ' ' && str.data()[i] != '\t'){
+			str = string(str.data() + i, str.length() - i);
+			return str;
+		}
+	}
 	return str;
 }
 
 char * itrim(char * str, const char * left, const char * right, bool multi)
 {
+	string tmp(str);
+	return strcpy(str, itrim(tmp, left, right, multi).data());
+}
+
+//todo merge above with this
+string &itrim(string &input, const char * left, const char * right, bool multi)
+{
 	bool nukeright=true;
-	int totallen=(int)strlen(str);
+	int totallen=input.length();
 	int rightlen=(int)strlen(right);
-	if (rightlen<=totallen)
+	if (rightlen && rightlen<=totallen)
 	{
 		do
 		{
 			const char * rightend=right+rightlen;
-			char * strend=str+totallen;
+			const char * strend=input.data()+totallen;
 			while (right!=rightend)
 			{
 				rightend--;
 				strend--;
-				if (tolower(*strend)!=tolower(*rightend)) nukeright=false;
+				if (to_lower(*strend)!=to_lower(*rightend)) nukeright=false;
 			}
 			if (nukeright)
 			{
 				totallen-=rightlen;
-				str[totallen]=0;
+				input.truncate(totallen);
 			}
 		} while (multi && nukeright && rightlen<=totallen);
 	}
 	bool nukeleft=true;
-	do
+	int leftlen = strlen(left);
+	if(!multi && leftlen == 1 && input.data()[0] == left[0])
 	{
-		int leftlen;
-		for (leftlen=0;left[leftlen];leftlen++)
+		return input = string(input.data()+1, (input.length()-1));
+	}
+	else
+	{
+		do
 		{
-			if (tolower(str[leftlen])!=tolower(left[leftlen])) nukeleft=false;
-		}
-		if (nukeleft) memmove(str, str+leftlen, (size_t)(totallen-leftlen+1));
-	} while (multi && nukeleft);
-	return str;
+			
+			for (int i = 0; i < leftlen; i++)
+			{
+				if (to_lower(input.data()[i])!=to_lower(left[i])) nukeleft=false;
+			}
+			if (nukeleft) input = string(input.data()+leftlen, (input.length()-leftlen));
+		} while (multi && nukeleft);
+	}
+	return input;
 }
 
 char* strqpchr(const char* str, char key)
@@ -413,3 +432,23 @@ char* strqpchr(const char* str, char key)
 	}
 	return nullptr;
 }
+
+extern const uint8_t char_props[256] = {
+	//x0   x1   x2   x3   x4   x5   x6   x7   x8   x9   xA   xB   xC   xD   xE   xF
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x80,0x00,0x00,0x80,0x00,0x00, // 0x
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // 1x
+	0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // 2x  !"#$%&'()*+,-./
+	0x41,0x41,0x41,0x41,0x41,0x41,0x41,0x41,0x41,0x41,0x00,0x00,0x00,0x00,0x00,0x00, // 3x 0123456789:;<=>?
+	0x00,0x23,0x23,0x23,0x23,0x23,0x23,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22, // 4x @ABCDEFGHIJKLMNO
+	0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x22,0x00,0x00,0x00,0x00,0x08, // 5x PQRSTUVWXYZ[\]^_
+	0x00,0x25,0x25,0x25,0x25,0x25,0x25,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24, // 6x `abcdefghijklmno
+	0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x24,0x00,0x00,0x00,0x00,0x00, // 7x pqrstuvwxyz{|}~
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // 8x
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // 9x
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // Ax
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // Bx
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // Cx
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // Dx
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // Ex
+	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00, // Fx
+};

@@ -89,7 +89,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 	else if (pass == whichpass) {
 		// don't show current block if the error came from an error command
 		bool show_block = (errid != error_id_error_command);
-		fillerror(errors[numerror++], errid, S "error: (E" + string(errid) + "): ", e_, show_block);
+		fillerror(errors[numerror++], errid, S "error: (E" + dec(errid) + "): ", e_, show_block);
 	}
 	else {}//ignore anything else
 }
@@ -98,7 +98,7 @@ void warn(int errid, const char * str)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (errid != warning_id_warn_command);
-	fillerror(warnings[numwarn++], errid, S "warning: (W" + string(errid) + "): ", str, show_block);
+	fillerror(warnings[numwarn++], errid, S "warning: (W" + dec(errid) + "): ", str, show_block);
 }
 
 static void resetdllstuff()
@@ -234,7 +234,7 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 	if (buflen < romlen) asar_throw_error(pass, error_type_null, error_id_buffer_too_small);
 	if (errored)
 	{
-		if (buflen != maxromsize) free(const_cast<unsigned char*>(romdata));
+		free(const_cast<unsigned char*>(romdata));
 		return false;
 	}
 	if (*romlen_ != buflen)
@@ -351,12 +351,11 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
 	for (int i = 0; i < paramscurrent.definecount; ++i)
 	{
 		string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
-		name = name.replace("\t", " ", true);
-		name = itrim(name.str, " ", " ", true);
-		name = itrim(name.str, "!", "", false); // remove leading ! if present
-		if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.str);
+		name = strip_whitespace(name);
+		name = strip_prefix(name, '!', false); // remove leading ! if present
+		if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
 		if (clidefines.exists(name)) {
-			asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.str);
+			asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.data());
 			return false;
 		}
 		string contents = (paramscurrent.additional_defines[i].contents != nullptr ? paramscurrent.additional_defines[i].contents : "");

@@ -20,8 +20,8 @@
 extern unsigned const char * romdata_r;
 extern int romlen_r;
 
-#define clean(string) do { string.qreplace("\t", " ", true); string.qreplace(", ", ",", true); string.qreplace("  ", " ", true); \
-											itrim(string.str, " ", " ", true); } while(0)
+#define clean(string) do { string.qreplace(", ", ",", true); string.qreplace("  ", " ", true); \
+						strip_whitespace(string); string.qreplace("\t", " ", true);} while(0)
 
 int getlen(const char * str, bool optimizebankextraction=false);
 bool is_hex_constant(const char * str);

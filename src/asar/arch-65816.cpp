@@ -20,11 +20,10 @@ extern bool fastrom;
 
 bool asblock_65816(char** word, int numwords)
 {
-#define is(test) (!stricmp(word[0], test))
+#define is(test) (!stricmpwithupper(word[0], test))
 //#define par word[1]
-	char * par=nullptr;
-	if (word[1]) par= duplicate_string(word[1]);
-	autoptr<char*> parptr=par;
+	string par;
+	if (word[1]) par = word[1];
 	unsigned int num;
 	int len=0;//declared here for A->generic fallback
 	bool explicitlen = false;
@@ -33,8 +32,9 @@ bool asblock_65816(char** word, int numwords)
 	else if (assemblemapper(word, numwords)) {}
 #define getvars(optbank) num=(pass!=0)?getnum(par):0; hexconstant=is_hex_constant(par); if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
 #define match(left, right) (word[1] && stribegin(par, left) && striend(par, right))
-#define init(left, right) itrim(par, left, right); getvars(false)
-#define bankoptinit(left, right) itrim(par, left, right); getvars(true)
+#define init(left, right) strip_suffix(par, right); strip_prefix(par, left); getvars(false)
+#define init_index(left, right) itrim(par, left, right); getvars(false)
+#define bankoptinit(left) strip_prefix(par, left); getvars(true)
 #define blankinit() len=1; explicitlen=false; num=0
 #define end() return false
 #define as0(    op, byte) if (is(op)          ) { write1((unsigned int)byte);              return true; }
@@ -50,10 +50,10 @@ bool asblock_65816(char** word, int numwords)
 																					 else {  write1((unsigned int)byte); write2(num); } return true; }
 #define as_rep( op, byte) if (is(op)) { if (pass==0) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
 #define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
-													if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
+													if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 													return true; }
 #define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+3); write1((unsigned int)byte); write2((unsigned int)pos);\
-											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
+											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 											return true; }
 #define the8(offset, len) as##len("ORA", offset+0x00); as##len("AND", offset+0x20); as##len("EOR", offset+0x40); as##len("ADC", offset+0x60); \
 													as##len("STA", offset+0x80); as##len("LDA", offset+0xA0); as##len("CMP", offset+0xC0); as##len("SBC", offset+0xE0)
@@ -61,7 +61,7 @@ bool asblock_65816(char** word, int numwords)
 															as##len("ROR", offset+0x60); as##len("LDY", offset+0x9E); as##len("DEC", offset+0xC0); as##len("INC", offset+0xE0)
 #define thefinal7(offset, len) as##len("TSB", offset+0x00); as##len("TRB", offset+0x10); as##len("STY", offset+0x80); as##len("STX", offset+0x82); \
 															 as##len("LDX", offset+0xA2); as##len("CPY", offset+0xC0); as##len("CPX", offset+0xE0)
-#define onlythe8(left, right, offset) else if (match(left, right)) do { init(left, right); the8(offset, 1); end(); } while(0)
+#define onlythe8(left, right, offset) else if (match(left, right)) do { init_index(left, right); the8(offset, 1); end(); } while(0)
 	else if ((strlen(word[0])!=3 && (strlen(word[0])!=5 || word[0][3]!='.')) || (word[1] && word[2])) return false;
 	else if (!word[1])
 	{
@@ -93,7 +93,7 @@ bool asblock_65816(char** word, int numwords)
 	}
 	else if (match("#", ""))
 	{
-		bankoptinit("#", "");
+		bankoptinit('#');
 		as_a("ORA", 0x09); as_a("AND", 0x29); as_a("EOR", 0x49); as_a("ADC", 0x69);
 		as_a("BIT", 0x89); as_a("LDA", 0xA9); as_a("CMP", 0xC9); as_a("SBC", 0xE9);
 		as_xy("CPX", 0xE0); as_xy("CPY", 0xC0); as_xy("LDX", 0xA2); as_xy("LDY", 0xA0);
@@ -110,21 +110,21 @@ bool asblock_65816(char** word, int numwords)
 	onlythe8("", ",s", 0x03);
 	else if (match("[", "]"))
 	{
-		init("[", "]");
+		init('[', ']');
 		the8(0x07, 1);
 		as2("JMP", 0xDC); as2("JML", 0xDC);
 		end();
 	}
 	else if (match("(", ",x)"))
 	{
-		init("(", ",x)");
+		init_index("(", ",x)");
 		the8(0x01, 1);
 		as2("JMP", 0x7C); as2("JSR", 0xFC);
 		end();
 	}
 	else if (match("(", ")") && confirmqpar(substr(word[1]+1, (int)(strlen(word[1]+1)-1))))
 	{
-		init("(", ")");
+		init('(', ')');
 		the8(0x12, 1);
 		as1("PEI", 0xD4);
 		as2("JMP", 0x6C);
@@ -132,7 +132,7 @@ bool asblock_65816(char** word, int numwords)
 	}
 	else if (match("", ",x"))
 	{
-		init("", ",x");
+		init_index("", ",x");
 		if (match("(", ")") && confirmqpar(substr(word[1] + 1, (int)(strlen(word[1] + 1) - 2 - 1)))) asar_throw_warning(0, warning_id_65816_yy_x_does_not_exist);
 		the8(0x1F, 3);
 		the8(0x1D, 2);
@@ -146,7 +146,7 @@ bool asblock_65816(char** word, int numwords)
 	}
 	else if (match("", ",y"))
 	{
-		init("", ",y");
+		init_index("", ",y");
 		if (len==3 && emulatexkas) len=2;
 		as1("LDX", 0xB6);
 		as1("STX", 0x96);
@@ -164,7 +164,7 @@ bool asblock_65816(char** word, int numwords)
 		if ((is("MVN") || is("MVP")) && confirmqpar(par))
 		{
 			int numargs;
-			autoptr<char**>param=qpsplit(par, ",", &numargs);
+			autoptr<char**>param=qpsplit(par.temp_raw(), ",", &numargs);
 			if (numargs ==2)
 			{
 				write1(is("MVN")?(unsigned int)0x54:(unsigned int)0x44);
@@ -185,12 +185,12 @@ opAFallback:
 		{
 			int tmp=optimizeforbank;
 			optimizeforbank=-1;
-			init("", "");
+			getvars(false)
 			optimizeforbank=tmp;
 		}
 		else
 		{
-			init("", "");
+			getvars(false)
 		}
 		the8(0x0F, 3);
 		the8(0x0D, 2);

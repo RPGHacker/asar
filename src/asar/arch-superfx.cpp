@@ -30,11 +30,11 @@ static bool getreg(const char * par, int * reg, reg_t type)
 	int ret;
 	*reg=-1;
 	if (type==reg_parr && *par++!='(') return false;
-	if (type==reg_parr && toupper(*par++)!='R') return false;
-	if (type==reg_r && toupper(*par++)!='R') return false;
+	if (type==reg_parr && to_lower(*par++)!='r') return false;
+	if (type==reg_r && to_lower(*par++)!='r') return false;
 	if (type==reg_hash && *par++!='#') return false;
-	if (!isdigit(par[0])) return false;
-	if (isdigit(par[1]))
+	if (!is_digit(par[0])) return false;
+	if (is_digit(par[1]))
 	{
 		if (par[0]!='1' || par[1]>'5') return false;
 		ret=par[1]-'0'+10;
@@ -54,7 +54,7 @@ static bool getreg(const char * par, int * reg, reg_t type)
 //for LMS and SMS short addressing forms, check range & evenness
 static bool check_short_addr(int num) {
 	if (num % 2 > 0 || num < 0 || num > 0x1FE) {
-		asar_throw_error(0, error_type_block, error_id_superfx_invalid_short_address, hex((unsigned int)num).str);
+		asar_throw_error(0, error_type_block, error_id_superfx_invalid_short_address, hex((unsigned int)num).data());
 		return false;
 	}
 	return true;
@@ -205,7 +205,7 @@ bool asblock_superfx(char** word, int numwords)
 					write1((unsigned int)byte); write1((unsigned int)pos);
 					if (pass==2 && (pos<-128 || pos>127))
 					{
-						asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str);
+						asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data());
 					}
 				}
 			}
