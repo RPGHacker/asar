@@ -250,6 +250,12 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_alignment_too_big, "Requested alignment too large." },
 
 	{ error_id_negative_shift, "Bitshift amount is negative." },
+	
+	{ error_id_macro_not_varadic, "Invalid use of sizeof(...), active macro is not variadic." },
+	{ error_id_vararg_sizeof_nomacro, "Invalid use of sizeof(...), no active macro." },
+	{ error_id_macro_wrong_min_params, "Variadic macro call with too few parameters" },
+	{ error_id_vararg_out_of_bounds, "Variadic macro parameter requested is out of bounds." },
+	{ error_id_vararg_must_be_last, "Variadic macro parameter must be the last parameter." }
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

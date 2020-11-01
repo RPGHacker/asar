@@ -18,7 +18,7 @@ asar_error_id openromerror;
 autoarray<writtenblockdata> writtenblocks;
 
 // RPG Hacker: Uses binary search to find the insert position of our ROM write
-
+#ifdef ASAR_SHARED
 static int findromwritepos(int snesoffset, int searchstartpos, int searchendpos)
 {
 	if (searchendpos == searchstartpos)
@@ -104,23 +104,30 @@ static void addromwrite(int pcoffset, int numbytes)
 
 	addromwriteforbank(snesaddr, bytesleft);
 }
+#endif
 
 void writeromdata(int pcoffset, const void * indata, int numbytes)
 {
 	memcpy(const_cast<unsigned char*>(romdata) + pcoffset, indata, (size_t)numbytes);
-	addromwrite(pcoffset, numbytes);
+	#ifdef ASAR_SHARED
+		addromwrite(pcoffset, numbytes);
+	#endif
 }
 
 void writeromdata_byte(int pcoffset, unsigned char indata)
 {
 	memcpy(const_cast<unsigned char*>(romdata) + pcoffset, &indata, 1);
-	addromwrite(pcoffset, 1);
+	#ifdef ASAR_SHARED
+		addromwrite(pcoffset, 1);
+	#endif
 }
 
 void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes)
 {
 	memset(const_cast<unsigned char*>(romdata) + pcoffset, indata, (size_t)numbytes);
-	addromwrite(pcoffset, numbytes);
+	#ifdef ASAR_SHARED
+		addromwrite(pcoffset, numbytes);
+	#endif
 }
 
 int ratsstart(int snesaddr)
@@ -157,7 +164,7 @@ static void handleprot(int loc, char * name, int len, const unsigned char * cont
 
 	if (!strncmp(name, "PROT", 4))
 	{
-		strncpy(name, "NULL", 4);//to block recursion, in case someone is an idiot
+		memcpy(name, "NULL", 4);//to block recursion, in case someone is an idiot
 		if (len%3) return;
 		len/=3;
 		for (int i=0;i<len;i++) removerats((contents[(i*3)+0]    )|(contents[(i*3)+1]<<8 )|(contents[(i*3)+2]<<16), 0x00);
@@ -355,12 +362,12 @@ void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsi
 	int pcoff=snestopc(loc);
 	if (strncmp((const char*)romdata+pcoff-8, "STAR", 4)) return;
 	const unsigned char * metadata=romdata+pcoff;
-	while (isupper(metadata[0]) && isupper(metadata[1]) && isupper(metadata[2]) && isupper(metadata[3]))
+	while (is_upper(metadata[0]) && is_upper(metadata[1]) && is_upper(metadata[2]) && is_upper(metadata[3]))
 	{
 		if (!strncmp((const char*)metadata, "STOP", 4))
 		{
 			metadata=romdata+pcoff;
-			while (isupper(metadata[0]) && isupper(metadata[1]) && isupper(metadata[2]) && isupper(metadata[3]))
+			while (is_upper(metadata[0]) && is_upper(metadata[1]) && is_upper(metadata[2]) && is_upper(metadata[3]))
 			{
 				if (!strncmp((const char*)metadata, "STOP", 4))
 				{

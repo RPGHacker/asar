@@ -2,7 +2,7 @@ version: '{build}'
 image: Visual Studio 2015
 environment:
   matrix:
-    # job names are used for FTP uploads, try to not change them! (jk i never got the uploading to work)
+    # job names are used for FTP uploads, try to not change them
     - JOB_NAME: "mingw"
       CMAKE_TARGET: "MinGW Makefiles"
     - JOB_NAME: "win32"
@@ -59,14 +59,14 @@ test_script:
 
       asar-tests\%CONFIGURATION%\asar-app-test.exe asar\%CONFIGURATION%\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
 
-# deploy:
-#   provider: FTP
-#   protocol: ftps
-#   host: "[2001:7d0:8314:b980:edad:8212:2eca:14dd]"
-#   username: asar_ftp
-#   password:
-#     secure: 2O8zpJfSlxa28ibgfgXNsca2OJhU4TAbOfpLaFcjf1BLqkLsjYHNlQ8p6PkI3Rki
-#   folder: asar/windows/$(JOB_NAME)/
+deploy:
+  provider: FTP
+  protocol: sftp
+  host: random.muncher.se
+  username: asar_ftp
+  password:
+    secure: 2O8zpJfSlxa28ibgfgXNsca2OJhU4TAbOfpLaFcjf1BLqkLsjYHNlQ8p6PkI3Rki
+  folder: asar/windows/$(JOB_NAME)/
 
 for:
 -

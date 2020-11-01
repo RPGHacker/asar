@@ -222,6 +222,6 @@ if(ASAR_GEN_DLL)
 		${ASAR_SHARED_SOURCE_FILES}
 		${ASAR_LIB_RESOURCE_FILES}
 	)
-	
+	target_compile_definitions(asar PRIVATE "ASAR_SHARED")
 	set_asar_shared_properties(asar)
 endif(ASAR_GEN_DLL)

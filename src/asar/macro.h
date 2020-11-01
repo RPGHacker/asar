@@ -8,6 +8,8 @@ void callmacro(const char * data);
 extern int macrorecursion;
 extern int reallycalledmacros;
 extern int calledmacros;
+extern bool inmacro;
+extern int numvarargs;
 
 struct macrodata
 {
@@ -17,6 +19,7 @@ struct macrodata
 	const char * fname;
 	const char * const* arguments;
 	int numargs;
+	bool variadic;
 };
 
 extern assocarr<macrodata*> macros;

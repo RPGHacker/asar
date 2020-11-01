@@ -77,10 +77,10 @@ bool setmapper()
 			unsigned char c=romdata[snestopc(0x00FFC0+i)];
 			if (foundnull && c) score-=4;//according to some documents, NUL terminated names are possible - but they shouldn't appear in the middle of the name
 			if (c>=128) highbits++;
-			else if (isupper(c)) score+=3;
+			else if (is_upper(c)) score+=3;
 			else if (c==' ') score+=2;
-			else if (isdigit(c)) score+=1;
-			else if (islower(c)) score+=1;
+			else if (is_digit(c)) score+=1;
+			else if (is_lower(c)) score+=1;
 			else if (c=='-') score+=1;
 			else if (!c) foundnull=true;
 			else score-=3;
@@ -198,7 +198,7 @@ bool is_hex_constant(const char* str){
 	if (*str=='$')
 	{
 		str++;
-		while(isxdigit(*str)) {
+		while(is_xdigit(*str)) {
 			str++;
 		}
 		if(*str=='\0'){
@@ -216,7 +216,7 @@ int getlen(const char * orgstr, bool optimizebankextraction)
 	const char* posneglabel = str;
 	string posnegname = posneglabelname(&posneglabel, false);
 
-	if (posnegname.truelen() > 0)
+	if (posnegname.length() > 0)
 	{
 		if (*posneglabel != '\0') goto notposneglabel;
 
@@ -235,7 +235,7 @@ notposneglabel:
 		{
 			str++;
 			int i;
-			for (i=0;isxdigit(str[i]);i++);
+			for (i=0;is_xdigit(str[i]);i++);
 			//if (i&1) warn(S dec(i)+"-digit hex value");//blocked in getnum instead
 			thislen=(i+1)/2;
 			str+=i;
@@ -254,7 +254,7 @@ notposneglabel:
 			thislen=1;
 			str+=3;
 		}
-		else if (isdigit(*str))
+		else if (is_digit(*str))
 		{
 			int val=strtol(str, const_cast<char**>(&str), 10);
 			if (val>=0) thislen=1;
@@ -262,7 +262,7 @@ notposneglabel:
 			if (val>=65536) thislen=3;
 			if (val>=16777216) thislen=4;
 		}
-		else if (isalpha(*str) || *str=='_' || *str=='.' || *str=='?')
+		else if (is_alpha(*str) || *str=='_' || *str=='.' || *str=='?')
 		{
 			unsigned int thislabel;
 			bool exists=labelval(&str, &thislabel);
@@ -308,7 +308,7 @@ bool validatedefinename(const char * name)
 	if (!name[0]) return false;
 	for (int i = 0;name[i];i++)
 	{
-		if (!isualnum(name[i])) return false;
+		if (!is_ualnum(name[i])) return false;
 	}
 
 	return true;
@@ -362,7 +362,7 @@ void resolvedefines(string& out, const char * start)
 			}
 			else
 			{
-				while (isualnum(*here)) defname+=*here++;
+				while (is_ualnum(*here)) defname+=*here++;
 			}
 			if (warnxkas && here[0]=='(' && here[1]==')')
 				asar_throw_warning(0, warning_id_xkas_eat_parentheses);
@@ -406,14 +406,14 @@ void resolvedefines(string& out, const char * start)
 				{
 					while (*here && *here!=' ') val+=*here++;
 				}
-				//if (strqchr(val.str, ';')) *strqchr(val.str, ';')=0;
+				//if (strqchr(val.data(), ';')) *strqchr(val.data(), ';')=0;
 				if (*here && !stribegin(here, " : ")) asar_throw_error(0, error_type_line, error_id_broken_define_declaration);
 				clean(val);
 
 				// RPG Hacker: throw an error if we're trying to overwrite built-in defines.
 				if (builtindefines.exists(defname))
 				{
-					asar_throw_error(0, error_type_line, error_id_overriding_builtin_define, defname.str);
+					asar_throw_error(0, error_type_line, error_id_overriding_builtin_define, defname.data());
 				}
 
 				switch (mode)
@@ -425,7 +425,7 @@ void resolvedefines(string& out, const char * start)
 					}
 					case append:
 					{
-						if (!defines.exists(defname)) asar_throw_error(0, error_type_line, error_id_define_not_found, defname.str);
+						if (!defines.exists(defname)) asar_throw_error(0, error_type_line, error_id_define_not_found, defname.data());
 						string oldval = defines.find(defname);
 						val=oldval+val;
 						defines.create(defname) = val;
@@ -460,7 +460,7 @@ void resolvedefines(string& out, const char * start)
 				if (!defname) out+="!";
 				else
 				{
-					if (!defines.exists(defname)) asar_throw_error(0, error_type_line, error_id_define_not_found, defname.str);
+					if (!defines.exists(defname)) asar_throw_error(0, error_type_line, error_id_define_not_found, defname.data());
 					else {
 						string thisone = defines.find(defname);
 						resolvedefines(out, thisone);
@@ -491,7 +491,6 @@ void assembleline(const char * fname, int linenum, const char * line)
 	try
 	{
 		string tmp=line;
-		if (!confirmquotes(tmp)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
 		clean(tmp);
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);
@@ -500,7 +499,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 		if (!confirmquotes(out)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
 		out.qreplace(": :", ":  :", true);
 //puts(out);
-		autoptr<char**> blocks=qsplit(out.str, " : ");
+		autoptr<char**> blocks=qsplit(out.temp_raw(), " : ");
 		moreonline=true;
 		for (int block=0;moreonline;block++)
 		{
@@ -511,15 +510,16 @@ void assembleline(const char * fname, int linenum, const char * line)
 			{
 				try
 				{
-					itrim(blocks[block], " ", " ", true);
-					thisfilename= absolutepath;
+					string stripped_block = blocks[block];
+					strip_both(stripped_block, ' ', true);
+					
 					thisline=linenum;//do not optimize, this one is recursive
-					thisblock = blocks[block];
+					const char *thisblock = stripped_block.data();
 					if (thisblock[0] == '@')
 					{
 						lastspecialline = thisline;
 						thisblock++;
-						while (isspace(*thisblock))
+						while (is_space(*thisblock))
 						{
 							thisblock++;
 						}
@@ -608,7 +608,7 @@ void assemblefile(const char * filename, bool toplevel)
 			}
 			while (strqchr(line, '\t')) *strqchr(line, '\t')=' ';
 			if (!confirmquotes(line)) { thisline = i; thisblock = line; asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
-			itrim(line, " ", " ", true);
+			itrim(line, " ", " ", true);	//todo make use strip
 		}
 		for(int i=0;file.contents[i];i++)
 		{
@@ -711,8 +711,7 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 				pos++;
 			} while (pos[0] != '\0' && pos[0] != '\n');
 
-			stdinclude = itrim(stdinclude.str, " ", " ", true);
-			stdinclude = itrim(stdinclude.str, "\t", "\t", true);
+			stdinclude = strip_whitespace(stdinclude);
 
 			if (stdinclude != "")
 			{
@@ -720,7 +719,6 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 				{
 					stdinclude = dir(textfile) + stdinclude;
 				}
-
 				outarray.append(normalize_path(stdinclude));
 			}
 		}
@@ -736,7 +734,7 @@ void parse_std_defines(const char* textfile)
 	// (They're not really standard defines, but I was lazy and this was
 	// one convenient place for doing it).
 	builtindefines.create("assembler") = "asar";
-	builtindefines.create("assembler_ver") = get_version_int();
+	builtindefines.create("assembler_ver") = dec(get_version_int());
 
 	if(textfile == nullptr) return;
 
@@ -761,9 +759,8 @@ void parse_std_defines(const char* textfile)
 			if (*pos != 0)
 				pos++; // skip \n
 			// clean define_name
-			define_name = define_name.replace("\t", " ", true);
-			define_name = itrim(define_name.str, " ", " ", true);
-			define_name = itrim(define_name.str, "!", "", false); // remove leading ! if present
+			define_name = strip_whitespace(define_name);
+			define_name = strip_prefix(define_name, '!', false); // remove leading ! if present
 
 			if (define_name == "")
 			{
@@ -775,15 +772,15 @@ void parse_std_defines(const char* textfile)
 				asar_throw_error(pass, error_type_null, error_id_stddefines_no_identifier);
 			}
 
-			if (!validatedefinename(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "stddefines.txt", define_name.str);
+			if (!validatedefinename(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "stddefines.txt", define_name.data());
 
 			// clean define_val
-			char* defval = define_val.str;
+			const char* defval = define_val.data();
 			string cleaned_defval;
 
 			if (*defval == 0) {
 				// no value
-				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.str);
+				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.data());
 				clidefines.create(define_name) = "";
 				continue;
 			}
@@ -802,20 +799,20 @@ void parse_std_defines(const char* textfile)
 				if (*defval != 0 && *defval != '\n')
 					asar_throw_error(pass, error_type_null, error_id_stddefine_after_closing_quote);
 
-				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.str);
+				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.data());
 				clidefines.create(define_name) = cleaned_defval;
 				continue;
 			}
 			else
 			{
 				// slightly hacky way to remove trailing whitespace
-				char* defval_end = strchr(defval, '\n'); // slightly hacky way to get end of string or newline
+				const char* defval_end = strchr(defval, '\n'); // slightly hacky way to get end of string or newline
 				if (!defval_end) defval_end = strchr(defval, 0);
 				defval_end--;
 				while (*defval_end == ' ' || *defval_end == '\t') defval_end--;
 				cleaned_defval = string(defval, (int)(defval_end - defval + 1));
 
-				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.str);
+				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.data());
 				clidefines.create(define_name) = cleaned_defval;
 				continue;
 			}
@@ -884,7 +881,7 @@ string create_symbols_file(string format, uint32_t romCrc){
 			snprintf(addrToFileListStr, 256, "%.4x %.8x %s\n",
 				i,
 				addrToLineFileList[i].fileCrc,
-				addrToLineFileList[i].filename.str
+				addrToLineFileList[i].filename.data()
 			);
 			symbolfile += addrToFileListStr;
 		}
@@ -953,5 +950,8 @@ void reseteverything()
 	force_checksum_fix = false;
 	
 	lastspecialline = -1;
+	#ifndef ASAR_SHARED
+		free(const_cast<unsigned char*>(romdata_r));
+	#endif
 #undef free
 }

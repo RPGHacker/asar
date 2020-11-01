@@ -16,7 +16,7 @@ static void inline_finalizeorg()
 	if (writesizeto>=0 && pass==2)
 	{
 		int pcpos=snestopc(writesizeto&0xFFFFFF);
-		if (pcpos<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).str);
+		if (pcpos<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).data());
 		int num=snespos-startpos;
 		writeromdata_byte(pcpos, (unsigned char)num);
 		writeromdata_byte(pcpos+1, (unsigned char)(num >> 8));
@@ -27,7 +27,7 @@ static void inline_finalizeorg()
 static void inline_org(unsigned int num)
 {
 	inline_finalizeorg();
-	if (num&~0xFFFF) asar_throw_error(0, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
+	if (num&~0xFFFF) asar_throw_error(0, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).data());
 	writesizeto=realsnespos;
 	write2(0x0000);
 	write2(num);
@@ -55,13 +55,14 @@ static bool matchandwrite(const char * str, const char * left, const char * righ
 {
 	for (int i=0;left[i];i++)
 	{
-		if (tolower(*str)!=left[i]) return false;
+		if (to_lower(*str)!=left[i]) return false;
 		str++;
 	}
 	int mainlen=(int)(strlen(str)-strlen(right));
+	if(mainlen < 0) return false;
 	for (int i=0;right[i];i++)
 	{
-		if (tolower(str[mainlen+i])!=right[i]) return false;
+		if (to_lower(str[mainlen+i])!=right[i]) return false;
 	}
 	remainder=substr(str, mainlen);
 	return true;
@@ -71,7 +72,7 @@ static bool bitmatch(const char * opnamein, string& opnameout, const char * str,
 {
 	const char * opnameend=strchr(opnamein, '\0');
 	const char * dot=strqrchr(str, '.');
-	if (dot && isdigit(dot[1]) && !dot[2])
+	if (dot && is_digit(dot[1]) && !dot[2])
 	{
 		bit=atoi(dot+1);
 		if (bit>=8) return false;
@@ -113,7 +114,7 @@ static bool assinglebitwithc(const char * op, const char * math, int bits)
 		else return false;
 		num=getnum(math);
 	}
-	if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).str);
+	if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
 	write2(((unsigned int)bits<<13)|num);
 	return true;
 }
@@ -202,7 +203,7 @@ bool asblock_spc700(char** word, int numwords)
 #define w2(hex) do { write1((unsigned int)hex); write2(getnum(math)); return true; } while(0)
 #define wv(hex1, hex2) do { if ((opLen == 1) || (opLen == 0 && getlen(math) == 1)) { write1((unsigned int)hex1); write1(getnum(math)); } else { write1((unsigned int)hex2); write2(getnum(math)); } return true; } while(0)
 #define wr(hex) do { int len=getlen(math); int num=(int)getnum64(math); int pos=(len==1)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)hex); write1((unsigned int)pos); \
-								if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
+								if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								return true; } while(0)
 #define op0(str, hex) if (isop(str)) w0(hex)
 #define op1(str, hex) if (isop(str)) w1(hex)
@@ -261,7 +262,7 @@ bool asblock_spc700(char** word, int numwords)
 				else if (!stricmp(op, "clr")) write1((unsigned int)(0x12|(bits<<5)));
 				else return false;
 				unsigned int num=getnum(math);
-				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).str);
+				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
 				write1(num);
 				return true;
 			}
@@ -330,10 +331,10 @@ bool asblock_spc700(char** word, int numwords)
 																	 else { write1((unsigned int)opcode2); write2(getnum(math)); } return true; } while(0)
 #define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1(getnum(math1)); write1(getnum(math2)); return true; } while(0)
 #define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum64(math); int pos=(len==1)?num:num-(snespos+2); \
-								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
+								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								write1((unsigned int)opcode); write1((unsigned int)pos); return true; } while(0)
 #define w1r(opcode, math1, math2) do { int len=getlen(math2); int num=(int)getnum64(math2); int pos=(len==1)?num:num-(snespos+3); \
-								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).str); \
+								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								write1((unsigned int)opcode); write1(getnum(math1)); write1((unsigned int)pos); return true; } while(0)
 			string s1;
 			string s2;
@@ -350,7 +351,7 @@ bool asblock_spc700(char** word, int numwords)
 				if (isop("mov") && !stricmp(arg[1], "c"))
 				{
 					unsigned int num=getnum(s1);
-					if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).str);
+					if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).data());
 					write1(0xCA);
 					write2(((unsigned int)bits<<13)|num);
 					return true;
@@ -360,7 +361,7 @@ bool asblock_spc700(char** word, int numwords)
 				else if (isop("bbc")) write1((unsigned int)(0x13|(bits<<5)));
 				else return false;
 				unsigned int num=getnum(s1);
-				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).str);
+				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
 				write1(num);
 				write1((getnum(arg[1])- (unsigned int)(snespos+1)));
 				return true;
