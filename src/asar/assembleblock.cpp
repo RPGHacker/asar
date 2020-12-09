@@ -1252,10 +1252,10 @@ void assembleblock(const char * block)
 					asar_throw_warning(0, warning_id_xkas_patch);
 				for (char * str=const_cast<char*>(safedequote(pars[i]));*str;str++)
 				{
-					if (len==1) write1(table.table[(size_t)*str]);
-					if (len==2) write2(table.table[(size_t)*str]);
-					if (len==3) write3(table.table[(size_t)*str]);
-					if (len==4) write4(table.table[(size_t)*str]);
+					if (len==1) write1(table.table[(size_t)(unsigned char) *str]);
+					if (len==2) write2(table.table[(size_t)(unsigned char) *str]);
+					if (len==3) write3(table.table[(size_t)(unsigned char) *str]);
+					if (len==4) write4(table.table[(size_t)(unsigned char) *str]);
 				}
 			}
 			else
