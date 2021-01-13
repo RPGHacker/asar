@@ -106,7 +106,7 @@ void callmacro(const char * data)
 	*endpar=0;
 	autoptr<const char * const*> args;
 	int numargs=0;
-	if (*startpar) args=(const char* const*)qpsplit(duplicate_string(startpar), ",", &numargs);
+	if (*startpar) args=(const char* const*)qpsplit(startpar, ",", &numargs);
 	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_num_params);
 	if (numargs < thismacro->numargs && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);
 	macrorecursion++;
