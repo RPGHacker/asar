@@ -565,7 +565,6 @@ void assemblefile(const char * filename, bool toplevel)
 	string prevthisfilename = thisfilename;
 	thisfilename = absolutepath;
 	int prevline = thisline;
-	printf("%s, %p\n", filename, (void*)&prevline);
 	thisline=-1;
 	const char* prevthisblock = thisblock;
 	thisblock= nullptr;

@@ -60,7 +60,7 @@ public:
 	recurseblock()
 	{
 		recursioncount++;
-		if (recursioncount > 100) asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
+		if (recursioncount > 250) asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
 	}
 	~recurseblock()
 	{
