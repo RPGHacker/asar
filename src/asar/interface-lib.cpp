@@ -75,7 +75,7 @@ static void fillerror(errordata& myerr, int errid, const char * type, const char
 	myerr.rawerrdata= duplicate_string(str);
 	myerr.fullerrdata= duplicate_string(S getdecor()+type+str+((thisblock&&show_block)?(S" ["+thisblock+"]"):""));
 	myerr.callerline=callerline;
-	myerr.callerfilename=callerfilename;
+	myerr.callerfilename=callerfilename ? duplicate_string(callerfilename) : nullptr;
 	myerr.errid = errid;
 }
 
@@ -116,6 +116,7 @@ static void resetdllstuff()
 		free_and_null(errors[i].filename);
 		free_and_null(errors[i].rawerrdata);
 		free_and_null(errors[i].fullerrdata);
+		free_and_null(errors[i].callerfilename);
 		free_and_null(errors[i].block);
 	}
 	errors.reset();
@@ -126,6 +127,7 @@ static void resetdllstuff()
 		free_and_null(warnings[i].filename);
 		free_and_null(warnings[i].rawerrdata);
 		free_and_null(warnings[i].fullerrdata);
+		free_and_null(warnings[i].callerfilename);
 		free_and_null(warnings[i].block);
 	}
 	warnings.reset();

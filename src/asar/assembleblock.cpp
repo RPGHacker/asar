@@ -817,6 +817,7 @@ void assembleblock(const char * block)
 	if (is("elseif") && numtrue+1==numif)
 	{
 		resolvedefines(resolved, block);
+		free(word);
 		word = qsplit(resolved.temp_raw(), " ", &numwords);
 	}
 
@@ -837,7 +838,7 @@ void assembleblock(const char * block)
 		callmacro(strchr(block, '%')+1);
 		if (!macrorecursion)
 		{
-			callerfilename= nullptr;
+			callerfilename="";
 			callerline=-1;
 		}
 		return;

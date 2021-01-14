@@ -182,7 +182,7 @@ string()
 	allocated.len = 0;
 	inlined.len = 0;
 	cached_data = inlined.str;
-	next_resize = max_inline_length_;
+	next_resize = max_inline_length_+1;
 
 }
 string(const char * newstr) : string()
@@ -213,7 +213,7 @@ string(string &&move)
 	}else{
 		inlined.len = 0;
 		cached_data = inlined.str;
-		next_resize = max_inline_length_;
+		next_resize = max_inline_length_+1;
 		assign(move);
 	}
 }
@@ -261,7 +261,7 @@ union{
 void resize(int new_length)
 {
 	const char *old_data = data();
-	if(new_length >= next_resize){
+	if(new_length >= next_resize || (!is_inlined() && new_length <= max_inline_length_)) {
 		if(new_length > max_inline_length_ && (is_inlined() || allocated.bufferlen <= new_length)){ //SSO or big to big
 			int new_size = bit_round(new_length + 1);
 			if(old_data == inlined.str){
@@ -273,10 +273,10 @@ void resize(int new_length)
 			allocated.bufferlen = new_size;
 			cached_data = allocated.str;
 			next_resize = allocated.bufferlen;
-		}else if(length() >= max_inline_length_ && new_length < max_inline_length_){ //big to SSO
+		}else if(length() > max_inline_length_ && new_length <= max_inline_length_){ //big to SSO
 			copy(old_data, new_length, inlined.str);
 			cached_data = inlined.str;
-			next_resize = max_inline_length_;
+			next_resize = max_inline_length_+1;
 		}
 		if(old_data != inlined.str && old_data != data()){
 			free((char *)old_data);

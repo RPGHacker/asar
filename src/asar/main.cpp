@@ -44,7 +44,7 @@ int thisline;
 int lastspecialline=-1;
 const char * thisblock;
 
-const char * callerfilename= nullptr;
+string callerfilename;
 int callerline=-1;
 
 bool errored=false;
