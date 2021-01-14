@@ -198,8 +198,14 @@ string(const string& old) : string()
 	assign(old.data());
 }
 
-string(string &&move)
+string(string &&move) : string()
 {
+	*this = move;
+}
+
+string& operator=(string&& move)
+{
+	if(!is_inlined()) free(allocated.str);
 	if(!move.is_inlined()){
 		allocated.str = move.allocated.str;
 		allocated.bufferlen = move.allocated.bufferlen;
@@ -216,6 +222,7 @@ string(string &&move)
 		next_resize = max_inline_length_+1;
 		assign(move);
 	}
+	return *this;
 }
 
 ~string()
