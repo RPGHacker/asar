@@ -514,7 +514,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 					strip_both(stripped_block, ' ', true);
 					
 					thisline=linenum;//do not optimize, this one is recursive
-					const char *thisblock = stripped_block.data();
+					thisblock = stripped_block.data();
 					if (thisblock[0] == '@')
 					{
 						lastspecialline = thisline;
