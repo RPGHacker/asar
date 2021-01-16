@@ -104,6 +104,7 @@
 					<li><a href="#macro-labels">Macro Labels</a></li>
 					<li><a href="#structs">Structs</a></li>
 					<li><a href="#namespaces">Namespaces</a></li>
+					<li><a href="#global-labels">Global labels</a></li>
 				</ul>
 			</li>
 			<li>
@@ -2221,6 +2222,29 @@ dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main
 dl TheFirst_Main                ; TheFirst_Main
 dl TheSecond_Main               ; TheSecond_Main
 dl TheThird_Main                ; TheThird_Main</code></pre>
+		<h4 id="global-labels">Global labels</h4>
+		While in a namespace, you can use the keyword <code class="65c816_asar">global</code> to define labels outside all namespaces. The syntax is <code class="65c816_asar">global [#]{identifier}:</code>. For example:
+		<pre><code class="65c816_asar">
+namespace NS
+global GlobalLabel:
+.Sub: ; this is a sublabel of GlobalLabel
+
+LocalLabel:
+
+global #AnotherGlobal: ; this global won't modify the sublabel hierarchy
+
+.Sub: ; this is a sublabel of LocalLabel
+namespace off
+
+; these are all valid:
+dl NS_LocalLabel
+dl NS_LocalLabel_Sub
+dl GlobalLabel
+dl GlobalLabel_Sub
+dl AnotherGlobal
+		</code></pre>
+		Note that <code>#</code> acts the same way as it does for regular labels.<br>
+		Note that you cannot use the <code>global</code> command with sublabels or macro labels. Outside of a namespace, <code>global</code> acts just like a regular label definition.<br>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="defines"><h3>Defines</h3>
