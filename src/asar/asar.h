@@ -85,7 +85,6 @@ extern string callerfilename;
 extern int callerline;
 extern string thisfilename;
 extern int thisline;
-extern int lastspecialline;
 extern const char * thisblock;
 
 extern int incsrcdepth;

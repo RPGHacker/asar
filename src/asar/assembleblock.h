@@ -61,7 +61,7 @@ void checkbankcross();
 void initstuff();
 void finishpass();
 
-void assembleblock(const char * block);
+void assembleblock(const char * block, bool isspecialline);
 
 extern int snespos;
 extern int realsnespos;

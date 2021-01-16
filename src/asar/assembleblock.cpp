@@ -795,7 +795,7 @@ static void pop_pc()
 }
 
 
-void assembleblock(const char * block)
+void assembleblock(const char * block, bool isspecialline)
 {
 	string tmp=block;
 	int numwords;
@@ -2225,7 +2225,7 @@ void assembleblock(const char * block)
 	else if (is0("{") || is0("}")) {}
 	else
 	{
-		if (thisline == lastspecialline)
+		if (isspecialline)
 		{
 			asar_throw_warning(0, warning_id_unrecognized_special_command);
 		}

@@ -41,7 +41,6 @@ int optimize_address = optimize_address_flag::DEFAULT;
 
 string thisfilename;
 int thisline;
-int lastspecialline=-1;
 const char * thisblock;
 
 string callerfilename;
@@ -515,16 +514,17 @@ void assembleline(const char * fname, int linenum, const char * line)
 					
 					thisline=linenum;//do not optimize, this one is recursive
 					thisblock = stripped_block.data();
+					bool isspecialline = false;
 					if (thisblock[0] == '@')
 					{
-						lastspecialline = thisline;
+						isspecialline = true;
 						thisblock++;
 						while (is_space(*thisblock))
 						{
 							thisblock++;
 						}
 					}
-					assembleblock(thisblock);
+					assembleblock(thisblock, isspecialline);
 				}
 				catch (errblock&) {}
 				if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
@@ -949,7 +949,6 @@ void reseteverything()
 	checksum_fix_enabled = true;
 	force_checksum_fix = false;
 	
-	lastspecialline = -1;
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));
 	#endif
