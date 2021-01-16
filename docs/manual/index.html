@@ -1797,7 +1797,7 @@ lda SpriteTable,x</code></pre>
 
 		<h4 id="optimize-address">optimize address</h4>
                 <pre><code class="65c816_asar">optimize address {default/ram/mirrors}</code></pre>
-		TODO: document this
+		This command changes how aggressive Asar's label optimizer is. With <code>optimize address default</code>, references to labels will be shortened to 2 bytes only if the label is in the current bank. With <code>optimize address ram</code>, labels between <code>$7E:0000-$7E:1FFF</code> will be shortened to 2 bytes. With <code>optimize address mirrors</code>, labels between <code>$7E:0000-$7E:7FFF</code> and also labels in <code>$00-3F:0000-7FFF</code> will be shortened to 2 bytes.
 
 		<h4 id="pushpc">pushpc/pullpc</h4>
 		The pushpc command pushes the current pc to the stack, the pullpc command restores the pc by pulling its value from the stack. This can be useful for inserting code in another location and then continuing at the original location.
