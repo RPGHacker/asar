@@ -720,7 +720,7 @@ void finishpass()
 	deinitmathcore();
 }
 
-static bool addlabel(const char * label, int pos=-1)
+static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 {
 	if (!label[0] || label[0]==':') return false;//colons are reserved for special labels
 
@@ -729,6 +729,7 @@ static bool addlabel(const char * label, int pos=-1)
 
 	if (posnegname.length() > 0)
 	{
+		if (global_label) return false;
 		if (*posneglabel != '\0' && *posneglabel != ':') asar_throw_error(0, error_type_block, error_id_broken_label_definition);
 		setlabel(posnegname, pos);
 		return true;
@@ -736,6 +737,7 @@ static bool addlabel(const char * label, int pos=-1)
 	if (label[strlen(label)-1]==':' || label[0]=='.' || label[0]=='?' || label[0] == '#')
 	{
 		if (!label[1]) return false;
+		if(global_label && (in_struct || in_sub_struct || label[0]=='?')) return false;
 
 		bool define = true;
 
@@ -752,8 +754,9 @@ static bool addlabel(const char * label, int pos=-1)
 		string name=labelname(&label, define);
 		if (label[0]==':') label++;
 		else if (requirecolon) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
+		else if (global_label) return false;
 		if (label[0]) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
-		if (ns) name=S ns+name;
+		if (ns && !global_label) name=S ns+name;
 		setlabel(name, pos);
 		return true;
 	}
@@ -822,7 +825,13 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 
 	autoptr<char**> wordcopy=word;
-	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=") != 0) && addlabel(word[0]))
+	if (numif==numtrue && is1("global")) {
+		if (!addlabel(word[1], -1, true)) {
+			asar_throw_error(1, error_type_block, error_id_invalid_global_label, word[1]);
+		}
+		return;
+	}
+	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
 	{
 		word++;
 		numwords--;

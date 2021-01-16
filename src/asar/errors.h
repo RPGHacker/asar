@@ -233,6 +233,8 @@ enum asar_error_id : int
 	error_id_vararg_out_of_bounds,
 	error_id_vararg_must_be_last,
 
+	error_id_invalid_global_label,
+	
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
 };
