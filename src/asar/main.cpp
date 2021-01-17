@@ -525,6 +525,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 						}
 					}
 					assembleblock(thisblock, isspecialline);
+					checkbankcross();
 				}
 				catch (errblock&) {}
 				if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
@@ -670,7 +671,6 @@ void assemblefile(const char * filename, bool toplevel)
 	}
 	thisline++;
 	thisblock= nullptr;
-	checkbankcross();
 	if (inmacro)
 	{
 		asar_throw_error(0, error_type_null, error_id_unclosed_macro);

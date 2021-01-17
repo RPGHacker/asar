@@ -70,7 +70,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_rom_too_short, "ROM is too short to have a title. (Expected '%s')" },
 	{ error_id_rom_title_incorrect, "ROM title is incorrect. Expected '%s', got '%s'." },
 
-	{ error_id_bank_border_crossed, "A bank border was crossed somewhere prior to this point." },
+	{ error_id_bank_border_crossed, "A bank border was crossed, SNES address $%06X." },
 
 	{ error_id_start_of_file, "This command may only be used at the start of a file." },
 	{ error_id_xkas_asar_conflict, "Using @xkas and @asar in the same patch is not supported." },
