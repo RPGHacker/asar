@@ -92,6 +92,7 @@
 					<li><a href="#optimize-address">optimize address</a></li>
 					<li><a href="#pushpc">pushpc/pullpc</a></li>
 					<li><a href="#pushbase">pushbase/pullbase</a></li>
+					<li><a href="#arch-spc700-inline">The spc700-inline architecture</a></li>
 				</ul>
 			</li>
 			<li><a href="#math">Math</a></li>
@@ -892,7 +893,7 @@ XCN A</code>
 				<td>SPC700</td>
 				<td><code class="65c816_asar">arch&nbsp;spc700-inline</code></td>
 				<td></td>
-				<td>Same as above, but implements the standard upload system (16bit length, then location, with a terminator at the end) automatically.</td>
+				<td>Same as above, but implements the standard upload system (16bit length, then location, with a terminator at the end) automatically. See the <a href="#arch-spc700-inline">spc700-inline</a> section for more information.</td>
 			</tr>
 			<tr>
 				<td>Super FX</td>
@@ -1792,11 +1793,11 @@ org $008000
 lda SpriteTable,x</code></pre>
 
 		<h4 id="optimize-dp">optimize dp</h4>
-                <pre><code class="65c816_asar">optimize dp {none/ram/always}</code></pre>
+		<pre><code class="65c816_asar">optimize dp {none/ram/always}</code></pre>
 		This command changes how aggressive Asar's direct page access optimizer is. With <code class="65c816_asar">optimize dp none</code> (the default), the direct page optimizer is disabled and direct page accesses will only be done with the <code class="65c816_asar">.b</code> instruction suffix or with explicit addresses like <code class="65c816_asar">lda $42</code>. With <code class="65c816_asar">optimize dp ram</code>, direct page optimization will be performed according to the <a href="#dpbase">dpbase</a> setting, but only on labels in bank <code class="65c816_asar">$7E</code>. With <code class="65c816_asar">optimize dp always</code>, direct page optimization will be performed on all labels in banks that have RAM mirrors, i.e. 00-3F and 80-BF, and also on labels in bank 7E.
 
 		<h4 id="optimize-address">optimize address</h4>
-                <pre><code class="65c816_asar">optimize address {default/ram/mirrors}</code></pre>
+		<pre><code class="65c816_asar">optimize address {default/ram/mirrors}</code></pre>
 		This command changes how aggressive Asar's label optimizer is. With <code>optimize address default</code>, references to labels will be shortened to 2 bytes only if the label is in the current bank. With <code>optimize address ram</code>, labels between <code>$7E:0000-$7E:1FFF</code> will be shortened to 2 bytes. With <code>optimize address mirrors</code>, labels between <code>$7E:0000-$7E:7FFF</code> and also labels in <code>$00-3F:0000-7FFF</code> will be shortened to 2 bytes.
 
 		<h4 id="pushpc">pushpc/pullpc</h4>
@@ -1843,6 +1844,27 @@ InRamAgain:
 	rtl
 
 base off</code></pre>
+
+		<h4 id="arch-spc700-inline">The spc700-inline architecture</h4>
+		Using <code>arch spc700-inline</code> changes the way most program-counter-related commands work. It is meant for use with the default program loader on the SPC700. In this mode, data is always written sequentially to the ROM. The <code>org</code> command causes Asar to write out a command instructing the loader program to start writing to the specified address in the SPC700's memory. There is also a special <code>startpos</code> command which writes out a command that tells the SPC to jump to this address after all of the code has been uploaded. Asar also writes the necessary header and terminator for the data, so it's possible to just upload the entire written block of data to the SPC. Here is a basic usage example:
+		<pre><code class="65c816_asar">
+spcdata_start:
+arch spc700-inline
+org $0400 ; position in APU RAM to copy block to
+startpos main ; label (or address in APU RAM) to jump to after uploading
+main:
+; any spc code here
+mov a,$00
+ret
+org $0600
+; this label will end up at $0600 in APU RAM
+data:
+db $00,$01,$02
+arch 65816
+spcdata_end:
+; now, you can copy each byte from spcdata_start to spcdata_end to $2141
+		</code></pre>
+		A few notes: <code>skip</code> will act like <code>org</code> in that it starts a new block and has the effect that the uploader program will leave the jumped-over part of APU RAM unchanged. The <code>base</code> command is disabled in this mode.<br>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="math"><h3>Math</h3>
