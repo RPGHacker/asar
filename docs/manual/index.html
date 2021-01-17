@@ -1763,11 +1763,11 @@ warnpc $008100		; Throws an error if datafile.bin is larger than $100 bytes.</co
 		The bank command makes Asar's label optimizer act as though the current data bank was set to <code>data_bank</code>. Consider the following example:		
 		<pre><code class="65c816_asar">bank $FF
 		
-lda Table,x
+lda DataTable,x
 
-Table:
+DataTable:
 	db $01,$02,$03,$04</code></pre>
-		Asar will always assemble the <code class="65c816_asar">lda Table,x</code> with 24-bit addressing, unless the current pc (or <a href="#base">base address</a>) is inside bank <code>$FF</code> itself. This is intended for code that uses a data bank register different from the code bank register. You can use <code>bank noassume</code> to make Asar act as though the data bank was always in a different bank. Using <code>bank auto</code> restores the default behavior of assuming that the data bank register and the code bank register are the same. Note that the bank command can't point to freespace areas.		
+		Asar will always assemble the <code class="65c816_asar">lda DataTable,x</code> with 24-bit addressing, unless the current pc (or <a href="#base">base address</a>) is inside bank <code>$FF</code> itself. This is intended for code that uses a data bank register different from the code bank register. You can use <code>bank noassume</code> to make Asar act as though the data bank was always in a different bank. Using <code>bank auto</code> restores the default behavior of assuming that the data bank register and the code bank register are the same. Note that the bank command can't point to freespace areas.		
 		<pre><code class="65c816_asar">org $008000
 phb
 lda #$FF
@@ -2804,7 +2804,7 @@ dl $01,$0203,$04050607,Label,"ABC"
 ; $01 $00 $00 $00  $03 $02 $00 $00  $07 $06 $05 $04  $AB $89 $01 $00  $41 $00 $00 $00 $42 $00 $00 $00 $43 $00 $00 $00
 dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 		By default, each character in an ASCII string used in in a table maps onto the respective ASCII value. This mapping can be customized via the table command:
-		<pre><code class="65c816_asar">table {filename}[,ltr/rtl]</code></pre>
+		<pre><code class="65c816_asar">table {filename}[,rtl/ltr]</code></pre>
 		Where <code>filename</code> specifies the path to a table file (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and ltr/rtl specifies whether that file is in left-to-right or right-to left format (default: left-to-right).<br />
 		Format of left-to-right table files:
 		<pre><code>{character}={value}
