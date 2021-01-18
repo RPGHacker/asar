@@ -109,11 +109,12 @@
 				</ul>
 			</li>
 			<li>
-				<a href="#defines">Defines</a></li>
+				<a href="#defines">Defines</a>
 				<ul>
 					<li><a href="#nested-defines">Nested Defines</a></li>
 					<li><a href="#built-in-defines">Built-in Defines</a></li>
 				</ul>
+			</li>
 			<li><a href="#macros">Macros</a></li>
 			<li>
 				<a href="#functions">Functions</a>
@@ -2356,7 +2357,7 @@ db !{hex}FF   ; OK</code></pre>
 		<pre><code class="65c816_asar">; Please specifiy a mode from 0 to 3
 !mode = 1
 
-assert !mode >= 0 && !mode <= 3, "Please specify a mode from 0 to 3!"
+assert !mode &gt;= 0 && !mode &lt;= 3, "Please specify a mode from 0 to 3!"
 
 !modename0 = "Default"
 !modename1 = "Debug"
