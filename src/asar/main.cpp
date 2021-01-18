@@ -18,8 +18,8 @@
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
 extern const int asarver_maj=1;
-extern const int asarver_min=7;
-extern const int asarver_bug=1;
+extern const int asarver_min=8;
+extern const int asarver_bug=0;
 extern const bool asarver_beta=false;
 
 #ifdef _I_RELEASE
