@@ -592,16 +592,18 @@ void checkbankcross()
 {
 	if (snespos<0 && realsnespos<0 && startpos<0 && realstartpos<0) return;
 	if (disable_bank_cross_errors) return;
-	if ( (((snespos^    startpos) & 0x7FFF0000) && (((snespos - 1) ^ startpos) & 0x7FFF0000))
-		|| (((realsnespos^realstartpos) & 0x7FFF0000) && (((realsnespos - 1) ^ realstartpos) & 0x7FFF0000)) )
+	if (((snespos^    startpos) & 0x7FFF0000) && (((snespos - 1) ^ startpos) & 0x7FFF0000))
 	{
-		asar_throw_error(pass, error_type_fatal, error_id_bank_border_crossed);
+		asar_throw_error(pass, error_type_fatal, error_id_bank_border_crossed, snespos);
+	}
+	else if (((realsnespos^realstartpos) & 0x7FFF0000) && (((realsnespos - 1) ^ realstartpos) & 0x7FFF0000))
+	{
+		asar_throw_error(pass, error_type_fatal, error_id_bank_border_crossed, realsnespos);
 	}
 }
 
 static void freespaceend()
 {
-	checkbankcross();
 	if ((snespos&0x7F000000) && ((unsigned int)snespos&0x80000000)==0)
 	{
 		freespacelen[freespaceid]=snespos-freespacestart+freespaceextra;
@@ -1827,7 +1829,6 @@ void assembleblock(const char * block, bool isspecialline)
 #endif
 	else if (is1("incsrc"))
 	{
-		checkbankcross();
 		string name;
 		if (warnxkas && (strchr(thisfilename, '/') || strchr(thisfilename, '\\')))
 			asar_throw_warning(0, warning_id_xkas_incsrc_relative);

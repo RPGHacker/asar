@@ -70,7 +70,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_rom_too_short, "ROM is too short to have a title. (Expected '%s')" },
 	{ error_id_rom_title_incorrect, "ROM title is incorrect. Expected '%s', got '%s'." },
 
-	{ error_id_bank_border_crossed, "A bank border was crossed somewhere prior to this point." },
+	{ error_id_bank_border_crossed, "A bank border was crossed, SNES address $%06X." },
 
 	{ error_id_start_of_file, "This command may only be used at the start of a file." },
 	{ error_id_xkas_asar_conflict, "Using @xkas and @asar in the same patch is not supported." },
@@ -256,7 +256,9 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_macro_wrong_min_params, "Variadic macro call with too few parameters" },
 	{ error_id_vararg_out_of_bounds, "Variadic macro parameter requested is out of bounds." },
 	{ error_id_vararg_must_be_last, "Variadic macro parameter must be the last parameter." },
-	{ error_id_invalid_global_label, "Global label definition contains an invalid label [%s]."}
+	{ error_id_invalid_global_label, "Global label definition contains an invalid label [%s]."},
+
+	{ error_id_spc700_addr_out_of_range, "Address %s out of range for instruction, valid range is 0000-1FFF" }
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

@@ -3,18 +3,16 @@ import sys
 import urllib.request
 import os
 
-# massive hack but whatever
-
-if len(sys.argv) != 3:
-	print("Usage: {} appveyor_job_id version_number".format(sys.argv[0]))
+if len(sys.argv) != 2:
+	print("Usage: {} version_number".format(sys.argv[0]))
 	sys.exit(1)
 
-zipf = zipfile.ZipFile("asar"+sys.argv[2]+".zip", 'x', compression=zipfile.ZIP_DEFLATED)
+zipf = zipfile.ZipFile("asar"+sys.argv[1]+".zip", 'x', compression=zipfile.ZIP_DEFLATED)
 
-appveyor_prefix = "https://ci.appveyor.com/api/buildjobs/{}/artifacts/build/asar/MinSizeRel/".format(sys.argv[1])
-with urllib.request.urlopen(appveyor_prefix + "asar-standalone.exe") as resp:
+build_server_prefix = "https://random.muncher.se/ftp/asar/windows/xp_compat/build/asar/MinSizeRel/"
+with urllib.request.urlopen(build_server_prefix + "asar-standalone.exe") as resp:
 	exe_data = resp.read()
-with urllib.request.urlopen(appveyor_prefix + "asar.dll") as resp:
+with urllib.request.urlopen(build_server_prefix + "asar.dll") as resp:
 	dll_data = resp.read()
 
 zipf.writestr("asar.exe", exe_data)
