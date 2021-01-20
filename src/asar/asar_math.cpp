@@ -127,18 +127,16 @@ void closecachedfiles()
 
 static int struct_size(const char *name)
 {
-	snes_struct structure;
-	if(!structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
-	structure = structs.find(name);
-	return structure.struct_size;
+       if(pass && !structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
+       else if(!structs.exists(name)) return 0;
+       return structs.find(name).struct_size;
 }
 
 static int object_size(const char *name)
 {
-	snes_struct structure;
-	if(!structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
-	structure = structs.find(name);
-	return structure.object_size;
+       if(pass && !structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
+       else if(!structs.exists(name)) return 0;
+       return structs.find(name).object_size;
 }
 
 static int data_size(const char *name)

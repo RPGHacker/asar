@@ -138,7 +138,7 @@ void callmacro(const char * data)
 			string connectedline;
 			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, connectedline);
 			string intmp;
-			if(thismacro->variadic) resolvedefines(intmp, connectedline.data());
+			if(thismacro->variadic && numif<=numtrue) resolvedefines(intmp, connectedline.data());
 			else intmp = connectedline;
 			for (char * in=intmp.temp_raw();*in;)
 			{

@@ -77,15 +77,6 @@ void onsigxcpu(int ignored)
 
 int main(int argc, char * argv[])
 {
-	
-	//string test = "asdassdasdasdasd";
-	//test = "asdassd";
-	//test = "asdassdjghhjkjhjhjkhghjkgjhkgjhkgjhkjghkhjg";
-	//test = "123";
-	//test = "asdassdjghhjkjhjhjkhghjkgjhkgjhkgjhkjghkhfff";
-	//
-	//printf("%s\n", test.data());
-	//return -1;
 #ifdef TIMELIMIT
 #if defined(linux)
 	rlimit lim;

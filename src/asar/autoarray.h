@@ -173,7 +173,7 @@ public:
 	autoarray()
 	{
 		ptr = (T*)malloc(sizeof(T) * default_size);
-		memset(ptr, default_size, sizeof(T));
+		memset(ptr, 0, default_size*sizeof(T));
 		bufferlen = default_size;
 		count = 0;
 	}
