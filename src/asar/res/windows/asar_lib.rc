@@ -1,6 +1,6 @@
 1 VERSIONINFO
-    FILEVERSION    1,8,0,0
-    PRODUCTVERSION 1,8,0,0
+    FILEVERSION    1,8,1,0
+    PRODUCTVERSION 1,8,1,0
 {
     BLOCK "StringFileInfo"
     {
@@ -9,12 +9,12 @@
             VALUE "CompanyName",        "Asar devs\0"
             VALUE "FileDescription",    "SNES assembler\0"
             // explorer apparently always shows the file version with the numbers, but product version with text?
-            VALUE "FileVersion",        "v1.80\0"
+            VALUE "FileVersion",        "v1.81\0"
             // apparently this is required?
             VALUE "InternalName",       "asar\0"
             VALUE "OriginalFilename",   "asar.exe\0"
             VALUE "ProductName",        "Asar\0"
-            VALUE "ProductVersion",     "v1.80\0"
+            VALUE "ProductVersion",     "v1.81\0"
         }
     }
     BLOCK "VarFileInfo"
