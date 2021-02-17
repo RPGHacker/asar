@@ -88,6 +88,7 @@ void endmacro(bool insert)
 
 void callmacro(const char * data)
 {
+	int prev_numvarargs = numvarargs;
 	inmacro=true;
 	int numcm=reallycalledmacros++;
 	macrodata * thismacro;
@@ -233,5 +234,6 @@ void callmacro(const char * data)
 		numtrue=startif;
 		asar_throw_error(0, error_type_block, error_id_unclosed_if);
 	}
-	inmacro = false;
+	inmacro = macrorecursion;
+	numvarargs = prev_numvarargs;
 }
