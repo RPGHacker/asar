@@ -521,18 +521,30 @@ string copy_arg()
 		return (t += get_string_argument() + "\"");
 	}
 	
-	string result = "(";
+	string result;
+	bool is_symbolic = true;
 	int parlevel=0;
 	int i = 0;
 	while(parlevel > 0 || (str[i] != ',' && str[i] != ')'))
 	{
+		is_symbolic &= is_ualnum(str[i]);
 		if(str[i] == '(') parlevel++;
 		else if(str[i] == ')') parlevel--;
 		i++;
 	}
 	result += string(str, i);
 	str += i;
-	return result + ")";
+	
+	if(is_symbolic)
+	{
+		return result;
+	}
+	
+	const char * oldstr=str;
+	str = (const char *)result;
+	double evaled = eval(0);
+	str = oldstr;
+	return ftostr(evaled);
 }
 
 assocarr<double (*)()> builtin_functions =
@@ -670,7 +682,12 @@ static double asar_call_user_function()
 			}
 		}
 		
-		if(!found) real_content += user_function.content[i];
+		if(!found){
+			for(; is_ualnum(user_function.content[i]); i++){
+				real_content += user_function.content[i];
+			}
+			real_content += user_function.content[i];
+		}
 	}
 	const char * oldstr=str;
 	str = (const char *)real_content;
