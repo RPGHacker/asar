@@ -535,16 +535,14 @@ string copy_arg()
 	result += string(str, i);
 	str += i;
 	
-	if(is_symbolic)
+	if(!is_symbolic)
 	{
-		return result;
+		const char *oldstr=str;
+		str = (const char *)result;
+		result = ftostr(eval(0));
+		str = oldstr;
 	}
-	
-	const char * oldstr=str;
-	str = (const char *)result;
-	double evaled = eval(0);
-	str = oldstr;
-	return ftostr(evaled);
+	return result;
 }
 
 assocarr<double (*)()> builtin_functions =
