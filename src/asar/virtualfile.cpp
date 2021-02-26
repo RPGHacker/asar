@@ -2,6 +2,7 @@
 #include "virtualfile.h"
 #include "platform/file-helpers.h"
 #include "warnings.h"
+#include "fopen_helper.h"
 
 
 
@@ -78,7 +79,7 @@ public:
 			if(!file_exists((const char*)path)) return vfe_doesnt_exist;
 			if(!check_is_regular_file((const char*)path)) return vfe_not_regular_file;
 
-			m_file_handle = fopen((const char*)path, "rb");
+			m_file_handle =wfopen((const char*)path, "rb");
 
 			if (m_file_handle == nullptr)
 			{

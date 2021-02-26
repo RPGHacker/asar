@@ -10,6 +10,7 @@
 #include "interface-shared.h"
 #include "assembleblock.h"
 #include "asar_math.h"
+#include "fopen_helper.h"
 
 #ifdef TIMELIMIT
 # if defined(linux)
@@ -472,7 +473,7 @@ int main(int argc, char * argv[])
 		{
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";
 			string contents = create_symbols_file(symbols, romCrc);
-			FILE * symfile = fopen(symfilename, "wt");
+			FILE * symfile = wfopen(symfilename, "wt");
 			fputs(contents, symfile);
 			fclose(symfile);
 

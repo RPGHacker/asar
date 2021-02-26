@@ -2,6 +2,7 @@
 #include "libstr.h"
 #include "virtualfile.h"
 #include "asar.h"
+#include "fopen_helper.h"
 
 #define typed_malloc(type, count) (type*)malloc(sizeof(type)*(count))
 #define typed_realloc(type, ptr, count) (type*)realloc(ptr, sizeof(type)*(count))
@@ -29,7 +30,7 @@ char * readfile(const char * fname, const char * basepath)
 // and instead read our file directly.
 char * readfilenative(const char * fname)
 {
-	FILE* myfile = fopen(fname, "rb");
+	FILE* myfile =wfopen(fname, "rb");
 	if (myfile == nullptr) return nullptr;
 	fseek(myfile, 0, SEEK_END);
 	size_t datalen = (size_t)ftell(myfile);

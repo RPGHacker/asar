@@ -117,6 +117,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/errors.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/fopen_helper.cpp"
 
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.cpp"
 	
@@ -138,6 +139,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/interface-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/fopen_helper.h"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
