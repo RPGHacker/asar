@@ -513,6 +513,20 @@ static double asar_stringsequalnocase()
 	return (stricmp(string1, get_string_argument()) == 0 ? 1.0 : 0.0);
 }
 
+static double asar_rgb555()
+{
+	int value = get_double_argument();
+	if(has_next_parameter()){
+		value = value << 10;
+		value |= (int) get_double_argument() << 5;
+		require_next_parameter();
+		value |= (int) get_double_argument();
+	} else {
+		value = ((value >> 16) << 10) | (((value >> 8) & 0xFF) << 5) | (value & 0xFF);
+	}
+	return value & 0x7FFF;
+}
+
 string copy_arg()
 {
 	if(*str == '"')
@@ -611,7 +625,9 @@ assocarr<double (*)()> builtin_functions =
 	{"datasize", asar_datasize_wrapper},
 	
 	{"stringsequal", asar_stringsequal},
-	{"stringsequalnocase", asar_stringsequalnocase}
+	{"stringsequalnocase", asar_stringsequalnocase},
+
+	{"rgb555", asar_rgb555}
 };
 
 assocarr<double (*)()> functions;

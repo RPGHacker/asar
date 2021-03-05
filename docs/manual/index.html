@@ -2627,6 +2627,12 @@ max(a, b)</code></td>
 				<td><pre><code class="65c816_asar">lda #bank(some_label)</code></pre></td>
 			</tr>
 			<tr>
+				<td><code class="65c816_asar">rgb555(value[, value, value])</code></td>
+				<td>Converts any RGB color to a valid RGB555 <code>(?bbbbbgg gggrrrrr)</code></td>
+				<td><pre><code class="65c816_asar">lda.w #rgb555($0000FF) : sta $2122 ; blue
+lda.w #rgb555(255,0,0) : sta $2122 ; red</code></pre></td>
+			</tr>
+			<tr>
 				<td><code class="65c816_asar">equal(value, comparand)
 notequal(value, comparand)
 less(value, comparand)
