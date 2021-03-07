@@ -626,7 +626,7 @@ assocarr<double (*)()> builtin_functions =
 	{"datasize", asar_datasize_wrapper},
 	
 	{"stringsequal", asar_stringsequal},
-    {"stringsequalnocase", asar_stringsequalnocase},
+	{"stringsequalnocase", asar_stringsequalnocase},
 	{"strlen", asar_strlen}
 };
 
