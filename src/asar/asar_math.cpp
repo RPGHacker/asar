@@ -513,6 +513,11 @@ static double asar_stringsequalnocase()
 	return (stricmp(string1, get_string_argument()) == 0 ? 1.0 : 0.0);
 }
 
+static double asar_strlen() { 
+	string string1 = get_string_argument(); 
+	return (double)string1.length();
+}
+
 string copy_arg()
 {
 	if(*str == '"')
@@ -621,7 +626,8 @@ assocarr<double (*)()> builtin_functions =
 	{"datasize", asar_datasize_wrapper},
 	
 	{"stringsequal", asar_stringsequal},
-	{"stringsequalnocase", asar_stringsequalnocase}
+    {"stringsequalnocase", asar_stringsequalnocase},
+	{"strlen", asar_strlen}
 };
 
 assocarr<double (*)()> functions;
