@@ -317,10 +317,9 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		if (verbose && !printed_version)
+		if (verbose)
 		{
 			puts(version);
-			printed_version = true;
 		}
 		string asmname=libcon_require_filename("Enter patch name:");
 		string romname=libcon_optional_filename("Enter ROM name:", nullptr);
