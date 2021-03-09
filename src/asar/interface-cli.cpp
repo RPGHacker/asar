@@ -167,7 +167,6 @@ int main(int argc, char * argv[])
 		bool verbose=libcon_interactive;
 		string symbols="";
 		string symfilename="";
-		bool printed_version=false;
 
 		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;
@@ -193,14 +192,8 @@ int main(int argc, char * argv[])
 			}
 			else if (par=="--version")
 			{
-				if (!printed_version)
-				{
-					puts(version);
-					printed_version = true;
-					// RPG Hacker: ...why?!?
-					// Keep finding these useless exit cases in all kinds of applications.
-					//return 0;
-				}
+				puts(version);
+				return 0;
 			}
 			else if (checkstartmatch(par, "--pause-mode="))
 			{
@@ -324,10 +317,9 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		if (verbose && !printed_version)
+		if (verbose)
 		{
 			puts(version);
-			printed_version = true;
 		}
 		string asmname=libcon_require_filename("Enter patch name:");
 		string romname=libcon_optional_filename("Enter ROM name:", nullptr);
