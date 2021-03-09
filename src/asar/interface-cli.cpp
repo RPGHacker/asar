@@ -167,7 +167,6 @@ int main(int argc, char * argv[])
 		bool verbose=libcon_interactive;
 		string symbols="";
 		string symfilename="";
-		bool printed_version=false;
 
 		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;
@@ -193,14 +192,8 @@ int main(int argc, char * argv[])
 			}
 			else if (par=="--version")
 			{
-				if (!printed_version)
-				{
-					puts(version);
-					printed_version = true;
-					// RPG Hacker: ...why?!?
-					// Keep finding these useless exit cases in all kinds of applications.
-					//return 0;
-				}
+				puts(version);
+				return 0;
 			}
 			else if (checkstartmatch(par, "--pause-mode="))
 			{
