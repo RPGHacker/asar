@@ -321,6 +321,7 @@ void resolvedefines(string& out, const char * start)
 	{
 		if (*here=='"' && emulatexkas)
 		{
+			asar_throw_warning(0, warning_id_feature_deprecated, "xkas define quotes", "removing the quotes generally does what you want");
 			out+=*here++;
 			while (*here && *here!='"') out+=*here++;
 			out+=*here++;

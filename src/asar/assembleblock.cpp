@@ -23,6 +23,7 @@ int realstartpos;
 
 bool emulatexkas;
 bool mapper_set = false;
+bool warn_endwhile = true;
 static bool specifiedasarver = false;
 
 static int old_snespos;
@@ -250,7 +251,11 @@ int getlenfromchar(char c)
 	if (c=='b') return 1;
 	if (c=='w') return 2;
 	if (c=='l') return 3;
-	if (c=='d') return 4;
+	if (c=='d')
+	{
+		asar_throw_warning(1, warning_id_feature_deprecated, ".d opcode suffix", "this doesn't even make sense");
+		return 4;
+	}
 	asar_throw_error(0, error_type_block, error_id_invalid_opcode_length);
 	return -1;
 }
@@ -893,7 +898,7 @@ void assembleblock(const char * block, bool isspecialline)
 			{
 				if (nextword[0][0] == '!')
 				{
-					asar_throw_warning(0, warning_id_if_not_condition_deprecated);
+					asar_throw_warning(0, warning_id_feature_deprecated, "old style conditional negation (if !condition) ", "the not function");
 					double val = getnumdouble(nextword[0]+1);
 					if (foundlabel && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 					thiscond = !(val > 0);
@@ -1011,12 +1016,16 @@ void assembleblock(const char * block, bool isspecialline)
 			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
-	else if (is("endif"))
+	else if (is("endif") || is("endwhile"))
 	{
 		if (numwords != 1) asar_throw_error(1, error_type_block, error_id_unknown_command);
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
 		if (numif==numtrue) numtrue--;
 		numif--;
+		if (whilestatus[numif].iswhile && is("endif") && warn_endwhile){
+			warn_endwhile = false;
+			asar_throw_warning(0, warning_id_feature_deprecated, "endif terminating while statements", "use endwhile instead");
+		}
 	}
 	else if (is("else"))
 	{
@@ -1223,10 +1232,10 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is0("xkas"))
 	{
+		asar_throw_warning(0, warning_id_feature_deprecated, "xkas compatibility mode", "UPGRADE YOUR PATCH ITS 2021!!!");
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (incsrcdepth != 1 && !emulatexkas) asar_throw_error(0, error_type_block, error_id_command_in_non_root_file);
 		if (specifiedasarver) asar_throw_error(0, error_type_block, error_id_xkas_asar_conflict);
-		asar_throw_warning(0, warning_id_xkas_deprecated);
 		emulatexkas=true;
 		optimizeforbank=0x100;
 		if(!force_checksum_fix)
@@ -1544,7 +1553,7 @@ void assembleblock(const char * block, bool isspecialline)
 			}
 			else if (!stricmp(pars[i], "static") || !stricmp(pars[i], "fixed"))
 			{
-				if (!stricmp(pars[i], "fixed")) asar_throw_warning(0, warning_id_fixed_deprecated);
+				if (!stricmp(pars[i], "fixed")) asar_throw_warning(0, warning_id_feature_deprecated, "fixed freespace/code/data", "static freespace/code/data");
 				if (fixedpos) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 				fixedpos=true;
 			}
@@ -1810,14 +1819,17 @@ void assembleblock(const char * block, bool isspecialline)
 		if (foundlabel) asar_throw_error(0, error_type_block, error_id_rep_label);
 		if (rep<=1)
 		{
+			if(rep < 0){
+				asar_throw_warning(0, warning_id_feature_deprecated, "rep condition < 0", "You probably want conditionals");
+			}
 			if (emulatexkas)
 			{
+				asar_throw_warning(0, warning_id_feature_deprecated, "rep <= 1 xkas behaviour", "You probably want conditionals");
 				if (rep==0) rep=1;
 				if (rep<0) rep=0;
 				repeatnext=rep;
 				return;
 			}
-			asar_throw_warning(0, warning_id_xkas_style_conditional);
 		}
 		repeatnext=rep;
 	}
@@ -1836,13 +1848,14 @@ void assembleblock(const char * block, bool isspecialline)
 		{
 			if (emulatexkas)
 			{
+				asar_throw_warning(0, warning_id_feature_deprecated, "xkas style paths", "convert paths to crossplatform style");
 				for (int i=0;par[i];i++)
 				{
 					if (par[i]=='\\') par[i]='/';//let's just hope nobody finds I could just enable this for everything.
 				}
 			}
 #ifdef _WIN32
-			else asar_throw_warning(0, warning_id_cross_platform_path);
+			else asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
 #endif
 		}
 		if (emulatexkas) name= safedequote(par);
@@ -1888,13 +1901,14 @@ void assembleblock(const char * block, bool isspecialline)
 		{
 			if (emulatexkas)
 			{
+				asar_throw_warning(0, warning_id_feature_deprecated, "xkas style paths", "convert paths to crossplatform style");
 				for (int i=0;par[i];i++)
 				{
 					if (par[i]=='\\') par[i]='/';//let's just hope nobody finds I could just enable this for everything.
 				}
 			}
 #ifdef _WIN32
-			else asar_throw_warning(0, warning_id_cross_platform_path);
+			else asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
 #endif
 		}
 		if (emulatexkas) name= safedequote(par);
@@ -2220,13 +2234,14 @@ void assembleblock(const char * block, bool isspecialline)
 		else asar_throw_error(0, error_type_block, error_id_invalid_warn);
 		if(0);
 		else if (!stricmp(word[1], "xkas")) {
-			asar_throw_warning(0, warning_id_xkas_deprecated);
+			asar_throw_warning(0, warning_id_feature_deprecated, "xkas compatibility warning", "If you worry about xkas I worry about you.  Just stop.");
 			warnxkas=val;
 		}
 		else asar_throw_error(0, error_type_block, error_id_invalid_warn);
 	}
 	else if (is0("fastrom"))
 	{
+			asar_throw_warning(0, warning_id_feature_deprecated, "fastrom", "This feature has been disabled for years and is a lie. Sorry.");
 		//removed due to causing more trouble than it's worth.
 		//if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
 		//if (mapper==lorom || mapper==hirom) fastrom=true;
@@ -2317,6 +2332,7 @@ bool assemblemapper(char** word, int numwords)
 	else if (is0("header"))
 	{
 		//headers are detected elsewhere; ignoring for familiarity
+		asar_throw_warning(0, warning_id_feature_deprecated, "header", "Remove command, unnecessary.");
 	}
 	else return false;
 	

@@ -12,7 +12,7 @@ macro sorry(...)
 	while !a < sizeof(...)
 		db <!a>
 		!a #= !a+1
-	endif
+	endwhile
 endmacro
 
 macro sorry2(asd, ...)
@@ -20,7 +20,7 @@ macro sorry2(asd, ...)
 	while !a < sizeof(...)
 		db <!a>
 		!a #= !a+1
-	endif
+	endwhile
 	db <asd>
 endmacro
 

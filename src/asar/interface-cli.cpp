@@ -126,7 +126,7 @@ int main(int argc, char * argv[])
 		if (!strncasecmp(myname, "xkas", strlen("xkas"))) {
 			// RPG Hacker: no asar_throw_Warning() here, because we didn't have a chance to disable warnings yet.
 			// Also seems like warning aren't even registered at this point yet.
-			puts("Warning: xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
+			puts("Warning: xkas support is being deprecated and will be removed in the next release of asar!!!");
 			puts("(this was triggered by renaming asar.exe to xkas.exe, which activated a compatibility feature.)");
 			errloc=stdout;
 		}
