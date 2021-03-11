@@ -4,7 +4,6 @@
 #define MB * 1024 * 1204
 __declspec(thread) FIBER_DATA *g_pData;
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
-  printf("DllMain called %lu\n", fdwReason);
   switch (fdwReason) {
   case DLL_THREAD_ATTACH:
   case DLL_PROCESS_ATTACH:
@@ -22,7 +21,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
 ULONG FIBER_DATA::Create(unsigned __int64 dwStackCommitSize,
                          unsigned __int64 dwStackReserveSize) {
   if (ConvertThreadToFiber(this)) {
-    printf("Converted to fiber\n");
     _bConvertToThread = TRUE;
   } else {
     ULONG dwError = GetLastError();
@@ -31,8 +29,6 @@ ULONG FIBER_DATA::Create(unsigned __int64 dwStackCommitSize,
       return dwError;
     }
   }
-
-  printf("Using %llu %llu bytes\n", dwStackCommitSize, dwStackReserveSize);
   _MyFiber =
       CreateFiberEx(dwStackCommitSize, dwStackReserveSize, 0, _FiberProc, this);
   return _MyFiber ? NOERROR : GetLastError();
@@ -61,7 +57,6 @@ FIBER_DATA::~FIBER_DATA() {
 }
 
 ULONG FIBER_DATA::DoCallout(STACK_EXPAND pfn, void *Parameter) {
-  printf("Getting current fiber\n");
   _PrevFiber = GetCurrentFiber();
   _pfn = pfn;
   _Parameter = Parameter;
@@ -88,5 +83,13 @@ void OnDetach() {
   if (FIBER_DATA *pData = g_pData) {
     delete pData;
   }
+}
+
+ULONG DoCallout(STACK_EXPAND pfn, void* Parameter) {
+  if (FIBER_DATA *pData = g_pData) {
+    return pData->DoCallout(pfn, Parameter);
+  }
+
+  return ERROR_GEN_FAILURE;
 }
 #endif

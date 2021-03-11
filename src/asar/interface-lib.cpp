@@ -20,7 +20,6 @@
 #define EXPORT extern "C" __attribute__ ((visibility ("default")))
 #endif
 
-extern FIBER_DATA *g_pData;
 static autoarray<const char *> prints;
 static string symbolsfile;
 static int numprint;
@@ -432,7 +431,7 @@ EXPORT bool asar_patch(const char* patchloc, char* romdata_, int buflen,
   data->romdata = romdata_;
   data->buflen = buflen;
   data->romlen = romlen_;
-  unsigned long res = g_pData->DoCallout(asar_patch_fiber, (void *)data);
+  unsigned long res = DoCallout(asar_patch_fiber, (void *)data);
   bool retval = data->retval;
   delete data;
   return retval;
@@ -440,11 +439,9 @@ EXPORT bool asar_patch(const char* patchloc, char* romdata_, int buflen,
 
 EXPORT bool asar_patch_ex(const patchparams_base* params)
 {
-  printf("Before callout\n");
   struct patchdataex *data = new struct patchdataex;
   data->params = params;
-  unsigned long res = g_pData->DoCallout(asar_patch_ex_fiber, (void *)data);
-  printf("After callout");
+  unsigned long res = DoCallout(asar_patch_ex_fiber, (void *)data);
   bool retval = data->retval;
   delete data;
   return retval;

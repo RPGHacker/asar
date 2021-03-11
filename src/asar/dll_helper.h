@@ -28,5 +28,6 @@ public:
 
 unsigned long OnAttach();
 void OnDetach();
+unsigned long DoCallout(STACK_EXPAND pfn, void* Parameter);
 
 #endif
