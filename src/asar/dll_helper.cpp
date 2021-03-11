@@ -1,6 +1,6 @@
 #include "dll_helper.h"
-#include <windows.h>
 #if defined(_WIN32)
+#include <windows.h>
 #define MB * 1024 * 1204
 __declspec(thread) FIBER_DATA *g_pData;
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {

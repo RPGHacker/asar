@@ -11,7 +11,6 @@
 #include "asar_math.h"
 #include "dll_helper.h"
 #include <cstdint>
-
 #if defined(CPPCLI)
 #define EXPORT extern "C"
 #elif defined(_WIN32)
@@ -25,6 +24,17 @@ static string symbolsfile;
 static int numprint;
 static uint32_t romCrc;
 
+struct patchparams_base {
+  int structsize;
+};
+
+#if defined(_WIN32)
+
+struct patchdataex {
+  const patchparams_base *params;
+  bool retval;
+};
+
 struct patchdata {
   const char *patchloc;
   char *romdata;
@@ -33,14 +43,7 @@ struct patchdata {
   bool retval;
 };
 
-struct patchparams_base {
-  int structsize;
-};
-
-struct patchdataex {
-  const patchparams_base *params;
-  bool retval;
-};
+#endif
 
 struct errordata {
 	const char * fullerrdata;
@@ -294,12 +297,17 @@ EXPORT void asar_close()
 	resetdllstuff();
 }
 
+#if defined(_WIN32)
 unsigned long asar_patch_fiber(void *param) {
   struct patchdata *data = (struct patchdata *)(param);
   const char *patchloc = data->patchloc;
   char *romdata_ = data->romdata;
   int buflen = data->buflen;
   int *romlen_ = data->romlen;
+#else
+bool asar_patch_fiber(const char *patchloc, char *romdata_, int buflen,
+                      int *romlen_) {
+#endif
   asar_patch_begin(romdata_, buflen, romlen_, true);
 
   virtual_filesystem new_filesystem;
@@ -310,14 +318,21 @@ unsigned long asar_patch_fiber(void *param) {
 
   new_filesystem.destroy();
   filesystem = nullptr;
-
+#if defined(_WIN32)
   data->retval = asar_patch_end(romdata_, buflen, romlen_);
   return 0ul;
+#else
+  return asar_patch_end(romdata_, buflen, romlen_);
+#endif
 }
 
+#if defined(_WIN32)
 unsigned long asar_patch_ex_fiber(void* param) {
   patchdataex *data = (patchdataex *)(param);
-  const patchparams_base *params = data->params; 
+  const patchparams_base *params = data->params;
+#else
+bool asar_patch_ex_fiber(const patchparams_base *params) {
+#endif
   if (params == nullptr) {
     asar_throw_error(pass, error_type_null, error_id_params_null);
   }
@@ -418,14 +433,19 @@ unsigned long asar_patch_ex_fiber(void* param) {
 
   new_filesystem.destroy();
   filesystem = nullptr;
-
+#if defined(_WIN32)
   data->retval = asar_patch_end(paramscurrent.romdata, paramscurrent.buflen,
                         paramscurrent.romlen);
   return 0ul;
+#else
+  return asar_patch_end(paramscurrent.romdata, paramscurrent.buflen,
+                        paramscurrent.romlen);
+#endif
 }
 
 EXPORT bool asar_patch(const char* patchloc, char* romdata_, int buflen,
 	int* romlen_) {
+#if defined(_WIN32)
   struct patchdata *data = new struct patchdata;
   data->patchloc = patchloc;
   data->romdata = romdata_;
@@ -435,16 +455,23 @@ EXPORT bool asar_patch(const char* patchloc, char* romdata_, int buflen,
   bool retval = data->retval;
   delete data;
   return retval;
+#else
+  return asar_patch_fiber(patchloc, romdata_, buflen, romlen_);
+#endif
 }
 
 EXPORT bool asar_patch_ex(const patchparams_base* params)
 {
+#if defined(_WIN32)
   struct patchdataex *data = new struct patchdataex;
   data->params = params;
   unsigned long res = DoCallout(asar_patch_ex_fiber, (void *)data);
   bool retval = data->retval;
   delete data;
   return retval;
+#else
+  return asar_patch_ex_fiber(params);
+#endif
 }
 
 EXPORT int asar_maxromsize()
