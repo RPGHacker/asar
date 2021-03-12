@@ -9,7 +9,11 @@
 #include "interface-shared.h"
 #include "assembleblock.h"
 #include "asar_math.h"
+#if defined(_WIN32)
+#include <winerror.h> // I need this for ERROR_GEN_FAILURE
 #include "dll_helper.h"
+#endif
+
 #include <cstdint>
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -28,22 +32,13 @@ struct patchparams_base {
   int structsize;
 };
 
-#if defined(_WIN32)
-
-struct patchdataex {
-  const patchparams_base *params;
-  bool retval;
-};
-
+// used only on Windows for fiber calls
 struct patchdata {
   const char *patchloc;
   char *romdata;
   int buflen;
   int *romlen;
-  bool retval;
 };
-
-#endif
 
 struct errordata {
 	const char * fullerrdata;
@@ -298,7 +293,7 @@ EXPORT void asar_close()
 }
 
 #if defined(_WIN32)
-unsigned long asar_patch_fiber(void *param) {
+unsigned long __stdcall asar_patch_fiber(void *param) {
   struct patchdata *data = (struct patchdata *)(param);
   const char *patchloc = data->patchloc;
   char *romdata_ = data->romdata;
@@ -318,18 +313,12 @@ bool asar_patch_fiber(const char *patchloc, char *romdata_, int buflen,
 
   new_filesystem.destroy();
   filesystem = nullptr;
-#if defined(_WIN32)
-  data->retval = asar_patch_end(romdata_, buflen, romlen_);
-  return 0ul;
-#else
   return asar_patch_end(romdata_, buflen, romlen_);
-#endif
 }
 
 #if defined(_WIN32)
-unsigned long asar_patch_ex_fiber(void* param) {
-  patchdataex *data = (patchdataex *)(param);
-  const patchparams_base *params = data->params;
+unsigned long __stdcall asar_patch_ex_fiber(void* param) {
+  const patchparams_base *params = (const patchparams_base*)param;
 #else
 bool asar_patch_ex_fiber(const patchparams_base *params) {
 #endif
@@ -433,14 +422,8 @@ bool asar_patch_ex_fiber(const patchparams_base *params) {
 
   new_filesystem.destroy();
   filesystem = nullptr;
-#if defined(_WIN32)
-  data->retval = asar_patch_end(paramscurrent.romdata, paramscurrent.buflen,
-                        paramscurrent.romlen);
-  return 0ul;
-#else
   return asar_patch_end(paramscurrent.romdata, paramscurrent.buflen,
                         paramscurrent.romlen);
-#endif
 }
 
 EXPORT bool asar_patch(const char* patchloc, char* romdata_, int buflen,
@@ -452,9 +435,17 @@ EXPORT bool asar_patch(const char* patchloc, char* romdata_, int buflen,
   data->buflen = buflen;
   data->romlen = romlen_;
   unsigned long res = DoCallout(asar_patch_fiber, (void *)data);
-  bool retval = data->retval;
+  if (res == ERROR_GEN_FAILURE) {
+	// ERROR_GEN_FAILURE is the only error that can be returned by DoCallout, 
+    // if anything else is returned, it's the return value of the passed function, in this case a boolean
+	// now, the question is, what do we do when DoCallout straight up fails?
+	// 2 options: return false and ignore or call directly asar_patch_fiber and open it doesn't recurse too far
+	// recalling the function is probably safe, since if the DoCallout returns ERROR_GEN_FAILURE, it means that the callback was never executed to begin with
+	// so (struct patchdata *data) is still completely untouched, safe to re-use
+    res = asar_patch_fiber((void*)data);
+  }
   delete data;
-  return retval;
+  return !res;
 #else
   return asar_patch_fiber(patchloc, romdata_, buflen, romlen_);
 #endif
@@ -463,12 +454,17 @@ EXPORT bool asar_patch(const char* patchloc, char* romdata_, int buflen,
 EXPORT bool asar_patch_ex(const patchparams_base* params)
 {
 #if defined(_WIN32)
-  struct patchdataex *data = new struct patchdataex;
-  data->params = params;
-  unsigned long res = DoCallout(asar_patch_ex_fiber, (void *)data);
-  bool retval = data->retval;
-  delete data;
-  return retval;
+  unsigned long res = DoCallout(asar_patch_ex_fiber, (void *)params);
+  if (res == ERROR_GEN_FAILURE) {
+    // ERROR_GEN_FAILURE is the only error that can be returned by DoCallout,
+    // if anything else is returned, it's the return value of the passed function, in this case a boolean 
+	// now, the question is, what do we do when DoCallout straight up fails? 
+	// 2 options: return false and ignore or call directly asar_patch_fiber and open it doesn't recurse too far
+    // recalling the function is probably safe, since if the DoCallout returns ERROR_GEN_FAILURE, it means that the callback was never executed to begin with
+    // so (const patchparams_base* params) is still completely untouched, safe to re-use
+    res = asar_patch_ex_fiber((void *)params);
+  }
+  return !res;
 #else
   return asar_patch_ex_fiber(params);
 #endif

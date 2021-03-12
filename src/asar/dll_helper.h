@@ -1,5 +1,4 @@
 #if defined(_WIN32)
-#include <cstdio>
 typedef unsigned long(_stdcall *STACK_EXPAND)(void* Parameter);
 class FIBER_DATA {
 public:
@@ -16,10 +15,8 @@ public:
 public:
   ~FIBER_DATA();
 
-#pragma warning(push)
-#pragma warning(disable : 26495)
-  FIBER_DATA() : _bConvertToThread(0), _MyFiber(0) {}
-#pragma warning(pop)
+  FIBER_DATA()
+      : _PrevFiber(0), _MyFiber(0), _pfn(nullptr), _Parameter(nullptr), _dwError(0), _bConvertToThread(0) {}
 
   unsigned long Create(unsigned __int64 dwStackCommitSize,
                unsigned __int64 dwStackReserveSize);

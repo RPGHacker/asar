@@ -1,7 +1,15 @@
 #include "dll_helper.h"
 #if defined(_WIN32)
-#include <windows.h>
-#define MB * 1024 * 1204
+
+#pragma warning(push)
+#pragma warning(disable: 4668) // warning C4668: '_WIN32_WINNT_WIN10_RS<n>' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+// I'm including <windows.h> here and not in the dll_helper.h file because
+// including it there yields errors in winnt.h when I include dll_helper.h in other files that use platform/file-helpers.h,
+// (see file-helpers-win32.cpp for more info)
+#include <windows.h>        
+#pragma warning(pop)
+
+constexpr unsigned __int64 MB(unsigned __int64 n) { return n * 1024 * 1204; }
 __declspec(thread) FIBER_DATA *g_pData;
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
   switch (fdwReason) {
@@ -39,7 +47,6 @@ VOID CALLBACK FIBER_DATA::_FiberProc(void *lpParameter) {
 }
 
 VOID FIBER_DATA::FiberProc() {
-  printf("Changed to fiber");
   for (;;) {
     _dwError = _pfn(_Parameter);
     SwitchToFiber(_PrevFiber);
@@ -66,7 +73,7 @@ ULONG FIBER_DATA::DoCallout(STACK_EXPAND pfn, void *Parameter) {
 
 ULONG OnAttach() {
   if (FIBER_DATA *pData = new FIBER_DATA) {
-    if (ULONG dwError = pData->Create(4 MB, 8 MB)) {
+    if (ULONG dwError = pData->Create(MB(4), MB(8))) {
       delete pData;
       return dwError;
     }
