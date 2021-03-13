@@ -1,6 +1,5 @@
 #include "dll_helper.h"
 #if defined(_WIN32)
-
 #pragma warning(push)
 #pragma warning(disable: 4668) // warning C4668: '_WIN32_WINNT_WIN10_RS<n>' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
 // I'm including <windows.h> here and not in the dll_helper.h file because
@@ -9,8 +8,8 @@
 #include <windows.h>        
 #pragma warning(pop)
 
-constexpr unsigned __int64 MB(unsigned __int64 n) { return n * 1024 * 1204; }
-__declspec(thread) FIBER_DATA *g_pData;
+constexpr unsigned long long MB(unsigned long long n) { return n * 1024 * 1204; }
+thread_local FIBER_DATA *g_pData;
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
   switch (fdwReason) {
   case DLL_THREAD_ATTACH:
@@ -26,8 +25,8 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
   return TRUE;
 }
 
-ULONG FIBER_DATA::Create(unsigned __int64 dwStackCommitSize,
-                         unsigned __int64 dwStackReserveSize) {
+ULONG FIBER_DATA::Create(unsigned long long dwStackCommitSize,
+                         unsigned long long dwStackReserveSize) {
   if (ConvertThreadToFiber(this)) {
     _bConvertToThread = TRUE;
   } else {

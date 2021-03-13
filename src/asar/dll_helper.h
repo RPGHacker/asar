@@ -18,8 +18,8 @@ public:
   FIBER_DATA()
       : _PrevFiber(0), _MyFiber(0), _pfn(nullptr), _Parameter(nullptr), _dwError(0), _bConvertToThread(0) {}
 
-  unsigned long Create(unsigned __int64 dwStackCommitSize,
-               unsigned __int64 dwStackReserveSize);
+  unsigned long Create(unsigned long long dwStackCommitSize,
+               unsigned long long dwStackReserveSize);
   unsigned long DoCallout(STACK_EXPAND pfn, void* Parameter);
 };
 
