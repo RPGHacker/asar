@@ -1,14 +1,19 @@
 #include "dll_helper.h"
 #if defined(_WIN32)
 #pragma warning(push)
-#pragma warning(disable: 4668) // warning C4668: '_WIN32_WINNT_WIN10_RS<n>' is not defined as a preprocessor macro, replacing with '0' for '#if/#elif'
+#pragma warning(disable : 4668) // warning C4668: '_WIN32_WINNT_WIN10_RS<n>' is
+                                // not defined as a preprocessor macro,
+                                // replacing with '0' for '#if/#elif'
 // I'm including <windows.h> here and not in the dll_helper.h file because
-// including it there yields errors in winnt.h when I include dll_helper.h in other files that use platform/file-helpers.h,
-// (see file-helpers-win32.cpp for more info)
-#include <windows.h>        
+// including it there yields errors in winnt.h when I include dll_helper.h in
+// other files that use platform/file-helpers.h, (see file-helpers-win32.cpp for
+// more info)
+#include <windows.h>
 #pragma warning(pop)
 
-constexpr unsigned long long MB(unsigned long long n) { return n * 1024 * 1204; }
+constexpr unsigned long long MB(unsigned long long n) {
+  return n * 1024 * 1204;
+}
 thread_local FIBER_DATA *g_pData;
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
   switch (fdwReason) {
@@ -28,7 +33,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved) {
 ULONG FIBER_DATA::Create(unsigned long long dwStackCommitSize,
                          unsigned long long dwStackReserveSize) {
   if (ConvertThreadToFiber(this)) {
-    _bConvertToThread = TRUE;
+    m_ConvertToThread = TRUE;
   } else {
     ULONG dwError = GetLastError();
 
@@ -36,38 +41,38 @@ ULONG FIBER_DATA::Create(unsigned long long dwStackCommitSize,
       return dwError;
     }
   }
-  _MyFiber =
-      CreateFiberEx(dwStackCommitSize, dwStackReserveSize, 0, _FiberProc, this);
-  return _MyFiber ? NOERROR : GetLastError();
+  m_CurrentFiber =
+      CreateFiberEx(dwStackCommitSize, dwStackReserveSize, 0, FiberProc, this);
+  return m_CurrentFiber ? NOERROR : GetLastError();
 }
 
-VOID CALLBACK FIBER_DATA::_FiberProc(void *lpParameter) {
-  reinterpret_cast<FIBER_DATA *>(lpParameter)->FiberProc();
+VOID CALLBACK FIBER_DATA::FiberProc(void *lpParameter) {
+  reinterpret_cast<FIBER_DATA *>(lpParameter)->m_FiberProc();
 }
 
-VOID FIBER_DATA::FiberProc() {
+VOID FIBER_DATA::m_FiberProc() {
   for (;;) {
-    _dwError = _pfn(_Parameter);
-    SwitchToFiber(_PrevFiber);
+    m_CallbackError = m_Callback(m_CallbackParam);
+    SwitchToFiber(m_PrevFiber);
   }
 }
 
 FIBER_DATA::~FIBER_DATA() {
-  if (_MyFiber) {
-    DeleteFiber(_MyFiber);
+  if (m_CurrentFiber) {
+    DeleteFiber(m_CurrentFiber);
   }
 
-  if (_bConvertToThread) {
+  if (m_ConvertToThread) {
     ConvertFiberToThread();
   }
 }
 
-ULONG FIBER_DATA::DoCallout(STACK_EXPAND pfn, void *Parameter) {
-  _PrevFiber = GetCurrentFiber();
-  _pfn = pfn;
-  _Parameter = Parameter;
-  SwitchToFiber(_MyFiber);
-  return _dwError;
+ULONG FIBER_DATA::m_DoCallback(STACK_EXPAND pfn, void *Parameter) {
+  m_PrevFiber = GetCurrentFiber();
+  m_Callback = pfn;
+  m_CallbackParam = Parameter;
+  SwitchToFiber(m_CurrentFiber);
+  return m_CallbackError;
 }
 
 ULONG OnAttach() {
@@ -91,9 +96,9 @@ void OnDetach() {
   }
 }
 
-ULONG DoCallout(STACK_EXPAND pfn, void* Parameter) {
+ULONG DoCallback(STACK_EXPAND Callback, void *Parameter) {
   if (FIBER_DATA *pData = g_pData) {
-    return pData->DoCallout(pfn, Parameter);
+    return pData->m_DoCallback(Callback, Parameter);
   }
 
   return ERROR_GEN_FAILURE;
