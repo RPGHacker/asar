@@ -1,5 +1,4 @@
 #pragma once
-#ifdef __GXX_EXPERIMENTAL_CXX0X__
 inline int min(int val)
 {
 	return val;
@@ -23,7 +22,6 @@ template<typename... Args> inline int posmin(int arg1, const Args&... args)
 	if (arg1>=0 && arg1<i) return arg1;
 	return i;
 }
-#endif
 
 template<int N> struct forceconst { enum { value = N }; };
 #define forceconst(n) (forceconst<n>::value)
