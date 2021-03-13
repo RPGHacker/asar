@@ -11,15 +11,17 @@ static int asar_num_warnings = 0;
 struct asar_warning_mapping
 {
 	asar_warning_id warnid;
+	const char* name;
 	const char* message;
 	bool enabled;
 	bool enabled_default;
 
-	asar_warning_mapping(asar_warning_id inwarnid, const char* inmessage, bool inenabled = true)
+	asar_warning_mapping(asar_warning_id inwarnid, const char *iname, const char* inmessage, bool inenabled = true)
 	{
 		++asar_num_warnings;
 
 		warnid = inwarnid;
+		name = iname;
 		message = inmessage;
 		enabled = inenabled;
 		enabled_default = inenabled;
@@ -36,53 +38,55 @@ struct asar_warning_mapping
 
 // Keep in sync with asar_warning_id.
 // Both, enum mapping and order, must match.
+#define WRN(name) warning_id_ ## name, "W" #name
 static asar_warning_mapping asar_warnings[] =
 {
-	{ warning_id_relative_path_used, "Relative %s path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!" },
+	{ WRN(relative_path_used), "Relative %s path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!" },
 
-	{ warning_id_rom_too_short, "ROM is too short to have a title. (Expected '%s')" },
-	{ warning_id_rom_title_incorrect, "ROM title is incorrect. Expected '%s', got '%s'." },
+	{ WRN(rom_too_short), "ROM is too short to have a title. (Expected '%s')" },
+	{ WRN(rom_title_incorrect), "ROM title is incorrect. Expected '%s', got '%s'." },
 
-	{ warning_id_65816_yy_x_does_not_exist, "($yy),x does not exist, assuming $yy,x." },
-	{ warning_id_65816_xx_y_assume_16_bit, "%s $xx,y is not valid with 8-bit parameters, assuming 16-bit." },
-	{ warning_id_spc700_assuming_8_bit, "This opcode does not exist with 16-bit parameters, assuming 8-bit." },
+	{ WRN(65816_yy_x_does_not_exist), "($yy),x does not exist, assuming $yy,x." },
+	{ WRN(65816_xx_y_assume_16_bit), "%s $xx,y is not valid with 8-bit parameters, assuming 16-bit." },
+	{ WRN(spc700_assuming_8_bit), "This opcode does not exist with 16-bit parameters, assuming 8-bit." },
 
-	{ warning_id_cross_platform_path, "This patch may not assemble cleanly on all platforms. Please use / instead." },
+	{ WRN(cross_platform_path), "This patch may not assemble cleanly on all platforms. Please use / instead." },
 
-	{ warning_id_missing_org, "Missing org or freespace command." },
-	{ warning_id_set_middle_byte, "It would be wise to set the 008000 bit of this address." },
+	{ WRN(missing_org), "Missing org or freespace command." },
+	{ WRN(set_middle_byte), "It would be wise to set the 008000 bit of this address." },
 
-	{ warning_id_unrecognized_special_command, "Unrecognized special command - your version of Asar might be outdated." },
+	{ WRN(unrecognized_special_command), "Unrecognized special command - your version of Asar might be outdated." },
 
-	{ warning_id_freespace_leaked, "This freespace appears to be leaked." },
+	{ WRN(freespace_leaked), "This freespace appears to be leaked." },
 
-	{ warning_id_warn_command, "warn command%s" },
+	{ WRN(warn_command), "warn command%s" },
 
-	{ warning_id_implicitly_sized_immediate, "Implicitly sized immediate.", false },
+	{ WRN(implicitly_sized_immediate), "Implicitly sized immediate.", false },
 
-	{ warning_id_xkas_deprecated, "xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it." },
-	{ warning_id_xkas_eat_parentheses, "xkas compatibility warning: Unlike xkas, Asar does not eat parentheses after defines." },
-	{ warning_id_xkas_label_access, "xkas compatibility warning: Label access is always 24bit in emulation mode, but may be 16bit in native mode." },
-	{ warning_id_xkas_warnpc_relaxed, "xkas conversion warning : warnpc is relaxed one byte in Asar." },
-	{ warning_id_xkas_style_conditional, "xkas-style conditional compilation detected. Please use the if command instead." },
-	{ warning_id_xkas_patch, "If you want to assemble an xkas patch, add ;@xkas at the top or you may run into a couple of problems." },
-	{ warning_id_xkas_incsrc_relative, "xkas compatibility warning: incsrc and incbin look for files relative to the patch in Asar, but xkas looks relative to the assembler." },
-	{ warning_id_convert_to_asar, "Convert the patch to native Asar format instead of making an Asar-only xkas patch." },
+	{ WRN(xkas_deprecated), "xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it." },
+	{ WRN(xkas_eat_parentheses), "xkas compatibility warning: Unlike xkas, Asar does not eat parentheses after defines." },
+	{ WRN(xkas_label_access), "xkas compatibility warning: Label access is always 24bit in emulation mode, but may be 16bit in native mode." },
+	{ WRN(xkas_warnpc_relaxed), "xkas conversion warning : warnpc is relaxed one byte in Asar." },
+	{ WRN(xkas_style_conditional), "xkas-style conditional compilation detected. Please use the if command instead." },
+	{ WRN(xkas_patch), "If you want to assemble an xkas patch, add ;@xkas at the top or you may run into a couple of problems." },
+	{ WRN(xkas_incsrc_relative), "xkas compatibility warning: incsrc and incbin look for files relative to the patch in Asar, but xkas looks relative to the assembler." },
+	{ WRN(convert_to_asar), "Convert the patch to native Asar format instead of making an Asar-only xkas patch." },
 
-	{ warning_id_fixed_deprecated, "the 'fixed' parameter on freespace/freecode/freedata is deprecated - please use 'static' instead." },
+	{ WRN(fixed_deprecated), "the 'fixed' parameter on freespace/freecode/freedata is deprecated - please use 'static' instead." },
 
-	{ warning_id_autoclear_deprecated, "'autoclear' is deprecated - please use 'autoclean' instead." },
+	{ WRN(autoclear_deprecated), "'autoclear' is deprecated - please use 'autoclean' instead." },
 
-	{ warning_id_check_memory_file, "Accessing file '%s' which is not in memory while W%d is enabled.", false },
+	{ WRN(check_memory_file), "Accessing file '%s' which is not in memory while W%d is enabled.", false },
 
-	{ warning_id_if_not_condition_deprecated, "'if !condition' is deprecated - please use 'if not(condition)' instead." },
+	{ WRN(if_not_condition_deprecated), "'if !condition' is deprecated - please use 'if not(condition)' instead." },
 
-	{ warning_id_function_redefined, "Function '%s' redefined." },
+	{ WRN(function_redefined), "Function '%s' redefined." },
 	
-	{ warning_id_datasize_last_label, "Datasize used on last detected label '%s'." },
-	{ warning_id_datasize_exceeds_size, "Datasize exceeds 0xFFFF for label '%s'." },
+	{ WRN(datasize_last_label), "Datasize used on last detected label '%s'." },
+	{ WRN(datasize_exceeds_size), "Datasize exceeds 0xFFFF for label '%s'." },
 	
-	{ warning_id_mapper_already_set, "A mapper has already been selected." }
+	{ WRN(mapper_already_set), "A mapper has already been selected." },
+	{ WRN(feature_deprecated), "DEPRECATION NOTIFICATION: Feature %s is deprecated and will be REMOVED in the future. Please update your code to conform to newer styles. Suggested work around: %s." }
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

@@ -55,6 +55,7 @@ enum asar_warning_id : int
 	warning_id_datasize_exceeds_size,
 	
 	warning_id_mapper_already_set,
+	warning_id_feature_deprecated,
 
 	warning_id_end,
 	warning_id_count = warning_id_end - warning_id_start - 1

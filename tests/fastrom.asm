@@ -12,6 +12,7 @@
 ;`53 54 4F 50 00
 ;`EA
 ;`FFFFF 00
+;`warnW1030
 
 fastrom ; this is a null operation. it gives too much trouble.
 

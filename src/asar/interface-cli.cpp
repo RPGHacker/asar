@@ -126,7 +126,7 @@ int main(int argc, char * argv[])
 		if (!strncasecmp(myname, "xkas", strlen("xkas"))) {
 			// RPG Hacker: no asar_throw_Warning() here, because we didn't have a chance to disable warnings yet.
 			// Also seems like warning aren't even registered at this point yet.
-			puts("Warning: xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
+			puts("Warning: xkas support is being deprecated and will be removed in the next release of asar!!!");
 			puts("(this was triggered by renaming asar.exe to xkas.exe, which activated a compatibility feature.)");
 			errloc=stdout;
 		}
@@ -167,7 +167,6 @@ int main(int argc, char * argv[])
 		bool verbose=libcon_interactive;
 		string symbols="";
 		string symfilename="";
-		bool printed_version=false;
 
 		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;
@@ -193,14 +192,8 @@ int main(int argc, char * argv[])
 			}
 			else if (par=="--version")
 			{
-				if (!printed_version)
-				{
-					puts(version);
-					printed_version = true;
-					// RPG Hacker: ...why?!?
-					// Keep finding these useless exit cases in all kinds of applications.
-					//return 0;
-				}
+				puts(version);
+				return 0;
 			}
 			else if (checkstartmatch(par, "--pause-mode="))
 			{
@@ -324,10 +317,9 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		if (verbose && !printed_version)
+		if (verbose)
 		{
 			puts(version);
-			printed_version = true;
 		}
 		string asmname=libcon_require_filename("Enter patch name:");
 		string romname=libcon_optional_filename("Enter ROM name:", nullptr);

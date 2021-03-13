@@ -188,6 +188,7 @@ string get_symbol_argument()
 	const char * strpos = str;
 	// hack: for backwards compat, allow strings as symbols
 	if(*str=='"') {
+		asar_throw_warning(1, warning_id_feature_deprecated, "quoted symbolic arguments", "Remove the quotations");
 		string arg = get_string_argument();
 		int i = 0;
 		if(is_alpha(arg[i]) || arg[i] == '_') i++;
@@ -700,7 +701,7 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 	if(functions.exists(name)) //functions holds both types.
 	{
 		//asar_throw_error(0, error_type_block, error_id_function_redefined, name);
-		asar_throw_warning(0, warning_id_function_redefined, name);
+		asar_throw_warning(1, warning_id_feature_deprecated, "overwriting a previously defined function", "change the function name");
 	}
 	funcdat& user_function=user_functions[name];
 	user_function.name= duplicate_string(name);
@@ -855,12 +856,13 @@ static double getnum()
 {
 	while (*str==' ') str++;
 #define prefix(sym, func) if (*str == sym) { str+=1; double val=getnum(); return sanitize(func); }
+#define prefix_dep(sym, func) if (*str == sym) { str+=1; asar_throw_warning(0, warning_id_feature_deprecated, "xkas style numbers ", "remove the #"); double val=getnum(); return sanitize(func); }
 #define prefix2(sym, sym2, func) if (*str == sym && *(str+1) == sym2) { str+=2; double val=getnum(); return sanitize(func); }
 	prefix('-', -val);
 	prefix('~', ~(int)val);
 	prefix2('<', ':', (int)val>>16);
 	prefix('+', val);
-	prefix('#' && emulatexkas, val);
+	prefix_dep('#' && emulatexkas, val);
 #undef prefix
 	return sanitize(getnumcore());
 }

@@ -210,6 +210,7 @@ opAFallback:
 		as2("PEA", 0xF4);
 		if (emulatexkas)
 		{
+			asar_throw_warning(0, warning_id_feature_deprecated, "usage of jmp instead of jml ", "use jml instead");
 			as3("JMP", 0x5C);//all my hate
 			//as3("JSR", 0x22);
 		}
