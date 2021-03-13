@@ -439,7 +439,7 @@ EXPORT bool asar_patch(const char* patchloc, char* romdata_, int buflen,
 	// ERROR_GEN_FAILURE is the only error that can be returned by DoCallback, 
     // if anything else is returned, it's the return value of the passed function, in this case a boolean
 	// now, the question is, what do we do when DoCallback straight up fails?
-	// 2 options: return false and ignore or call directly asar_patch_fiber and open it doesn't recurse too far
+	// 2 options: return false and ignore or call directly asar_patch_fiber and hope it doesn't recurse too far
 	// recalling the function is probably safe, since if the DoCallback returns ERROR_GEN_FAILURE, it means that the callback was never executed to begin with
 	// so (struct patchdata *data) is still completely untouched, safe to re-use
     res = asar_patch_fiber((void*)data);
@@ -459,7 +459,7 @@ EXPORT bool asar_patch_ex(const patchparams_base* params)
     // ERROR_GEN_FAILURE is the only error that can be returned by DoCallback,
     // if anything else is returned, it's the return value of the passed function, in this case a boolean 
 	// now, the question is, what do we do when DoCallback straight up fails? 
-	// 2 options: return false and ignore or call directly asar_patch_fiber and open it doesn't recurse too far
+	// 2 options: return false and ignore or call directly asar_patch_fiber and hope it doesn't recurse too far
     // recalling the function is probably safe, since if the DoCallback returns ERROR_GEN_FAILURE, it means that the callback was never executed to begin with
     // so (const patchparams_base* params) is still completely untouched, safe to re-use
     res = asar_patch_ex_fiber((void *)params);
