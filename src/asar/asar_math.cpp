@@ -339,6 +339,11 @@ double asar_pctosnes_wrapper()
 	return pctosnes(get_double_argument());
 }
 
+double asar_realbase_wrapper()
+{
+	return realsnespos;
+}
+
 template <int count> double asar_read()
 {
 	int target = get_double_argument();
@@ -592,6 +597,7 @@ assocarr<double (*)()> builtin_functions =
 	
 	{"snestopc", asar_snestopc_wrapper},
 	{"pctosnes", asar_pctosnes_wrapper},
+	{"realbase", asar_realbase_wrapper},
 	
 	{"max", asar_binary_wrapper<asar_max>},
 	{"min", asar_binary_wrapper<asar_min>},
@@ -773,36 +779,30 @@ static double getnumcore()
 		if (*str=='(')
 		{
 			str++;
-			while (*str==' ') str++;
-
 			// RPG Hacker: This is only here to assure that all strings are still
 			// alive in memory when we call our functions further down
 			double result;
-			if (*str!=')')
+			while (true)
 			{
-				while (true)
+				while (*str==' ') str++;
+				string function_name = string(start, len);
+				if(functions.exists(function_name))
 				{
-					while (*str==' ') str++;
-					string function_name = string(start, len);
-					if(functions.exists(function_name))
-					{
-						current_user_function_name = function_name;
-						result = functions[function_name]();
-					}
-					else
-					{
-						str++;
-						break;
-					}
-					
-					if (*str==')')
-					{
-						str++;
-						return result;
-						break;
-					}
-					asar_throw_error(1, error_type_block, error_id_malformed_function_call);
+					current_user_function_name = function_name;
+					result = functions[function_name]();
 				}
+				else
+				{
+					str++;
+					break;
+				}
+				
+				if (*str==')')
+				{
+					str++;
+					return result;
+				}
+				asar_throw_error(1, error_type_block, error_id_malformed_function_call);
 			}
 
 			asar_throw_error(1, error_type_block, error_id_function_not_found, start);
