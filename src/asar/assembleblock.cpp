@@ -598,7 +598,7 @@ void checkbankcross()
 {
 	if (snespos<0 && realsnespos<0 && startpos<0 && realstartpos<0) return;
 	if (disable_bank_cross_errors) return;
-	unsigned int mask = 0x7FFF0000 | check_half_banks_crossed ? 0x8000 : 0;
+	unsigned int mask = 0x7FFF0000 | (check_half_banks_crossed ? 0x8000 : 0);
 	if (((snespos^    startpos) & mask) && (((snespos - 1) ^ startpos) & mask))
 	{
 		asar_throw_error(pass, error_type_fatal, error_id_bank_border_crossed, snespos);
