@@ -325,7 +325,7 @@ bool asblock_spc700(char** word, int numwords)
 #define vv(left1, right1, left2, right2) if (isvv(left1, right1, left2, right2))
 #define w0(opcode) do { write1((unsigned int)opcode); return true; } while(0)
 #define w1(opcode, math) do { write1((unsigned int)opcode); unsigned int val=getnum(math); \
-													if (((val&0xFF00)&&(val&0x80000000)==0)||(((val&0xFF00)!=0xFF00)&&(val&0x80000000))) asar_throw_warning(0, warning_id_spc700_assuming_8_bit); write1(val); return true; } while(0)
+		if (val>0xFF&&opLen!=1) asar_throw_warning(0, warning_id_spc700_assuming_8_bit); write1(val);return true; } while(0)
 #define w2(opcode, math) do { write1((unsigned int)opcode); write2(getnum(math)); return true; } while(0)
 #define wv(opcode1, opcode2, math) do { if ((opLen == 1) || (opLen == 0 && getlen(math)==1)) { write1((unsigned int)opcode1); write1(getnum(math)); } \
 																	 else { write1((unsigned int)opcode2); write2(getnum(math)); } return true; } while(0)
