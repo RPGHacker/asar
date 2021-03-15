@@ -2724,6 +2724,11 @@ endif</code></pre></td>
 	warn "This patch was only tested in Asar and might not work correctly in your assembler."
 endif</code></pre></td>
 			</tr>
+			<tr>
+				<td><code class="65c816_asar">strlen(string)</code></td>
+				<td>Returns the length of the given string.</td>
+				<td><pre><code class="65c816_asar">db strlen("string")</code></pre></td>
+			</tr>
 		</table><br/>
 		All built-in functions can be overridden by user-defined functions. Prepending an underscore (for example: <code class="65c816_asar">_read1()</code>) leads to the original function, which can be used to make an overridden function call its original function.
 		<pre><code class="65c816_asar">function read1(x) = _read1(x+$010000)</code></pre>
