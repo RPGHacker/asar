@@ -2,20 +2,19 @@
 
 #include <windows.h>
 
-template <typename functor, typename ret = typename std::result_of<functor()>::type> 
-ret run_as_fiber(functor &&callback) {
-    static_assert(std::is_default_constructible<ret>::value, "Return value of callback must be default constructible");
+template <typename functor> 
+bool run_as_fiber(functor &&callback) {
     struct fiber_wrapper {
         functor &callback;
         void *original;
-        ret result;
+        bool result;
 
         void execute() {
             result = callback();
             SwitchToFiber(original);
         }
 
-    } wrapper{callback, nullptr, ret{}};
+    } wrapper{callback, nullptr, false};
 
     auto fiber = CreateFiberEx(
         4 * 1024 * 1024, 8 * 1024 * 1024, 0,
