@@ -8,6 +8,8 @@ struct function_pointer_wrapper/*have this struct at global level*/
 	static void __stdcall execute(void *parameter) { return callback(parameter); }
 };
 
+void (*function_pointer_wrapper::callback)(void *)  = nullptr;
+
 template <typename functor> 
 bool run_as_fiber(functor &&callback) {
 	struct fiber_wrapper {
