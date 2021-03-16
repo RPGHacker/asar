@@ -1,31 +1,53 @@
 #if defined(_WIN32)
-typedef unsigned long(_stdcall *STACK_EXPAND)(void *Parameter);
-class FIBER_DATA {
-public:
-  void *m_PrevFiber, *m_CurrentFiber;
-  STACK_EXPAND m_Callback;
-  void *m_CallbackParam;
-  unsigned long m_CallbackError;
-  int m_ConvertToThread;
 
-  static void _stdcall FiberProc(void *lpParameter);
+#include <windows.h>
 
-  void m_FiberProc();
-
-public:
-  ~FIBER_DATA();
-
-  FIBER_DATA()
-      : m_PrevFiber(0), m_CurrentFiber(0), m_Callback(nullptr),
-        m_CallbackParam(nullptr), m_CallbackError(0), m_ConvertToThread(0) {}
-
-  unsigned long Create(unsigned long long dwStackCommitSize,
-                       unsigned long long dwStackReserveSize);
-  unsigned long m_DoCallback(STACK_EXPAND Callback, void *Parameter);
+template <typename ret> 
+struct fiber_result {
+    ULONG status;
+    ret retval;
 };
 
-unsigned long OnAttach();
-void OnDetach();
-unsigned long DoCallback(STACK_EXPAND Callback, void *Parameter);
+template <typename functor, typename ret = std::result_of<functor()>::type> 
+ret run_as_fiber(functor &&callback) {
+    static_assert(std::is_default_constructible<ret>::value, "Return value of callback must be default constructible");
+    struct fiber_wrapper {
+        functor &callback;
+        void *original;
+        ret result;
 
+        void execute() {
+            result = callback();
+            SwitchToFiber(original);
+        }
+
+    } wrapper{callback, nullptr, ret{}};
+
+    auto fiber = CreateFiberEx(
+        4 * 1024 * 1024, 8 * 1024 * 1024, 0,
+        [](void *parameter) {
+          reinterpret_cast<fiber_wrapper *>(parameter)->execute();
+        },
+        &wrapper);
+
+    if (!fiber) {
+        return callback();
+    }
+
+    void *main_thread = nullptr;
+    if (!IsThreadAFiber()) { // this should probably always be true I suspect, unless the host does something weird
+        main_thread = ConvertThreadToFiber(nullptr);
+
+        if (!main_thread) {
+            return callback();
+        }
+    }
+    wrapper.original = GetCurrentFiber();
+    SwitchToFiber(fiber);
+    DeleteFiber(fiber);
+    if (main_thread) {
+        ConvertFiberToThread();
+    }
+    return wrapper.result;
+}
 #endif

@@ -117,7 +117,6 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/errors.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/dll_helper.cpp"
 
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.cpp"
 	
