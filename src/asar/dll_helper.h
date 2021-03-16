@@ -2,13 +2,7 @@
 
 #include <windows.h>
 
-template <typename ret> 
-struct fiber_result {
-    ULONG status;
-    ret retval;
-};
-
-template <typename functor, typename ret = std::result_of<functor()>::type> 
+template <typename functor, typename ret = typename std::result_of<functor()>::type> 
 ret run_as_fiber(functor &&callback) {
     static_assert(std::is_default_constructible<ret>::value, "Return value of callback must be default constructible");
     struct fiber_wrapper {
@@ -34,13 +28,9 @@ ret run_as_fiber(functor &&callback) {
         return callback();
     }
 
-    void *main_thread = nullptr;
-    if (!IsThreadAFiber()) { // this should probably always be true I suspect, unless the host does something weird
-        main_thread = ConvertThreadToFiber(nullptr);
-
-        if (!main_thread) {
+    void* main_thread = ConvertThreadToFiber(nullptr);
+    if (!main_thread && GetLastError() != ERROR_ALREADY_FIBER) { 
             return callback();
-        }
     }
     wrapper.original = GetCurrentFiber();
     SwitchToFiber(fiber);
