@@ -89,7 +89,7 @@ static void fillerror(errordata& myerr, int errid, const char * type, const char
 	if (thisblock) myerr.block= duplicate_string(thisblock);
 	else myerr.block= duplicate_string("");
 	myerr.rawerrdata= duplicate_string(str);
-	myerr.fullerrdata= duplicate_string(S getdecor()+type+str+((thisblock&&show_block)?(S" ["+thisblock+"]"):""));
+	myerr.fullerrdata= duplicate_string(STR getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):""));
 	myerr.callerline=callerline;
 	myerr.callerfilename=callerfilename ? duplicate_string(callerfilename) : nullptr;
 	myerr.errid = errid;
@@ -105,7 +105,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 	else if (pass == whichpass) {
 		// don't show current block if the error came from an error command
 		bool show_block = (errid != error_id_error_command);
-		fillerror(errors[numerror++], errid, S "error: (E" + dec(errid) + "): ", e_, show_block);
+		fillerror(errors[numerror++], errid, STR "error: (E" + dec(errid) + "): ", e_, show_block);
 	}
 	else {}//ignore anything else
 }
@@ -114,7 +114,7 @@ void warn(int errid, const char * str)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (errid != warning_id_warn_command);
-	fillerror(warnings[numwarn++], errid, S "warning: (W" + dec(errid) + "): ", str, show_block);
+	fillerror(warnings[numwarn++], errid, STR "warning: (W" + dec(errid) + "): ", str, show_block);
 }
 
 static void resetdllstuff()

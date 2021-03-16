@@ -1000,7 +1000,7 @@ void initmathcore()
 	functions.reset();
 	builtin_functions.each([](const char* key, double (*val)()) {
 		functions[key] = val;
-		functions[S "_" + key] = val;
+		functions[STR "_" + key] = val;
 	});
 	user_functions.reset();
 }

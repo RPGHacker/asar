@@ -70,7 +70,7 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 	{
 		const char * ptr=strstr(thisstring, instr);
 		if (!ptr) return thisstring;
-		string out=S substr(thisstring, (int)(ptr-thisstring.data()))+outstr+(ptr+strlen(instr));
+		string out=STR substr(thisstring, (int)(ptr-thisstring.data()))+outstr+(ptr+strlen(instr));
 		thisstring =out;
 		return thisstring;
 	}
