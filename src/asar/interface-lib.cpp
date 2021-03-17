@@ -283,7 +283,8 @@ EXPORT void asar_close()
 	resetdllstuff();
 }
 
-EXPORT bool asar_patch(const char *patchloc, char *romdata_, int buflen, int *romlen_) {
+EXPORT bool asar_patch(const char *patchloc, char *romdata_, int buflen, int *romlen_)
+{
 	auto execute_patch = [&]() {
 		asar_patch_begin(romdata_, buflen, romlen_, true);
 
@@ -305,113 +306,106 @@ EXPORT bool asar_patch(const char *patchloc, char *romdata_, int buflen, int *ro
 #endif
 }
 
-EXPORT bool asar_patch_ex(const patchparams_base *params) {
+EXPORT bool asar_patch_ex(const patchparams_base *params)
+{
 	auto execute_patch = [&]() {
-	if (params == nullptr) {
-	  asar_throw_error(pass, error_type_null, error_id_params_null);
-	}
+		if (params == nullptr)
+		{
+			asar_throw_error(pass, error_type_null, error_id_params_null);
+		}
 
-	if (params->structsize != sizeof(patchparams_v160)) {
-	  asar_throw_error(pass, error_type_null, error_id_params_invalid_size);
-	}
+		if (params->structsize != sizeof(patchparams_v160))
+		{
+			asar_throw_error(pass, error_type_null, error_id_params_invalid_size);
+		}
 
-	patchparams paramscurrent;
-	memset(&paramscurrent, 0, sizeof(paramscurrent));
-	memcpy(&paramscurrent, params, (size_t)params->structsize);
+		patchparams paramscurrent;
+		memset(&paramscurrent, 0, sizeof(paramscurrent));
+		memcpy(&paramscurrent, params, (size_t)params->structsize);
 
-	asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen,
-					 paramscurrent.romlen, paramscurrent.should_reset);
 
-	autoarray<string> includepaths;
-	autoarray<const char *> includepath_cstrs;
+		asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen, paramscurrent.should_reset);
 
-	for (int i = 0; i < paramscurrent.numincludepaths; ++i) {
-	  if (!path_is_absolute(paramscurrent.includepaths[i]))
-		asar_throw_warning(pass, warning_id_relative_path_used,
-						   "include search");
-	  string &newpath = includepaths.append(paramscurrent.includepaths[i]);
-	  includepath_cstrs.append((const char *)newpath);
-	}
+		autoarray<string> includepaths;
+		autoarray<const char*> includepath_cstrs;
 
-	if (paramscurrent.stdincludesfile != nullptr) {
-	  if (!path_is_absolute(paramscurrent.stdincludesfile))
-		asar_throw_warning(pass, warning_id_relative_path_used,
-						   "std includes file");
-	  string stdincludespath = paramscurrent.stdincludesfile;
-	  parse_std_includes(stdincludespath, includepaths);
-	}
+		for (int i = 0; i < paramscurrent.numincludepaths; ++i)
+		{
+			if (!path_is_absolute(paramscurrent.includepaths[i])) asar_throw_warning(pass, warning_id_relative_path_used, "include search");
+			string& newpath = includepaths.append(paramscurrent.includepaths[i]);
+			includepath_cstrs.append((const char*)newpath);
+		}
 
-	for (int i = 0; i < includepaths.count; ++i) {
-	  includepath_cstrs.append((const char *)includepaths[i]);
-	}
+		if (paramscurrent.stdincludesfile != nullptr) {
+			if (!path_is_absolute(paramscurrent.stdincludesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std includes file");
+			string stdincludespath = paramscurrent.stdincludesfile;
+			parse_std_includes(stdincludespath, includepaths);
+		}
 
-	size_t includepath_count = (size_t)includepath_cstrs.count;
-	virtual_filesystem new_filesystem;
-	new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
-	filesystem = &new_filesystem;
+		for (int i = 0; i < includepaths.count; ++i)
+		{
+			includepath_cstrs.append((const char*)includepaths[i]);
+		}
 
-	for (int i = 0; i < paramscurrent.memory_file_count; ++i) {
-	  memoryfile f = paramscurrent.memory_files[i];
-	  filesystem->add_memory_file(f.path, f.buffer, f.length);
-	}
+		size_t includepath_count = (size_t)includepath_cstrs.count;
+		virtual_filesystem new_filesystem;
+		new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
+		filesystem = &new_filesystem;
 
-	clidefines.reset();
-	for (int i = 0; i < paramscurrent.definecount; ++i) {
-	  string name = (paramscurrent.additional_defines[i].name != nullptr
-						 ? paramscurrent.additional_defines[i].name
-						 : "");
-	  name = strip_whitespace(name);
-	  name = strip_prefix(name, '!', false); // remove leading ! if present
-	  if (!validatedefinename(name))
-		asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid,
-						 "asar_patch_ex() additional defines", name.data());
-	  if (clidefines.exists(name)) {
-		asar_throw_error(pass, error_type_null, error_id_cmdl_define_override,
-						 "asar_patch_ex() additional define", name.data());
-		return false;
-	  }
-	  string contents = (paramscurrent.additional_defines[i].contents != nullptr
-							 ? paramscurrent.additional_defines[i].contents
-							 : "");
-	  clidefines.create(name) = contents;
-	}
+		for(int i = 0; i < paramscurrent.memory_file_count; ++i) {
+			memoryfile f = paramscurrent.memory_files[i];
+			filesystem->add_memory_file(f.path, f.buffer, f.length);
+		}
 
-	if (paramscurrent.stddefinesfile != nullptr) {
-	  if (!path_is_absolute(paramscurrent.stddefinesfile))
-		asar_throw_warning(pass, warning_id_relative_path_used,
-						   "std defines file");
-	  string stddefinespath = paramscurrent.stddefinesfile;
-	  parse_std_defines(stddefinespath);
-	} else {
-	  parse_std_defines(nullptr); // needed to populate builtin defines
-	}
+		clidefines.reset();
+		for (int i = 0; i < paramscurrent.definecount; ++i)
+		{
+			string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
+			name = strip_whitespace(name);
+			name = strip_prefix(name, '!', false); // remove leading ! if present
+			if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
+			if (clidefines.exists(name)) {
+				asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.data());
+				return false;
+			}
+			string contents = (paramscurrent.additional_defines[i].contents != nullptr ? paramscurrent.additional_defines[i].contents : "");
+			clidefines.create(name) = contents;
+		}
 
-	for (int i = 0; i < paramscurrent.warning_setting_count; ++i) {
-	  asar_warning_id warnid = parse_warning_id_from_string(
-		  paramscurrent.warning_settings[i].warnid);
+		if (paramscurrent.stddefinesfile != nullptr) {
+			if (!path_is_absolute(paramscurrent.stddefinesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std defines file");
+			string stddefinespath = paramscurrent.stddefinesfile;
+			parse_std_defines(stddefinespath);
+		} else {
+			parse_std_defines(nullptr); // needed to populate builtin defines
+		}
 
-	  if (warnid != warning_id_end) {
-		set_warning_enabled(warnid, paramscurrent.warning_settings[i].enabled);
-	  } else {
-		asar_throw_error(pass, error_type_null, error_id_invalid_warning_id,
-						 "asar_patch_ex() warning_settings",
-						 (int)(warning_id_start + 1),
-						 (int)(warning_id_end - 1));
-	  }
-	}
+		for (int i = 0; i < paramscurrent.warning_setting_count; ++i)
+		{
+			asar_warning_id warnid = parse_warning_id_from_string(paramscurrent.warning_settings[i].warnid);
 
-	if (paramscurrent.override_checksum_gen) {
-	  checksum_fix_enabled = paramscurrent.generate_checksum;
-	  force_checksum_fix = true;
-	}
+			if (warnid != warning_id_end)
+			{
+				set_warning_enabled(warnid, paramscurrent.warning_settings[i].enabled);
+			}
+			else
+			{
+				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "asar_patch_ex() warning_settings", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+			}
+		}
 
-	asar_patch_main(paramscurrent.patchloc);
+		if(paramscurrent.override_checksum_gen) {
+			checksum_fix_enabled = paramscurrent.generate_checksum;
+			force_checksum_fix = true;
+		}
 
-	new_filesystem.destroy();
-	filesystem = nullptr;
-	return asar_patch_end(paramscurrent.romdata, paramscurrent.buflen,
-						  paramscurrent.romlen);
-  };
+		asar_patch_main(paramscurrent.patchloc);
+
+		new_filesystem.destroy();
+		filesystem = nullptr;
+
+		return asar_patch_end(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
+};
 #if defined(_WIN32)
 	return run_as_fiber(execute_patch);
 #else
