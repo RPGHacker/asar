@@ -111,9 +111,9 @@ string getdecor()
 	string e;
 	if (thisfilename)
 	{
-		e+=S thisfilename;
-		if (thisline!=-1) e+=S ":"+dec(thisline+1);
-		if (callerfilename) e+=S" (called from "+callerfilename+":"+dec(callerline+1)+")";
+		e+=STR thisfilename;
+		if (thisline!=-1) e+=STR ":"+dec(thisline+1);
+		if (callerfilename) e+=STR" (called from "+callerfilename+":"+dec(callerline+1)+")";
 		e+=": ";
 	}
 	return e;

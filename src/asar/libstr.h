@@ -299,7 +299,7 @@ bool is_inlined() const
 	return inlined.len != (unsigned char)-1;
 }
 };
-#define S (string)
+#define STR (string)
 
 char * readfile(const char * fname, const char * basepath);
 char * readfilenative(const char * fname);

@@ -34,3 +34,20 @@
 # SNES ROMs
 *.smc
 *.sfc
+
+# Visual Studio build files and CMAKE build files on Windows
+asar/
+src/asar/res/windows/asar_lib.aps
+!src/asar
+CMakefiles/
+asar-tests/
+.vs
+ALL_BUILD.*
+ZERO_CHECK.*
+cmake_install.cmake
+Project.sln
+CMakeCache.txt
+
+# Test folders
+tests_tmp_dll/
+tests_tmp_app/
