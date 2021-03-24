@@ -1361,6 +1361,7 @@ void assembleblock(const char * block, bool isspecialline)
 
 		setlabel(completename, num);
 	}
+	else if (assemblemapper(word, numwords)) {}
 	else if (is1("org"))
 	{
 		freespaceend();

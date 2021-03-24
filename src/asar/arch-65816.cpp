@@ -29,7 +29,6 @@ bool asblock_65816(char** word, int numwords)
 	bool explicitlen = false;
 	bool hexconstant = false;
 	if(0);
-	else if (assemblemapper(word, numwords)) {}
 #define getvars(optbank) num=(pass!=0)?getnum(par):0; hexconstant=is_hex_constant(par); if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
 #define match(left, right) (word[1] && stribegin(par, left) && striend(par, right))
 #define init(left, right) strip_suffix(par, right); strip_prefix(par, left); getvars(false)
