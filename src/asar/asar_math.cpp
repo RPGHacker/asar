@@ -979,14 +979,33 @@ notposneglabel:
 
 //static autoptr<char*> freeme;
 double math(const char * s)
-{
+{	
 	//free(freeme);
 	//freeme=NULL;
 	foundlabel=false;
 	forwardlabel=false;
-
-	str = s;
-	double rval = eval(0);
+	double rval;
+	
+	if(math_pri)
+	{
+		str = s;
+		rval = eval(0);
+	}
+	else
+	{
+		str = s;
+		double no_pri_rval = eval(0);
+		
+		math_pri = true;
+		str = s;
+		rval = eval(0);	
+		math_pri = false;
+		if(no_pri_rval != rval)
+		{
+			asar_throw_warning(2, warning_id_feature_deprecated, "xkas style left to right math ", "apply order of operations");
+			rval = no_pri_rval;
+		}
+	}
 	if (*str)
 	{
 		if (*str == ',') asar_throw_error(1, error_type_block, error_id_invalid_input);
