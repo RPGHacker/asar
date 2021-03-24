@@ -314,14 +314,14 @@ string posneglabelname(const char ** input, bool define)
 			if (first == '+')
 			{
 				*input = label;
-				output = S":pos_" + dec(depth) + "_" + dec(poslabels[depth]);
+				output = STR":pos_" + dec(depth) + "_" + dec(poslabels[depth]);
 				if (define) poslabels[depth]++;
 			}
 			else
 			{
 				*input = label;
 				if (define) neglabels[depth]++;
-				output = S":neg_" + dec(depth) + "_" + dec(neglabels[depth]);
+				output = STR":neg_" + dec(depth) + "_" + dec(neglabels[depth]);
 			}
 		}
 		else
@@ -335,14 +335,14 @@ string posneglabelname(const char ** input, bool define)
 				if (first == '+')
 				{
 					*input = label;
-					output = S":macro_" + dec(calledmacros) + S"_pos_" + dec(depth) + "_" + dec((*macroposlabels)[depth]);
+					output = STR":macro_" + dec(calledmacros) + STR"_pos_" + dec(depth) + "_" + dec((*macroposlabels)[depth]);
 					if (define) (*macroposlabels)[depth]++;
 				}
 				else
 				{
 					*input = label;
 					if (define) (*macroneglabels)[depth]++;
-					output = S":macro_" + dec(calledmacros) + S"_neg_" + dec(depth) + "_" + dec((*macroneglabels)[depth]);
+					output = STR":macro_" + dec(calledmacros) + STR"_neg_" + dec(depth) + "_" + dec((*macroneglabels)[depth]);
 				}
 			}
 		}
@@ -386,7 +386,7 @@ static string labelname(const char ** rawname, bool define=false)
 		if (i)
 		{
 			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(1, error_type_block, error_id_label_missing_parent);
-			name+=S(*sublabellist)[i-1]+"_";
+			name+=STR(*sublabellist)[i-1]+"_";
 			issublabel = true;
 		}
 	}
@@ -396,7 +396,7 @@ static string labelname(const char ** rawname, bool define=false)
 		// RPG Hacker: Don't add the prefix for sublabels, because they already inherit it from
 		// their parents' names.
 		if (!macrorecursion || macrosublabels == nullptr) asar_throw_error(1, error_type_block, error_id_macro_label_outside_of_macro);
-		name = S":macro_" + dec(calledmacros) + "_" + name;
+		name = STR":macro_" + dec(calledmacros) + "_" + name;
 	}
 
 	if(in_sub_struct)
@@ -451,7 +451,7 @@ inline bool labelvalcore(const char ** rawname, unsigned int * rval, bool define
 {
 	string name=labelname(rawname, define);
 	unsigned int rval_=0;
-	if (ns && labels.exists(S ns+name)) {rval_ = labels.find(S ns+name);}
+	if (ns && labels.exists(STR ns+name)) {rval_ = labels.find(STR ns+name);}
 	else if (labels.exists(name)) {rval_ = labels.find(name);}
 	else
 	{
@@ -766,7 +766,7 @@ static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 		else if (requirecolon) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
 		else if (global_label) return false;
 		if (label[0]) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
-		if (ns && !global_label) name=S ns+name;
+		if (ns && !global_label) name=STR ns+name;
 		setlabel(name, pos);
 		return true;
 	}
@@ -1075,7 +1075,7 @@ void assembleblock(const char * block, bool isspecialline)
 		// defined() (the defined is already replaced at that point), so
 		// I think we should not support it here, either.
 		/*if (*par == '!') def = S safedequote(par) + 1;
-		else*/ def = S safedequote(par);
+		else*/ def = STR safedequote(par);
 
 		if (defines.exists(def))
 		{
@@ -1276,7 +1276,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (istoplevel)
 		{
-			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string("The main file is '") + S par + S "'.").data());
+			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string("The main file is '") + STR par + STR "'.").data());
 			else asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, "");
 		}
 	}
@@ -1354,7 +1354,7 @@ void assembleblock(const char * block, bool isspecialline)
 
 		if (ismacro)
 		{
-			completename += S":macro_" + dec(calledmacros) + "_";
+			completename += STR":macro_" + dec(calledmacros) + "_";
 		}
 
 		completename += newlabelname;
@@ -1560,8 +1560,8 @@ void assembleblock(const char * block, bool isspecialline)
 		if (numwords==1) parstr="\n";//crappy hack: impossible character to cut out extra commas
 		else if (numwords==2) parstr=word[1];
 		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-		if (is("freecode")) parstr=S"ram,"+parstr;
-		if (is("freedata")) parstr=S"noram,"+parstr;
+		if (is("freecode")) parstr=STR"ram,"+parstr;
+		if (is("freedata")) parstr=STR"noram,"+parstr;
 		autoptr<char**> pars=split(parstr.temp_raw(), ",");
 		unsigned char fsbyte = 0x00;
 		int useram=-1;
@@ -1805,7 +1805,7 @@ void assembleblock(const char * block, bool isspecialline)
 				{
 					namespace_list.reset();
 				}
-				namespace_list.append(S tmpstr);
+				namespace_list.append(STR tmpstr);
 			}
 		}
 		else
@@ -1830,7 +1830,7 @@ void assembleblock(const char * block, bool isspecialline)
 		for (int i = 0; i < namespace_list.count; i++)
 		{
 			ns += namespace_list[i];
-			ns += S"_";
+			ns += STR"_";
 		}
 	}
 	else if (is1("warnpc"))
@@ -1888,7 +1888,7 @@ void assembleblock(const char * block, bool isspecialline)
 #endif
 		}
 		if (emulatexkas) name= safedequote(par);
-		else name=S safedequote(par);
+		else name=STR safedequote(par);
 		assemblefile(name, false);
 	}
 	else if (is1("incbin") || is3("incbin"))
@@ -1941,7 +1941,7 @@ void assembleblock(const char * block, bool isspecialline)
 #endif
 		}
 		if (emulatexkas) name= safedequote(par);
-		else name=S safedequote(par);
+		else name=STR safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
 		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char*> datacopy=data;
@@ -2041,7 +2041,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if(0);
 		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
-		string name=S safedequote(par);
+		string name=STR safedequote(par);
 		autoptr<char*> tablecontents=readfile(name, thisfilename);
 		if (!tablecontents) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char**> tablelines=split(tablecontents, "\n");

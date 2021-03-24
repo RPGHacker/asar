@@ -44,7 +44,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 		errnum++;
 		// don't show current block if the error came from an error command
 		bool show_block = (thisblock && (errid != error_id_error_command));
-		fputs(S getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
+		fputs(STR getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
 		static const int max_num_errors = 20;
 		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
@@ -57,7 +57,7 @@ void warn(int errid, const char * e_)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (thisblock && (errid != warning_id_warn_command));
-	fputs(S getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
+	fputs(STR getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
 	warned=true;
 }
 
@@ -116,7 +116,7 @@ int main(int argc, char * argv[])
 	try
 	{
 		romdata_r = nullptr;
-		string version=S"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
+		string version=STR"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
 				dec(asarver_bug)+(asarver_beta?"pre":"")+", originally developed by Alcaro, maintained by Asar devs.\n"+
 				"Source code: https://github.com/RPGHacker/asar\n";
 		char * myname=argv[0];
@@ -331,12 +331,12 @@ int main(int argc, char * argv[])
 			string romnametmp = get_base_name(asmname);
 			if (file_exists(romnametmp+".sfc")) romname=romnametmp+".sfc";
 			else if (file_exists(romnametmp+".smc")) romname=romnametmp+".smc";
-			else romname=S romnametmp+".sfc";
+			else romname=STR romnametmp+".sfc";
 		}
 		else if (!strchr(romname, '.') && !file_exists(romname))
 		{
-			if (file_exists(S romname+".sfc")) romname+=".sfc";
-			else if (file_exists(S romname+".smc")) romname+=".smc";
+			if (file_exists(STR romname+".sfc")) romname+=".sfc";
+			else if (file_exists(STR romname+".smc")) romname+=".smc";
 		}
 		if (!file_exists(romname))
 		{
@@ -374,7 +374,7 @@ int main(int argc, char * argv[])
 				}
 				if (libcon_interactive)
 				{
-					if (!libcon_question_bool(S"Warning: The ROM title appears to be \""+title+"\", which looks like garbage. "
+					if (!libcon_question_bool(STR"Warning: The ROM title appears to be \""+title+"\", which looks like garbage. "
 							"Is this your ROM title? (Note that inproperly answering \"yes\" will crash your ROM.)", false))
 					{
 						puts("Assembling aborted. snespurify should be able to fix your ROM.");
@@ -383,7 +383,7 @@ int main(int argc, char * argv[])
 				}
 				else
 				{
-					puts(S"Error: The ROM title appears to be \""+title+"\", which looks like garbage. "
+					puts(STR"Error: The ROM title appears to be \""+title+"\", which looks like garbage. "
 								"If this is the ROM title, add --no-title-check to the command line options. If the ROM title is something else, use snespurify on your ROM.");
 					pause(err);
 					return 1;
@@ -394,7 +394,7 @@ int main(int argc, char * argv[])
 		romlen_r=romlen;
 		memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
 
-		string stdincludespath = S dir(argv[0]) + "stdincludes.txt";
+		string stdincludespath = STR dir(argv[0]) + "stdincludes.txt";
 		parse_std_includes(stdincludespath, includepaths);
 
 		for (int i = 0; i < includepaths.count; ++i)
@@ -407,7 +407,7 @@ int main(int argc, char * argv[])
 		new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
 		filesystem = &new_filesystem;
 
-		string stddefinespath = S dir(argv[0]) + "stddefines.txt";
+		string stddefinespath = STR dir(argv[0]) + "stddefines.txt";
 		parse_std_defines(stddefinespath);
 
 		for (pass=0;pass<3;pass++)
