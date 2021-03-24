@@ -77,6 +77,8 @@ extern bool asarverallowed;
 extern bool istoplevel;
 
 extern bool moreonline;
+extern bool moreonlinecond;
+extern int fakeendif;
 
 extern bool checksum_fix_enabled;
 extern bool force_checksum_fix;

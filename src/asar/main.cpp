@@ -475,6 +475,8 @@ void resolvedefines(string& out, const char * start)
 int repeatnext=1;
 
 bool moreonline;
+bool moreonlinecond;
+int fakeendif;
 bool asarverallowed;
 bool istoplevel;
 
@@ -501,6 +503,8 @@ void assembleline(const char * fname, int linenum, const char * line)
 //puts(out);
 		autoptr<char**> blocks=qsplit(out.temp_raw(), " : ");
 		moreonline=true;
+		moreonlinecond=true;
+		fakeendif=0;
 		for (int block=0;moreonline;block++)
 		{
 			moreonline=(blocks[block+1] != nullptr);
@@ -531,6 +535,11 @@ void assembleline(const char * fname, int linenum, const char * line)
 				catch (errblock&) {}
 				if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
 			}
+		}
+		if(fakeendif)
+		{
+			if (numif==numtrue) numtrue--;
+			numif--;
 		}
 	}
 	catch (errline&) {}

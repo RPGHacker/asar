@@ -825,6 +825,10 @@ void assembleblock(const char * block, bool isspecialline)
 #define is3(test) (numwords==4 && !stricmpwithlower(word[0], test))
 #define par word[1]
 
+	if(!moreonlinecond && !(is("elseif") || is("else"))){
+		return;
+	}
+
 	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
 	// This really seems like the only possible place for the fix
 	if (is("elseif") && numtrue+1==numif)
@@ -854,7 +858,11 @@ void assembleblock(const char * block, bool isspecialline)
 			callerfilename=thisfilename;
 			callerline=thisline;
 		}
+		int fakeendif_prev = fakeendif;
+		int moreonlinecond_prev = moreonlinecond;
 		callmacro(strchr(block, '%')+1);
+		fakeendif = fakeendif_prev;
+		moreonlinecond = moreonlinecond_prev;
 		if (!macrorecursion)
 		{
 			callerfilename="";
@@ -864,6 +872,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
+		if(is("if") && moreonline) fakeendif++;
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		const char * errmsg= nullptr;
 		whiletracker wstatus;		
@@ -883,10 +892,10 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		if (numtrue!=numif && !(is("elseif") && numtrue+1==numif))
 		{
-			if ((is("if") || is("while")) && !moreonline) numif++;
+			if ((is("if") || is("while"))) numif++;
 			return;
 		}
-		if ((is("if") || is("while")) && !moreonline) numif++;
+		if ((is("if") || is("while"))) numif++;
 		bool cond;
 
 		bool isassert = is("assert");
@@ -987,15 +996,14 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("if") || is("while"))
 		{
 			if(0);
-			else if (cond && moreonline) {}
-			else if (cond && !moreonline)
+			else if (cond)
 			{
 				numtrue++;
 				elsestatus[numif]=true;
 			}
-			else if (!cond && moreonline) moreonline=false;
-			else if (!cond && !moreonline)
+			else if (!cond)
 			{
+				if(moreonline)  moreonlinecond=false;
 				elsestatus[numif]=false;
 			}
 			addedwstatus.cond = cond;
@@ -1004,10 +1012,10 @@ void assembleblock(const char * block, bool isspecialline)
 		{
 			if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_elseif);
 			if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_elseif_in_while);
-			if (moreonline) asar_throw_error(1, error_type_block, error_id_elseif_in_singleline);
 			if (numif==numtrue) numtrue--;
 			if (cond && !elsestatus[numif])
 			{
+				if(moreonline) moreonlinecond = true;
 				numtrue++;
 				elsestatus[numif]=true;
 			}
@@ -1021,6 +1029,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is("endif") || is("endwhile"))
 	{
+		if(fakeendif) fakeendif--;
 		if (numwords != 1) asar_throw_error(1, error_type_block, error_id_unknown_command);
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
 		if (numif==numtrue) numtrue--;
@@ -1032,6 +1041,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is("else"))
 	{
+		if(!moreonlinecond) moreonlinecond = true;
 		if (numwords != 1) asar_throw_error(1, error_type_block, error_id_unknown_command);
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_else);
 		if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
