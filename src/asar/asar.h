@@ -72,6 +72,7 @@ extern const int asarver_maj;
 extern const int asarver_min;
 extern const int asarver_bug;
 extern const bool asarver_beta;
+extern bool default_math_pri;
 
 extern bool asarverallowed;
 extern bool istoplevel;

@@ -1247,6 +1247,7 @@ void assembleblock(const char * block, bool isspecialline)
 			int tmpver=asarver_bug;
 			if (tmpver>9) tmpver=9;
 			if (asarver_min*10+tmpver<verminbug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
+			if(vermaj == 1 && verminbug >= 90) default_math_pri = true;
 		}
 		else
 		{
@@ -1254,6 +1255,7 @@ void assembleblock(const char * block, bool isspecialline)
 			if (vermin>asarver_min) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
 			int verbug=atoi(vers[2]);
 			if (vermin==asarver_min && verbug>asarver_bug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
+			if(vermaj == 1 && vermin >= 9) default_math_pri = true;
 		}
 		specifiedasarver = true;
 	}

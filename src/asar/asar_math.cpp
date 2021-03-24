@@ -943,7 +943,7 @@ notposneglabel:
 #define oper(name, thisdepth, contents)      \
 			if (!strncmp(str, name, strlen(name))) \
 			{                                      \
-				if (math_pri)                        \
+				if (math_pri || default_math_pri)                        \
 				{                                    \
 					if (depth<=thisdepth)              \
 					{                                  \
@@ -986,7 +986,7 @@ double math(const char * s)
 	forwardlabel=false;
 	double rval;
 	
-	if(math_pri)
+	if(math_pri || default_math_pri)
 	{
 		str = s;
 		rval = eval(0);
