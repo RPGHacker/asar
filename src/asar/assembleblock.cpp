@@ -274,6 +274,7 @@ autoarray<string>* macrosublabels;
 // randomdude999: ns is still the string to prefix to all labels, it's calculated whenever namespace_list is changed
 string ns;
 autoarray<string> namespace_list;
+autoarray<string> prefix_list;
 
 //bool fastrom=false;
 
@@ -385,8 +386,20 @@ static string labelname(const char ** rawname, bool define=false)
 		if (emulatexkas && i>1) asar_throw_warning(1, warning_id_convert_to_asar);
 		if (i)
 		{
-			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(1, error_type_block, error_id_label_missing_parent);
-			name+=STR(*sublabellist)[i-1]+"_";
+			if ((!sublabellist || !(*sublabellist)[i - 1]) && !prefix_list.count) asar_throw_error(1, error_type_block, error_id_label_missing_parent);
+			else if (prefix_list.count)
+			{
+				for(int p = 0; p < prefix_list.count; p++){
+					name+=prefix_list[p]+"_";
+				}
+				if(sublabellist && (*sublabellist)[i - 1]){
+					name+=STR(*sublabellist)[i-1]+"_";
+				}
+			}
+			else
+			{
+				name+=STR(*sublabellist)[i-1]+"_";
+			}
 			issublabel = true;
 		}
 	}
@@ -652,6 +665,7 @@ void initstuff()
 	clidefines.each(adddefine);
 	ns="";
 	namespace_list.reset();
+	prefix_list.reset();
 	sublabels.reset();
 	poslabels.reset();
 	neglabels.reset();
@@ -1778,6 +1792,19 @@ void assembleblock(const char * block, bool isspecialline)
 		if (snespos != realstartpos)
 		{
 			optimizeforbank = -1;
+		}
+	}
+	else if (is("pool"))
+	{
+		if(numwords == 1)  asar_throw_error(0, error_type_block, error_id_invalid_namespace_use); //temp error
+		if(numwords == 2 && !stricmp(par, "off"))
+		{
+			prefix_list.reset();
+			return;
+		}
+		for(int i = 1; i < numwords; i++)
+		{
+			prefix_list.append(word[i]);
 		}
 	}
 	else if (is1("namespace") || is2("namespace"))
