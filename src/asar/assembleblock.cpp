@@ -352,7 +352,7 @@ string posneglabelname(const char ** input, bool define)
 	return output;
 }
 
-static string labelname(const char ** rawname, bool define=false)
+static string labelname(const char ** rawname, bool define=false, string prefix = "")
 {
 #define deref_rawname (*rawname)
 	bool ismacro = (deref_rawname[0] == '?');
@@ -387,13 +387,11 @@ static string labelname(const char ** rawname, bool define=false)
 		if (i)
 		{
 			if ((!sublabellist || !(*sublabellist)[i - 1]) && !prefix_list.count) asar_throw_error(1, error_type_block, error_id_label_missing_parent);
-			else if (prefix_list.count)
+			else if (prefix)
 			{
-				for(int p = 0; p < prefix_list.count; p++){
-					name+=prefix_list[p]+"_";
-				}
+				name+=prefix+"_";
 				if(sublabellist && (*sublabellist)[i - 1]){
-					name+=STR(*sublabellist)[i-1]+"_";
+					name+=STR(*sublabellist)[i-1]+"_";  //this may be better off as an error
 				}
 			}
 			else
@@ -775,13 +773,29 @@ static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 		// Also, apparently this here doesn't account for main labels. I guess because
 		// we don't even get here in the first place if they don't include a colon?
 		bool requirecolon = (label[0] != '.' && label[1] != '.') && (in_struct || in_sub_struct);
-		string name=labelname(&label, define);
-		if (label[0]==':') label++;
-		else if (requirecolon) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
-		else if (global_label) return false;
-		if (label[0]) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
-		if (ns && !global_label) name=STR ns+name;
-		setlabel(name, pos);
+		auto build_label_name = [&](string prefix){	//this is 100% a hack to experiment
+			string name=labelname(&label, define, prefix);
+			if (label[0]==':') label++;
+			else if (requirecolon) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
+			else if (global_label) return false;
+			if (label[0]) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
+			if (ns && !global_label) name=STR ns+name;
+			setlabel(name, pos);
+			return true;
+		};
+		for(int i = 0; i < prefix_list.count; i++)
+		{
+			const char *original_label = label;
+			if(!build_label_name(prefix_list[i]))
+			{
+				return false;
+			}
+			label = original_label;
+		}
+		if(!prefix_list.count)
+		{
+			return build_label_name("");
+		}
 		return true;
 	}
 	return false;
