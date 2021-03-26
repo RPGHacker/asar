@@ -144,6 +144,7 @@ static int data_size(const char *name)
 	unsigned int label;
 	unsigned int next_label = 0xFFFFFF;
 	if(!labels.exists(name)) asar_throw_error(1, error_type_block, error_id_label_not_found, name);
+	foundlabel = true;
 	label = labels.find(name) & 0xFFFFFF;
 	labels.each([&next_label, label](const char *key, unsigned int current_label){
 		current_label &= 0xFFFFFF;

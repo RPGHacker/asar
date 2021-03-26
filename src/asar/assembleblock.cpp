@@ -1327,6 +1327,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (word[0][0]=='\'' && word[0][1] && word[0][2]=='\'' && word[0][3]=='\0')
 		{
 			table.table[(unsigned char)word[0][1]]=getnum(word[2]);
+			if (foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 			return;
 		}
 		// randomdude999: int cast b/c i'm too lazy to also mess with making setlabel()
@@ -1907,6 +1908,7 @@ void assembleblock(const char * block, bool isspecialline)
 				char* tmp = strqpchr(lengths, '-');
 				if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
 				start = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+				if (foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 				lengths = tmp;
 			} else {
 				start=(int)strtoul(lengths, &lengths, 16);
@@ -1917,6 +1919,7 @@ void assembleblock(const char * block, bool isspecialline)
 				char* tmp = strchr(lengths, '\0');
 				if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
 				end = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+				if (foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 				// no need to check end-of-string here
 			} else {
 				end=(int)strtoul(lengths, &lengths, 16);
