@@ -535,7 +535,12 @@ static void setlabel(string name, int loc=-1)
 		//all label locations are known at this point, add a sanity check
 		if (!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_on_third_pass);
 		labelpos = labels.find(name);
-		if ((int)labelpos != loc && !movinglabelspossible) asar_throw_error(2, error_type_block, error_id_label_moving);
+		if ((int)labelpos != loc && !movinglabelspossible)
+		{
+			if((unsigned int)loc < labelpos && (unsigned int)loc>>16 != labelpos>>16 && disable_bank_cross_errors) return;
+			if((unsigned int)loc < labelpos && (unsigned int)loc>>16 != labelpos>>16)  asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());	
+			else asar_throw_error(2, error_type_block, error_id_label_moving);
+		}
 	}
 }
 

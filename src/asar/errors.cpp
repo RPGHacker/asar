@@ -258,7 +258,8 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_vararg_must_be_last, "Variadic macro parameter must be the last parameter." },
 	{ error_id_invalid_global_label, "Global label definition contains an invalid label [%s]."},
 
-	{ error_id_spc700_addr_out_of_range, "Address %s out of range for instruction, valid range is 0000-1FFF" }
+	{ error_id_spc700_addr_out_of_range, "Address %s out of range for instruction, valid range is 0000-1FFF" },
+	{ error_id_label_ambiguous, "Label (%s) location is ambiguous due to saddling optimization border." }
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
