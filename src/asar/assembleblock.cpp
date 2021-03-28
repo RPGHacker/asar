@@ -408,6 +408,7 @@ static string labelname(const char ** rawname, bool define=false)
 	{
 		name += struct_name;
 		name += '.';
+		if(*deref_rawname != '.') asar_throw_error(1, error_type_block, error_id_invalid_label_name);  //probably should be a better error. TODO!!!
 		deref_rawname++;
 	}
 

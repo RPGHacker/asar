@@ -342,7 +342,8 @@ double asar_pctosnes_wrapper()
 
 double asar_realbase_wrapper()
 {
-	foundlabel=true;  //Going to consider this an implicit label because we don't really have a better system
+	//need a better way to do this to make sure it is useful...
+	//foundlabel=true;  //Going to consider this an implicit label because we don't really have a better system
 	return realsnespos;
 }
 
