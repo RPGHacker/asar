@@ -156,6 +156,7 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 		asar_throw_warning(1, warning_id_xkas_label_access);
 	unsigned int bank = thislabel>>16;
 	unsigned int word = thislabel&0xFFFF;
+	unsigned int relaxed_bank = optimizeforbank < 0 ? 0 : optimizeforbank;
 	if (!exists)
 	{
 		if (!freespaced) freespaceextra++;
@@ -174,11 +175,11 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 	{
 		return 2;
 	}
-	else if (optimize_address == optimize_address_flag::MIRRORS && (bank == 0x7E || (!(bank & 0x40) && !(optimizeforbank & 0x40))) && word < 0x2000)
+	else if (optimize_address == optimize_address_flag::MIRRORS && (bank == relaxed_bank || (!(bank & 0x40) && !(relaxed_bank & 0x40))) && word < 0x2000)
 	{
 		return 2;
 	}
-	else if (optimize_address == optimize_address_flag::MIRRORS && (!(bank & 0x40)) && !(optimizeforbank & 0x40) && word < 0x8000)
+	else if (optimize_address == optimize_address_flag::MIRRORS && !(bank & 0x40) && !(relaxed_bank & 0x40) && word < 0x8000)
 	{
 		return 2;
 	}
