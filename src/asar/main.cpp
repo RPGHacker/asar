@@ -174,7 +174,11 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 	{
 		return 2;
 	}
-	else if (optimize_address == optimize_address_flag::MIRRORS && (bank == 0x7E || !(bank & 0x40)) && word < 0x8000)
+	else if (optimize_address == optimize_address_flag::MIRRORS && (bank == 0x7E || (!(bank & 0x40) && !(optimizeforbank & 0x40))) && word < 0x2000)
+	{
+		return 2;
+	}
+	else if (optimize_address == optimize_address_flag::MIRRORS && (!(bank & 0x40)) && !(optimizeforbank & 0x40) && word < 0x8000)
 	{
 		return 2;
 	}
