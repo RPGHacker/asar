@@ -750,12 +750,12 @@ static double getnumcore()
 	{
 		if (!is_xdigit(str[1])) asar_throw_error(1, error_type_block, error_id_invalid_hex_value);
 		if (to_lower(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
-		return strtoul(str+1, const_cast<char**>(&str), 16);
+		return strtoull(str+1, const_cast<char**>(&str), 16);
 	}
 	if (*str=='%')
 	{
 		if (str[1] != '0' && str[1] != '1') asar_throw_error(1, error_type_block, error_id_invalid_binary_value);
-		return strtoul(str+1, const_cast<char**>(&str), 2);
+		return strtoull(str+1, const_cast<char**>(&str), 2);
 	}
 	if (*str=='\'')
 	{
