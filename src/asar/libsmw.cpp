@@ -151,7 +151,7 @@ void resizerats(int snesaddr, int newlen)
 {
 	int pos=snestopc(ratsstart(snesaddr));
 	if (pos<0) return;
-	if (newlen!=1) newlen--;
+	if (newlen!=0) newlen--;
 	writeromdata_byte(pos+4, (unsigned char)(newlen&0xFF));
 	writeromdata_byte(pos+5, (unsigned char)((newlen>>8)&0xFF));
 	writeromdata_byte(pos+6, (unsigned char)((newlen&0xFF)^0xFF));

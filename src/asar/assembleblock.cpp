@@ -1631,7 +1631,7 @@ void assembleblock(const char * block, bool isspecialline)
 		{
 			if (fixedpos && freespaceorgpos[freespaceid]==-1) return;//to kill some errors
 			snespos=(freespaceid<<24)|freespacepos[freespaceid];
-			resizerats(snespos, freespacelen[freespaceid]);
+			resizerats(snespos&0xFFFFFF, freespacelen[freespaceid]);
 			if (freespaceleak[freespaceid] && leakwarn) asar_throw_warning(2, warning_id_freespace_leaked);
 			if (fixedpos && freespaceorgpos[freespaceid]>0 && freespacelen[freespaceid]>freespaceorglen[freespaceid])
 				asar_throw_error(2, error_type_block, error_id_static_freespace_growing);
