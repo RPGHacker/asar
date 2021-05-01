@@ -1529,6 +1529,9 @@ lda #~$80	; Equal to lda #$FFFFFF7F</code></pre>
 		<pre><code class="65c816_asar">lda #'a'
 sta $00
 
+lda.w #'bc'
+sta $01
+
 db 'x','x'+1,'x'+2</code></pre>
 		<h4 id="opcode-length">Opcode Length Specification</h4>
 		By appending <code>.b</code>, <code>.w</code> or <code>.l</code> to an opcode, you can specify that opcode's length. This is recommended in cases where the length could be ambiguous.
