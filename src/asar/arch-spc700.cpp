@@ -356,6 +356,10 @@ bool asblock_spc700(char** word, int numwords)
 					write2(((unsigned int)bits<<13)|num);
 					return true;
 				}
+				int pos = (getnum(arg[1])- (unsigned int)(snespos)-3);
+				if (pass && foundlabel && (pos<-128 || pos>127)) {
+					asar_throw_error(1, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data());
+				}
 				if(0);
 				else if (isop("bbs")) write1((unsigned int)(0x03|(bits<<5)));
 				else if (isop("bbc")) write1((unsigned int)(0x13|(bits<<5)));
@@ -363,7 +367,7 @@ bool asblock_spc700(char** word, int numwords)
 				unsigned int num=getnum(s1);
 				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
 				write1(num);
-				write1((getnum(arg[1])- (unsigned int)(snespos+1)));
+				write1(pos);
 				return true;
 			}
 #undef isop
