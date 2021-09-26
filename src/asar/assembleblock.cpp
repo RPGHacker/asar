@@ -1283,7 +1283,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (istoplevel)
 		{
-			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string("The main file is '") + STR par + STR "'.").data());
+			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string(" The main file is '") + STR par + STR "'.").data());
 			else asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, "");
 		}
 	}
