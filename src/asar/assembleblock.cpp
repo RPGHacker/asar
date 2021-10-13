@@ -1367,7 +1367,7 @@ void assembleblock(const char * block, bool isspecialline)
 
 		completename += newlabelname;
 
-		setlabel(completename, num);
+		setlabel(ns + completename, num);
 	}
 	else if (assemblemapper(word, numwords)) {}
 	else if (is1("org"))
