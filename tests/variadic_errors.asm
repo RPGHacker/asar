@@ -5,6 +5,8 @@
 ;`errE5181
 ;`errE5181
 ;`errE5180
+;`errE5181
+;`errE5180
 
 
 
@@ -28,6 +30,10 @@ macro normal()
 	db sizeof(...)
 endmacro
 
+macro sorry3(asd, ...)
+	db 0
+endmacro
+
 %asd(1, 2)
 db $FF, $FF
 db sizeof(...)
@@ -37,4 +43,6 @@ db sizeof(...)
 db $FF, $FF
 %sorry2(1,2,3,4,5,6,7)
 %sorry2()
+%sorry2(0)
+%sorry3()
 

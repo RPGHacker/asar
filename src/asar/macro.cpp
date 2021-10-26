@@ -109,11 +109,13 @@ void callmacro(const char * data)
 	int numargs=0;
 	if (*startpar) args=(const char* const*)qpsplit(startpar, ",", &numargs);
 	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_num_params);
-	if (numargs < thismacro->numargs && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);
+	// RPG Hacker: -1, because the ... is also counted as an argument, yet we want it to be entirely optional.
+	if (numargs < thismacro->numargs - 1 && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);
 	macrorecursion++;
 	int startif=numif;
 	
-	if(thismacro->variadic) numvarargs = numargs-thismacro->numargs;
+	// RPG Hacker: -1 to take the ... into account, which is also being counted.
+	if(thismacro->variadic) numvarargs = numargs-(thismacro->numargs-1);
 	else numvarargs = -1;
 
 	autoarray<int>* oldmacroposlabels = macroposlabels;

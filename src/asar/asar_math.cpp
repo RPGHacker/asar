@@ -493,7 +493,7 @@ static double asar_structsize_wrapper()
 	if(symbol == "..."){
 		if(!inmacro) asar_throw_error(1, error_type_block, error_id_vararg_sizeof_nomacro);
 		if(numvarargs == -1) asar_throw_error(1, error_type_block, error_id_macro_not_varadic);
-		return numvarargs + 1;
+		return numvarargs;
 	}
 	return (double)struct_size(symbol);
 }

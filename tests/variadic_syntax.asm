@@ -1,4 +1,4 @@
-;`01 01 01 FF FF 05 01 01 FF FF 01 02 03 04 05 06 07 FF FF 02 03 04 05 06 07 01
+;`01 01 01 FF FF 05 01 01 FF FF 01 02 03 04 05 06 07 FF FF 02 03 04 05 06 07 01 01 02 03
 lorom
 org $008000
 
@@ -24,6 +24,13 @@ macro sorry2(asd, ...)
 	db <asd>
 endmacro
 
+macro optional(required, ...)
+	db <required>
+	if sizeof(...) > 0
+		db <0>
+	endif
+endmacro
+
 %asd(1)
 db $FF, $FF
 
@@ -33,3 +40,6 @@ db $FF, $FF
 %sorry(1,2,3,4,5,6,7)
 db $FF, $FF
 %sorry2(1,2,3,4,5,6,7)
+
+%optional(1)
+%optional(2, 3)
