@@ -606,6 +606,16 @@ static int pushpcnum;
 static autoarray<int> basestack;
 static int basestacknum;
 
+struct ns_pushable {
+	string ns;
+	autoarray<string> namespace_list;
+	bool nested_namespaces;
+};
+
+static autoarray<ns_pushable> pushns;
+static int pushnsnum;
+
+
 static unsigned char fillbyte[12];
 static unsigned char padbyte[12];
 
@@ -685,6 +695,8 @@ void initstuff()
 	cleartable();
 	pushpc.reset();
 	pushpcnum=0;
+	pushns.reset();
+	pushnsnum = 0;
 	bytes=0;
 	memset(fillbyte, 0, sizeof(fillbyte));
 	memset(padbyte, 0, sizeof(padbyte));
@@ -747,6 +759,7 @@ void finishpass()
 	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_missing_endspcblock);
 	if (in_struct || in_sub_struct) asar_throw_error(pass, error_type_null, error_id_struct_without_endstruct);
 	else if (pushpcnum && pass == 0) asar_throw_error(pass, error_type_null, error_id_pushpc_without_pullpc);
+	else if (pushnsnum && pass == 0) asar_throw_error(pass, error_type_null, error_id_pushns_without_pullns);
 	freespaceend();
 	if (arch==arch_65816) asend_65816();
 	if (arch==arch_spc700) asend_spc700();
@@ -1504,7 +1517,7 @@ void assembleblock(const char * block, bool isspecialline)
 #undef ret_error
 	else if(is("spcblock"))
 	{
-		//banned features when active: org, freespace(and variants), arch, mapper,namespace
+		//banned features when active: org, freespace(and variants), arch, mapper,namespace,pushns
 		if(arch != arch_spc700)  asar_throw_error(0, error_type_block, error_id_spcblock_bad_arch);
 		if(in_struct || in_sub_struct) asar_throw_error(0, error_type_block, error_id_spcblock_inside_struct);
 		if(numwords < 2)  asar_throw_error(0, error_type_block, error_id_spcblock_too_few_args);
@@ -1909,6 +1922,34 @@ void assembleblock(const char * block, bool isspecialline)
 		if (snespos != realstartpos)
 		{
 			optimizeforbank = -1;
+		}
+	}
+	else if (is0("pushns"))
+	{
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		pushns[pushnsnum].ns = ns;
+		for(int i = 0; i < namespace_list.count; i++)
+		{
+			pushns[pushnsnum].namespace_list.append(namespace_list[i]);
+		}
+		pushns[pushnsnum].nested_namespaces = nested_namespaces;
+		pushnsnum++;
+
+		namespace_list.reset();
+		ns = "";
+		nested_namespaces = false;
+	}
+	else if (is0("pullns"))
+	{
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if (!pushnsnum) asar_throw_error(0, error_type_block, error_id_pullns_without_pushns);
+		pushnsnum--;
+		ns = pushns[pushnsnum].ns;
+		nested_namespaces = pushns[pushnsnum].nested_namespaces;
+		namespace_list.reset();
+		for(int i = 0; i < pushns[pushnsnum].namespace_list.count; i++)
+		{
+			namespace_list.append(pushns[pushnsnum].namespace_list[i]);
 		}
 	}
 	else if (is1("namespace") || is2("namespace"))

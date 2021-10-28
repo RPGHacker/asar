@@ -235,12 +235,12 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_failed_to_open_file_access_denied, "Failed to open file '%s'. Access denied." },
 	{ error_id_failed_to_open_not_regular_file, "Failed to open file '%s'. Not a regular file (did you try to use a directory?)" },
-	
+
 	{ error_id_bad_dp_base, "The dp base should be page aligned (i.e. a multiple of 256)"},
 	{ error_id_bad_dp_optimize, "Bad dp optimize value %s, expected: [none, ram, always]"},
 	{ error_id_bad_address_optimize, "Bad dp optimize value %s, expected: [default, ram, mirrors]"},
 	{ error_id_bad_optimize, "Bad optimize value %s, expected: [dp, address]"},
-	
+
 	{ error_id_require_parameter, "Missing required function parameter"},
 	{ error_id_expected_parameter, "Not enough parameters in calling of function %s"},
 	{ error_id_unexpected_parameter, "Too many parameters in calling of function %s"},
@@ -250,7 +250,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_alignment_too_big, "Requested alignment too large." },
 
 	{ error_id_negative_shift, "Bitshift amount is negative." },
-	
+
 	{ error_id_macro_not_varadic, "Invalid use of sizeof(...), active macro is not variadic." },
 	{ error_id_vararg_sizeof_nomacro, "Invalid use of sizeof(...), no active macro." },
 	{ error_id_macro_wrong_min_params, "Variadic macro call with too few parameters" },
@@ -260,7 +260,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_spc700_addr_out_of_range, "Address %s out of range for instruction, valid range is 0000-1FFF" },
 	{ error_id_label_ambiguous, "Label (%s) location is ambiguous due to straddling optimization border." },
-	
+
 	{ error_id_feature_unavaliable_in_spcblock, "This feature may not be used while an spcblock is active" },
 	{ error_id_endspcblock_without_spcblock, "Use of endspcblock without matching spcblock" },
 	{ error_id_missing_endspcblock, "Use of endspcblock without matching spcblock" },
@@ -277,11 +277,10 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_spcblock_custom_types_incomplete, "Custom spcblock types are not yet supported. One day." },
 	{ error_id_startpos_without_spcblock, "The startpos command is only valid in spcblocks" },
 	{ error_id_internal_error, "An internal asar error occured (%s). Send help." },
-	
-	
-	
-};
 
+	{ error_id_pushns_without_pullns, "pushns without matching pullns." },
+	{ error_id_pullns_without_pushns, "pullns without matching pushns." }
+};
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
 // matches with the number of constants in asar_warning_id. This is important, because
 // we are going to access asar_warnings as an array.
