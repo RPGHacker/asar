@@ -153,7 +153,7 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 	{
 		++pos;
 	}
-	for(int i = 1; i < warning_id_end-warning_id_start-1; i++)
+	for(int i = 0; i < warning_id_end-warning_id_start-1; i++)
 	{
 		if(!stricmpwithlower(pos, asar_warnings[i].name+1))
 		{

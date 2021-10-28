@@ -1407,6 +1407,7 @@ void assembleblock(const char * block, bool isspecialline)
 #define ret_error_params(errid, ...) { asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
 	else if (is("struct"))
 	{
+		verifysnespos();
 		if (in_struct || in_sub_struct) ret_error(error_id_nested_struct);
 		if (numwords < 2) ret_error(error_id_missing_struct_params);
 		if (numwords > 4) ret_error(error_id_too_many_struct_params);
