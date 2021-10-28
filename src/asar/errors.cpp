@@ -259,7 +259,27 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_invalid_global_label, "Global label definition contains an invalid label [%s]."},
 
 	{ error_id_spc700_addr_out_of_range, "Address %s out of range for instruction, valid range is 0000-1FFF" },
-	{ error_id_label_ambiguous, "Label (%s) location is ambiguous due to straddling optimization border." }
+	{ error_id_label_ambiguous, "Label (%s) location is ambiguous due to straddling optimization border." },
+	
+	{ error_id_feature_unavaliable_in_spcblock, "This feature may not be used while an spcblock is active" },
+	{ error_id_endspcblock_without_spcblock, "Use of endspcblock without matching spcblock" },
+	{ error_id_missing_endspcblock, "Use of endspcblock without matching spcblock" },
+	{ error_id_spcblock_bad_arch, "spcblock only valid inside spc700 arch" },
+	{ error_id_spcblock_inside_struct, "Can not start an spcblock while a struct is still open" },
+	{ error_id_spcblock_too_few_args, "Too few args passed to spcblock" },
+	{ error_id_spcblock_too_many_args, "Too many args passed to spcblock" },
+	{ error_id_unknown_spcblock_type, "Unknown spcblock format" },
+	{ error_id_custom_spcblock_missing_macro, "Custom spcblock types must refer to a valid macro" },
+	{ error_id_spcblock_macro_doesnt_exist, "Macro specified to custom spcblock was not found"},
+	{ error_id_extra_spcblock_arg_for_type, "Only custom spcblock type takes a fourth argument" },
+	{ error_id_spcblock_macro_must_be_varadic, "Custom spcblock macros must be variadic" },
+	{ error_id_spcblock_macro_invalid_static_args, "Custom spcblock macros must have three static arguments" },
+	{ error_id_spcblock_custom_types_incomplete, "Custom spcblock types are not yet supported. One day." },
+	{ error_id_startpos_without_spcblock, "The startpos command is only valid in spcblocks" },
+	{ error_id_internal_error, "An internal asar error occured (%s). Send help." },
+	
+	
+	
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings

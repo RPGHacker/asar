@@ -4,7 +4,7 @@
 void initmathcore();
 void deinitmathcore();
 
-unsigned int getnum(const char * str);
+int64_t getnum(const char * str);
 int64_t getnum64(const char * str);
 double getnumdouble(const char * str);
 

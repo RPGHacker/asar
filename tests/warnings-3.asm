@@ -1,7 +1,7 @@
 ;`+
 ;`errE5164
 
-warnings disable W1008
+warnings disable Wmissing_org
 
 db $01
 

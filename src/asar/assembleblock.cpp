@@ -34,6 +34,7 @@ static string struct_name;
 static string struct_parent;
 static bool in_struct = false;
 static bool in_sub_struct = false;
+static bool in_spcblock = false;
 
 assocarr<snes_struct> structs;
 
@@ -49,6 +50,21 @@ static enum {
 	ratsmeta_allow,
 	ratsmeta_used,
 } ratsmetastate=ratsmeta_ban;
+
+enum spcblock_type{
+	spcblock_nspc,
+	spcblock_custom
+};
+
+struct spcblock_data{
+	unsigned int destination;
+	spcblock_type type;
+	string macro_name;
+
+	unsigned int execute_address;
+	unsigned int size_address;
+	mapper_t old_mapper;
+}spcblock;
 
 int snestopc_pick(int addr)
 {
@@ -273,6 +289,7 @@ autoarray<string>* macrosublabels;
 
 // randomdude999: ns is still the string to prefix to all labels, it's calculated whenever namespace_list is changed
 string ns;
+string ns_backup;
 autoarray<string> namespace_list;
 
 //bool fastrom=false;
@@ -682,7 +699,7 @@ void initstuff()
 	numopcodes=0;
 	specifiedasarver = false;
 	incsrcdepth = 0;
-	
+
 	optimizeforbank = -1;
 	optimize_dp = optimize_dp_flag::NONE;
 	dp_base = 0;
@@ -690,6 +707,7 @@ void initstuff()
 
 	in_struct = false;
 	in_sub_struct = false;
+	in_spcblock = false;
 
 	math_pri=false;
 	math_round=true;
@@ -726,6 +744,7 @@ void finishpass()
 	pull_warnings(false);
 
 //defines.traverse(nerf);
+	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_missing_endspcblock);
 	if (in_struct || in_sub_struct) asar_throw_error(pass, error_type_null, error_id_struct_without_endstruct);
 	else if (pushpcnum && pass == 0) asar_throw_error(pass, error_type_null, error_id_pushpc_without_pullpc);
 	freespaceend();
@@ -882,7 +901,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if(is("if") && moreonline) fakeendif++;
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		const char * errmsg= nullptr;
-		whiletracker wstatus;		
+		whiletracker wstatus;
 		wstatus.startline = thisline;
 		wstatus.iswhile = false;
 		wstatus.cond = false;
@@ -1216,7 +1235,7 @@ void assembleblock(const char * block, bool isspecialline)
 				check_half_banks_crossed = false;
 			}
 			else asar_throw_error(0, error_type_block, error_id_invalid_check);
-			
+
 		}
 		else
 		{
@@ -1372,6 +1391,7 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (assemblemapper(word, numwords)) {}
 	else if (is1("org"))
 	{
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		freespaceend();
 		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
@@ -1479,6 +1499,103 @@ void assembleblock(const char * block, bool isspecialline)
 		optimizeforbank = old_optimizeforbank;
 	}
 #undef ret_error
+	else if(is("spcblock"))
+	{
+		//banned features when active: org, freespace(and variants), arch, mapper,namespace
+		if(arch != arch_spc700)  asar_throw_error(0, error_type_block, error_id_spcblock_bad_arch);
+		if(in_struct || in_sub_struct) asar_throw_error(0, error_type_block, error_id_spcblock_inside_struct);
+		if(numwords < 2)  asar_throw_error(0, error_type_block, error_id_spcblock_too_few_args);
+		if(numwords > 4)  asar_throw_error(0, error_type_block, error_id_spcblock_too_many_args);
+
+		spcblock.destination = getnum(par);
+		spcblock.type = spcblock_nspc;
+		spcblock.macro_name = "";
+
+		if (spcblock.destination&~0xFFFF) asar_throw_error(0, error_type_block, error_id_snes_address_out_of_bounds, hex6(spcblock.destination).data());
+
+		if(numwords == 3)
+		{
+			if(!stricmp(word[2], "nspc")) spcblock.type = spcblock_nspc;
+			else if(!stricmp(word[2], "custom")) asar_throw_error(0, error_type_block, error_id_custom_spcblock_missing_macro);
+			else asar_throw_error(0, error_type_block, error_id_unknown_spcblock_type);
+		}
+		else if(numwords == 4)
+		{
+			if(!stricmp(word[2], "custom")) spcblock.type = spcblock_custom;
+			else asar_throw_error(0, error_type_block, error_id_extra_spcblock_arg_for_type);
+
+			if(macros.exists(word[3]))
+			{
+				macrodata *macro = macros.find(word[3]);
+				if(!macro->variadic) asar_throw_error(0, error_type_block, error_id_spcblock_macro_must_be_varadic);
+				if(macro->numargs != 3) asar_throw_error(0, error_type_block, error_id_spcblock_macro_invalid_static_args);
+				spcblock.macro_name = word[3];
+			}
+			else asar_throw_error(0, error_type_block, error_id_spcblock_macro_doesnt_exist);
+		}
+
+		switch(spcblock.type)
+		{
+			case spcblock_nspc:
+				spcblock.size_address=realsnespos;
+				write2(0x0000);
+				write2(spcblock.destination);
+				snespos=(int)spcblock.destination;
+				startpos=(int)spcblock.destination;
+				spcblock.execute_address = -1u;
+			break;
+			case spcblock_custom:
+				//this is a todo that probably won't be ready for 1.9
+				//mostly so we can leverage some cleanups we make in 2.0 for practicality
+				asar_throw_error(0, error_type_block, error_id_spcblock_custom_types_incomplete);
+				push_pc();
+				spcblock.old_mapper = mapper;
+				mapper = norom;
+			break;
+			default:
+				asar_throw_error(0, error_type_fatal, error_id_internal_error, "invalid spcblock type");
+		}
+
+		ns_backup = ns;
+		ns = STR":SPCBLOCK:_" + ns_backup;
+		in_spcblock = true;
+	}
+	else if(is0("endspcblock"))
+	{
+		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_endspcblock_without_spcblock);
+
+		switch(spcblock.type)
+		{
+			case spcblock_nspc:
+				if (pass==2)
+				{
+					int pcpos=snestopc(spcblock.size_address&0xFFFFFF);
+					if (pcpos<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).data());
+					int num=snespos-startpos;
+					writeromdata_byte(pcpos, (unsigned char)num);
+					writeromdata_byte(pcpos+1, (unsigned char)(num >> 8));
+				}
+				if(spcblock.execute_address != -1u)
+				{
+					write2(0x0000);
+					write2((unsigned int)spcblock.execute_address);
+				}
+			break;
+			case spcblock_custom:
+				mapper = spcblock.old_mapper;
+				pop_pc();
+			break;
+			default:
+				asar_throw_error(0, error_type_fatal, error_id_internal_error, "invalid spcblock type");
+		}
+		ns = ns_backup;
+		in_spcblock = false;
+	}
+	else if (is1("startpos"))
+	{
+		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_startpos_without_spcblock);
+		spcblock.execute_address=getnum64(par);
+	}
 	else if (is1("base"))
 	{
 		if (!stricmp(par, "off"))
@@ -1494,54 +1611,54 @@ void assembleblock(const char * block, bool isspecialline)
 		startpos=(int)num;
 		optimizeforbank=-1;
 	}
-	else if (is1("dpbase"))		
-	{		
-		unsigned int num=(int)getnum(par);		
-		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);		
-		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex6((unsigned int)num).data());		
-		dp_base = (int)num;		
-	}		
-	else if (is2("optimize"))		
-	{		
-		if (!stricmp(par, "dp"))		
-		{		
-			if (!stricmp(word[2], "none"))		
-			{		
-				optimize_dp = optimize_dp_flag::NONE;		
-				return;		
-			}		
-			if (!stricmp(word[2], "ram"))		
-			{		
-				optimize_dp = optimize_dp_flag::RAM;		
-				return;		
-			}		
-			if (!stricmp(word[2], "always"))		
-			{		
-				optimize_dp = optimize_dp_flag::ALWAYS;		
-				return;		
-			}		
-			asar_throw_error(1, error_type_block, error_id_bad_dp_optimize, word[2]);		
-		}		
-		if (!stricmp(par, "address"))		
-		{		
-			if (!stricmp(word[2], "default"))		
-			{		
-				optimize_address = optimize_address_flag::DEFAULT;		
-				return;		
-			}		
-			if (!stricmp(word[2], "ram"))		
-			{		
-				optimize_address = optimize_address_flag::RAM;		
-				return;		
-			}		
-			if (!stricmp(word[2], "mirrors"))		
-			{		
-				optimize_address = optimize_address_flag::MIRRORS;		
-				return;		
-			}		
-			asar_throw_error(1, error_type_block, error_id_bad_address_optimize, word[2]);		
-		}		
-		asar_throw_error(1, error_type_block, error_id_bad_optimize, par);		
+	else if (is1("dpbase"))
+	{
+		unsigned int num=(int)getnum(par);
+		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
+		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex6((unsigned int)num).data());
+		dp_base = (int)num;
+	}
+	else if (is2("optimize"))
+	{
+		if (!stricmp(par, "dp"))
+		{
+			if (!stricmp(word[2], "none"))
+			{
+				optimize_dp = optimize_dp_flag::NONE;
+				return;
+			}
+			if (!stricmp(word[2], "ram"))
+			{
+				optimize_dp = optimize_dp_flag::RAM;
+				return;
+			}
+			if (!stricmp(word[2], "always"))
+			{
+				optimize_dp = optimize_dp_flag::ALWAYS;
+				return;
+			}
+			asar_throw_error(1, error_type_block, error_id_bad_dp_optimize, word[2]);
+		}
+		if (!stricmp(par, "address"))
+		{
+			if (!stricmp(word[2], "default"))
+			{
+				optimize_address = optimize_address_flag::DEFAULT;
+				return;
+			}
+			if (!stricmp(word[2], "ram"))
+			{
+				optimize_address = optimize_address_flag::RAM;
+				return;
+			}
+			if (!stricmp(word[2], "mirrors"))
+			{
+				optimize_address = optimize_address_flag::MIRRORS;
+				return;
+			}
+			asar_throw_error(1, error_type_block, error_id_bad_address_optimize, word[2]);
+		}
+		asar_throw_error(1, error_type_block, error_id_bad_optimize, par);
 	}
 	else if (is1("bank"))
 	{
@@ -1563,6 +1680,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is("freespace") || is("freecode") || is("freedata"))
 	{
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		string parstr;
 		if (numwords==1) parstr="\n";//crappy hack: impossible character to cut out extra commas
@@ -1650,6 +1768,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("prot"))
 	{
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		if (!confirmqpar(par)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 		if (!ratsmetastate) asar_throw_error(2, error_type_block, error_id_prot_not_at_freespace_start);
 		if (ratsmetastate==ratsmeta_used) step(-5);
@@ -1680,6 +1799,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("autoclean") || is2("autoclean") || is1("autoclear") || is2("autoclear"))
 	{
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		if (is1("autoclear") || is2("autoclear")) asar_throw_warning(0, warning_id_autoclear_deprecated);
 		if (numwords==3)
 		{
@@ -1790,6 +1910,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("namespace") || is2("namespace"))
 	{
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		bool leave = false;
 		if (par)
 		{
@@ -2238,11 +2359,13 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("arch"))
 	{
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
-		if (!stricmp(par, "spc700-inline")) { arch=arch_spc700_inline; return; }
+		if (!stricmp(par, "spc700-inline")) { asar_throw_warning(1, warning_id_feature_deprecated, "spc700-inline", " Use spcblock and spcblockend"); arch=arch_spc700_inline; return; }
 		if (!stricmp(par, "spc700-raw")) {
+			asar_throw_warning(1, warning_id_feature_deprecated, "spc700-raw", " Use arch spc700 with norom");
 			arch=arch_spc700;
 			mapper=norom;
 			mapper_set = false;
@@ -2298,7 +2421,7 @@ void assembleblock(const char * block, bool isspecialline)
 			asar_throw_error(1, error_type_block, error_id_unknown_command);
 		}
 	}
-	
+
 }
 
 bool assemblemapper(char** word, int numwords)
@@ -2374,7 +2497,8 @@ bool assemblemapper(char** word, int numwords)
 		asar_throw_warning(0, warning_id_feature_deprecated, "header", "Remove command, unnecessary.");
 	}
 	else return false;
-	
+
+	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 	if(!mapper_set){
 		mapper_set = true;
 	}else if(previous_mapper != mapper){
