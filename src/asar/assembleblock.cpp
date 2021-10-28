@@ -1407,7 +1407,7 @@ void assembleblock(const char * block, bool isspecialline)
 #define ret_error_params(errid, ...) { asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
 	else if (is("struct"))
 	{
-		verifysnespos();
+		//verifysnespos();
 		if (in_struct || in_sub_struct) ret_error(error_id_nested_struct);
 		if (numwords < 2) ret_error(error_id_missing_struct_params);
 		if (numwords > 4) ret_error(error_id_too_many_struct_params);
@@ -1458,6 +1458,8 @@ void assembleblock(const char * block, bool isspecialline)
 
 		struct_name = word[1];
 		struct_base = snespos;
+		realsnespos = 0;
+		realstartpos = 0;
 #undef ret_error_cleanup
 #undef ret_error_params_cleanup
 	}
