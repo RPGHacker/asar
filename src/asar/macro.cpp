@@ -183,11 +183,12 @@ void callmacro(const char * data)
 					}
 					if (!found)
 					{
-						//todo do we need to ban labels here?
 						unsigned int ret;
 						if(valid_named_param  && !thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
 						if(thismacro->variadic && valid_named_param && !labelval(in, &ret, false))  asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
 						int arg_num = getnum(in);
+
+						if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
 
 						if(numif<=numtrue){
 							if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
