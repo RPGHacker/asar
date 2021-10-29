@@ -17,8 +17,9 @@ endmacro
 
 macro sorry2(asd, ...)
 	!a = 0
-	while !a < sizeof(...)
-		db <!a>
+	db <0>
+	while !a < sizeof(...)-1
+		db <!a+1>
 		!a #= !a+1
 	endwhile
 	db <asd>
