@@ -2,7 +2,7 @@
 ;`29 78
 ;`warnW1013
 
-warnings enable W1013
+warnings enable Wimplicitly_sized_immediate
 
 org $008000
 

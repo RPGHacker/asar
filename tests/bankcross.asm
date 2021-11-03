@@ -38,8 +38,8 @@
 
 ;disabling mapper change warning as a bonus test instead
 ;of requiring the warning like other tests
-warnings disable W1029
-warnings disable W1030
+warnings disable Wmapper_already_set
+warnings disable Wfeature_deprecated
 check bankcross off
 
 org $00FFFF

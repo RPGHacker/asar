@@ -81,10 +81,10 @@ static asar_warning_mapping asar_warnings[] =
 	{ WRN(if_not_condition_deprecated), "'if !condition' is deprecated - please use 'if not(condition)' instead." },
 
 	{ WRN(function_redefined), "Function '%s' redefined." },
-	
+
 	{ WRN(datasize_last_label), "Datasize used on last detected label '%s'." },
 	{ WRN(datasize_exceeds_size), "Datasize exceeds 0xFFFF for label '%s'." },
-	
+
 	{ WRN(mapper_already_set), "A mapper has already been selected." },
 	{ WRN(feature_deprecated), "DEPRECATION NOTIFICATION: Feature %s is deprecated and will be REMOVED in the future. Please update your code to conform to newer styles. Suggested work around: %s." }
 };
@@ -148,11 +148,18 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 		return warning_id_end;
 	}
 
+
 	if (pos[0] == 'w' || pos[0] == 'W')
 	{
 		++pos;
 	}
-
+	for(int i = 0; i < warning_id_end-warning_id_start-1; i++)
+	{
+		if(!stricmpwithlower(pos, asar_warnings[i].name+1))
+		{
+			return asar_warnings[i].warnid;
+		}
+	}
 	char* endpos = nullptr;
 	int numid = (int)strtol(pos, &endpos, 10);
 
@@ -168,6 +175,7 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 		return warning_id_end;
 	}
 
+	asar_throw_warning(1, warning_id_feature_deprecated, "Numerical warnings", "Please transition to Wwarning_name");
 	return warnid;
 }
 
@@ -244,7 +252,7 @@ void verify_warnings()
 	if (warnings_state_stack.count > 0)
 	{
 		asar_throw_error(0, error_type_null, error_id_pushwarnings_without_pullwarnings);
-		
+
 		warnings_state_stack.reset();
 	}
 }

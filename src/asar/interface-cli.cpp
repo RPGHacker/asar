@@ -249,7 +249,7 @@ int main(int argc, char * argv[])
 				else if (checkstartmatch(w_param, "no"))
 				{
 					asar_warning_id warnid = parse_warning_id_from_string(w_param + strlen("no"));
-					
+
 					if (warnid != warning_id_end)
 					{
 						set_warning_enabled(warnid, false);

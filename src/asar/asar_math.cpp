@@ -870,8 +870,10 @@ static double getnum()
 	return sanitize(getnumcore());
 }
 
-uint32_t getnum(const char* instr)
+int64_t getnum(const char* instr)
 {
+	return getnum64(instr);
+	
 	// randomdude999: perform manual bounds-checking and 2's complement,
 	// to prevent depending on UB
 	double num = math(instr);

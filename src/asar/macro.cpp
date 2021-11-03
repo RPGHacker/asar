@@ -5,6 +5,7 @@
 #include "errors.h"
 #include "assembleblock.h"
 #include "macro.h"
+#include "asar_math.h"
 
 assocarr<macrodata*> macros;
 static string thisname;
@@ -113,7 +114,7 @@ void callmacro(const char * data)
 	if (numargs < thismacro->numargs - 1 && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);
 	macrorecursion++;
 	int startif=numif;
-	
+
 	// RPG Hacker: -1 to take the ... into account, which is also being counted.
 	if(thismacro->variadic) numvarargs = numargs-(thismacro->numargs-1);
 	else numvarargs = -1;
@@ -140,54 +141,31 @@ void callmacro(const char * data)
 			string out;
 			string connectedline;
 			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, connectedline);
-			string intmp;
-			if(thismacro->variadic && numif<=numtrue) resolvedefines(intmp, connectedline.data());
-			else intmp = connectedline;
+			string intmp = connectedline;
 			for (char * in=intmp.temp_raw();*in;)
 			{
-				if (*in=='<' && in[1]=='<')
+				if (*in=='<' && in[1]=='<' && in[2] != ':')
 				{
 					out+="<<";
 					in+=2;
 				}
-				else if (thismacro->variadic && *in=='<' && (is_digit(in[1]) || in[1] == '-'))
-				{
-					char * end=in+2;
-					while (is_digit(*end)) end++;
-					if (*end!='>')
-					{
-						out+=*(in++);
-						continue;
-					}
-					*end=0;
-					in++;
-					int arg_num = strtol(in, nullptr, 10);
-					
-					if(numif<=numtrue){
-						if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
-						if (arg_num > numargs-thismacro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
-						if (args[arg_num+thismacro->numargs-1][0]=='"')
-						{
-							string s=args[arg_num+thismacro->numargs-1];
-							out+=safedequote(s.temp_raw());
-						}
-						else out+=args[arg_num+thismacro->numargs-1];
-					}
-					in=end+1;
-					
-				}
-				else if (*in=='<' && is_alnum(in[1]))
+				else if (*in=='<')
 				{
 					char * end=in+1;
-					while (*end && *end!='<' && *end!='>') end++;
+					while (*end && *end!='>'&& *end!='<' && *(end+1)!=':') end++; //allow for conditionals and <:
 					if (*end!='>')
 					{
 						out+=*(in++);
 						continue;
 					}
+
 					*end=0;
 					in++;
-					if (!confirmname(in)) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
+					string param;
+					resolvedefines(param, in);
+					in = param.temp_raw();
+					bool valid_named_param = confirmname(in);
+					if (!valid_named_param && !thismacro->variadic) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
 					bool found=false;
 					for (int j=0;thismacro->arguments[j];j++)
 					{
@@ -203,7 +181,26 @@ void callmacro(const char * data)
 							break;
 						}
 					}
-					if (!found) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
+					if (!found)
+					{
+						unsigned int ret;
+						if(valid_named_param  && !thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
+						if(thismacro->variadic && valid_named_param && !labelval(in, &ret, false))  asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
+						int arg_num = getnum(in);
+
+						if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
+
+						if(numif<=numtrue){
+							if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
+							if (arg_num > numargs-thismacro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
+							if (args[arg_num+thismacro->numargs-1][0]=='"')
+							{
+								string s=args[arg_num+thismacro->numargs-1];
+								out+=safedequote(s.temp_raw());
+							}
+							else out+=args[arg_num+thismacro->numargs-1];
+						}
+					}
 					in=end+1;
 				}
 				else out+=*(in++);

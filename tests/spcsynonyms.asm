@@ -3,6 +3,7 @@
 ;`EA 12 60  EA 12 60
 ;`EA 12 60  EA 12 60
 ;`EA 12 60  EA 12 60
+warnings disable Wfeature_deprecated
 arch spc700-raw
 org 0
 L:

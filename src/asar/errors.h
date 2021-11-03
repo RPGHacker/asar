@@ -211,12 +211,12 @@ enum asar_error_id : int
 
 	error_id_failed_to_open_file_access_denied,
 	error_id_failed_to_open_not_regular_file,
-	
+
 	error_id_bad_dp_base,
 	error_id_bad_dp_optimize,
 	error_id_bad_address_optimize,
 	error_id_bad_optimize,
-	
+
 	error_id_require_parameter,
 	error_id_expected_parameter,
 	error_id_unexpected_parameter,
@@ -226,7 +226,7 @@ enum asar_error_id : int
 	error_id_alignment_too_big,
 
 	error_id_negative_shift,
-	
+
 	error_id_macro_not_varadic,
 	error_id_vararg_sizeof_nomacro,
 	error_id_macro_wrong_min_params,
@@ -237,7 +237,29 @@ enum asar_error_id : int
 
 	error_id_spc700_addr_out_of_range,
 	error_id_label_ambiguous,
-	
+
+	error_id_feature_unavaliable_in_spcblock,
+	error_id_endspcblock_without_spcblock,
+	error_id_missing_endspcblock,
+	error_id_spcblock_bad_arch,
+	error_id_spcblock_inside_struct,
+	error_id_spcblock_too_few_args,
+	error_id_spcblock_too_many_args,
+	error_id_unknown_spcblock_type,
+	error_id_custom_spcblock_missing_macro,
+	error_id_spcblock_macro_doesnt_exist,
+	error_id_extra_spcblock_arg_for_type,
+	error_id_spcblock_macro_must_be_varadic,
+	error_id_spcblock_macro_invalid_static_args,
+	error_id_spcblock_custom_types_incomplete,
+	error_id_startpos_without_spcblock,
+	error_id_internal_error,
+
+	error_id_pushns_without_pullns,
+	error_id_pullns_without_pushns,
+
+	error_id_label_forward,
+
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
 };
