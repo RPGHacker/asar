@@ -60,7 +60,7 @@ This line tests that `22`, `20`, `80` and `90` were written to the ROM offset `0
 ;`007606 22 20 80 90
 ```
 
-This line tests that the byte `FF` was written to the start of the ROM and that the string "This is a test." was printed by the patch.
+This line tests that the byte `FF` was written to the start of the ROM and that the string `This is a test.` was printed by the patch.
 ```
 ;`FF
 ;>This is a test.
