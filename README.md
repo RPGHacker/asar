@@ -41,6 +41,13 @@ These two characters should precede each test line, so that Asar sees them as co
 * A line starting with `+` tells the testing app to patch the SMW ROM instead of creating a new ROM
 * `errEXXXX` and `warnWXXXX` (where `XXXX` is an ID number) means that the test is expected to throw that specific error or warning while patching. The test will succeed if only these errors and warnings are thrown.
 
+In addition to the format mentioned above, it's also possible to specify user prints that the patch in question is expected to output by starting the respective line with:
+```
+;>`
+```
+
+Following this sequence, every character up to the end of the current line is a part of the expected string to be printed.
+
 **Example tests:**
 
 This line tests that the bytes `5A`, `40` and `00` (in that order) were written to the start of the ROM.
@@ -51,4 +58,10 @@ This line tests that the bytes `5A`, `40` and `00` (in that order) were written 
 This line tests that `22`, `20`, `80` and `90` were written to the ROM offset `0x007606`.
 ```
 ;`007606 22 20 80 90
+```
+
+This line tests that the byte `FF` was written to the start of the ROM and that the string "This is a test." was printed by the patch.
+```
+;`FF
+;>This is a test.
 ```

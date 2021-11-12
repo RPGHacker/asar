@@ -247,27 +247,45 @@ static void delete_file(const char * filename)
 // complicated platform-specific solution.
 // NOTE: No cont char*, for commandline, because CreateProcess()
 // actually can mess with this string for some reason...
-static bool execute_command_line(char * commandline, const char * log_file)
+static bool execute_command_line(char * commandline, const char * stdout_log_file, const char * stderr_log_file)
 {
 #if defined(_WIN32)
 
-	HANDLE read_handle = nullptr;
-	HANDLE write_handle = nullptr;
+	HANDLE stdout_read_handle = nullptr;
+	HANDLE stdout_write_handle = nullptr;
+	HANDLE stderr_read_handle = nullptr;
+	HANDLE stderr_write_handle = nullptr;
 
 	SECURITY_ATTRIBUTES sa;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = nullptr;
 
-	if (!CreatePipe(&read_handle, &write_handle, &sa, 0))
+	if (!CreatePipe(&stdout_read_handle, &stdout_write_handle, &sa, 0))
 	{
 		return false;
 	}
 
-	if (!SetHandleInformation(read_handle, HANDLE_FLAG_INHERIT, 0))
+	if (!SetHandleInformation(stdout_read_handle, HANDLE_FLAG_INHERIT, 0))
 	{
-		CloseHandle(read_handle);
-		CloseHandle(write_handle);
+		CloseHandle(stdout_read_handle);
+		CloseHandle(stdout_write_handle);
+		return false;
+	}
+
+	if (!CreatePipe(&stderr_read_handle, &stderr_write_handle, &sa, 0))
+	{
+		CloseHandle(stdout_read_handle);
+		CloseHandle(stdout_write_handle);
+		return false;
+	}
+
+	if (!SetHandleInformation(stderr_read_handle, HANDLE_FLAG_INHERIT, 0))
+	{
+		CloseHandle(stdout_read_handle);
+		CloseHandle(stdout_write_handle);
+		CloseHandle(stderr_read_handle);
+		CloseHandle(stderr_write_handle);
 		return false;
 	}
 
@@ -276,15 +294,17 @@ static bool execute_command_line(char * commandline, const char * log_file)
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
 	si.cb = sizeof(si);
-	si.hStdError = write_handle;
-	si.hStdOutput = write_handle;
+	si.hStdError = stderr_write_handle;
+	si.hStdOutput = stdout_write_handle;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 
 	if (!CreateProcessA(nullptr, commandline, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi))
 	{
 		printf("execute_command_line() failed with HRESULT: 0x%8x", (unsigned int)HRESULT_FROM_WIN32(GetLastError()));
-		CloseHandle(read_handle);
-		CloseHandle(write_handle);
+		CloseHandle(stdout_read_handle);
+		CloseHandle(stdout_write_handle);
+		CloseHandle(stderr_read_handle);
+		CloseHandle(stderr_write_handle);
 		return false;
 	}
 
@@ -292,32 +312,56 @@ static bool execute_command_line(char * commandline, const char * log_file)
 
 	CloseHandle(pi.hThread);
 	CloseHandle(pi.hProcess);
-	CloseHandle(write_handle);
+	CloseHandle(stdout_write_handle);
+	CloseHandle(stderr_write_handle);
 
-	FILE * logfilehandle = fopen(log_file, "wt");
-
-	DWORD dwRead;
-	CHAR chBuf[4096];
-	BOOL bSuccess = FALSE;
-	for (;;)
 	{
-		bSuccess = ReadFile(read_handle, chBuf, sizeof(chBuf), &dwRead, nullptr);
-		if (bSuccess == FALSE || dwRead == 0) break;
-		fwrite(chBuf, 1, dwRead, logfilehandle);
+		FILE * logfilehandle = fopen(stdout_log_file, "wb");
+
+		DWORD dwRead;
+		CHAR chBuf[4096];
+		BOOL bSuccess = FALSE;
+		for (;;)
+		{
+			bSuccess = ReadFile(stdout_read_handle, chBuf, sizeof(chBuf), &dwRead, nullptr);
+			if (bSuccess == FALSE || dwRead == 0) break;
+			fwrite(chBuf, 1, dwRead, logfilehandle);
+		}
+
+		fclose(logfilehandle);
+
+		CloseHandle(stdout_read_handle);
 	}
 
-	fclose(logfilehandle);
+	{
+		FILE * logfilehandle = fopen(stderr_log_file, "wb");
 
-	CloseHandle(read_handle);
+		DWORD dwRead;
+		CHAR chBuf[4096];
+		BOOL bSuccess = FALSE;
+		for (;;)
+		{
+			bSuccess = ReadFile(stderr_read_handle, chBuf, sizeof(chBuf), &dwRead, nullptr);
+			if (bSuccess == FALSE || dwRead == 0) break;
+			fwrite(chBuf, 1, dwRead, logfilehandle);
+		}
+
+		fclose(logfilehandle);
+
+		CloseHandle(stderr_read_handle);
+	}
 
 #else
+
+	// RPG Hacker: TODO: Needs support for splitting stderr and stdout.
+	// Currently, I expect tests to just fail on Linux.
 
 	fflush(stdout);
 	
 	std::string line = commandline;
 	line += " 2>&1";
 	FILE * fp = popen(line.c_str(), "r");
-	FILE * logfilehandle = fopen(log_file, "wt+");
+	FILE * logfilehandle = fopen(stderr_log_file, "wt+");
 	
 	char buffer[4096];
 	char* last_line = nullptr;
@@ -464,21 +508,28 @@ int main(int argc, char * argv[])
 
 	int numfailed = 0;
 
+	// RPG Hacker: A list of standard prints to ignore from print output verification. They will make tests fail that are
+	// supposed to be successful. This is kind of stinky solution, but there currently isn't really a good way to distinguish
+	// between "user prints" and prints coming directly from Asar.
+	std::set<std::string> standard_prints;
+	standard_prints.insert("Errors were detected while assembling the patch. Assembling aborted. Your ROM has not been modified.");
+	standard_prints.insert("A fatal error was detected while assembling the patch. Assembling aborted. Your ROM has not been modified.");
+
 	for (size_t testno = 0; testno < input_files.size(); ++testno)
 	{
 		char * fname = input_files[testno].file_path;
 
 		char out_rom_name[512];
 		snprintf(out_rom_name, sizeof(out_rom_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".sfc");
-		char azm_name[512];
-		snprintf(azm_name, sizeof(azm_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".azm");
-		char log_name[512];
-		snprintf(log_name, sizeof(log_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".log");
+		char stdout_log_name[512];
+		snprintf(stdout_log_name, sizeof(stdout_log_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".stdout.log");
+		char stderr_log_name[512];
+		snprintf(stderr_log_name, sizeof(stderr_log_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".stderr.log");
 
 		// Delete files if they already exist, so we don't get leftovers from a previous testrun
 		delete_file(out_rom_name);
-		delete_file(azm_name);
-		delete_file(log_name);
+		delete_file(stdout_log_name);
+		delete_file(stderr_log_name);
 
 		char * expectedrom = (char*)malloc(max_rom_size);
 		char * truerom = (char*)malloc(max_rom_size);
@@ -497,6 +548,7 @@ int main(int argc, char * argv[])
 
 		std::set<int> expected_errors;
 		std::set<int> expected_warnings;
+		std::vector<std::string> expected_prints;
 
 		while (true)
 		{
@@ -532,67 +584,74 @@ int main(int argc, char * argv[])
 			}
 				
 			line[current_line_length > 0 ? current_line_length-1 : 0] = '\0';
-			
-			if (line[0] != ';' || line[1] != '`')
-			{				
+
+			if (line[0] == ';' && line[1] == '`')
+			{
+				std::vector<std::string> words = tokenize_string(line + 2, " ");
+				for (size_t i = 0; i < words.size(); ++i)
+				{
+					std::string& cur_word = words[i];
+					char * outptr;
+					int num = (int)strtol(words[i].c_str(), &outptr, 16);
+					if (*outptr) num = -1;
+					if (cur_word == "+")
+					{
+						if (line[2] == '+')
+						{
+							memcpy(expectedrom, smwrom, 512 * 1024);
+							fwrite(smwrom, 1, 512 * 1024, rom);
+							len = 512 * 1024;
+						}
+					}
+					if ((cur_word.length() == 5 || cur_word.length() == 6) && num >= 0) pos = num;
+					if (cur_word.length() == 2 && num >= 0) expectedrom[pos++] = (char)num;
+					if (cur_word[0] == '#')
+					{
+						numiter = atoi(cur_word.c_str() + 1);
+					}
+
+					const char* token = "errE";
+					if (strncmp(cur_word.c_str(), token, strlen(token)) == 0)
+					{
+						const char* idstr = cur_word.c_str() + strlen(token);
+						char* endpos = nullptr;
+						long int id = strtol(idstr, &endpos, 10);
+
+						if (endpos == nullptr || *endpos != '\0')
+						{
+							dief("Error: Invalid %s declaration!\n", token);
+						}
+
+						expected_errors.insert((int)id);
+					}
+
+					token = "warnW";
+					if (strncmp(cur_word.c_str(), token, strlen(token)) == 0)
+					{
+						const char* idstr = cur_word.c_str() + strlen(token);
+						char* endpos = nullptr;
+						long int id = strtol(idstr, &endpos, 10);
+
+						if (endpos == nullptr || *endpos != '\0')
+						{
+							dief("Error: Invalid %s declaration!\n", token);
+						}
+
+						expected_warnings.insert((int)id);
+					}
+
+					if (pos > len) len = pos;
+				}
+			}
+			else if(line[0] == ';' && line[1] == '>')
+			{
+				std::string string_to_print(line, 2, std::string::npos);
+				expected_prints.push_back(string_to_print);
+			}
+			else
+			{
 				fseek(asmfile, line_start_pos, SEEK_SET);
 				break;
-			}
-			
-			std::vector<std::string> words = tokenize_string(line + 2, " ");
-			for (size_t i = 0; i < words.size(); ++i)
-			{
-				std::string& cur_word = words[i];
-				char * outptr;
-				int num = (int)strtol(words[i].c_str(), &outptr, 16);
-				if (*outptr) num = -1;
-				if (cur_word == "+")
-				{
-					if (line[2] == '+')
-					{
-						memcpy(expectedrom, smwrom, 512 * 1024);
-						fwrite(smwrom, 1, 512 * 1024, rom);
-						len = 512 * 1024;
-					}
-				}
-				if ((cur_word.length() == 5 || cur_word.length() == 6) && num >= 0) pos = num;
-				if (cur_word.length() == 2 && num >= 0) expectedrom[pos++] = (char)num;
-				if (cur_word[0] == '#')
-				{
-					numiter = atoi(cur_word.c_str() + 1);
-				}
-
-				const char* token = "errE";
-				if (strncmp(cur_word.c_str(), token, strlen(token)) == 0)
-				{
-					const char* idstr = cur_word.c_str() + strlen(token);
-					char* endpos = nullptr;
-					long int id = strtol(idstr, &endpos, 10);
-
-					if (endpos == nullptr || *endpos != '\0')
-					{
-						dief("Error: Invalid %s declaration!\n", token);
-					}
-
-					expected_errors.insert((int)id);
-				}
-
-				token = "warnW";
-				if (strncmp(cur_word.c_str(), token, strlen(token)) == 0)
-				{
-					const char* idstr = cur_word.c_str() + strlen(token);
-					char* endpos = nullptr;
-					long int id = strtol(idstr, &endpos, 10);
-
-					if (endpos == nullptr || *endpos != '\0')
-					{
-						dief("Error: Invalid %s declaration!\n", token);
-					}
-
-					expected_warnings.insert((int)id);
-				}
-
-				if (pos > len) len = pos;
 			}
 		}
 
@@ -608,8 +667,11 @@ int main(int argc, char * argv[])
 		fseek(rom, 0, SEEK_SET);
 		fread(truerom, 1, (size_t)truelen, rom);
 		fclose(rom);
+
 		printf("Patching: %s\n", fname);
-		FILE * err = fopen(log_name, "wt");
+
+		FILE * err = fopen(stderr_log_name, "wt");
+		FILE * out = fopen(stdout_log_name, "wt");
 
 		{
 			std::string base_path_string = dir(fname);
@@ -725,10 +787,21 @@ int main(int argc, char * argv[])
 						fwrite("\n", 1, strlen("\n"), err);
 					}
 				}
+
+				{
+					int numprints;
+					const char * const * prints = asar_getprints(&numprints);
+					for (int j = 0; j < numprints; ++j)
+					{
+						fwrite(prints[j], 1, strlen(prints[j]), out);
+						fwrite("\n", 1, strlen("\n"), out);
+					}
+				}
 			}
 		}
 
 		fclose(err);
+		fclose(out);
 #else
 		{
 			std::string base_path_string = dir(fname);
@@ -740,91 +813,141 @@ int main(int argc, char * argv[])
 			for (int i = 0;i < numiter;i++)
 			{
 				printf("Executing: %s\n", cmd);
-				if (!execute_command_line(cmd, log_name))
+				if (!execute_command_line(cmd, stdout_log_name, stderr_log_name))
 				{
 					dief("Failed executing command line:\n    %s\n", cmd);
 				}
 			}
 		}
 		FILE * err = nullptr;
+		FILE * out = nullptr;
 #endif
-		err = fopen(log_name, "rt");
-		fseek(err, 0, SEEK_END);
-		size_t fsize = (size_t)ftell(err);
-		fseek(err, 0, SEEK_SET);
-		char* buf = (char*)malloc(fsize + 1);
-		memset(buf, 0, fsize + 1);
-		fread(buf, 1, fsize, err);
-		fclose(err);
 
 		std::set<int> actual_errors;
 		std::set<int> actual_warnings;
+		std::vector<std::string> actual_prints;
 		std::list<std::string> lines_to_print;
 
-		std::string log_line;
-
-		for (size_t i = 0; i < fsize; ++i)
 		{
-			if (buf[i] == '\n' || buf[i] == '\0')
-			{
-				const char* token = ": error: (E";
-				size_t found = log_line.find(token);
-				if (found != std::string::npos)
-				{
-					char* endpos = nullptr;
-					long int num = strtol(log_line.c_str() + found + strlen(token), &endpos, 10);
+			err = fopen(stderr_log_name, "rt");
+			fseek(err, 0, SEEK_END);
+			size_t fsize = (size_t)ftell(err);
+			fseek(err, 0, SEEK_SET);
+			char* buf = (char*)malloc(fsize + 1);
+			memset(buf, 0, fsize + 1);
+			fread(buf, 1, fsize, err);
+			fclose(err);
 
-					if (endpos == nullptr || *endpos != ')')
+			std::string log_line;
+
+			for (size_t i = 0; i < fsize; ++i)
+			{
+				if (buf[i] == '\n' || buf[i] == '\0')
+				{
+					const char* token = ": error: (E";
+					size_t found = log_line.find(token);
+					if (found != std::string::npos)
 					{
-						dief("Error: Failed parsing error code from Asar output!\n");
+						char* endpos = nullptr;
+						long int num = strtol(log_line.c_str() + found + strlen(token), &endpos, 10);
+
+						if (endpos == nullptr || *endpos != ')')
+						{
+							dief("Error: Failed parsing error code from Asar output!\n");
+						}
+
+						actual_errors.insert(num);
+
+						lines_to_print.push_back(log_line);
 					}
 
-					actual_errors.insert(num);
-
-					lines_to_print.push_back(log_line);
-				}
-
-				token = ": warning: (W";
-				found = log_line.find(token);
-				if (found != std::string::npos)
-				{
-					char* endpos = nullptr;
-					long int num = strtol(log_line.c_str() + found + strlen(token), &endpos, 10);
-
-					if (endpos == nullptr || *endpos != ')')
+					token = ": warning: (W";
+					found = log_line.find(token);
+					if (found != std::string::npos)
 					{
-						dief("Error: Failed parsing warning code from Asar output!\n");
+						char* endpos = nullptr;
+						long int num = strtol(log_line.c_str() + found + strlen(token), &endpos, 10);
+
+						if (endpos == nullptr || *endpos != ')')
+						{
+							dief("Error: Failed parsing warning code from Asar output!\n");
+						}
+
+						actual_warnings.insert(num);
+
+						lines_to_print.push_back(log_line);
 					}
 
-					actual_warnings.insert(num);
-
-					lines_to_print.push_back(log_line);
+					log_line.clear();
 				}
-
-				log_line.clear();
-			}
-			else
-			{
-				if (buf[i] != '\r')
+				else
 				{
-					log_line += buf[i];
+					if (buf[i] != '\r')
+					{
+						log_line += buf[i];
+					}
 				}
 			}
+
+			free(buf);
 		}
 
-		free(buf);
+		{
+			out = fopen(stdout_log_name, "rt");
+			fseek(out, 0, SEEK_END);
+			size_t fsize = (size_t)ftell(out);
+			fseek(out, 0, SEEK_SET);
+			char* buf = (char*)malloc(fsize + 1);
+			memset(buf, 0, fsize + 1);
+			fread(buf, 1, fsize, out);
+			fclose(out);
+
+			std::string log_line;
+
+			for (size_t i = 0; i < fsize; ++i)
+			{
+				// RPG Hacker: We treat \0 as EOF now.
+				// I have no idea how these even end up in the output file, but they definitely shouldn't be considered
+				// part of the actual output, and doing so will make a bunch of tests fail.
+				if (buf[i] == '\0')
+				{
+					break;
+				}
+
+				if (buf[i] == '\n')
+				{
+					if (standard_prints.find(log_line) == standard_prints.cend())
+					{
+						actual_prints.push_back(log_line);
+					}
+					log_line.clear();
+				}
+				else
+				{
+					if (buf[i] != '\r')
+					{
+						log_line += buf[i];
+					}
+				}
+			}
+
+			free(buf);
+		}
 
 		bool did_fail = false;
 		if (expected_errors.size() != actual_errors.size()
 			|| expected_warnings.size() != actual_warnings.size()
+			|| expected_prints.size() != actual_prints.size()
 			|| !std::equal(expected_errors.begin(), expected_errors.end(), actual_errors.begin())
-			|| !std::equal(expected_warnings.begin(), expected_warnings.end(), actual_warnings.begin()))
+			|| !std::equal(expected_warnings.begin(), expected_warnings.end(), actual_warnings.begin())
+			|| !std::equal(expected_prints.begin(), expected_prints.end(), actual_prints.begin()))
 			did_fail = true;
 
 		if(did_fail) {
 			// this thing depends on c++11 already, right?
-			for(std::string line : lines_to_print) {
-				printf("%s\n", line.c_str());
+			for(std::string line_to_print : lines_to_print)
+			{
+				printf("%s\n", line_to_print.c_str());
 			}
 			printf("Expected errors: ");
 			for (auto it = expected_errors.begin(); it != expected_errors.end(); ++it)
@@ -853,6 +976,21 @@ int main(int argc, char * argv[])
 				printf("%sW%d", (it != actual_warnings.begin() ? "," : ""), *it);
 			}
 			printf("\n");
+
+			printf("Expected prints: \n");
+			for (auto it = expected_prints.begin(); it != expected_prints.end(); ++it)
+			{
+				printf("\"%s\"\n", it->c_str());
+			}
+			printf("\n");
+
+			printf("Actual prints: \n");
+			for (auto it = actual_prints.begin(); it != actual_prints.end(); ++it)
+			{
+				printf("\"%s\"\n", it->c_str());
+			}
+			printf("\n");
+
 			dief("Mismatch!\n");
 		}
 
