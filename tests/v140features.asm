@@ -209,7 +209,7 @@
 ;>;This is not a comment, so getconnectedlines() should ignore it and not remove it.
 ;>
 ;>Let's have some random decimal number with fractional part: 10.34017
-;>Now the same number, but with a different precision: 10.340173447601383571736732847057282924652099609375
+;>Now the same number, but with a different precision: 10.3401734476
 ;>Testing a few more numbers: 0, 0.1, -0.1, 1, -1
 ;>
 @asar 1.40
@@ -382,7 +382,7 @@ print ";This is not a comment, ",\
 print ""
  
 print "Let's have some random decimal number with fractional part: ",double(10.340173447601384024017510834015701571048)
-print "Now the same number, but with a different precision: ",double(10.340173447601384024017510834015701571048, 100)
+print "Now the same number, but with a different precision: ",double(10.340173447601384024017510834015701571048, 10)
 print "Testing a few more numbers: ",double(0.0),", ",double(0.1),", ",double(-0.1),", ",double(1.0),", ",double(-1.0)
 
 print ""
