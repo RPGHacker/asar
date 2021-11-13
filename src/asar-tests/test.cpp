@@ -549,6 +549,8 @@ int main(int argc, char * argv[])
 		std::set<int> expected_errors;
 		std::set<int> expected_warnings;
 		std::vector<std::string> expected_prints;
+		std::vector<std::string> expected_error_prints;
+		std::vector<std::string> expected_warn_prints;
 
 		while (true)
 		{
@@ -643,10 +645,21 @@ int main(int argc, char * argv[])
 					if (pos > len) len = pos;
 				}
 			}
-			else if(line[0] == ';' && line[1] == '>')
+			else if(line[0] == ';' && line[1] != '\0' && line[2] == '>')
 			{
-				std::string string_to_print(line, 2, std::string::npos);
-				expected_prints.push_back(string_to_print);
+				std::string string_to_print(line, 3, std::string::npos);
+				if (line[1] == 'P')
+				{
+					expected_prints.push_back(string_to_print);
+				}
+				else if (line[1] == 'E')
+				{
+					expected_error_prints.push_back(string_to_print);
+				}
+				else if (line[1] == 'W')
+				{
+					expected_warn_prints.push_back(string_to_print);
+				}
 			}
 			else
 			{
@@ -826,6 +839,8 @@ int main(int argc, char * argv[])
 		std::set<int> actual_errors;
 		std::set<int> actual_warnings;
 		std::vector<std::string> actual_prints;
+		std::vector<std::string> actual_error_prints;
+		std::vector<std::string> actual_warn_prints;
 		std::list<std::string> lines_to_print;
 
 		{
@@ -858,6 +873,33 @@ int main(int argc, char * argv[])
 
 						actual_errors.insert(num);
 
+						// RPG Hacker: Check if it's the error command. If so, we also need to add a print as well.
+						{
+							std::string command_token = ": error command: ";
+							std::string remainder = endpos;
+							size_t command_found = remainder.find(command_token);
+
+							if (command_found != std::string::npos)
+							{
+								actual_error_prints.push_back(std::string(remainder, command_found + command_token.length(), std::string::npos));
+							}
+						}
+
+						// RPG Hacker: Same goes for the assert command.
+						{
+							std::string command_token_1 = ": Assertion failed: ";
+							std::string command_token_2 = " [assert ";
+							std::string remainder = endpos;
+							size_t command_found_1 = remainder.find(command_token_1);
+							size_t command_found_2 = remainder.find(command_token_2);
+
+							if (command_found_1 != std::string::npos && command_found_2 != std::string::npos)
+							{
+								size_t string_start_pos = command_found_1 + command_token_1.length();
+								actual_error_prints.push_back(std::string(remainder, string_start_pos, command_found_2-string_start_pos));
+							}
+						}
+
 						lines_to_print.push_back(log_line);
 					}
 
@@ -874,6 +916,18 @@ int main(int argc, char * argv[])
 						}
 
 						actual_warnings.insert(num);
+
+						// RPG Hacker: Check if it's the warn command. If so, we also need to add a print as well.
+						{
+							std::string command_token = ": warn command: ";
+							std::string remainder = endpos;
+							size_t command_found = remainder.find(command_token);
+
+							if (command_found != std::string::npos)
+							{
+								actual_warn_prints.push_back(std::string(remainder, command_found + command_token.length(), std::string::npos));
+							}
+						}
 
 						lines_to_print.push_back(log_line);
 					}
@@ -919,6 +973,8 @@ int main(int argc, char * argv[])
 					if (standard_prints.find(log_line) == standard_prints.cend())
 					{
 						actual_prints.push_back(log_line);
+
+						lines_to_print.push_back(log_line);
 					}
 					log_line.clear();
 				}
@@ -938,9 +994,13 @@ int main(int argc, char * argv[])
 		if (expected_errors.size() != actual_errors.size()
 			|| expected_warnings.size() != actual_warnings.size()
 			|| expected_prints.size() != actual_prints.size()
+			|| expected_error_prints.size() != actual_error_prints.size()
+			|| expected_warn_prints.size() != actual_warn_prints.size()
 			|| !std::equal(expected_errors.begin(), expected_errors.end(), actual_errors.begin())
 			|| !std::equal(expected_warnings.begin(), expected_warnings.end(), actual_warnings.begin())
-			|| !std::equal(expected_prints.begin(), expected_prints.end(), actual_prints.begin()))
+			|| !std::equal(expected_prints.begin(), expected_prints.end(), actual_prints.begin())
+			|| !std::equal(expected_error_prints.begin(), expected_error_prints.end(), actual_error_prints.begin())
+			|| !std::equal(expected_warn_prints.begin(), expected_warn_prints.end(), actual_warn_prints.begin()))
 			did_fail = true;
 
 		if(did_fail) {
@@ -949,7 +1009,7 @@ int main(int argc, char * argv[])
 			{
 				printf("%s\n", line_to_print.c_str());
 			}
-			printf("Expected errors: ");
+			printf("\nExpected errors: ");
 			for (auto it = expected_errors.begin(); it != expected_errors.end(); ++it)
 			{
 				printf("%sE%d", (it != expected_errors.begin() ? "," : ""), *it);
@@ -963,7 +1023,7 @@ int main(int argc, char * argv[])
 			}
 			printf("\n");
 
-			printf("Expected warnings: ");
+			printf("\nExpected warnings: ");
 			for (auto it = expected_warnings.begin(); it != expected_warnings.end(); ++it)
 			{
 				printf("%sW%d", (it != expected_warnings.begin() ? "," : ""), *it);
@@ -977,17 +1037,33 @@ int main(int argc, char * argv[])
 			}
 			printf("\n");
 
-			printf("Expected prints: \n");
+			printf("\nExpected user prints: \n");
 			for (auto it = expected_prints.begin(); it != expected_prints.end(); ++it)
 			{
-				printf("\"%s\"\n", it->c_str());
+				printf("(Print) \"%s\"\n", it->c_str());
+			}
+			for (auto it = expected_error_prints.begin(); it != expected_error_prints.end(); ++it)
+			{
+				printf("(Error) \"%s\"\n", it->c_str());
+			}
+			for (auto it = expected_warn_prints.begin(); it != expected_warn_prints.end(); ++it)
+			{
+				printf("(Warning) \"%s\"\n", it->c_str());
 			}
 			printf("\n");
 
-			printf("Actual prints: \n");
+			printf("Actual user prints: \n");
 			for (auto it = actual_prints.begin(); it != actual_prints.end(); ++it)
 			{
-				printf("\"%s\"\n", it->c_str());
+				printf("(Print) \"%s\"\n", it->c_str());
+			}
+			for (auto it = actual_error_prints.begin(); it != actual_error_prints.end(); ++it)
+			{
+				printf("(Error) \"%s\"\n", it->c_str());
+			}
+			for (auto it = actual_warn_prints.begin(); it != actual_warn_prints.end(); ++it)
+			{
+				printf("(Warning) \"%s\"\n", it->c_str());
 			}
 			printf("\n");
 

@@ -205,13 +205,13 @@
 ;`0B
 ;`warnW1030
 ;`
-;>
-;>;This is not a comment, so getconnectedlines() should ignore it and not remove it.
-;>
-;>Let's have some random decimal number with fractional part: 10.34017
-;>Now the same number, but with a different precision: 10.3401734476
-;>Testing a few more numbers: 0, 0.1, -0.1, 1, -1
-;>
+;P>
+;P>;This is not a comment, so getconnectedlines() should ignore it and not remove it.
+;P>
+;P>Let's have some random decimal number with fractional part: 10.34017
+;P>Now the same number, but with a different precision: 10.3401734476
+;P>Testing a few more numbers: 0, 0.1, -0.1, 1, -1
+;P>
 @asar 1.40
 
 math round off

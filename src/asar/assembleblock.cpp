@@ -1135,7 +1135,10 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("error"))
 	{
-		asar_throw_error(0, error_type_block, error_id_error_command, (string(": ") + safedequote(par)).data());
+		// RPG Hacker: This used to be on pass 0, which had its merits (you don't want to miss a potentially critical
+		// user-generated error, just because a bazillion other errors are thrown in passes before it). However, I
+		// don't see how to support print functions with this without moving it to pass 2. Suggestions are welcome.
+		asar_throw_error(2, error_type_block, error_id_error_command, (string(": ") + safedequote(par)).data());
 	}
 	else if (is1("warn"))
 	{
