@@ -1005,7 +1005,6 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("assert"))
 		{
 			autoptr<char**> tokens = qpsplit(word[numwords - 1], ",");
-			char * rawerrmsg=strqrchr(word[numwords-1], ',');
 			if (tokens[0] != NULL && tokens[1] != NULL)
 			{
 				string rawerrmsg;
