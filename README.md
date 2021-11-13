@@ -67,9 +67,10 @@ This line tests that assembling the patch throws error `5117` and warning `1030`
 ;`warnW1030
 ```
 
-This line tests that the byte `FF` was written to the start of the ROM, that the string `This is a print.` was printed and that the string `This is a user error.` was output via the error command.
+This line tests that the byte `FF` was written to the start of the ROM, that the string `This is a print.` was printed and that the string `This is a user error.` was output via the error command (which itself also causes error `E5159`to be thrown).
 ```
 ;`FF
 ;P>This is a print.
 ;E>This is a user error.
+;`errE5159
 ```
