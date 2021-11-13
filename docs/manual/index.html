@@ -3233,15 +3233,15 @@ SomeLargeData:
 		</table><br/>
 		<h4 id="warn">warn</h4>
 		The warn command lets you output a warning message to the user. Usage:
-		<pre><code class="65c816_asar">warn [custom_warning_text]</code></pre>
-		where <code>custom_warning_text</code> can be a custom warning text delimited by double quotes. A warning does not cause compilation to fail, so it can be used to inform the user about potential dangers. Warning messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
+		<pre><code class="65c816_asar">warn [text_or_function...]</code></pre>
+		where <code>custom_warning_text</code> can be a custom warning text and uses the same format as the <code>print</code> command. A warning does not cause compilation to fail, so it can be used to inform the user about potential dangers. Warning messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
 		<pre><code class="65c816_asar">if read1($00FFD5) == $23
 	warn "SA-1 compatibility of this patch is untested, use with caution!"
 endif</code></pre>
 		<h4 id="error">error</h4>
 		The error command lets you output an error message to the user. Usage:
-		<pre><code class="65c816_asar">error [custom_error_text]</code></pre>
-		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states. Error messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
+		<pre><code class="65c816_asar">error [text_or_function...]</code></pre>
+		where <code>custom_error_text</code> can be a custom error text and uses the same format as the <code>print</code> command. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states. Error messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
 		<pre><code class="65c816_asar">if read1($00FFD5) == $23
 	error "This patch is not SA-1 compatible!"
 endif</code></pre>
@@ -3252,8 +3252,8 @@ else
 	error [custom_error_text]
 endif</code></pre>
 		and is used via the syntax
-		<pre><code class="65c816_asar">assert {condition}[,custom_error_text]</code></pre>
-		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
+		<pre><code class="65c816_asar">assert {condition}[,text_or_function...]</code></pre>
+		where <code>custom_error_text</code> can be a custom error text and uses the same format as the <code>print</code> command. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
 		<pre><code class="65c816_asar">assert read1($00FFD5) != $23,"This patch is not SA-1 compatible!"</code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />

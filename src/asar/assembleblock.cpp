@@ -847,6 +847,88 @@ static void pop_pc()
 }
 
 
+string handle_print(char* input)
+{
+	if (!confirmqpar(input)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
+	string out;
+	autoptr<char**> pars = qpsplit(input, ",");
+	for (int i = 0; pars[i]; i++)
+	{
+		if (0);
+		else if (pars[i][0] == '"') out += safedequote(pars[i]);
+		else if (!stricmp(pars[i], "bytes")) out += dec(bytes);
+		else if (!stricmp(pars[i], "freespaceuse")) out += dec(freespaceuse);
+		else if (!stricmp(pars[i], "pc")) out += hex6((unsigned int)(snespos & 0xFFFFFF));
+		else if (!strncasecmp(pars[i], "bin(", strlen("bin(")) ||
+			!strncasecmp(pars[i], "dec(", strlen("dec(")) ||
+			!strncasecmp(pars[i], "hex(", strlen("hex(")) ||
+			!strncasecmp(pars[i], "double(", strlen("double(")))
+		{
+			char * arg1pos = strchr(pars[i], '(') + 1;
+			char * endpos = strchr(arg1pos, '\0');
+			while (*endpos == ' ' || *endpos == '\0') endpos--;
+			if (*endpos != ')') asar_throw_error(0, error_type_block, error_id_invalid_print_function_syntax);
+			string paramstr = string(arg1pos, (int)(endpos - arg1pos));
+
+			int numargs;
+			autoptr<char**> params = qpsplit(paramstr.temp_raw(), ",", &numargs);
+			if (numargs > 2) asar_throw_error(0, error_type_block, error_id_wrong_num_parameters);
+			int precision = 0;
+			bool hasprec = numargs == 2;
+			if (hasprec)
+			{
+				precision = getnum64(params[1]);
+				if (precision < 0) precision = 0;
+				if (precision > 64) precision = 64;
+			}
+			*(arg1pos - 1) = '\0'; // allows more convenient comparsion functions
+			if (!stricmp(pars[i], "bin"))
+			{
+				// sadly printf doesn't have binary, so let's roll our own
+				int64_t value = getnum64(params[0]);
+				char buffer[65];
+				if (value < 0) {
+					out += '-';
+					value = -value;
+					// decrement precision because we've output one char already
+					precision -= 1;
+					if (precision<0) precision = 0;
+				}
+				for (int j = 0; j < 64; j++) {
+					buffer[63 - j] = '0' + ((value & (1ull << j)) >> j);
+				}
+				buffer[64] = 0;
+				int startidx = 0;
+				while (startidx < 64 - precision && buffer[startidx] == '0') startidx++;
+				if (startidx == 64) startidx--; // always want to print at least one digit
+				out += buffer + startidx;
+			}
+			else if (!stricmp(pars[i], "dec"))
+			{
+				int64_t value = getnum64(params[0]);
+				char buffer[65];
+				snprintf(buffer, 65, "%0*" PRId64, precision, value);
+				out += buffer;
+			}
+			else if (!stricmp(pars[i], "hex"))
+			{
+				int64_t value = getnum64(params[0]);
+				char buffer[65];
+				snprintf(buffer, 65, "%0*" PRIX64, precision, value);
+				out += buffer;
+			}
+			else if (!stricmp(pars[i], "double"))
+			{
+				if (!hasprec) precision = 5;
+				out += ftostrvar(getnumdouble(params[0]), precision);
+			}
+		}
+		else asar_throw_error(2, error_type_block, error_id_unknown_variable);
+	}
+	return out;
+}
+
+
 void assembleblock(const char * block, bool isspecialline)
 {
 	string tmp=block;
@@ -913,7 +995,7 @@ void assembleblock(const char * block, bool isspecialline)
 	{
 		if(is("if") && moreonline) fakeendif++;
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
-		const char * errmsg= nullptr;
+		string errmsg;
 		whiletracker wstatus;
 		wstatus.startline = thisline;
 		wstatus.iswhile = false;
@@ -922,11 +1004,23 @@ void assembleblock(const char * block, bool isspecialline)
 		whiletracker& addedwstatus = (whilestatus[numif] = wstatus);
 		if (is("assert"))
 		{
+			autoptr<char**> tokens = qpsplit(word[numwords - 1], ",");
 			char * rawerrmsg=strqrchr(word[numwords-1], ',');
-			if (rawerrmsg)
+			if (tokens[0] != NULL && tokens[1] != NULL)
 			{
-				*rawerrmsg=0;
-				errmsg= safedequote(rawerrmsg+1);
+				string rawerrmsg;
+				size_t pos = 1;
+				while (tokens[pos])
+				{
+					rawerrmsg += tokens[pos];
+					if (tokens[pos + 1] != NULL)
+					{
+						rawerrmsg += ",";
+					}
+					pos++;
+				}
+
+				errmsg = handle_print(rawerrmsg.raw());
 			}
 		}
 		if (numtrue!=numif && !(is("elseif") && numtrue+1==numif))
@@ -1135,14 +1229,16 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("error"))
 	{
+		string out = handle_print(par);
 		// RPG Hacker: This used to be on pass 0, which had its merits (you don't want to miss a potentially critical
 		// user-generated error, just because a bazillion other errors are thrown in passes before it). However, I
 		// don't see how to support print functions with this without moving it to pass 2. Suggestions are welcome.
-		asar_throw_error(2, error_type_block, error_id_error_command, (string(": ") + safedequote(par)).data());
+		asar_throw_error(2, error_type_block, error_id_error_command, (string(": ") + out).data());
 	}
 	else if (is1("warn"))
 	{
-		asar_throw_warning(2, warning_id_warn_command, (string(": ") + safedequote(par)).data());
+		string out = handle_print(par);
+		asar_throw_warning(2, warning_id_warn_command, (string(": ") + out).data());
 	}
 	else if (is1("warnings"))
 	{
@@ -2269,82 +2365,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("print"))
 	{
-		if (!confirmqpar(par)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
-		string out;
-		autoptr<char**> pars=qpsplit(par, ",");
-		for (int i=0;pars[i];i++)
-		{
-			if(0);
-			else if (pars[i][0]=='"') out+= safedequote(pars[i]);
-			else if (!stricmp(pars[i], "bytes")) out+=dec(bytes);
-			else if (!stricmp(pars[i], "freespaceuse")) out+=dec(freespaceuse);
-			else if (!stricmp(pars[i], "pc")) out+=hex6((unsigned int)(snespos&0xFFFFFF));
-			else if (!strncasecmp(pars[i], "bin(", strlen("bin(")) ||
-			         !strncasecmp(pars[i], "dec(", strlen("dec(")) ||
-			         !strncasecmp(pars[i], "hex(", strlen("hex(")) ||
-			         !strncasecmp(pars[i], "double(", strlen("double(")))
-			{
-				char * arg1pos = strchr(pars[i], '(')+1;
-				char * endpos = strchr(arg1pos, '\0');
-				while (*endpos==' ' || *endpos=='\0') endpos--;
-				if (*endpos != ')') asar_throw_error(0, error_type_block, error_id_invalid_print_function_syntax);
-				string paramstr = string(arg1pos, (int)(endpos-arg1pos));
-
-				int numargs;
-				autoptr<char**> params = qpsplit(paramstr.temp_raw(), ",", &numargs);
-				if (numargs > 2) asar_throw_error(0, error_type_block, error_id_wrong_num_parameters);
-				int precision = 0;
-				bool hasprec = numargs == 2;
-				if (hasprec)
-				{
-					precision = getnum64(params[1]);
-					if(precision < 0) precision = 0;
-					if(precision > 64) precision = 64;
-				}
-				*(arg1pos-1) = '\0'; // allows more convenient comparsion functions
-				if(!stricmp(pars[i], "bin"))
-				{
-					// sadly printf doesn't have binary, so let's roll our own
-					int64_t value = getnum64(params[0]);
-					char buffer[65];
-					if(value < 0) {
-						out += '-';
-						value = -value;
-						// decrement precision because we've output one char already
-						precision -= 1;
-						if(precision<0) precision=0;
-					}
-					for(int j = 0; j < 64; j++) {
-						buffer[63-j] = '0' + ((value & (1ull<<j)) >> j);
-					}
-					buffer[64] = 0;
-					int startidx = 0;
-					while(startidx < 64-precision && buffer[startidx] == '0') startidx++;
-					if(startidx == 64) startidx--; // always want to print at least one digit
-					out += buffer+startidx;
-				}
-				else if(!stricmp(pars[i], "dec"))
-				{
-					int64_t value = getnum64(params[0]);
-					char buffer[65];
-					snprintf(buffer, 65, "%0*" PRId64, precision, value);
-					out += buffer;
-				}
-				else if(!stricmp(pars[i], "hex"))
-				{
-					int64_t value = getnum64(params[0]);
-					char buffer[65];
-					snprintf(buffer, 65, "%0*" PRIX64, precision, value);
-					out += buffer;
-				}
-				else if(!stricmp(pars[i], "double"))
-				{
-					if(!hasprec) precision=5;
-					out += ftostrvar(getnumdouble(params[0]), precision);
-				}
-			}
-			else asar_throw_error(2, error_type_block, error_id_unknown_variable);
-		}
+		string out = handle_print(par);
 		if (pass!=2) return;
 		print(out);
 	}

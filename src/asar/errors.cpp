@@ -225,7 +225,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_error_command, "error command%s" },
 
-	{ error_id_invalid_print_function_syntax, "Invalid print function syntax." },
+	{ error_id_invalid_print_function_syntax, "Invalid printable string syntax." },
 	{ error_id_unknown_variable, "Unknown variable." },
 
 	{ error_id_invalid_warning_id, "Invalid warning ID passed to %s. Expected format is WXXXX where %d <= XXXX <= %d." },
