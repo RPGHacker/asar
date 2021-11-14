@@ -359,25 +359,10 @@ static bool execute_command_line(char * commandline, const char * stdout_log_fil
 	fflush(stdout);
 	
 	std::string line = commandline;
-	line += " 2>&1";
+	line += std::string(" 2>\"") + stderr_log_file + "\" 1>\"" + stdout_log_file + "\"";
 	FILE * fp = popen(line.c_str(), "r");
-	FILE * logfilehandle = fopen(stderr_log_file, "wt+");
-	
-	char buffer[4096];
-	char* last_line = nullptr;
-	
-	do
-	{
-		last_line = fgets(buffer, sizeof(buffer), fp);
-		if (last_line != nullptr)
-		{
-			fputs(last_line, logfilehandle);
-		}
-	}
-	while (last_line != nullptr);
 	
 	pclose(fp);
-	fclose(logfilehandle);
 
 #endif
 
