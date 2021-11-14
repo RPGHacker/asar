@@ -36,12 +36,10 @@ jobs:
       run: mkdir temp
 
     - name: App Test
-      working-directory: ${{github.workspace}}/build
       # Run app test
-      run: ./asar-tests/asar-app-test ./asar/asar-standalone "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ./temp
+      run: ${{github.workspace}}/build/asar-tests/asar-app-test ${{github.workspace}}/build/asar/asar-standalone "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
 
     - name: DLL Test
-      working-directory: ${{github.workspace}}/build
       # Run app test
-      run: ./asar-tests/asar-dll-test ./asar/libasar.so "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ./temp
+      run: ${{github.workspace}}/build/asar-tests/asar-dll-test ${{github.workspace}}/build/asar/libasar.so "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
       
