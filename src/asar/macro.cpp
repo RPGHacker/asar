@@ -152,12 +152,18 @@ void callmacro(const char * data)
 				else if (*in=='<')
 				{
 					char * end=in+1;
-					// RPG Hacker: Added a space to this check, because this code would consider
+					// RPG Hacker: Added checking for space here, because this code would consider
 					// if a < b && a > c
-					// a macro expansion. In reality, this still is a sloppy solution and is likely
-					// to fail in some edge case I can't think of right now. Should parse this in
-					// a much more robust way at some point...
-					while (*end && *end!='>'&& *end!='<' && *(end+1)!=':' && *end != ' ') end++; //allow for conditionals and <:
+					// a macro arg expansion. In practice, this is still a sloppy solution and is
+					// likely to fail in some edge case I can't think of right now. Should parse
+					// this in a much more robust way at some point...
+					if (*end==' ')
+					{
+						out += *(in++);
+						continue;
+					}
+
+					while (*end && *end!='>'&& *end!='<' && *(end+1)!=':') end++; //allow for conditionals and <:
 					if (*end!='>')
 					{
 						out+=*(in++);
