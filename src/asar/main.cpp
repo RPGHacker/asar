@@ -226,9 +226,11 @@ int getlen(const char * orgstr, bool optimizebankextraction)
 		if (*posneglabel != '\0') goto notposneglabel;
 
 		if (!pass) return 2;
-		unsigned int labelpos=31415926;
-		bool found = labelval(posnegname, &labelpos);
-		return getlenforlabel(snespos, (int)labelpos, found);
+		snes_label label_data;
+		// RPG Hacker: Umm... what kind of magic constant is this?
+		label_data.pos = 31415926;
+		bool found = labelval(posnegname, &label_data);
+		return getlenforlabel(snespos, (int)label_data.pos, found);
 	}
 notposneglabel:
 	int len=0;
@@ -269,9 +271,9 @@ notposneglabel:
 		}
 		else if (is_alpha(*str) || *str=='_' || *str=='.' || *str=='?')
 		{
-			unsigned int thislabel;
+			snes_label thislabel;
 			bool exists=labelval(&str, &thislabel);
-			thislen=getlenforlabel(snespos, (int)thislabel, exists);
+			thislen=getlenforlabel(snespos, (int)thislabel.pos, exists);
 		}
 		else str++;
 		if (optimizebankextraction && maybebankextraction &&
@@ -449,7 +451,7 @@ void resolvedefines(string& out, const char * start)
 						string newval;
 						resolvedefines(newval, val);
 						double num= getnumdouble(newval);
-						if (foundlabel) asar_throw_error(0, error_type_line, error_id_define_label_math);
+						if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_line, error_id_define_label_math);
 						defines.create(defname) = ftostr(num);
 						break;
 					}
@@ -866,15 +868,15 @@ static void adddefine(const string & key, string & value)
 
 static string symbolfile;
 
-static void printsymbol_wla(const string& key, unsigned int& address)
+static void printsymbol_wla(const string& key, snes_label& label)
 {
-	string line = hex2((address & 0xFF0000)>>16)+":"+hex4(address & 0xFFFF)+" "+key+"\n";
+	string line = hex2((label.pos & 0xFF0000)>>16)+":"+hex4(label.pos & 0xFFFF)+" "+key+"\n";
 	symbolfile += line;
 }
 
-static void printsymbol_nocash(const string& key, unsigned int& address)
+static void printsymbol_nocash(const string& key, snes_label& label)
 {
-	string line = hex8(address & 0xFFFFFF)+" "+key+"\n";
+	string line = hex8(label.pos & 0xFFFFFF)+" "+key+"\n";
 	symbolfile += line;
 }
 

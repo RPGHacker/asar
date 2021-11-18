@@ -10,9 +10,22 @@ struct snes_struct {
 	int base_end;
 	int struct_size;
 	int object_size;
+	bool is_static;
 };
 
 extern assocarr<snes_struct> structs;
+
+
+struct snes_label {
+	unsigned int pos;
+	bool is_static;
+
+	snes_label()
+	{
+		pos = 0;
+		is_static = false;
+	}
+};
 
 
 // RPG Hacker: Really the only purpose of this struct is to support pushtable and pulltable
@@ -47,12 +60,12 @@ int snestopc_pick(int addr);
 
 int getlenfromchar(char c);
 
-unsigned int labelval(const char ** rawname, bool define = false);
-unsigned int labelval(char ** rawname, bool define = false);
-unsigned int labelval(string name, bool define = false);
-bool labelval(const char ** rawname, unsigned int * rval, bool define = false);
-bool labelval(char ** rawname, unsigned int * rval, bool define = false);
-bool labelval(string name, unsigned int * rval, bool define = false);
+snes_label labelval(const char ** rawname, bool define = false);
+snes_label labelval(char ** rawname, bool define = false);
+snes_label labelval(string name, bool define = false);
+bool labelval(const char ** rawname, snes_label * rval, bool define = false);
+bool labelval(char ** rawname, snes_label * rval, bool define = false);
+bool labelval(string name, snes_label * rval, bool define = false);
 
 const char * safedequote(char * str);
 
@@ -81,7 +94,7 @@ extern bool emulatexkas;
 
 extern int freespaceextra;
 
-extern assocarr<unsigned int> labels;
+extern assocarr<snes_label> labels;
 
 extern autoarray<int>* macroposlabels;
 extern autoarray<int>* macroneglabels;

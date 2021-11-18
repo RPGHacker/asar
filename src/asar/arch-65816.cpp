@@ -175,10 +175,10 @@ bool asblock_65816(char** word, int numwords)
 		if (false)
 		{
 opAFallback:
-			unsigned int tmp=0;
+			snes_label tmp;
 			if (pass && !labelval(par, &tmp)) return false;
 			len=getlen(par);
-			num=tmp;
+			num=tmp.pos;
 		}
 		if (is("JSR") || is("JMP"))
 		{

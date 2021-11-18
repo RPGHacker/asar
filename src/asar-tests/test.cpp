@@ -531,8 +531,8 @@ int main(int argc, char * argv[])
 
 		int numiter = 1;
 
-		std::set<int> expected_errors;
-		std::set<int> expected_warnings;
+		std::vector<int> expected_errors;
+		std::vector<int> expected_warnings;
 		std::vector<std::string> expected_prints;
 		std::vector<std::string> expected_error_prints;
 		std::vector<std::string> expected_warn_prints;
@@ -609,7 +609,7 @@ int main(int argc, char * argv[])
 							dief("Error: Invalid %s declaration!\n", token);
 						}
 
-						expected_errors.insert((int)id);
+						expected_errors.push_back((int)id);
 					}
 
 					token = "warnW";
@@ -624,7 +624,7 @@ int main(int argc, char * argv[])
 							dief("Error: Invalid %s declaration!\n", token);
 						}
 
-						expected_warnings.insert((int)id);
+						expected_warnings.push_back((int)id);
 					}
 
 					if (pos > len) len = pos;
@@ -821,8 +821,8 @@ int main(int argc, char * argv[])
 		FILE * out = nullptr;
 #endif
 
-		std::set<int> actual_errors;
-		std::set<int> actual_warnings;
+		std::vector<int> actual_errors;
+		std::vector<int> actual_warnings;
 		std::vector<std::string> actual_prints;
 		std::vector<std::string> actual_error_prints;
 		std::vector<std::string> actual_warn_prints;
@@ -856,7 +856,7 @@ int main(int argc, char * argv[])
 							dief("Error: Failed parsing error code from Asar output!\n");
 						}
 
-						actual_errors.insert(num);
+						actual_errors.push_back(num);
 
 						// RPG Hacker: Check if it's the error command. If so, we also need to add a print as well.
 						{
@@ -900,7 +900,7 @@ int main(int argc, char * argv[])
 							dief("Error: Failed parsing warning code from Asar output!\n");
 						}
 
-						actual_warnings.insert(num);
+						actual_warnings.push_back(num);
 
 						// RPG Hacker: Check if it's the warn command. If so, we also need to add a print as well.
 						{

@@ -2824,6 +2824,22 @@ endif</code></pre>
 	if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball
 	rtl
 		</code></pre>
+		If you plan to use labels in if commands, note that there's certain restrictions that apply. More specifically, only static labels can be used. That is, only labels whose address can't change between Asar's passes, as demonstrated by the following example:
+		<pre><code class="65c816_asar">FirstLabel = $018000
+		
+freecode
+	lda SecondLabel,x
+	
+SecondLabel:
+	db $00,$01,$02,$03
+	
+; All good. FirstLabel was statically defined.
+if FirstLabel == 0
+endif
+
+; Error E5107. The label could move between passes.
+if SecondLabel == 0
+endif</code></pre>
 		<h4 id="while">while</h4>
 		A special variation of if conditionals are while loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to <code>&lt;= 0</code>. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.
 		<pre><code class="65c816_asar">!counter = 0

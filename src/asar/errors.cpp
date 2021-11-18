@@ -106,7 +106,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_label_not_found, "Label '%s' wasn't found." },
 	{ error_id_label_redefined, "Label '%s' redefined." },
 	{ error_id_broken_label_definition, "Broken label definition." },
-	{ error_id_label_cross_assignment, "Setting labels to each other is not valid." },
+	{ error_id_label_cross_assignment, "Setting labels to other non-static labels is not valid." },
 	{ error_id_macro_label_outside_of_macro, "Macro label outside of a macro." },
 	{ error_id_label_on_third_pass, "Internal error: A label was created on the third pass. Please create an issue on the official GitHub repository and attach a patch which reproduces the error." },
 	{ error_id_label_moving, "Internal error: A label is moving around. Please create an issue on the official GitHub repository and attach a patch which reproduces the error." },
@@ -137,7 +137,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_define_not_found, "Define '%s' wasn't found." },
 	{ error_id_broken_define_declaration, "Broken define declaration." },
 	{ error_id_overriding_builtin_define, "Trying to set define '%s', which is the name of a built-in define and thus can't be modified." },
-	{ error_id_define_label_math, "!Define #= Label is not allowed." },
+	{ error_id_define_label_math, "!Define #= Label is not allowed with non-static labels." },
 	{ error_id_mismatched_braces, "Mismatched braces." },
 
 	{ error_id_invalid_macro_name, "Invalid macro name." },
@@ -155,7 +155,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_misplaced_endmacro, "Misplaced endmacro." },
 	{ error_id_unclosed_macro, "Unclosed macro." },
 
-	{ error_id_label_in_conditional, "Label in %s command." },
+	{ error_id_label_in_conditional, "Non-static label in %s command." },
 	{ error_id_broken_conditional, "Broken %s command." },
 	{ error_id_invalid_condition, "Invalid condition." },
 	{ error_id_misplaced_elseif, "Misplaced elseif." },
@@ -174,7 +174,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_recursion_limit, "Recursion limit reached." },
 	{ error_id_command_in_non_root_file, "This command may only be used in the root file." },
 	{ error_id_cant_be_main_file, "This file may not be used as the main file.%s" },
-	{ error_id_no_labels_here, "Can't use labels here." },
+	{ error_id_no_labels_here, "Can't use non-static labels here." },
 
 	{ error_id_invalid_freespace_request, "Invalid freespace request." },
 	{ error_id_no_banks_with_ram_mirrors, "No banks contain the RAM mirrors in hirom or exhirom." },

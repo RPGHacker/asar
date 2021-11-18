@@ -194,7 +194,7 @@ void callmacro(const char * data)
 					}
 					if (!found)
 					{
-						unsigned int ret;
+						snes_label ret;
 						if(valid_named_param  && !thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
 						if(thismacro->variadic && valid_named_param && !labelval(in, &ret, false))  asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
 						int arg_num = getnum(in);

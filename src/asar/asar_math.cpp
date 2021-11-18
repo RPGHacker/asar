@@ -30,6 +30,7 @@ static double eval(int depth);
 //userfunction
 
 bool foundlabel;
+bool foundlabel_static;
 bool forwardlabel;
 
 struct cachedfile {
@@ -145,11 +146,13 @@ static int data_size(const char *name)
 	unsigned int next_label = 0xFFFFFF;
 	if(!labels.exists(name)) asar_throw_error(1, error_type_block, error_id_label_not_found, name);
 	foundlabel = true;
-	label = labels.find(name) & 0xFFFFFF;
-	labels.each([&next_label, label](const char *key, unsigned int current_label){
-		current_label &= 0xFFFFFF;
-		if(label < current_label && current_label < next_label){
-			next_label = current_label;
+	snes_label label_data = labels.find(name);
+	foundlabel_static &= label_data.is_static;
+	label = label_data.pos & 0xFFFFFF;
+	labels.each([&next_label, label](const char *key, snes_label current_label){
+		current_label.pos &= 0xFFFFFF;
+		if(label < current_label.pos && current_label.pos < next_label){
+			next_label = current_label.pos;
 		}
 	});
 	if(next_label == 0xFFFFFF) asar_throw_warning(1, warning_id_datasize_last_label, name);
@@ -815,7 +818,9 @@ static double getnumcore()
 			foundlabel=true;
 
 			const char *old_start = start;
-			int i=(int)labelval(&start);
+			snes_label label_data = labelval(&start);
+			int i=(int)label_data.pos;
+			foundlabel_static &= label_data.is_static;
 			bool scope_passed = false;
 			bool subscript_passed = false;
 			while (str < start)
@@ -933,7 +938,9 @@ static double eval(int depth)
 
 		foundlabel=true;
 		if (*(posneglabel-1) == '+') forwardlabel=true;
-		return labelval(posnegname) & 0xFFFFFF;
+		snes_label label_data = labelval(posnegname);
+		foundlabel_static &= label_data.is_static;
+		return label_data.pos & 0xFFFFFF;
 	}
 notposneglabel:
 	recurseblock rec;
@@ -988,6 +995,7 @@ double math(const char * s)
 	//free(freeme);
 	//freeme=NULL;
 	foundlabel=false;
+	foundlabel_static=true;
 	forwardlabel=false;
 	double rval;
 	

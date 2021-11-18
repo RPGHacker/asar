@@ -154,11 +154,11 @@ static autoarray<labeldata> ldata;
 static int labelsinldata = 0;
 static bool expectsNewAPI = false;
 
-static void addlabel(const string & name, unsigned int & value)
+static void addlabel(const string & name, const snes_label & label_data)
 {
 	labeldata label;
 	label.name = strdup(name);
-	label.location = (int)(value & 0xFFFFFF);
+	label.location = (int)(label_data.pos & 0xFFFFFF);
 	ldata[labelsinldata++] = label;
 }
 
@@ -448,7 +448,7 @@ EXPORT const labeldata * asar_getalllabels(int * count)
 EXPORT int asar_getlabelval(const char * name)
 {
 	if (!stricmp(name, ":$:opcodes:$:")) return numopcodes;//aaah, you found me
-	int i=(int)labelval(&name);
+	int i=(int)labelval(&name).pos;
 	if (*name || i<0) return -1;
 	else return i&0xFFFFFF;
 }
