@@ -279,7 +279,9 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_internal_error, "An internal asar error occured (%s). Send help." },
 
 	{ error_id_pushns_without_pullns, "pushns without matching pullns." },
-	{ error_id_pullns_without_pushns, "pullns without matching pushns." }
+	{ error_id_pullns_without_pushns, "pullns without matching pushns." },
+
+	{ error_id_undefined_char, "'%s' is not defined in the character table" },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
 // matches with the number of constants in asar_warning_id. This is important, because

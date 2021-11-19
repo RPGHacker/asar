@@ -17,11 +17,13 @@ extern assocarr<snes_struct> structs;
 
 // RPG Hacker: Really the only purpose of this struct is to support pushtable and pulltable
 // Also don't know where else to put this, so putting it in this header
-struct chartabledata {
+/*struct chartabledata {
 	unsigned int table[256];
 };
 
 extern chartabledata table;
+unsigned int get_table_val(int inp);
+void set_table_val(int inp, unsigned int out);*/
 
 struct whiletracker {
 	bool iswhile;
