@@ -340,12 +340,12 @@ int main(int argc, char * argv[])
 		}
 		if (!file_exists(romname))
 		{
-			FILE * f=fopen(romname, "wb");
-			if (!f)
+			FileHandleType f = open_file(romname, FileOpenMode_Write);
+			if (f == InvalidFileHandle)
 			{
 				asar_throw_error(pass, error_type_fatal, error_id_create_rom_failed);
 			}
-			fclose(f);
+			close_file(f);
 		}
 		if (!openrom(romname, false))
 		{
@@ -375,7 +375,7 @@ int main(int argc, char * argv[])
 				if (libcon_interactive)
 				{
 					if (!libcon_question_bool(STR"Warning: The ROM title appears to be \""+title+"\", which looks like garbage. "
-							"Is this your ROM title? (Note that inproperly answering \"yes\" will crash your ROM.)", false))
+							"Is this your ROM title? (Note that improperly answering \"yes\" will crash your ROM.)", false))
 					{
 						puts("Assembling aborted. snespurify should be able to fix your ROM.");
 						return 1;
@@ -463,10 +463,21 @@ int main(int argc, char * argv[])
 		if (symbols)
 		{
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";
-			string contents = create_symbols_file(symbols, romCrc);
-			FILE * symfile = fopen(symfilename, "wt");
-			fputs(contents, symfile);
-			fclose(symfile);
+			string contents = create_symbols_file(symbols, romCrc).convert_line_endngs_to_native();
+
+			FileHandleType symfile = open_file(symfilename, FileOpenMode_Write);
+
+			if (symfile == InvalidFileHandle)
+			{
+				puts(STR"Failed to create symbols file: \""+symfilename+"\".");
+				pause(err);
+				return 1;
+			}
+			else
+			{
+				write_file(symfile, (const char*)contents, (uint32_t)contents.length());
+				close_file(symfile);
+			}
 
 		}
 		reseteverything();

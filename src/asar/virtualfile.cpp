@@ -61,7 +61,7 @@ class physical_file : public virtual_file
 {
 public:
 	physical_file()
-		: m_file_handle(nullptr)
+		: m_file_handle(InvalidFileHandle)
 	{		
 	}
 
@@ -78,10 +78,12 @@ public:
 			if(!file_exists((const char*)path)) return vfe_doesnt_exist;
 			if(!check_is_regular_file((const char*)path)) return vfe_not_regular_file;
 
-			m_file_handle = fopen((const char*)path, "rb");
+			m_file_handle = open_file((const char*)path, FileOpenMode_Read);
 
-			if (m_file_handle == nullptr)
+			if (m_file_handle == InvalidFileHandle)
 			{
+				// TODO: Check this with new API.
+
 				if (errno == ENOENT)
 				{
 					return vfe_doesnt_exist;
@@ -104,32 +106,28 @@ public:
 
 	virtual void close()
 	{
-		if (m_file_handle != nullptr)
+		if (m_file_handle != InvalidFileHandle)
 		{
-			fclose(m_file_handle);
-			m_file_handle = nullptr;
+			close_file(m_file_handle);
+			m_file_handle = InvalidFileHandle;
 		}
 	}
 
 	virtual size_t read(void* out_buffer, size_t pos, size_t num_bytes)
 	{
-		fseek(m_file_handle, (long)pos, SEEK_SET);
-		return fread(out_buffer, 1, num_bytes, m_file_handle);
+		set_file_pos(m_file_handle, (uint64_t)pos);
+		return (size_t)read_file(m_file_handle, out_buffer, (uint32_t)num_bytes);
 	}
 
 	virtual size_t get_size()
 	{
-		fseek(m_file_handle, 0, SEEK_END);
-		long filepos = ftell(m_file_handle);
-		fseek(m_file_handle, 0, SEEK_SET);
-
-		return (size_t)filepos;
+		return (size_t)get_file_size(m_file_handle);
 	}
 
 private:
 	friend class virtual_filesystem;
 
-	FILE* m_file_handle;
+	FileHandleType m_file_handle;
 };
 
 

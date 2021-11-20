@@ -6,12 +6,14 @@
 #include "crc32.h"
 #include <cstdint>
 
+#include "platform/file-helpers.h"
+
 mapper_t mapper=lorom;
 int sa1banks[8]={0<<20, 1<<20, -1, -1, 2<<20, 3<<20, -1, -1};
 const unsigned char * romdata= nullptr; // NOTE: Changed into const to prevent direct write access - use writeromdata() functions below
 int romlen;
 static bool header;
-static FILE * thisfile;
+static FileHandleType thisfile = InvalidFileHandle;
 
 asar_error_id openromerror;
 
@@ -407,24 +409,23 @@ int getsnesfreespace(int size, bool isforcode, bool autoexpand, bool respectbank
 bool openrom(const char * filename, bool confirm)
 {
 	closerom();
-	thisfile=fopen(filename, "r+b");
-	if (!thisfile)
+	thisfile = open_file(filename, FileOpenMode_ReadWrite);
+	if (thisfile == InvalidFileHandle)
 	{
 		openromerror = error_id_open_rom_failed;
 		return false;
 	}
-	fseek(thisfile, 0, SEEK_END);
 	header=false;
 	if (strlen(filename)>4)
 	{
 		const char * fnameend=strchr(filename, '\0')-4;
 		header=(!stricmp(fnameend, ".smc"));
 	}
-	romlen=ftell(thisfile)-(header*512);
+	romlen=(int)get_file_size(thisfile)-(header*512);
 	if (romlen<0) romlen=0;
-	fseek(thisfile, header*512, SEEK_SET);
+	set_file_pos(thisfile, header*512);
 	romdata=(unsigned char*)malloc(sizeof(unsigned char)*16*1024*1024);
-	int truelen=(int)fread(const_cast<unsigned char*>(romdata), 1u, (size_t)romlen, thisfile);
+	int truelen=(int)read_file(thisfile, (void*)romdata, (uint32_t)romlen);
 	if (truelen!=romlen)
 	{
 		openromerror = error_id_open_rom_failed;
@@ -444,27 +445,27 @@ bool openrom(const char * filename, bool confirm)
 uint32_t closerom(bool save)
 {
 	uint32_t romCrc = 0;
-	if (thisfile && save && romlen)
+	if (thisfile != InvalidFileHandle && save && romlen)
 	{
-		fseek(thisfile, header*512, SEEK_SET);
-		fwrite(const_cast<unsigned char*>(romdata), 1, (size_t)romlen, thisfile);
+		set_file_pos(thisfile, header*512);
+		write_file(thisfile, romdata, (uint32_t)romlen);
 
 		// do a quick re-read of the header, and include that in the crc32 calculation if necessary
 		{
 			uint8_t* filedata = (uint8_t*)malloc(sizeof(uint8_t) * (romlen + header * 512));
 			if (header)
 			{
-				fseek(thisfile, 0, SEEK_SET);
-				fread(filedata, sizeof(uint8_t), 512, thisfile);
+				set_file_pos(thisfile, 0u);
+				read_file(thisfile, filedata, 512);
 			}
 			memcpy(filedata + (header * 512), romdata, sizeof(uint8_t) * (size_t)romlen);
 			romCrc = crc32(filedata, (unsigned int)(romlen + header * 512));
 			free(filedata);
 		}
 	}
-	if (thisfile) fclose(thisfile);
+	if (thisfile != InvalidFileHandle) close_file(thisfile);
 	if (romdata) free(const_cast<unsigned char*>(romdata));
-	thisfile= nullptr;
+	thisfile= InvalidFileHandle;
 	romdata= nullptr;
 	romlen=0;
 	return romCrc;

@@ -3,6 +3,8 @@
 #include "virtualfile.h"
 #include "asar.h"
 
+#include "platform/file-helpers.h"
+
 #define typed_malloc(type, count) (type*)malloc(sizeof(type)*(count))
 #define typed_realloc(type, ptr, count) (type*)realloc(ptr, sizeof(type)*(count))
 
@@ -29,14 +31,12 @@ char * readfile(const char * fname, const char * basepath)
 // and instead read our file directly.
 char * readfilenative(const char * fname)
 {
-	FILE* myfile = fopen(fname, "rb");
-	if (myfile == nullptr) return nullptr;
-	fseek(myfile, 0, SEEK_END);
-	size_t datalen = (size_t)ftell(myfile);
-	fseek(myfile, 0, SEEK_SET);
+	FileHandleType myfile = open_file(fname, FileOpenMode_Read);
+	if (myfile == InvalidFileHandle) return nullptr;
+	size_t datalen = (size_t)get_file_size(myfile);
 	char * data = typed_malloc(char, datalen + 1);
-	data[fread(data, 1u, datalen, myfile)] = 0;
-	fclose(myfile);
+	data[read_file(myfile, data, datalen)] = 0;
+	close_file(myfile);
 	int inpos = 0;
 	int outpos = 0;
 	while (data[inpos])

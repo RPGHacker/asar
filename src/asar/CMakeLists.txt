@@ -118,6 +118,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/errors.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/unicode.cpp"
 
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.cpp"
 	
@@ -133,6 +134,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/errors.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/unicode.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/assembleblock.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/asar_math.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/macro.h"
