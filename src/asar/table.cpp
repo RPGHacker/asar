@@ -5,7 +5,55 @@
 
 table::table() {
 	memset(data, 0, sizeof(data));
-	utf8_mode = false;
+	utf8_mode = true;
+}
+
+table& table::operator=(const table& from) {
+	// clear out all old data
+	for(int i=0; i<256; i++) {
+		if(data[i] != nullptr) {
+			for(int j=0; j<256; j++) {
+				if(data[i][j] != nullptr) free(data[i][j]);
+			}
+			free(data[i]);
+		}
+	}
+	memcpy(data, from.data, sizeof(data));
+	// copy over all allocated pages
+	for(int i=0; i<256; i++) {
+		if(data[i] != nullptr) {
+			table_page** newp = (table_page**)calloc(256,sizeof(void*));
+			memcpy(newp, data[i], 256*sizeof(void*));
+			data[i] = newp;
+			for(int j=0; j<256; j++) {
+				if(data[i][j] != nullptr) {
+					table_page* newp = (table_page*)calloc(1,sizeof(table_page));
+					memcpy(newp, data[i][j], sizeof(table_page));
+					data[i][j] = newp;
+				}
+			}
+		}
+	}
+	return *this;
+}
+
+table::table(const table& from) {
+	memcpy(data, from.data, sizeof(data));
+	// copy over all allocated pages
+	for(int i=0; i<256; i++) {
+		if(data[i] != nullptr) {
+			table_page** newp = (table_page**)calloc(256,sizeof(void*));
+			memcpy(newp, data[i], 256*sizeof(void*));
+			data[i] = newp;
+			for(int j=0; j<256; j++) {
+				if(data[i][j] != nullptr) {
+					table_page* newp = (table_page*)calloc(1,sizeof(table_page));
+					memcpy(newp, data[i][j], sizeof(table_page));
+					data[i][j] = newp;
+				}
+			}
+		}
+	}
 }
 
 table::~table() {

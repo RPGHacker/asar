@@ -11,6 +11,8 @@ public:
 class table {
 public:
 	table();
+	table(const table& from);
+	table& operator=(const table& from);
 	void set_val(int off, uint32_t val);
 	// returns either the 32-bit unsigned value or -1 if that codepoint isn't in the table
 	int64_t get_val(int off);
