@@ -8,8 +8,7 @@ table::table() {
 	utf8_mode = true;
 }
 
-table& table::operator=(const table& from) {
-	// clear out all old data
+void table::clear() {
 	for(int i=0; i<256; i++) {
 		if(data[i] != nullptr) {
 			for(int j=0; j<256; j++) {
@@ -18,7 +17,12 @@ table& table::operator=(const table& from) {
 			free(data[i]);
 		}
 	}
+	memset(data, 0, sizeof(data));
+}
+
+void table::copy_from(const table& from) {
 	memcpy(data, from.data, sizeof(data));
+	utf8_mode = from.utf8_mode;
 	// copy over all allocated pages
 	for(int i=0; i<256; i++) {
 		if(data[i] != nullptr) {
@@ -34,37 +38,20 @@ table& table::operator=(const table& from) {
 			}
 		}
 	}
+}
+
+table& table::operator=(const table& from) {
+	clear();
+	copy_from(from);
 	return *this;
 }
 
 table::table(const table& from) {
-	memcpy(data, from.data, sizeof(data));
-	// copy over all allocated pages
-	for(int i=0; i<256; i++) {
-		if(data[i] != nullptr) {
-			table_page** newp = (table_page**)calloc(256,sizeof(void*));
-			memcpy(newp, data[i], 256*sizeof(void*));
-			data[i] = newp;
-			for(int j=0; j<256; j++) {
-				if(data[i][j] != nullptr) {
-					table_page* newp = (table_page*)calloc(1,sizeof(table_page));
-					memcpy(newp, data[i][j], sizeof(table_page));
-					data[i][j] = newp;
-				}
-			}
-		}
-	}
+	copy_from(from);
 }
 
 table::~table() {
-	for(int i=0; i<256; i++) {
-		if(data[i] != nullptr) {
-			for(int j=0; j<256; j++) {
-				if(data[i][j] != nullptr) free(data[i][j]);
-			}
-			free(data[i]);
-		}
-	}
+	clear();
 }
 
 void table::set_val(int off, uint32_t val) {

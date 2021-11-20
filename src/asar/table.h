@@ -21,6 +21,8 @@ public:
 	bool utf8_mode;
 private:
 	table_page** data[256];
+	void clear();
+	void copy_from(const table& from);
 };
 
 extern table thetable;
