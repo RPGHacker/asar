@@ -463,7 +463,7 @@ int main(int argc, char * argv[])
 		if (symbols)
 		{
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";
-			string contents = create_symbols_file(symbols, romCrc).convert_line_endngs_to_native();
+			string contents = create_symbols_file(symbols, romCrc).convert_line_endings_to_native();
 
 			FileHandleType symfile = open_file(symfilename, FileOpenMode_Write);
 

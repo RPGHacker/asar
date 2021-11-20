@@ -78,17 +78,17 @@ public:
 			if(!file_exists((const char*)path)) return vfe_doesnt_exist;
 			if(!check_is_regular_file((const char*)path)) return vfe_not_regular_file;
 
-			m_file_handle = open_file((const char*)path, FileOpenMode_Read);
+			FileOpenError error = FileOpenError_None;
+
+			m_file_handle = open_file((const char*)path, FileOpenMode_Read, &error);
 
 			if (m_file_handle == InvalidFileHandle)
 			{
-				// TODO: Check this with new API.
-
-				if (errno == ENOENT)
+				if (error == FileOpenError_NotFound)
 				{
 					return vfe_doesnt_exist;
 				}
-				else if (errno == EACCES)
+				else if (error == FileOpenError_AccessDenied)
 				{
 					return vfe_access_denied;
 				}

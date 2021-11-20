@@ -43,32 +43,57 @@ bool check_is_regular_file(const char* path)
 }
 
 
-FileHandleType open_file(const char* path, FileOpenMode mode)
+FileHandleType open_file(const char* path, FileOpenMode mode, FileOpenError* error)
 {
 	HANDLE out_handle = NULL;
 	DWORD access_mode = 0;
 	DWORD share_mode = 0;
 	DWORD disposition = 0;
 
-	if (mode == FileOpenMode_ReadWrite)
+	switch (mode)
 	{
+	case FileOpenMode_ReadWrite:
 		access_mode = GENERIC_READ | GENERIC_WRITE;
 		disposition = OPEN_EXISTING;
-	}
-	else if (mode == FileOpenMode_Read)
-	{
+		break;
+	case FileOpenMode_Read:
 		access_mode = GENERIC_READ;
 		// This should be fine, right?
 		share_mode = FILE_SHARE_READ;
 		disposition = OPEN_EXISTING;
-	}	
-	else if (mode == FileOpenMode_Write)
-	{
+		break;
+	case FileOpenMode_Write:
 		access_mode = GENERIC_WRITE;
 		disposition = CREATE_ALWAYS;
+		break;
 	}
 
 	out_handle = CreateFileA(path, access_mode, share_mode, NULL, disposition, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (error != NULL)
+	{
+		if (out_handle != INVALID_HANDLE_VALUE)
+		{
+			*error = FileOpenError_None;
+		}
+		else
+		{
+			DWORD win_error = GetLastError();
+
+			switch (win_error)
+			{
+			case ERROR_FILE_NOT_FOUND:
+				*error = FileOpenError_NotFound;
+				break;
+			case ERROR_ACCESS_DENIED:
+				*error = FileOpenError_AccessDenied;
+				break;
+			default:
+				*error = FileOpenError_Unknown;
+				break;
+			}
+		}
+	}
 
 	return out_handle;
 }

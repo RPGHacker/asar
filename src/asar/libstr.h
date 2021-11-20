@@ -238,14 +238,14 @@ string& qreplace(const char * instr, const char * outstr, bool all=true);
 // RPG Hacker: My hack shmeck to get around no longer supporting text mode.
 // Symbol files are currently the only thing that use text mode, anyways, and I don't even know
 // if the emulators that read them care about line endings.
-string& convert_line_endngs_to_native()
+string& convert_line_endings_to_native()
 {
 #if defined(windows)
 	// RPG Hacker: This is quite stinky, but doing the replacement directly will lead to a dead-lock.
 	// \x08 = backspace should never appear inside a string, so I'm abusing it here.
 	return replace("\n", "\x08").replace("\x08", "\r\n");
 #else
-	*this;
+	return *this;
 #endif
 }
 
