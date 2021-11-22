@@ -12,6 +12,7 @@
 #include "asar_math.h"
 #include "warnings.h"
 #include "table.h"
+#include "unicode.h"
 #include <math.h>
 #include <functional>
 #include <algorithm>

@@ -10,6 +10,7 @@
 #include "macro.h"
 #include "platform/file-helpers.h"
 #include "table.h"
+#include "unicode.h"
 #include <cinttypes>
 
 #include "interface-shared.h"
