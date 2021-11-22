@@ -11,6 +11,7 @@
 #include "macro.h"
 #include "asar_math.h"
 #include "warnings.h"
+#include "table.h"
 #include <math.h>
 #include <functional>
 #include <algorithm>
@@ -762,9 +763,11 @@ static double getnumcore()
 	}
 	if (*str=='\'')
 	{
-		if (!str[1] || str[2] != '\'') asar_throw_error(1, error_type_block, error_id_invalid_character);
-		unsigned int rval=table.table[(unsigned char)str[1]];
-		str+=3;
+		if (!str[1] || *utf8_next(str+1) != '\'') asar_throw_error(1, error_type_block, error_id_invalid_character);
+		int orig_val = utf8_val(str+1);
+		int64_t rval=thetable.get_val(orig_val);
+		if(rval == -1) asar_throw_error(1, error_type_block, error_id_undefined_char, codepoint_to_utf8(orig_val).data());
+		str=utf8_next(str+1)+1;
 		return rval;
 	}
 	if (is_digit(*str))

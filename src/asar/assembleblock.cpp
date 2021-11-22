@@ -9,6 +9,7 @@
 #include "asar_math.h"
 #include "macro.h"
 #include "platform/file-helpers.h"
+#include "table.h"
 #include <cinttypes>
 
 #include "interface-shared.h"
@@ -569,8 +570,8 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 }
 
 
-chartabledata table;
-static autoarray<chartabledata> tablestack;
+table thetable;
+static autoarray<table> tablestack;
 
 static int freespacepos[256];
 static int freespacelen[256];
@@ -589,7 +590,7 @@ static unsigned char freespacebyte[256];
 
 static void cleartable()
 {
-	for (unsigned int i=0;i<256;i++) table.table[i]=i;
+	thetable = table();
 }
 
 struct pushable {
@@ -1445,12 +1446,12 @@ void assembleblock(const char * block, bool isspecialline)
 			{
 				if (!strcmp(pars[i],"\"STAR\"") && !emulatexkas)
 					asar_throw_warning(0, warning_id_xkas_patch);
-				for (char * str=const_cast<char*>(safedequote(pars[i]));*str;str++)
+				for (char * str=const_cast<char*>(safedequote(pars[i]));*str;str=(char*)utf8_next(str))
 				{
-					if (len==1) write1(table.table[(size_t)(unsigned char) *str]);
-					if (len==2) write2(table.table[(size_t)(unsigned char) *str]);
-					if (len==3) write3(table.table[(size_t)(unsigned char) *str]);
-					if (len==4) write4(table.table[(size_t)(unsigned char) *str]);
+					if (len==1) write1(thetable.get_val(utf8_val(str)));
+					if (len==2) write2(thetable.get_val(utf8_val(str)));
+					if (len==3) write3(thetable.get_val(utf8_val(str)));
+					if (len==4) write4(thetable.get_val(utf8_val(str)));
 				}
 			}
 			else
@@ -1467,11 +1468,14 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (numwords==3 && !stricmp(word[1], "="))
 	{
-		if (word[0][0]=='\'' && word[0][1] && word[0][2]=='\'' && word[0][3]=='\0')
+		if(word[0][0] == '\'' && word[0][1])
 		{
-			table.table[(unsigned char)word[0][1]]=getnum(word[2]);
-			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-			return;
+			const char* after = utf8_next(word[0]+1);
+			if(after[0] == '\'' && after[1] == '\0') {
+				thetable.set_val(utf8_val(word[0]+1), getnum(word[2]));
+				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+				return;
+			} // todo: error checking here
 		}
 		// randomdude999: int cast b/c i'm too lazy to also mess with making setlabel()
 		// unsigned, besides it wouldn't matter anyways.
@@ -2313,12 +2317,12 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is0("pushtable"))
 	{
-		tablestack.append(table);
+		tablestack.append(thetable);
 	}
 	else if (is0("pulltable"))
 	{
 		if (tablestack.count <= 0) asar_throw_error(0, error_type_block, error_id_pulltable_without_table);
-		table=tablestack[tablestack.count-1];
+		thetable=tablestack[tablestack.count-1];
 		tablestack.remove(tablestack.count-1);
 	}
 	else if (is1("table"))
@@ -2331,10 +2335,10 @@ void assembleblock(const char * block, bool isspecialline)
 		autoptr<char*> tablecontents=readfile(name, thisfilename);
 		if (!tablecontents) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char**> tablelines=split(tablecontents, "\n");
-		for (int i=0;i<256;i++) table.table[i]=(unsigned int)(((numopcodes+read2(0x00FFDE)+i)*0x26594131)|0x40028020);
-			//garbage value so people will notice they're doing it wrong (for bonus points: figure out what 0x26594131 is)
+		cleartable();
 		for (int i=0;tablelines[i];i++)
 		{
+			// TODO: handle this properly (needs to use the utf8 functions)
 			string tableline=tablelines[i];
 			if (!*tableline) continue;
 			if (strlen(tableline) < 4 || strlen(tableline) & 1 || strlen(tableline) > 10) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
@@ -2342,7 +2346,7 @@ void assembleblock(const char * block, bool isspecialline)
 			{
 				if (tableline[3]=='x' || tableline[3]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 				char * end;
-				table.table[(unsigned char)tableline[0]]=(unsigned int)strtol(tableline.data()+2, &end, 16);
+				thetable.set_val(tableline[0], strtol(tableline.data()+2, &end, 16));
 				if (*end) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 			}
 			else
@@ -2351,7 +2355,7 @@ void assembleblock(const char * block, bool isspecialline)
 				char * eq;
 				unsigned int val=(unsigned int)strtol(tableline, &eq, 16);
 				if (eq[0]!='=' || eq[2]) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
-				table.table[(unsigned char)eq[1]]=val;
+				thetable.set_val(eq[1], val);
 			}
 		}
 	}
