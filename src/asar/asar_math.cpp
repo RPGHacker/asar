@@ -764,11 +764,15 @@ static double getnumcore()
 	}
 	if (*str=='\'')
 	{
-		if (!str[1] || *utf8_next(str+1) != '\'') asar_throw_error(1, error_type_block, error_id_invalid_character);
-		int orig_val = utf8_val(str+1);
+		if (!str[1]) asar_throw_error(1, error_type_block, error_id_invalid_character);
+		int orig_val;
+		str++;
+		str += utf8_val(&orig_val, str);
+		if (orig_val == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+		if (*str != '\'') asar_throw_error(1, error_type_block, error_id_invalid_character);
 		int64_t rval=thetable.get_val(orig_val);
 		if(rval == -1) asar_throw_error(1, error_type_block, error_id_undefined_char, codepoint_to_utf8(orig_val).data());
-		str=utf8_next(str+1)+1;
+		str++;
 		return rval;
 	}
 	if (is_digit(*str))

@@ -1447,13 +1447,18 @@ void assembleblock(const char * block, bool isspecialline)
 			{
 				if (!strcmp(pars[i],"\"STAR\"") && !emulatexkas)
 					asar_throw_warning(0, warning_id_xkas_patch);
-				for (char * str=const_cast<char*>(safedequote(pars[i]));*str;str=(char*)utf8_next(str))
+				char * str=const_cast<char*>(safedequote(pars[i]));
+				int codepoint = 0u;
+				str += utf8_val(&codepoint, str);
+				while ( codepoint != 0 && codepoint != -1 )
 				{
-					if (len==1) write1(thetable.get_val(utf8_val(str)));
-					if (len==2) write2(thetable.get_val(utf8_val(str)));
-					if (len==3) write3(thetable.get_val(utf8_val(str)));
-					if (len==4) write4(thetable.get_val(utf8_val(str)));
+					if (len==1) write1(thetable.get_val(codepoint));
+					if (len==2) write2(thetable.get_val(codepoint));
+					if (len==3) write3(thetable.get_val(codepoint));
+					if (len==4) write4(thetable.get_val(codepoint));
+					str += utf8_val(&codepoint, str);
 				}
+				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
 			}
 			else
 			{
@@ -1471,9 +1476,12 @@ void assembleblock(const char * block, bool isspecialline)
 	{
 		if(word[0][0] == '\'' && word[0][1])
 		{
-			const char* after = utf8_next(word[0]+1);
+			int codepoint;
+			const char* char_start = word[0]+1;
+			const char* after = char_start + utf8_val(&codepoint, char_start);
+			if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
 			if(after[0] == '\'' && after[1] == '\0') {
-				thetable.set_val(utf8_val(word[0]+1), getnum(word[2]));
+				thetable.set_val(codepoint, getnum(word[2]));
 				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 				return;
 			} // todo: error checking here

@@ -1,40 +1,63 @@
 #include "unicode.h"
 
-// skips to the next UTF-8 codepoint in the input. doesn't validate input!
-const char* utf8_next(const char* inp) {
-	inp++;
-	// skip all continuation bytes
-	while (((unsigned char)(*inp) & 0xC0) == 0x80) inp++;
-	return inp;
-}
-
-// returns the code point at *inp, or -1 on invalid UTF-8.
-int utf8_val(const char* inp) {
+size_t utf8_val(int* codepoint, const char* inp) {
 	unsigned char c = *inp++;
 	int val;
-	if (c < 0x80) return c; // plain ascii
-	else if (c < 0xC0) return -1; // start byte cannot be a cont. byte
-	else if (c < 0xF8) {
+	if (c < 0x80) {
+		// plain ascii
+		*codepoint = c;
+		return 1u;
+	}
+	else if (c < 0xC0) {
+		// start byte cannot be a cont. byte
+		*codepoint = -1;
+		return 0u;
+	}
+	// RPG Hacker: Byte sequences starting with 0xC0 or 0xC1 are invalid.
+	// So are byte sequences starting with anything >= 0xF5.
+	else if (c > 0xC1 && c < 0xF5) {
 		// 1, 2 or 3 continuation bytes
 		int cont_byte_count = (c >= 0xF0) ? 3 : (c >= 0xE0) ? 2 : 1;
 		// bit hack to extract the significant bits from the start byte
 		val = (c & ((1 << (6 - cont_byte_count)) - 1));
 		for (int i = 0; i < cont_byte_count; i++) {
 			unsigned char next = *inp++;
-			if ((next & 0xC0) != 0x80) return -1;
+			if ((next & 0xC0) != 0x80) {
+				*codepoint = -1;
+				return 0u;
+			}
 			val = (val << 6) | (next & 0x3F);
 		}
-		if ((*inp & 0xC0) == 0x80) return -1; // too many cont.bytes
-		if (val > 0x10FFFF) return -1; // invalid codepoints
-									   // check overlong encodings
+		if ((*inp & 0xC0) == 0x80) {
+			// too many cont.bytes
+			*codepoint = -1;
+			return 0u;
+		}
+		if (val > 0x10FFFF) {
+			// invalid codepoints
+			*codepoint = -1;
+			return 0u;
+		}
+		// check overlong encodings
 		if ((cont_byte_count == 3 && val < 0x1000) ||
 			(cont_byte_count == 2 && val < 0x800) ||
-			(cont_byte_count == 1 && val < 0x80)) return -1;
-		if (val >= 0xD800 && val <= 0xDFFF) return -1; // UTF16 surrogates
-		return val;
+			(cont_byte_count == 1 && val < 0x80)) {
+			*codepoint = -1;
+			return 0u;
+		}
+		if (val >= 0xD800 && val <= 0xDFFF) {
+			// UTF16 surrogates
+			*codepoint = -1;
+			return 0u;
+		};
+		*codepoint = val;
+		return 1u + cont_byte_count;
 	}
 	// if more than F8, this couldn't possibly be a valid encoding
-	else return -1;
+	else {
+		*codepoint = -1;
+		return 0u;
+	}
 }
 
 string codepoint_to_utf8(unsigned int codepoint) {
@@ -58,4 +81,15 @@ string codepoint_to_utf8(unsigned int codepoint) {
 		out += (unsigned char)(0x80 | (codepoint & 0x3f));
 	}
 	return out;
+}
+
+bool is_valid_utf8(const char* inp) {
+	while (*inp != '\0') {
+		int codepoint;
+		inp += utf8_val(&codepoint, inp);
+
+		if (codepoint == -1) return false;
+	}
+
+	return true;
 }

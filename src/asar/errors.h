@@ -260,6 +260,7 @@ enum asar_error_id : int
 
 	error_id_label_forward,
 	error_id_undefined_char,
+	error_id_invalid_utf8,
 
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,

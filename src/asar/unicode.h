@@ -3,8 +3,14 @@
 
 #include "libstr.h"
 
-const char* utf8_next(const char* inp);
-int utf8_val(const char* inp);
+// Writes the code point at *inp into codepoint (-1 on invalid UTF-8).
+// Returns the number of bytes consumed for the code point (0 for invalid UTF-8).
+size_t utf8_val(int* codepoint, const char* inp);
+
+// converts a unicode codepoint to a UTF-8 byte sequence
 string codepoint_to_utf8(unsigned int codepoint);
+
+// checks if input string contains only valid UTF-8
+bool is_valid_utf8(const char* inp);
 
 #endif
