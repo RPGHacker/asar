@@ -57,6 +57,8 @@ enum asar_warning_id : int
 	warning_id_mapper_already_set,
 	warning_id_feature_deprecated,
 
+	warning_id_byte_order_mark_utf8,
+
 	warning_id_end,
 	warning_id_count = warning_id_end - warning_id_start - 1
 };

@@ -284,7 +284,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_label_forward, "The use of forward labels is not allowed in this context" },
 	{ error_id_undefined_char, "'%s' is not defined in the character table" },
 
-	{ error_id_invalid_utf8, "Invalid text encoding detected. Asar expects UTF-8-encoded text. Please re-save your patch in a text editor of choice using UTF-8 encoding." },
+	{ error_id_invalid_utf8, "Invalid text encoding detected. Asar expects UTF-8-encoded text. Please re-save this file in a text editor of choice using UTF-8 encoding." },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
 // matches with the number of constants in asar_warning_id. This is important, because

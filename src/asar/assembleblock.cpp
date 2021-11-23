@@ -2350,21 +2350,32 @@ void assembleblock(const char * block, bool isspecialline)
 			// TODO: handle this properly (needs to use the utf8 functions)
 			string tableline=tablelines[i];
 			if (!*tableline) continue;
-			if (strlen(tableline) < 4 || strlen(tableline) & 1 || strlen(tableline) > 10) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 			if (!fliporder)
 			{
-				if (tableline[3]=='x' || tableline[3]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				const char* linepos = tableline;
+				int codepoint;
+				linepos += utf8_val(&codepoint, linepos);
+				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+				if (*linepos != '=') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				linepos++;
+				if (linepos[1]=='x' || linepos[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 				char * end;
-				thetable.set_val(tableline[0], strtol(tableline.data()+2, &end, 16));
-				if (*end) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				unsigned int val = (unsigned int)strtol(linepos, &end, 16);
+				if (*end != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				thetable.set_val(codepoint, val);
 			}
 			else
 			{
 				if (tableline[1]=='x' || tableline[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
 				char * eq;
 				unsigned int val=(unsigned int)strtol(tableline, &eq, 16);
-				if (eq[0]!='=' || eq[2]) asar_throw_error(0, error_type_block, error_id_invalid_table_file);
-				thetable.set_val(eq[1], val);
+				if (eq[0]!='=') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				const char* linepos = eq+1;
+				int codepoint;
+				linepos += utf8_val(&codepoint, linepos);
+				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+				if (*linepos != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				thetable.set_val(codepoint, val);
 			}
 		}
 	}

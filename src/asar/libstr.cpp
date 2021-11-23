@@ -2,6 +2,8 @@
 #include "libstr.h"
 #include "virtualfile.h"
 #include "asar.h"
+#include "unicode.h"
+#include "warnings.h"
 
 #include "platform/file-helpers.h"
 
@@ -18,12 +20,20 @@ char * readfile(const char * fname, const char * basepath)
 	filesystem->close_file(myfile);
 	int inpos=0;
 	int outpos=0;
+	// RPG Hacker: Detect and skip byte order marks if present.
+	// Should we also check for other common BoMs, so that we can generate warnings?
+	if (data[inpos] == '\xEF' && data[inpos + 1] == '\xBB' && data[inpos + 2] == '\xBF')
+	{
+		asar_throw_warning(0, warning_id_byte_order_mark_utf8);
+		inpos += 3;
+	}
 	while (data[inpos])
 	{
 		if (data[inpos]!='\r') data[outpos++]=data[inpos];
 		inpos++;
 	}
 	data[outpos]=0;
+	if (!is_valid_utf8(data)) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
 	return data;
 }
 
@@ -39,12 +49,20 @@ char * readfilenative(const char * fname)
 	close_file(myfile);
 	int inpos = 0;
 	int outpos = 0;
+	// RPG Hacker: Detect and skip byte order marks if present.
+	// Should we also check for other common BoMs, so that we can generate warnings?
+	if (data[inpos] == '\xEF' && data[inpos + 1] == '\xBB' && data[inpos + 2] == '\xBF')
+	{
+		asar_throw_warning(0, warning_id_byte_order_mark_utf8);
+		inpos += 3;
+	}
 	while (data[inpos])
 	{
 		if (data[inpos] != '\r') data[outpos++] = data[inpos];
 		inpos++;
 	}
 	data[outpos] = 0;
+	if (!is_valid_utf8(data)) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
 	return data;
 }
 

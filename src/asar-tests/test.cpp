@@ -529,6 +529,15 @@ int main(int argc, char * argv[])
 		int len = 0;
 		FILE * rom = fopen(out_rom_name, "wb");
 
+		// RPG Hacker: Skip BoM if present.
+		char bom_buf[4] = { 0, 0, 0, 0 };
+		fread(bom_buf, 1, sizeof(bom_buf) - 1, asmfile);
+
+		if (bom_buf[0] != '\xEF' || bom_buf[1] != '\xBB' || bom_buf[2] != '\xBF')
+		{
+			fseek(asmfile, 0, SEEK_SET);
+		}
+
 		int numiter = 1;
 
 		std::vector<int> expected_errors;

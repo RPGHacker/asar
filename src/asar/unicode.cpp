@@ -8,13 +8,9 @@ size_t utf8_val(int* codepoint, const char* inp) {
 		*codepoint = c;
 		return 1u;
 	}
-	else if (c < 0xC0) {
-		// start byte cannot be a cont. byte
-		*codepoint = -1;
-		return 0u;
-	}
 	// RPG Hacker: Byte sequences starting with 0xC0 or 0xC1 are invalid.
 	// So are byte sequences starting with anything >= 0xF5.
+	// And anything below 0xC0 indicates a follow-up byte and should never be at the start of a sequence.
 	else if (c > 0xC1 && c < 0xF5) {
 		// 1, 2 or 3 continuation bytes
 		int cont_byte_count = (c >= 0xF0) ? 3 : (c >= 0xE0) ? 2 : 1;
@@ -27,37 +23,31 @@ size_t utf8_val(int* codepoint, const char* inp) {
 				return 0u;
 			}
 			val = (val << 6) | (next & 0x3F);
-		}
-		if ((*inp & 0xC0) == 0x80) {
-			// too many cont.bytes
-			*codepoint = -1;
-			return 0u;
-		}
-		if (val > 0x10FFFF) {
+		}		
+		if (// too many cont.bytes
+			(*inp & 0xC0) == 0x80 ||
+			
 			// invalid codepoints
-			*codepoint = -1;
-			return 0u;
-		}
-		// check overlong encodings
-		if ((cont_byte_count == 3 && val < 0x1000) ||
+			val > 0x10FFFF ||
+
+			// check overlong encodings
+			(cont_byte_count == 3 && val < 0x1000) ||
 			(cont_byte_count == 2 && val < 0x800) ||
-			(cont_byte_count == 1 && val < 0x80)) {
-			*codepoint = -1;
-			return 0u;
-		}
-		if (val >= 0xD800 && val <= 0xDFFF) {
+			(cont_byte_count == 1 && val < 0x80) ||
+			
 			// UTF16 surrogates
+			(val >= 0xD800 && val <= 0xDFFF)
+		) {			
 			*codepoint = -1;
 			return 0u;
 		};
 		*codepoint = val;
 		return 1u + cont_byte_count;
 	}
-	// if more than F8, this couldn't possibly be a valid encoding
-	else {
-		*codepoint = -1;
-		return 0u;
-	}
+
+	// if none of the above, this couldn't possibly be a valid encoding
+	*codepoint = -1;
+	return 0u;
 }
 
 string codepoint_to_utf8(unsigned int codepoint) {
