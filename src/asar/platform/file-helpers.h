@@ -52,5 +52,5 @@ void close_file(FileHandleType handle);
 uint64_t get_file_size(FileHandleType handle);
 void set_file_pos(FileHandleType handle, uint64_t pos);
 uint64_t get_file_pos(FileHandleType handle);
-uint32_t read_file(FileHandleType handle, void* buffer, uint32_t numBytes);
-uint32_t write_file(FileHandleType handle, const void* buffer, uint32_t numBytes);
+uint32_t read_file(FileHandleType handle, void* buffer, uint32_t num_bytes);
+uint32_t write_file(FileHandleType handle, const void* buffer, uint32_t num_bytes);

@@ -158,7 +158,7 @@ uint64_t get_file_pos(FileHandleType handle)
 	return (uint64_t)f_pos.QuadPart;
 }
 
-uint32_t read_file(FileHandleType handle, void* buffer, uint32_t numBytes)
+uint32_t read_file(FileHandleType handle, void* buffer, uint32_t num_bytes)
 {
 	if (handle == InvalidFileHandle) 0u;
 
@@ -166,12 +166,12 @@ uint32_t read_file(FileHandleType handle, void* buffer, uint32_t numBytes)
 
 	// TODO: Some error handling would be wise here.
 
-	ReadFile(handle, buffer, (DWORD)numBytes, &bytes_read, NULL);
+	ReadFile(handle, buffer, (DWORD)num_bytes, &bytes_read, NULL);
 
 	return (uint32_t)bytes_read;
 }
 
-uint32_t write_file(FileHandleType handle, const void* buffer, uint32_t numBytes)
+uint32_t write_file(FileHandleType handle, const void* buffer, uint32_t num_bytes)
 {
 	if (handle == InvalidFileHandle) 0u;
 	
@@ -179,7 +179,7 @@ uint32_t write_file(FileHandleType handle, const void* buffer, uint32_t numBytes
 
 	// TODO: Some error handling would be wise here.
 
-	WriteFile(handle, buffer, (DWORD)numBytes, &bytes_written, NULL);
+	WriteFile(handle, buffer, (DWORD)num_bytes, &bytes_written, NULL);
 
 	return (uint32_t)bytes_written;
 }
