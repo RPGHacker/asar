@@ -49,20 +49,26 @@ macro(set_asar_test_shared_properties target)
 			# Not available nor needed on mingw
 			target_link_libraries(${target} dl)
 		endif()
-		target_compile_options(${target} PRIVATE -Wall -pedantic
-		-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
-		-Wno-unused-result # ignoring return value
-	)
 
-	# Static link for MinGW
-	if(MINGW)
-		target_compile_options(${target} PRIVATE -static -static-libgcc -s)
-		target_link_libraries(${target} PRIVATE -static -static-libgcc -s)
-	endif()
+		target_compile_options(${target} PRIVATE -Wall -pedantic
+			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
+			-Wno-unused-result # ignoring return value
+		)
+
+		# Static link for MinGW
+		if(MINGW)
+			target_compile_options(${target} PRIVATE -static -static-libgcc -s)
+			target_link_libraries(${target} PRIVATE -static -static-libgcc -s)
+		endif()
 
 		# for some reason this isn't available on MSVC?
 		target_compile_features(${target} PRIVATE c_std_99)
-	target_compile_features(${target} PRIVATE cxx_std_11)
+		target_compile_features(${target} PRIVATE cxx_std_11)
+	endif()
+			
+	if (WIN32)
+		# RPG Hacker: We define UNICODE on Windows, just to make sure we don't accidentally call an ANSI API somewhere.
+		target_compile_definitions(${target} PRIVATE "UNICODE" "_UNICODE")
 	endif()
 endmacro()
 

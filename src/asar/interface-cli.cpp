@@ -10,6 +10,13 @@
 #include "interface-shared.h"
 #include "assembleblock.h"
 #include "asar_math.h"
+#include "unicode.h"
+
+#if defined(windows)
+#	include <windows.h>
+#   include <io.h>
+#   include <fcntl.h>
+#endif
 
 #ifdef TIMELIMIT
 # if defined(linux)
@@ -74,8 +81,11 @@ void onsigxcpu(int ignored)
 #endif
 
 
-
+#if defined(windows)
+int wmain(int argc, wchar_t * argv_w[])
+#else
 int main(int argc, char * argv[])
+#endif
 {
 #ifdef TIMELIMIT
 #if defined(linux)
@@ -94,6 +104,7 @@ int main(int argc, char * argv[])
 	SetInformationJobObject(hjob, JobObjectBasicLimitInformation, &jbli, sizeof(jbli));
 #endif
 #endif
+
 #define pause(sev) do { if (pause>=pause_##sev) libcon_pause(); } while(0)
 
 	enum {
@@ -113,13 +124,43 @@ int main(int argc, char * argv[])
 		cmdlparam_count
 	};
 
+#if defined(windows)
+	_setmode(_fileno(stdin), _O_U16TEXT);
+	// RPG Hacker: These would currently break Asar, because we're using narrow print functions everywhere.
+	//_setmode(_fileno(stdout), _O_U16TEXT);
+	//_setmode(_fileno(stderr), _O_U16TEXT);
+
+	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleCP(CP_UTF8);
+
+
+	// RPG Hacker: Full Unicode support on Windows requires using wmain() with a wchar_t command line.
+	// This means we have to convert our arguments from UTF-16 to UTF-8 here.
+	autoarray<string> u8_argv_arr;
+	autoarray<const char *> raw_argv_arr;
+
+	for (int i = 0; i < argc; ++i)
+	{
+		if (!utf16_to_utf8(&u8_argv_arr[i], argv_w[i]))
+		{
+			asar_throw_error(pass, error_type_null, error_id_cmdl_utf16_to_utf8_failed, "Command line arguments on Windows must be valid UTF-16.");
+			pause(err);
+			return 1;
+		}
+
+		raw_argv_arr[i] = u8_argv_arr[i];
+	}
+
+	const char** argv = (const char**)raw_argv_arr;
+#endif
+
 	try
 	{
 		romdata_r = nullptr;
 		string version=STR"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
 				dec(asarver_bug)+(asarver_beta?"pre":"")+", originally developed by Alcaro, maintained by Asar devs.\n"+
 				"Source code: https://github.com/RPGHacker/asar\n";
-		char * myname=argv[0];
+		const char * myname=argv[0];
 		if (strrchr(myname, '/')) myname=strrchr(myname, '/')+1;
 		//char * dot=strrchr(myname, '.');
 		//if (dot) *dot='\0';

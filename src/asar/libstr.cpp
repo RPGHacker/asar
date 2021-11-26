@@ -10,6 +10,28 @@
 #define typed_malloc(type, count) (type*)malloc(sizeof(type)*(count))
 #define typed_realloc(type, ptr, count) (type*)realloc(ptr, sizeof(type)*(count))
 
+
+// Detects if str starts with a UTF-8 byte order mark.
+// If so, throws a warning, then returns the number of bytes we should skip ahead in the string.
+size_t check_bom(const char* str)
+{
+	// RPG Hacker: We could also check for BoMs of incompatible encodings here (like UTF-16)
+	// and throw errors, but not sure if that's worth adding. Asar never supported any wide
+	// encodings to begin with, so it's unreasonable to assume that any UTF-16 patches currently
+	// exist for it. As for future patches, those should be caught by the "must be UTF-8" checks
+	// I have already implemented further below.
+	// I think UTF-8 + BoM is the only case that could lead to confusion if we didn't handle it,
+	// so that's why I have added this.
+	if (str[0u] == '\xEF' && str[1u] == '\xBB' && str[2u] == '\xBF')
+	{
+		asar_throw_warning(0, warning_id_byte_order_mark_utf8);
+		return 3u;
+	}
+
+	return 0u;
+}
+
+
 char * readfile(const char * fname, const char * basepath)
 {
 	virtual_file_handle myfile = filesystem->open_file(fname, basepath);
@@ -20,13 +42,7 @@ char * readfile(const char * fname, const char * basepath)
 	filesystem->close_file(myfile);
 	int inpos=0;
 	int outpos=0;
-	// RPG Hacker: Detect and skip byte order marks if present.
-	// Should we also check for other common BoMs, so that we can generate warnings?
-	if (data[inpos] == '\xEF' && data[inpos + 1] == '\xBB' && data[inpos + 2] == '\xBF')
-	{
-		asar_throw_warning(0, warning_id_byte_order_mark_utf8);
-		inpos += 3;
-	}
+	inpos += check_bom(data + inpos);
 	while (data[inpos])
 	{
 		if (data[inpos]!='\r') data[outpos++]=data[inpos];
@@ -49,13 +65,7 @@ char * readfilenative(const char * fname)
 	close_file(myfile);
 	int inpos = 0;
 	int outpos = 0;
-	// RPG Hacker: Detect and skip byte order marks if present.
-	// Should we also check for other common BoMs, so that we can generate warnings?
-	if (data[inpos] == '\xEF' && data[inpos + 1] == '\xBB' && data[inpos + 2] == '\xBF')
-	{
-		asar_throw_warning(0, warning_id_byte_order_mark_utf8);
-		inpos += 3;
-	}
+	inpos += check_bom(data + inpos);
 	while (data[inpos])
 	{
 		if (data[inpos] != '\r') data[outpos++] = data[inpos];

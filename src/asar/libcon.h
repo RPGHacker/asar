@@ -1,5 +1,5 @@
 #pragma once
-void libcon_init(int argc, char * argv[], const char * usage);
+void libcon_init(int argc, const char * argv[], const char * usage);
 const char * libcon_require(const char * desc);
 const char * libcon_require_filename(const char * desc);
 const char * libcon_optional(const char * desc, const char * defval);

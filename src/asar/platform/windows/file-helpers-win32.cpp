@@ -22,7 +22,9 @@
 
 bool file_exists(const char * filename)
 {
-	return (GetFileAttributesA(filename) != INVALID_FILE_ATTRIBUTES);
+	std::wstring u16_str;
+	if (!utf8_to_utf16(&u16_str, filename)) return false;
+	return (GetFileAttributesW(u16_str.c_str()) != INVALID_FILE_ATTRIBUTES);
 }
 
 bool path_is_absolute(const char* path)
@@ -39,7 +41,9 @@ char get_native_path_separator()
 
 bool check_is_regular_file(const char* path)
 {
-	return !(GetFileAttributesA(path) & FILE_ATTRIBUTE_DIRECTORY);
+	std::wstring u16_str;
+	if (!utf8_to_utf16(&u16_str, path)) return false;
+	return !(GetFileAttributesW(u16_str.c_str()) & FILE_ATTRIBUTE_DIRECTORY);
 }
 
 
@@ -68,7 +72,16 @@ FileHandleType open_file(const char* path, FileOpenMode mode, FileOpenError* err
 		break;
 	}
 
-	out_handle = CreateFileA(path, access_mode, share_mode, NULL, disposition, FILE_ATTRIBUTE_NORMAL, NULL);
+	std::wstring u16_str;
+	if (!utf8_to_utf16(&u16_str, path))
+	{
+		// RPG Hacker: I treat encoding error as "file not found", which I guess is what
+		// Windows would do, anyways.
+		*error = FileOpenError_NotFound;
+		return INVALID_HANDLE_VALUE;
+	}
+
+	out_handle = CreateFileW(u16_str.c_str(), access_mode, share_mode, NULL, disposition, FILE_ATTRIBUTE_NORMAL, NULL);
 
 	if (error != NULL)
 	{

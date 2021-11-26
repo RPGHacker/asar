@@ -771,7 +771,14 @@ static double getnumcore()
 		if (orig_val == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
 		if (*str != '\'') asar_throw_error(1, error_type_block, error_id_invalid_character);
 		int64_t rval=thetable.get_val(orig_val);
-		if(rval == -1) asar_throw_error(1, error_type_block, error_id_undefined_char, codepoint_to_utf8(orig_val).data());
+		if (rval == -1)
+		{
+			// RPG Hacker: Should be fine to not check return value of codepoint_to_utf8() here, because
+			// our error cases above already made sure that orig_val contains valid data at this point.
+			string u8_str;
+			codepoint_to_utf8(&u8_str, orig_val);
+			asar_throw_error(1, error_type_block, error_id_undefined_char, u8_str.data());
+		}
 		str++;
 		return rval;
 	}

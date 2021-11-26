@@ -57,10 +57,96 @@
 static const size_t max_rom_size = 16777216u;
 
 
-inline int file_exist(const char *filename)
+#if defined(_WIN32)
+
+std::string utf16_to_utf8(const std::wstring input)
+{
+	int needed_chars = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.length(), NULL, 0, NULL, NULL);
+
+	std::string out;
+	out.resize(needed_chars);
+
+	WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.length(), const_cast<char*>(out.c_str()), out.length(), NULL, NULL);
+
+	return out;
+}
+
+
+std::wstring utf8_to_utf16(const std::string input)
+{
+	int needed_chars = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.length(), NULL, 0);
+
+	std::wstring out;
+	out.resize(needed_chars);
+
+	MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.length(), const_cast<wchar_t*>(out.c_str()), out.length());
+
+	return out;
+}
+
+inline bool file_exists(const char *filename)
+{
+	std::wstring filename_u16 = utf8_to_utf16(filename);
+	return (GetFileAttributesW(filename_u16.c_str()) != INVALID_FILE_ATTRIBUTES);
+}
+
+
+std::vector<char> read_file_into_buffer(const char *filename)
+{
+	std::wstring filename_u16 = utf8_to_utf16(filename);
+
+	HANDLE handle = CreateFileW(filename_u16.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	std::vector<char> out;
+
+	if (handle != INVALID_HANDLE_VALUE)
+	{
+		LARGE_INTEGER f_size;
+
+		GetFileSizeEx(handle, &f_size);
+
+		out.resize((size_t)f_size.QuadPart);
+
+		ReadFile(handle, out.data(), out.size(), NULL, NULL);
+
+		CloseHandle(handle);
+	}
+
+	return out;
+}
+
+void write_buffer_to_file(const char *filename, const void* data, size_t data_size)
+{
+	std::wstring filename_u16 = utf8_to_utf16(filename);
+
+	HANDLE handle = CreateFileW(filename_u16.c_str(), GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+
+	if (handle != INVALID_HANDLE_VALUE)
+	{
+		WriteFile(handle, data, data_size, NULL, NULL);
+
+		CloseHandle(handle);
+	}
+}
+
+#else
+
+inline bool file_exists(const char *filename)
 {
 	struct stat buffer;
 	return (stat(filename, &buffer) == 0);
+}
+
+#endif
+
+void write_buffer_to_file(const char *filename, const std::vector<char>& to_write)
+{
+	write_buffer_to_file(filename, to_write.data(), to_write.size());
+}
+
+void write_buffer_to_file(const char *filename, const std::string& to_write)
+{
+	write_buffer_to_file(filename, to_write.c_str(), to_write.length());
 }
 
 
@@ -137,18 +223,22 @@ static bool find_files_in_directory(std::vector<wrapped_file>& out_array, const 
 		snprintf(search_path, sizeof(search_path), "%s/*.*", directory_name);
 	}
 
-	WIN32_FIND_DATA fd;
-	HANDLE hFind = ::FindFirstFile(search_path, &fd);
+	std::wstring search_path_w = utf8_to_utf16(search_path);
+
+	WIN32_FIND_DATAW fd;
+	HANDLE hFind = ::FindFirstFileW(search_path_w.c_str(), &fd);
 	if (hFind != INVALID_HANDLE_VALUE)
 	{
 		do
 		{
 			if (!(fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
 			{
-				if (str_ends_with(fd.cFileName, ".asm"))
+				std::string filename_u8 = utf16_to_utf8(fd.cFileName);
+
+				if (str_ends_with(filename_u8.c_str(), ".asm"))
 				{
 					wrapped_file new_file;
-					strncpy(new_file.file_name, fd.cFileName, sizeof(new_file.file_name));
+					strncpy(new_file.file_name, filename_u8.c_str(), sizeof(new_file.file_name));
 					new_file.file_name[sizeof(new_file.file_name) - 1] = '\0';
 					strncpy(new_file.file_path, directory_name, sizeof(new_file.file_path));
 					if (!has_path_seperator)
@@ -160,15 +250,15 @@ static bool find_files_in_directory(std::vector<wrapped_file>& out_array, const 
 #endif
 					}
 #if defined(__MINGW32__)
-					strncat(new_file.file_path, fd.cFileName, sizeof(new_file.file_path) - strlen(new_file.file_path) - 1);
+					strncat(new_file.file_path, filename_u8.c_str(), sizeof(new_file.file_path) - strlen(new_file.file_path) - 1);
 #else
-					strcat_s(new_file.file_path, sizeof(new_file.file_path), fd.cFileName);
+					strcat_s(new_file.file_path, sizeof(new_file.file_path), filename_u8.c_str());
 #endif
 					new_file.file_path[sizeof(new_file.file_path) - 1] = '\0';
 					out_array.push_back(new_file);
 				}
 			}
-		} while (::FindNextFile(hFind, &fd));
+		} while (::FindNextFileW(hFind, &fd));
 
 		::FindClose(hFind);
 	}
@@ -289,7 +379,7 @@ static bool execute_command_line(char * commandline, const char * stdout_log_fil
 		return false;
 	}
 
-	STARTUPINFO si;
+	STARTUPINFOW si;
 	PROCESS_INFORMATION pi;
 	ZeroMemory(&si, sizeof(si));
 	ZeroMemory(&pi, sizeof(pi));
@@ -298,7 +388,9 @@ static bool execute_command_line(char * commandline, const char * stdout_log_fil
 	si.hStdOutput = stdout_write_handle;
 	si.dwFlags |= STARTF_USESTDHANDLES;
 
-	if (!CreateProcessA(nullptr, commandline, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi))
+	std::wstring u16_commandline = utf8_to_utf16(commandline);
+
+	if (!CreateProcessW(nullptr, const_cast<wchar_t*>(u16_commandline.c_str()), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi))
 	{
 		printf("execute_command_line() failed with HRESULT: 0x%8x", (unsigned int)HRESULT_FROM_WIN32(GetLastError()));
 		CloseHandle(stdout_read_handle);
@@ -316,37 +408,39 @@ static bool execute_command_line(char * commandline, const char * stdout_log_fil
 	CloseHandle(stderr_write_handle);
 
 	{
-		FILE * logfilehandle = fopen(stdout_log_file, "wb");
+		std::vector<char> stdout_buffer;
 
 		DWORD dwRead;
 		CHAR chBuf[4096];
 		BOOL bSuccess = FALSE;
+
 		for (;;)
 		{
 			bSuccess = ReadFile(stdout_read_handle, chBuf, sizeof(chBuf), &dwRead, nullptr);
 			if (bSuccess == FALSE || dwRead == 0) break;
-			fwrite(chBuf, 1, dwRead, logfilehandle);
+			stdout_buffer.insert(stdout_buffer.end(), chBuf, chBuf + dwRead);
 		}
 
-		fclose(logfilehandle);
+		write_buffer_to_file(stdout_log_file, stdout_buffer);
 
 		CloseHandle(stdout_read_handle);
 	}
 
 	{
-		FILE * logfilehandle = fopen(stderr_log_file, "wb");
+		std::vector<char> stderr_buffer;
 
 		DWORD dwRead;
 		CHAR chBuf[4096];
 		BOOL bSuccess = FALSE;
+
 		for (;;)
 		{
 			bSuccess = ReadFile(stderr_read_handle, chBuf, sizeof(chBuf), &dwRead, nullptr);
 			if (bSuccess == FALSE || dwRead == 0) break;
-			fwrite(chBuf, 1, dwRead, logfilehandle);
+			stderr_buffer.insert(stderr_buffer.end(), chBuf, chBuf + dwRead);
 		}
 
-		fclose(logfilehandle);
+		write_buffer_to_file(stderr_log_file, stderr_buffer);
 
 		CloseHandle(stderr_read_handle);
 	}
@@ -395,6 +489,11 @@ static std::vector<std::string> tokenize_string(const char * str, const char * k
 
 int main(int argc, char * argv[])
 {
+#if defined(_WIN32)
+	SetConsoleOutputCP(CP_UTF8);
+	SetConsoleCP(CP_UTF8);
+#endif
+
 	if (argc != 5)
 	{
 		// don't treat this as an error and just return 0
@@ -421,36 +520,20 @@ int main(int argc, char * argv[])
 	std::vector<wrapped_file> input_files;
 
 
-	FILE* stdincludesfile = fopen(stdincludespath.c_str(), "wb");
-
-	if (stdincludesfile == nullptr)
-	{
-		printf("Error: Failed to write std includes file at '%s'.\n", stdincludespath.c_str());
-		return 1;
-	}
-	else
 	{
 		std::string stdinclude = " ";
 		stdinclude += test_directory;
 		if (!str_ends_with(stdinclude.c_str(), "/") && !str_ends_with(stdinclude.c_str(), "\\")) stdinclude += "/";
 		stdinclude += "stdinclude \n";
-		fwrite((const void*)stdinclude.c_str(), 1, stdinclude.length(), stdincludesfile);
-		fclose(stdincludesfile);
+
+		write_buffer_to_file(stdincludespath.c_str(), stdinclude);
 	}
 
 
-	FILE* stddefinesfile = fopen(stddefinespath.c_str(), "wb");
-
-	if (stddefinesfile == nullptr)
-	{
-		printf("Error: Failed to write std defines file at '%s'.\n", stddefinespath.c_str());
-		return 1;
-	}
-	else
 	{
 		std::string stddefines = "!stddefined=1\n stddefined2=1\n\nstddefined3\nstddefined4 = 1 \nstddefined5 = \" $60,$50,$40 \"\n";
-		fwrite((const void*)stddefines.c_str(), 1, stddefines.length(), stddefinesfile);
-		fclose(stddefinesfile);
+
+		write_buffer_to_file(stddefinespath.c_str(), stddefines);
 	}
 
 
@@ -471,8 +554,7 @@ int main(int argc, char * argv[])
 		return 1;
 	}
 
-	char * smwrom=(char*)malloc(512*1024);
-	if (!file_exist(unheadered_rom_file))
+	if (!file_exists(unheadered_rom_file))
 	{
 		printf("Error: '%s' doesn't exist!\n", unheadered_rom_file);
 #if defined(ASAR_TEST_DLL)
@@ -480,9 +562,21 @@ int main(int argc, char * argv[])
 #endif
 		return 1;
 	}
-	FILE * smwromf=fopen(unheadered_rom_file, "rb");
-	fread(smwrom, 1, 512*1024, smwromf);
-	fclose(smwromf);
+
+	static const unsigned int smw_size = 512 * 1024;
+
+	std::vector<char> smwrom_buf(read_file_into_buffer(unheadered_rom_file));
+	const char* smwrom = smwrom_buf.data();
+
+	if (smwrom_buf.size() != smw_size)
+	{
+		printf("Error: '%s' doesn't seem to be an unheadered SMW ROM file! Expected a size of %u bytes, got %u.\n",
+			unheadered_rom_file, smw_size, (unsigned int)smwrom_buf.size());
+#if defined(ASAR_TEST_DLL)
+		asar_close();
+#endif
+		return 1;
+	}
 
 	bool has_path_seperator = false;
 	if (str_ends_with(output_directory, "/") || str_ends_with(output_directory, "\\"))
@@ -522,20 +616,16 @@ int main(int argc, char * argv[])
 		// Without them, tests can fail due to garbage being left in memory.
 		memset(expectedrom, 0, max_rom_size);
 		memset(truerom, 0, max_rom_size);
-		char line[256];
-		if (!file_exist(fname)) dief("Error: '%s' doesn't exist!\n", fname);
-		FILE * asmfile = fopen(fname, "rb");
+		if (!file_exists(fname)) dief("Error: '%s' doesn't exist!\n", fname);
 		int pos = 0;
 		int len = 0;
-		FILE * rom = fopen(out_rom_name, "wb");
+
+		std::vector<char> asmfile(read_file_into_buffer(fname));
 
 		// RPG Hacker: Skip BoM if present.
-		char bom_buf[4] = { 0, 0, 0, 0 };
-		fread(bom_buf, 1, sizeof(bom_buf) - 1, asmfile);
-
-		if (bom_buf[0] != '\xEF' || bom_buf[1] != '\xBB' || bom_buf[2] != '\xBF')
+		if (asmfile[0] == '\xEF' || asmfile[1] == '\xBB' || asmfile[2] == '\xBF')
 		{
-			fseek(asmfile, 0, SEEK_SET);
+			asmfile.erase(asmfile.begin(), asmfile.begin() + 3);
 		}
 
 		int numiter = 1;
@@ -546,44 +636,31 @@ int main(int argc, char * argv[])
 		std::vector<std::string> expected_error_prints;
 		std::vector<std::string> expected_warn_prints;
 
+		int asm_file_pos = 0;
+
 		while (true)
 		{
-			long int line_start_pos = ftell(asmfile);
+			std::string line;
+
+			long int line_start_pos = asm_file_pos;
 			
-			// RPG Hacker: Not doing this in text mode so that it works fine on both
-			// Linux and Windows.
-			// First we read all characters until we hit a \n or \r.
-			size_t current_line_length = 0;
-			size_t just_read = 0;
-			char last_read = '\0';
-			do
+			while (asm_file_pos < asmfile.size() != 0 && asmfile[asm_file_pos] != '\n')
 			{
-				just_read = fread(&line[current_line_length], 1, 1, asmfile);
-				last_read = line[current_line_length];
-				if (last_read != '\r')
+				// RPG Hacker: We ignore \r, because we don't support text mode and we want our checks
+				// to work consistently across platforms.
+				if (asmfile[asm_file_pos] != '\r')
 				{
-					current_line_length += just_read;
+					line += asmfile[asm_file_pos];
 				}
+				asm_file_pos++;
 			}
-			while (just_read != 0 && current_line_length < sizeof(line)-1
-				&& last_read != '\n' && last_read != '\0');
-				
-			// Next we skip all following \n and \r (since they might be part of the
-			// same multi-byte new line sequence).
-			char next_char = '\0';
-			just_read = fread(&next_char, 1, 1, asmfile);
-			
-			if (just_read != 0 && next_char != '\r')
-			{			
-				// Seek back one byte, because we've actually read past the new line now.
-				fseek(asmfile, -1, SEEK_CUR);
-			}
-				
-			line[current_line_length > 0 ? current_line_length-1 : 0] = '\0';
+
+			// If we haven't reached EoF yet, last read must have been a \n, so skip it.
+			if (asm_file_pos < asmfile.size()) asm_file_pos++;			
 
 			if (line[0] == ';' && line[1] == '`')
 			{
-				std::vector<std::string> words = tokenize_string(line + 2, " ");
+				std::vector<std::string> words = tokenize_string(line.c_str() + 2, " ");
 				for (size_t i = 0; i < words.size(); ++i)
 				{
 					std::string& cur_word = words[i];
@@ -594,9 +671,9 @@ int main(int argc, char * argv[])
 					{
 						if (line[2] == '+')
 						{
-							memcpy(expectedrom, smwrom, 512 * 1024);
-							fwrite(smwrom, 1, 512 * 1024, rom);
-							len = 512 * 1024;
+							memcpy(expectedrom, smwrom, smw_size);
+							write_buffer_to_file(out_rom_name, smwrom, smw_size);
+							len = smw_size;
 						}
 					}
 					if ((cur_word.length() == 5 || cur_word.length() == 6) && num >= 0) pos = num;
@@ -657,28 +734,21 @@ int main(int argc, char * argv[])
 			}
 			else
 			{
-				fseek(asmfile, line_start_pos, SEEK_SET);
+				asm_file_pos = line_start_pos;
 				break;
 			}
 		}
 
-		fclose(asmfile);
-		fclose(rom);
+		printf("(%u/%u) ", (unsigned int)(testno + 1), (unsigned int)input_files.size());
 
 #if defined(ASAR_TEST_DLL)
 		// RPG Hacker: We'll just use truerom directly when testing the DLL, since it takes
 		// a memory buffer, anyways. Makes everything easier.
-		rom = fopen(out_rom_name, "rb");
-		fseek(rom, 0, SEEK_END);
-		int truelen = ftell(rom);
-		fseek(rom, 0, SEEK_SET);
-		fread(truerom, 1, (size_t)truelen, rom);
-		fclose(rom);
+		std::vector<char> out_rom_data(read_file_into_buffer(out_rom_name));
+		int truelen = (int)out_rom_data.size();
+		memcpy(truerom, out_rom_data.data(), out_rom_data.size());
 
 		printf("Patching: %s\n", fname);
-
-		FILE * err = fopen(stderr_log_name, "wt");
-		FILE * out = fopen(stdout_log_name, "wt");
 
 		{
 			std::string base_path_string = dir(fname);
@@ -706,7 +776,9 @@ int main(int argc, char * argv[])
 			{
 				{ "cmddefined", nullptr },
 				{ "!cmddefined2", "" },
-				{ " !cmddefined3 ", " $10,$F0,$E0 "}
+				{ " !cmddefined3 ", " $10,$F0,$E0 "},
+				// RPG Hacker: 日本語🇯🇵 in UTF-8
+				{ "cmdl_define_utf8", "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xf0\x9f\x87\xaf\xf0\x9f\x87\xb5" },
 			};
 
 			asar_patch_params.additional_defines = libdefines;
@@ -775,13 +847,16 @@ int main(int argc, char * argv[])
 					}*/
 				}
 
+				std::string stderr_buff;
+				std::string stdout_buff;
+
 				{
 					int numerrors;
 					const struct errordata * errors = asar_geterrors(&numerrors);
 					for (int j = 0; j < numerrors; ++j)
 					{
-						fwrite(errors[j].fullerrdata, 1, strlen(errors[j].fullerrdata), err);
-						fwrite("\n", 1, strlen("\n"), err);
+						stderr_buff += errors[j].fullerrdata;
+						stderr_buff += "\n";
 					}
 				}
 
@@ -790,8 +865,8 @@ int main(int argc, char * argv[])
 					const struct errordata * warnings = asar_getwarnings(&numwarnings);
 					for (int j = 0; j < numwarnings; ++j)
 					{
-						fwrite(warnings[j].fullerrdata, 1, strlen(warnings[j].fullerrdata), err);
-						fwrite("\n", 1, strlen("\n"), err);
+						stderr_buff += warnings[j].fullerrdata;
+						stderr_buff += "\n";
 					}
 				}
 
@@ -800,15 +875,15 @@ int main(int argc, char * argv[])
 					const char * const * prints = asar_getprints(&numprints);
 					for (int j = 0; j < numprints; ++j)
 					{
-						fwrite(prints[j], 1, strlen(prints[j]), out);
-						fwrite("\n", 1, strlen("\n"), out);
+						stdout_buff += prints[j];
+						stdout_buff += "\n";
 					}
 				}
+
+				write_buffer_to_file(stderr_log_name, stderr_buff);
+				write_buffer_to_file(stdout_log_name, stdout_buff);
 			}
 		}
-
-		fclose(err);
-		fclose(out);
 #else
 		{
 			std::string base_path_string = dir(fname);
@@ -816,7 +891,12 @@ int main(int argc, char * argv[])
 
 			char cmd[1024];
 			// randomdude999: temp workaround: using $ in command line is unsafe on linux, so use dec representation instead (for !cmddefined3)
-			snprintf(cmd, sizeof(cmd), "\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \" \"%s\" \"%s\"", asar_exe_path, base_path, fname, out_rom_name);
+			snprintf(cmd, sizeof(cmd),
+				"\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \""
+				// RPG Hacker: 日本語🇯🇵 in UTF-8
+				" -Dcmdl_define_utf8=\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xf0\x9f\x87\xaf\xf0\x9f\x87\xb5"
+				" \"%s\" \"%s\"",
+				asar_exe_path, base_path, fname, out_rom_name);
 			for (int i = 0;i < numiter;i++)
 			{
 				printf("Executing: %s\n", cmd);
@@ -826,8 +906,6 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		FILE * err = nullptr;
-		FILE * out = nullptr;
 #endif
 
 		std::vector<int> actual_errors;
@@ -838,18 +916,11 @@ int main(int argc, char * argv[])
 		std::list<std::string> lines_to_print;
 
 		{
-			err = fopen(stderr_log_name, "rt");
-			fseek(err, 0, SEEK_END);
-			size_t fsize = (size_t)ftell(err);
-			fseek(err, 0, SEEK_SET);
-			char* buf = (char*)malloc(fsize + 1);
-			memset(buf, 0, fsize + 1);
-			fread(buf, 1, fsize, err);
-			fclose(err);
+			std::vector<char> buf(read_file_into_buffer(stderr_log_name));
 
 			std::string log_line;
 
-			for (size_t i = 0; i < fsize; ++i)
+			for (size_t i = 0; i < buf.size(); ++i)
 			{
 				if (buf[i] == '\n' || buf[i] == '\0')
 				{
@@ -936,23 +1007,14 @@ int main(int argc, char * argv[])
 					}
 				}
 			}
-
-			free(buf);
 		}
 
 		{
-			out = fopen(stdout_log_name, "rt");
-			fseek(out, 0, SEEK_END);
-			size_t fsize = (size_t)ftell(out);
-			fseek(out, 0, SEEK_SET);
-			char* buf = (char*)malloc(fsize + 1);
-			memset(buf, 0, fsize + 1);
-			fread(buf, 1, fsize, out);
-			fclose(out);
+			std::vector<char> buf(read_file_into_buffer(stdout_log_name));
 
 			std::string log_line;
 
-			for (size_t i = 0; i < fsize; ++i)
+			for (size_t i = 0; i < buf.size(); ++i)
 			{
 				// RPG Hacker: We treat \0 as EOF now.
 				// I have no idea how these even end up in the output file, but they definitely shouldn't be considered
@@ -980,8 +1042,6 @@ int main(int argc, char * argv[])
 					}
 				}
 			}
-
-			free(buf);
 		}
 
 		bool did_fail = false;
@@ -1066,12 +1126,9 @@ int main(int argc, char * argv[])
 
 
 #if !defined(ASAR_TEST_DLL)
-		rom = fopen(out_rom_name, "rb");
-		fseek(rom, 0, SEEK_END);
-		int truelen = ftell(rom);
-		fseek(rom, 0, SEEK_SET);
-		fread(truerom, 1, (size_t)truelen, rom);
-		fclose(rom);
+		std::vector<char> out_rom_data(read_file_into_buffer(out_rom_name));
+		int truelen = (int)out_rom_data.size();
+		memcpy(truerom, out_rom_data.data(), out_rom_data.size());
 #endif
 		bool fail = false;
 		for (int i = 0;i < min(len, truelen);i++)
@@ -1090,8 +1147,6 @@ int main(int argc, char * argv[])
 
 		printf("Success!\n\n");
 	}
-
-	free(smwrom);
 
 	printf("%u out of %u performed tests succeeded.\n", (unsigned int)(input_files.size() - (size_t)numfailed), (unsigned int)input_files.size());
 

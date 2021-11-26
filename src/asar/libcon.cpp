@@ -1,9 +1,11 @@
 #include "std-includes.h"
 #include "libcon.h"
+#include "libstr.h"
+#include "unicode.h"
 #include <signal.h>
 
-static char * progname;
-static char ** args;
+static const char * progname;
+static const char ** args;
 static int argsleft;
 bool libcon_interactive;
 static const char * usage;
@@ -62,6 +64,27 @@ static const char * getfname(bool tellusage, const char * defval= nullptr)
 	//return rval;
 }
 
+void u8_fgets(char* buffer, int buffer_size, FILE* handle)
+{
+#if defined(windows)
+	// RPG Hacker: Using buffer_size * 2 here to account for potential surrogate pairs.
+	// The idea is that our buffer here should be able to at least hold the same amount
+	// of characters as the old ANSI version would have supported.
+	int num_chars = buffer_size * 2;
+	wchar_t* w_buf = (wchar_t*)malloc(num_chars * sizeof(wchar_t));
+	(void)fgetws(w_buf, num_chars, stdin);
+	string u8_str;
+	if (utf16_to_utf8(&u8_str, w_buf))
+	{
+		strncpy(buffer, u8_str, buffer_size);
+		buffer[buffer_size-1] = '\0';
+	}
+	free(w_buf);
+#else
+	(void)fgets(buffer, buffer_size, handle);
+#endif
+}
+
 static const char * requirestrfromuser(const char * question, bool filename)
 {
 	confirmclose=false;
@@ -71,7 +94,7 @@ static const char * requirestrfromuser(const char * question, bool filename)
 	{
 		*rval=0;
 		printf("%s ", question);
-		(void)fgets(rval, 250, stdin);
+		u8_fgets(rval, 250, stdin);
 	}
 	*strchr(rval, '\n')=0;
 	confirmclose=true;
@@ -92,7 +115,7 @@ static const char * requeststrfromuser(const char * question, bool filename, con
 	char * rval=(char*)malloc(256);
 	*rval=0;
 	printf("%s ", question);
-	(void)fgets(rval, 250, stdin);
+	u8_fgets(rval, 250, stdin);
 	*strchr(rval, '\n')=0;
 	confirmclose=true;
 	if (!*rval) return defval;
@@ -107,7 +130,7 @@ static const char * requeststrfromuser(const char * question, bool filename, con
 	return rval;
 }
 
-void libcon_init(int argc, char ** argv, const char * usage_)
+void libcon_init(int argc, const char ** argv, const char * usage_)
 {
 	progname=argv[0];
 	args=argv;

@@ -2347,7 +2347,6 @@ void assembleblock(const char * block, bool isspecialline)
 		cleartable();
 		for (int i=0;tablelines[i];i++)
 		{
-			// TODO: handle this properly (needs to use the utf8 functions)
 			string tableline=tablelines[i];
 			if (!*tableline) continue;
 			if (!fliporder)

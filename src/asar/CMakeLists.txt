@@ -45,6 +45,8 @@ macro(set_asar_shared_properties target)
 		
 	if (WIN32)
 		target_compile_definitions(${target} PRIVATE "windows")
+		# RPG Hacker: We define UNICODE on Windows, just to make sure we don't accidentally call an ANSI API somewhere.
+		target_compile_definitions(${target} PRIVATE "UNICODE" "_UNICODE")
 	endif()
 		
 	if (UNIX)
