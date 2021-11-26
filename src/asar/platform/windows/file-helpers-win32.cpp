@@ -120,7 +120,7 @@ void close_file(FileHandleType handle)
 
 uint64_t get_file_size(FileHandleType handle)
 {
-	if (handle == InvalidFileHandle) 0u;
+	if (handle == InvalidFileHandle) return 0u;
 
 	LARGE_INTEGER f_size;
 
@@ -131,7 +131,7 @@ uint64_t get_file_size(FileHandleType handle)
 
 void set_file_pos(FileHandleType handle, uint64_t pos)
 {
-	if (handle == InvalidFileHandle) 0u;
+	if (handle == InvalidFileHandle) return;
 
 	// TODO: Some error handling would be wise here.
 
@@ -143,7 +143,7 @@ void set_file_pos(FileHandleType handle, uint64_t pos)
 
 uint64_t get_file_pos(FileHandleType handle)
 {
-	if (handle == InvalidFileHandle) 0u;
+	if (handle == InvalidFileHandle) return 0u;
 
 	// TODO: Some error handling would be wise here.
 
@@ -160,7 +160,7 @@ uint64_t get_file_pos(FileHandleType handle)
 
 uint32_t read_file(FileHandleType handle, void* buffer, uint32_t num_bytes)
 {
-	if (handle == InvalidFileHandle) 0u;
+	if (handle == InvalidFileHandle) return 0u;
 
 	DWORD bytes_read = 0u;
 
@@ -173,7 +173,7 @@ uint32_t read_file(FileHandleType handle, void* buffer, uint32_t num_bytes)
 
 uint32_t write_file(FileHandleType handle, const void* buffer, uint32_t num_bytes)
 {
-	if (handle == InvalidFileHandle) 0u;
+	if (handle == InvalidFileHandle) return 0u;
 	
 	DWORD bytes_written = 0u;
 
