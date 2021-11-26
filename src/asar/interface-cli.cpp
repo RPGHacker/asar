@@ -82,9 +82,9 @@ void onsigxcpu(int ignored)
 
 
 #if defined(windows)
-int wmain(int argc, wchar_t * argv_w[])
+int wmain(int argc, const wchar_t * argv_w[])
 #else
-int main(int argc, char * argv[])
+int main(int argc, const char * argv[])
 #endif
 {
 #ifdef TIMELIMIT

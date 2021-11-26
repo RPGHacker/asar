@@ -137,6 +137,41 @@ inline bool file_exists(const char *filename)
 	return (stat(filename, &buffer) == 0);
 }
 
+
+std::vector<char> read_file_into_buffer(const char *filename)
+{
+	FILE* handle = fopen(filename, "rb");
+
+	std::vector<char> out;
+
+	if (handle != nullptr)
+	{
+		fseek(handle, 0, SEEK_END);
+		long int f_size = ftell(handle);
+		fseek(handle, 0, SEEK_SET);
+
+		out.resize((size_t)f_size);
+
+		fread(out.data(), 1, out.size(), handle);
+
+		fclose(handle);
+	}
+
+	return out;
+}
+
+void write_buffer_to_file(const char *filename, const void* data, size_t data_size)
+{	
+	FILE* handle = fopen(filename, "wb");
+
+	if (handle != nullptr)
+	{
+		fwrite(data, 1, data_size, handle);
+
+		fclose(handle);
+	}
+}
+
 #endif
 
 void write_buffer_to_file(const char *filename, const std::vector<char>& to_write)
@@ -644,7 +679,7 @@ int main(int argc, char * argv[])
 
 			long int line_start_pos = asm_file_pos;
 			
-			while (asm_file_pos < asmfile.size() != 0 && asmfile[asm_file_pos] != '\n')
+			while (asm_file_pos < (int)asmfile.size() && asmfile[asm_file_pos] != '\n')
 			{
 				// RPG Hacker: We ignore \r, because we don't support text mode and we want our checks
 				// to work consistently across platforms.
@@ -656,7 +691,7 @@ int main(int argc, char * argv[])
 			}
 
 			// If we haven't reached EoF yet, last read must have been a \n, so skip it.
-			if (asm_file_pos < asmfile.size()) asm_file_pos++;			
+			if (asm_file_pos < (int)asmfile.size()) asm_file_pos++;			
 
 			if (line[0] == ';' && line[1] == '`')
 			{
@@ -777,7 +812,7 @@ int main(int argc, char * argv[])
 				{ "cmddefined", nullptr },
 				{ "!cmddefined2", "" },
 				{ " !cmddefined3 ", " $10,$F0,$E0 "},
-				// RPG Hacker: æ—¥æœ¬èªžðŸ‡¯ðŸ‡µ in UTF-8
+				// RPG Hacker: æ—¥æœ¬èªží«ží¿¿Çµ in UTF-8
 				{ "cmdl_define_utf8", "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xf0\x9f\x87\xaf\xf0\x9f\x87\xb5" },
 			};
 
@@ -893,7 +928,7 @@ int main(int argc, char * argv[])
 			// randomdude999: temp workaround: using $ in command line is unsafe on linux, so use dec representation instead (for !cmddefined3)
 			snprintf(cmd, sizeof(cmd),
 				"\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \""
-				// RPG Hacker: æ—¥æœ¬èªžðŸ‡¯ðŸ‡µ in UTF-8
+				// RPG Hacker: æ—¥æœ¬èªží«ží¿¿Çµ in UTF-8
 				" -Dcmdl_define_utf8=\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xf0\x9f\x87\xaf\xf0\x9f\x87\xb5"
 				" \"%s\" \"%s\"",
 				asar_exe_path, base_path, fname, out_rom_name);
