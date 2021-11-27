@@ -51,9 +51,9 @@ jobs:
 
     - name: App Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests/asar-app-test${{ matrix.exe_ext }} ${{github.workspace}}/build/asar/asar-standalone{{ matrix.exe_ext }} "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/asar-app-test${{ matrix.exe_ext }} ${{github.workspace}}/build/asar/asar-standalone${{ matrix.exe_ext }} "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
 
     - name: DLL Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests/asar-dll-test{{ matrix.exe_ext }} ${{github.workspace}}/build/asar/{{ matrix.dll_prefix }}sar{{ matrix.dll_ext }} "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/asar-dll-test${{ matrix.exe_ext }} ${{github.workspace}}/build/asar/${{ matrix.dll_prefix }}asar${{ matrix.dll_ext }} "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
       
