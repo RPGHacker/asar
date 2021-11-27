@@ -14,15 +14,25 @@ jobs:
   build:
     strategy:
       matrix:
-        config: ['ubuntu-default']
-        os: ['ubuntu-latest']
+        config: ['windows-default']
+        os: ['windows-2019']
         generator: ['']
         toolset: ['']
+        exe_ext: ['.exe']
+        dll_prefix: ['']
+        dll_ext: ['.dll']
         include:
-          - config: windows-default
-            os: windows-latest
+          - config: windows-2019
+            os: windows-2019
             generator: '-G "Visual Studio 16 2019"'
             toolset: '-T v142'
+          - config: ubuntu-20
+            os: ubuntu-20.04
+            generator: ''
+            toolset: ''
+            exe_ext: ''
+            dll_prefix: 'lib'
+            dll_ext: '.so'
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -41,9 +51,9 @@ jobs:
 
     - name: App Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests/asar-app-test ${{github.workspace}}/build/asar/asar-standalone "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/asar-app-test${{ matrix.exe_ext }} ${{github.workspace}}/build/asar/asar-standalone{{ matrix.exe_ext }} "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
 
     - name: DLL Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests/asar-dll-test ${{github.workspace}}/build/asar/libasar.so "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/asar-dll-test{{ matrix.exe_ext }} ${{github.workspace}}/build/asar/{{ matrix.dll_prefix }}sar{{ matrix.dll_ext }} "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
       
