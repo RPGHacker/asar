@@ -21,8 +21,8 @@ jobs:
         include:
           - config: windows-default
             os: windows-latest
-            generator: '-G "Visual Studio 14 2015"'
-            toolset: '-T v140'
+            generator: '-G "Visual Studio 16 2019"'
+            toolset: '-T v142'
     runs-on: ${{ matrix.os }}
 
     steps:
