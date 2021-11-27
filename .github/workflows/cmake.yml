@@ -41,21 +41,21 @@ jobs:
     - name: App Test
       # Run app test
       run: ${{github.workspace}}/build/asar-tests/${{env.BUILD_TYPE}}/asar-app-test.exe ${{github.workspace}}/build/asar/${{env.BUILD_TYPE}}/asar-standalone.exe "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
-      if: contains(matrix.config, 'msvc')
+      if: ${{ contains(matrix.config, 'msvc') }}
 
     - name: DLL Test
       # Run app test
       run: ${{github.workspace}}/build/asar-tests/${{env.BUILD_TYPE}}/asar-dll-test.exe ${{github.workspace}}/build/asar/${{env.BUILD_TYPE}}/asar.dll "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
-      if: contains(matrix.config, 'msvc')
+      if: ${{ contains(matrix.config, 'msvc') }}
 
     # Tests for other platforms
     - name: App Test
       # Run app test
       run: ${{github.workspace}}/build/asar-tests/asar-app-test ${{github.workspace}}/build/asar/asar-standalone "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
-      if: !contains(matrix.config, 'msvc')
+      if: ${{ !contains(matrix.config, 'msvc') }}
 
     - name: DLL Test
       # Run app test
       run: ${{github.workspace}}/build/asar-tests/asar-dll-test ${{github.workspace}}/build/asar/libasar.so "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
-      if: !contains(matrix.config, 'msvc')
+      if: ${{ !contains(matrix.config, 'msvc') }}
       
