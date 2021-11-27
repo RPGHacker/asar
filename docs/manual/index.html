@@ -73,6 +73,7 @@
 			<li>
 				<a href="#formatting">Code Formatting</a>
 				<ul>
+					<li><a href="#encoding">Encoding</a></li>
 					<li><a href="#comments">Comments</a></li>
 					<li><a href="#brackets">Brackets</a></li>
 					<li><a href="#multiline">Multi-Line Operators</a></li>
@@ -1525,11 +1526,13 @@ clc
 adc #-10
 and #%01111111
 lda #~$80	; Equal to lda #$FFFFFF7F</code></pre>
-		Aditionally, Asar supports character literals by delimiting a single ASCII character with <code>'</code>. Asar will automatically convert them to the integer value currently mapped to them (by default their ASCII value). They can be used in all places where number literals can be used. See section <a href="#tables">Tables</a> for details on ASCII character mapping.
+		Aditionally, Asar supports character literals by delimiting a single Unicode character with <code>'</code>. Asar will automatically convert them to the integer value currently mapped to them (by default their Unicode  code point). They can be used in all places where number literals can be used. See section <a href="#tables">Tables</a> for details on character mapping.
 		<pre><code class="65c816_asar">lda #'a'
 sta $00
 
-db 'x','x'+1,'x'+2</code></pre>
+db 'x','x'+1,'x'+2
+
+db '💩'</code></pre>
 		<h4 id="opcode-length">Opcode Length Specification</h4>
 		By appending <code>.b</code>, <code>.w</code> or <code>.l</code> to an opcode, you can specify that opcode's length. This is recommended in cases where the length could be ambiguous.
 		<pre><code class="65c816_asar">lda #0		; Could be either lda #$00 or lda #$0000
@@ -1685,6 +1688,8 @@ db (3/4)+1.75
 <a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="formatting"><h3>Code Formatting</h3>
+		<h4 id="encoding">Encoding</h4>
+		Asar expects all source files to be UTF-8-encoded and will throw an error when detecting any other encoding.
 		<h4 id="comments">Comments</h4>
 		You can use ; to add comments to your code, making it easier to read and understand for other people. Everything from the ; to the end of the line is silently ignored by Asar.
 		<pre><code class="65c816_asar">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
@@ -2862,7 +2867,7 @@ endif</code></pre>
 		<pre><code class="65c816_asar">dw {value}[,value...]</code></pre>
 		<pre><code class="65c816_asar">dl {value}[,value...]</code></pre>
 		<pre><code class="65c816_asar">dd {value}[,value...]</code></pre>
-		Table commands let you insert a number or a list of numbers directly into the ROM as raw bytes. Use db for 8-bit numbers, dw for 16-bit numbers, dl for 24-bit numbers and dd for 32-bit numbers respectively, where <code>value</code> can be a number literal, a math statement, a label or an ASCII string delimited by double quotes. When using dw, dl or dd, each number is converted to little-endian. Big numbers are truncated to smaller integers as needed.		
+		Table commands let you insert a number or a list of numbers directly into the ROM as raw bytes. Use db for 8-bit numbers, dw for 16-bit numbers, dl for 24-bit numbers and dd for 32-bit numbers respectively, where <code>value</code> can be a number literal, a math statement, a label or a Unicode string delimited by double quotes. When using dw, dl or dd, each number is converted to little-endian. Big numbers are truncated to smaller integers as needed.		
 		<pre><code class="65c816_asar">org $0189AB
 Label:
 
@@ -2876,7 +2881,7 @@ dw $01,$0203,$04050607,Label,"ABC"
 dl $01,$0203,$04050607,Label,"ABC"
 ; $01 $00 $00 $00  $03 $02 $00 $00  $07 $06 $05 $04  $AB $89 $01 $00  $41 $00 $00 $00 $42 $00 $00 $00 $43 $00 $00 $00
 dd $01,$0203,$04050607,Label,"ABC"</code></pre>
-		By default, each character in an ASCII string used in in a table maps onto the respective ASCII value. This mapping can be customized via the table command:
+		By default, each character in a Unicode string used in in a table maps onto the respective Unicode code point. This mapping can be customized via the table command:
 		<pre><code class="65c816_asar">table {filename}[,rtl/ltr]</code></pre>
 		Where <code>filename</code> specifies the path to a table file (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and ltr/rtl specifies whether that file is in left-to-right or right-to left format (default: left-to-right).<br />
 		Format of left-to-right table files:
@@ -2885,51 +2890,60 @@ dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 		Format of right-to-left table files:
 		<pre><code>{value}={character}
 [value=character...]</code></pre>
-		where <code>character</code> represents an ASCII character and <code>value</code> represents a hexadecimal number literal (without a prefix) to map to that ASCII character. Note that the table command initializes the mapping to garbage, so when using it, it's recommended to provide mappings for all ASCII characters. It's also possible to directly map characters inline without using a table file by using the syntax
+		where <code>character</code> represents a Unicode character (only single code points at this time - e.g., a precomposed &quot;Ä&quot; will work, while a split &quot;¨&quot; and an &quot;A&quot; will throw an error) and <code>value</code> represents a hexadecimal number literal (without a prefix) to map to that character. Characters not mapped in a table will still map to their respective Unicode code point. It's also possible to directly map characters inline without using a table file by using the syntax
 		<pre><code>'{character}' = {value}</code></pre>
 		where <code>value</code> can be any number literal or math statement.<br />
-		To reset the current table mapping to a direct ASCII mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push the current table mapping to the stack, whereas the <code>pulltable</code> command lets you restore the mapping from the stack.
+		To reset the current table mapping to a direct Unicode code point mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push the current table mapping to the stack, whereas the <code>pulltable</code> command lets you restore the mapping from the stack.
 		<pre><code class="65c816_asar">; Contents of table1.txt:
 ;A=1A
 ;B=1B
 ;C=1C
+;日=2A
+;本=2B
+;語=2C
 
 ; Contents of table2.txt:
 ;1D=A
 ;1E=B
 ;1F=C
+;2D=日
+;2E=本
+;2F=語
 
-; This writes $41 $42 $43
-db "ABC"
+; This writes $41 $42 $43 $E5 (from U+65E5) $2C (from U+672C) $9E (from U+8A9E)
+db "ABC日本語"
 
 table "table1.txt",ltr
 
-; This writes $1A $1B $1C
-db "ABC"
+; This writes $1A $1B $1C $2A $2B $2C
+db "ABC日本語"
 
 pushtable
 table "table2.txt",rtl
 
-; This writes $1D $1E $1F
-db "ABC"
+; This writes $1D $1E $1F $2D $2E $2F
+db "ABC日本語"
 
 pulltable
 
-; This writes $1A $1B $1C
-db "ABC"
+; This writes $1A $1B $1C $2A $2B $2C
+db "ABC日本語"
 
 cleartable
 
-; This writes $41 $42 $43
-db "ABC"
+; This writes $41 $42 $43 $E5 $2C $9E
+db "ABC日本語"
 
 'A' = $20
 'B' = $20+1
 'C' = $20+2
+'日' = $20+3
+'本' = $20+4
+'語' = $20+5
 
-; Those both write $20 $21 $22
-db "ABC"
-db 'A','B','C'</code></pre>
+; Those both write $20 $21 $22 $23 $24 $25
+db "ABC日本語"
+db 'A','B','C','日','本','語'</code></pre>
 		Note that Asar tries to replace defines wherever possible - even inside strings. Sometimes, this might be undesired. In those cases, you can prefix the <code>!</code> with a <code>\</code> to escape it. The <code>\</code> itself can be escaped with another <code>\</code>. In the case of a <code>"</code> it can be escaped with an additional <code>"</code>
 		<pre><code class="65c816_asar">!define = "text"
 		
@@ -3011,6 +3025,7 @@ pullpc</code></pre>
 				</ol>
 			</li>
 		</ol>
+		Asar supports Unicode file names where available, including on Windows.
 		<h4 id="incsrc">incsrc</h4>
 		<pre><code class="65c816_asar">incsrc {filename}</code></pre>
 		The incsrc command makes Asar assemble the file referenced by the <code>filename</code> parameter (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names). The file is assembled in-place which means that Asar instantly switches to the new file and only returns to the previous file once assembling the new file has finished. All of Asar's state (labels, defines, functions, pc etc.) is shared between files. When including other files, there is a recursion limit of 512 levels. This limit only serves the purpose of preventing infinite recursion. For an easier understanding of incsrc, you can visualize it as a command which pastes the contents of another file directly into the current file (although that's not actually how it's implemented and there are differences in the way relative file paths are handled).
