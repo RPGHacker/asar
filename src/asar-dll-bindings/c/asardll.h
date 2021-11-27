@@ -1,11 +1,16 @@
 #ifndef ASAR_DLL_H_INCLUDED
 #	define ASAR_DLL_H_INCLUDED
 
+// General note: All string arguments in this header (including file names)
+// are expected to be UTF-8-encoded, and all string return values will be
+// UTF-8 encoded, unless the contrary is specifically specified.
+
 
 // RPG Hacker: Holy poopy; this is hacky.
 // All just for the convenience of not having to copy-paste
 // function prototypes into asardll.c, all while keeping
 // everything warning-free in clang...
+
 #ifndef asarfunc
 
 #define asarfunc extern
@@ -140,7 +145,6 @@ bool asar_init(void);
 
 // Same as above, but instead of automatically looking for and trying to load asar.dll, takes
 // a path to the Asar DLL and tries to load it.
-// The path is expected to be UTF-8-encoded, even on Windows.
 bool asar_init_with_dll_path(const char * dllpath);
 
 //Clears out all errors, warnings and printed statements, and clears the file cache. Not really
