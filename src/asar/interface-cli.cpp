@@ -125,6 +125,11 @@ int main(int argc, const char * argv[])
 	};
 
 #if defined(windows)
+	// RPG Hacker: MinGW compatibility hack.
+#	if !defined(_O_U16TEXT)
+#		define _O_U16TEXT 0x20000
+#	endif
+
 	_setmode(_fileno(stdin), _O_U16TEXT);
 	// RPG Hacker: These would currently break Asar, because we're using narrow print functions everywhere.
 	//_setmode(_fileno(stdout), _O_U16TEXT);
