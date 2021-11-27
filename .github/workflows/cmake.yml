@@ -14,19 +14,13 @@ jobs:
   build:
     strategy:
       matrix:
-        config: ['windows-2019']
+        config: ['windows-msvc-2019']
         os: ['windows-2019']
         generator: ['-G "Visual Studio 16 2019"']
         toolset: ['-T v142']
-        exe_ext: ['.exe']
-        dll_prefix: ['']
-        dll_ext: ['.dll']
-        sub_dir: ['/${{env.BUILD_TYPE}}']
         include:
           - config: ubuntu-20
             os: ubuntu-20.04
-            dll_prefix: 'lib'
-            dll_ext: '.so'
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -43,11 +37,25 @@ jobs:
       # Create temp directory that tests will use
       run: mkdir temp
 
+    # Windows MSVC tests
     - name: App Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests${{github.sub_dir}}/asar-app-test${{ matrix.exe_ext }} ${{github.workspace}}/build/asar${{github.sub_dir}}/asar-standalone${{ matrix.exe_ext }} "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/${{env.BUILD_TYPE}}/asar-app-test.exe ${{github.workspace}}/build/asar/${{env.BUILD_TYPE}}/asar-standalone.exe "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      if: contains(matrix.config, 'msvc')
 
     - name: DLL Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests${{github.sub_dir}}/asar-dll-test${{ matrix.exe_ext }} ${{github.workspace}}/build/asar${{github.sub_dir}}/${{ matrix.dll_prefix }}asar${{ matrix.dll_ext }} "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/${{env.BUILD_TYPE}}/asar-dll-test.exe ${{github.workspace}}/build/asar/${{env.BUILD_TYPE}}/asar.dll "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      if: contains(matrix.config, 'msvc')
+
+    # Tests for other platforms
+    - name: App Test
+      # Run app test
+      run: ${{github.workspace}}/build/asar-tests/asar-app-test ${{github.workspace}}/build/asar/asar-standalone "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      if: !contains(matrix.config, 'msvc')
+
+    - name: DLL Test
+      # Run app test
+      run: ${{github.workspace}}/build/asar-tests/asar-dll-test ${{github.workspace}}/build/asar/libasar.so "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      if: !contains(matrix.config, 'msvc')
       
