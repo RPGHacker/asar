@@ -92,7 +92,7 @@ std::string utf16_to_utf8(const std::wstring input)
 
 std::wstring utf8_to_utf16(const std::string input)
 {
-	int needed_chars = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.length(), NULL, 0);
+	int needed_chars = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.length(), NULL, 0);
 
 	if (needed_chars == 0)
 	{
@@ -106,7 +106,7 @@ std::wstring utf8_to_utf16(const std::string input)
 	std::wstring out;
 	out.resize(needed_chars);
 
-	int ret_val = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.length(), const_cast<wchar_t*>(out.c_str()), out.length());
+	int ret_val = MultiByteToWideChar(CP_UTF8, 0, input.c_str(), input.length(), const_cast<wchar_t*>(out.c_str()), out.length());
 
 	if (ret_val == 0)
 	{
