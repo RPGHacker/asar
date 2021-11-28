@@ -63,10 +63,28 @@ std::string utf16_to_utf8(const std::wstring input)
 {
 	int needed_chars = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.length(), NULL, 0, NULL, NULL);
 
+	if (needed_chars == 0)
+	{
+		DWORD err_code = GetLastError();
+		HRESULT hresult = HRESULT_FROM_WIN32(err_code);
+		fprintf(stderr, "WideCharToMultiByte() (first call) failed with error code: %u (HRESULT: 0x%08x)\n",
+			(unsigned int)err_code, (unsigned int)hresult);
+		return "";
+	}
+
 	std::string out;
 	out.resize(needed_chars);
 
-	WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.length(), const_cast<char*>(out.c_str()), out.length(), NULL, NULL);
+	int ret_val = WideCharToMultiByte(CP_UTF8, 0, input.c_str(), input.length(), const_cast<char*>(out.c_str()), out.length(), NULL, NULL);
+
+	if (ret_val == 0)
+	{
+		DWORD err_code = GetLastError();
+		HRESULT hresult = HRESULT_FROM_WIN32(err_code);
+		fprintf(stderr, "WideCharToMultiByte() (second call) failed with error code: %u (HRESULT: 0x%08x)\n",
+			(unsigned int)err_code, (unsigned int)hresult);
+		return "";
+	}
 
 	return out;
 }
@@ -76,10 +94,28 @@ std::wstring utf8_to_utf16(const std::string input)
 {
 	int needed_chars = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.length(), NULL, 0);
 
+	if (needed_chars == 0)
+	{
+		DWORD err_code = GetLastError();
+		HRESULT hresult = HRESULT_FROM_WIN32(err_code);
+		fprintf(stderr, "MultiByteToWideChar() (first call) failed for string \"%s\" with error code: %u (HRESULT: 0x%08x)\n",
+			input.c_str(), (unsigned int)err_code, (unsigned int)hresult);
+		return L"";
+	}
+
 	std::wstring out;
 	out.resize(needed_chars);
 
-	MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.length(), const_cast<wchar_t*>(out.c_str()), out.length());
+	int ret_val = MultiByteToWideChar(CP_UTF8, MB_PRECOMPOSED, input.c_str(), input.length(), const_cast<wchar_t*>(out.c_str()), out.length());
+
+	if (ret_val == 0)
+	{
+		DWORD err_code = GetLastError();
+		HRESULT hresult = HRESULT_FROM_WIN32(err_code);
+		fprintf(stderr, "MultiByteToWideChar() (second call) failed for string \"%s\" with error code: %u (HRESULT: 0x%08x)\n",
+			input.c_str(), (unsigned int)err_code, (unsigned int)hresult);
+		return L"";
+	}
 
 	return out;
 }
@@ -304,8 +340,8 @@ static bool find_files_in_directory(std::vector<wrapped_file>& out_array, const 
 		// RPG Hacker: This conversion back to UTF-8 instead of just using search_path is intentional.
 		// That way we should see if maybe the UTF-16 to UTF-8 conversion above messed something up.
 		std::string search_path_converted_back = utf16_to_utf8(search_path_w);
-		fprintf(stderr, "FindFirstFileW() for path \"%s\" failed with error code: %u (HRESULT: 0x%08x)\n",
-			search_path_converted_back.c_str(), (unsigned int)err_code, (unsigned int)hresult);
+		fprintf(stderr, "FindFirstFileW() for path \"%s\" (converted from UTF-8 path: \"%s\") failed with error code: %u (HRESULT: 0x%08x)\n",
+			search_path_converted_back.c_str(), search_path, (unsigned int)err_code, (unsigned int)hresult);
 		return false;
 	}
 
