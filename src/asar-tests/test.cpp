@@ -299,6 +299,10 @@ static bool find_files_in_directory(std::vector<wrapped_file>& out_array, const 
 	}
 	else
 	{
+		DWORD err_code = GetLastError();
+		HRESULT hresult = HRESULT_FROM_WIN32(err_code);
+		fprintf(stderr, "FindFirstFileW() for path \"%s\" failed with error code: %u (HRESULT: 0x%08x)\n",
+			search_path, (unsigned int)err_code, (unsigned int)hresult);
 		return false;
 	}
 
@@ -427,7 +431,7 @@ static bool execute_command_line(char * commandline, const char * stdout_log_fil
 
 	if (!CreateProcessW(nullptr, const_cast<wchar_t*>(u16_commandline.c_str()), nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi))
 	{
-		printf("execute_command_line() failed with HRESULT: 0x%8x", (unsigned int)HRESULT_FROM_WIN32(GetLastError()));
+		printf("execute_command_line() failed with HRESULT: 0x%8x\n", (unsigned int)HRESULT_FROM_WIN32(GetLastError()));
 		CloseHandle(stdout_read_handle);
 		CloseHandle(stdout_write_handle);
 		CloseHandle(stderr_read_handle);
