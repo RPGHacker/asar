@@ -337,11 +337,8 @@ static bool find_files_in_directory(std::vector<wrapped_file>& out_array, const 
 	{
 		DWORD err_code = GetLastError();
 		HRESULT hresult = HRESULT_FROM_WIN32(err_code);
-		// RPG Hacker: This conversion back to UTF-8 instead of just using search_path is intentional.
-		// That way we should see if maybe the UTF-16 to UTF-8 conversion above messed something up.
-		std::string search_path_converted_back = utf16_to_utf8(search_path_w);
-		fprintf(stderr, "FindFirstFileW() for path \"%s\" (converted from UTF-8 path: \"%s\") failed with error code: %u (HRESULT: 0x%08x)\n",
-			search_path_converted_back.c_str(), search_path, (unsigned int)err_code, (unsigned int)hresult);
+		fprintf(stderr, "FindFirstFileW() for path \"%s\" failed with error code: %u (HRESULT: 0x%08x)\n",
+			search_path, (unsigned int)err_code, (unsigned int)hresult);
 		return false;
 	}
 
