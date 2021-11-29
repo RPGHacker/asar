@@ -81,11 +81,7 @@ void onsigxcpu(int ignored)
 #endif
 
 
-#if defined(windows)
-int wmain(int argc, const wchar_t * argv_w[])
-#else
 int main(int argc, const char * argv[])
-#endif
 {
 #ifdef TIMELIMIT
 #if defined(linux)
@@ -139,8 +135,10 @@ int main(int argc, const char * argv[])
 	SetConsoleCP(CP_UTF8);
 
 
-	// RPG Hacker: Full Unicode support on Windows requires using wmain() with a wchar_t command line.
+	// RPG Hacker: Full Unicode support on Windows requires using a wchar_t command line.
 	// This means we have to convert our arguments from UTF-16 to UTF-8 here.
+	LPWSTR * argv_w = CommandLineToArgvW(GetCommandLineW(), &argc);
+
 	autoarray<string> u8_argv_arr;
 	autoarray<const char *> raw_argv_arr;
 
@@ -156,7 +154,7 @@ int main(int argc, const char * argv[])
 		raw_argv_arr[i] = u8_argv_arr[i];
 	}
 
-	const char** argv = (const char**)raw_argv_arr;
+	argv = (const char**)raw_argv_arr;
 #endif
 
 	try
