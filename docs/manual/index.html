@@ -2174,7 +2174,7 @@ endstruct</code></pre>
 		<h4 id="namespaces">Namespaces</h4>
 		Namespaces are a feature which makes it easier to avoid name conflicts between different labels without having to give them long or cryptic names. They work similarly to C++ namespaces and accomplish this by automatically adding a prefix to all labels declared or accessed within them. This prefix consists of an identifier, followed by an underscore <code>_</code> . Namespaces can be stacked if desired by enabling the <a href="#namespace-nested">namespace nested</a> setting. When you try to access a label from within a namespace and Asar doesn't find it in there, it automatically looks in the upper namespaces (up to the global namespace). Use<br/>
 		<pre><code class="65c816_asar">namespace {identifier}</code></pre>
-		to enter a namspace, where <code>identifier</code> can contain any of the following characters:<br/>		
+		to enter a namespace, where <code>identifier</code> can contain any of the following characters:<br/>		
 		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
 		Use
 		<pre><code class="65c816_asar">namespace off</code></pre>
