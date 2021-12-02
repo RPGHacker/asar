@@ -157,8 +157,8 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 }
 
 #define dequote(var, next, error) if (var=='"') do { next; while (var!='"') { if (!var) error; next; } next; } while(0); else if (var=='\'') do { next; while (var!='\'') { if (!var) error; next; } next; } while(0)
-#define skippar(var, next, error) dequote(var, next, error); else if (var=='(') { int par=1; next; while (par) { dequote(var, next, error); \
-				if (var=='(') par++; if (var==')') par--; if (!var) error; next; } } else if (var==')') error
+#define skippar(var, next, error) dequote(var, next, error); else if (var=='(') { int par=1; next; while (par) { dequote(var, next, error); else { \
+				if (var=='(') par++; if (var==')') par--; if (!var) error; next; } } } else if (var==')') error
 
 string& string::replace(const char * instr, const char * outstr, bool all)
 {
@@ -271,20 +271,23 @@ string& string::qreplace(const char * instr, const char * outstr, bool all)
 		for (int i=0;thisstring[i];)
 		{
 			dequote(thisstring[i], out+= thisstring[i++], return thisstring);
-			if (!strncmp((const char*)thisstring +i, instr, strlen(instr)))
+			else
 			{
-				replaced=true;
-				out+=outstr;
-				i+=(int)strlen(instr);
-				if (!all)
+				if (!strncmp((const char*)thisstring + i, instr, strlen(instr)))
 				{
-					out+=((const char*)thisstring)+i;
-					thisstring =out;
-					return thisstring;
+					replaced = true;
+					out += outstr;
+					i += (int)strlen(instr);
+					if (!all)
+					{
+						out += ((const char*)thisstring) + i;
+						thisstring = out;
+						return thisstring;
+					}
 				}
+				// randomdude999: prevent appending the null terminator to the output
+				else if (thisstring[i]) out += thisstring[i++];
 			}
-			// randomdude999: prevent appending the null terminator to the output
-			else if(thisstring[i]) out+= thisstring[i++];
 		}
 		thisstring =out;
 	}

@@ -22,6 +22,7 @@ extern int romlen_r;
 
 #define clean(string) do { string.qreplace(", ", ",", true); string.qreplace("  ", " ", true); \
 						strip_whitespace(string); string.qreplace("\t", " ", true);} while(0)
+#define clean_and_trim(string) do { clean(string); string.qreplace(" ", "", true);} while(0)
 
 int getlen(const char * str, bool optimizebankextraction=false);
 bool is_hex_constant(const char * str);

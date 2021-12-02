@@ -23,7 +23,7 @@ void startmacro(const char * line_)
 	thisone= nullptr;
 	if (!confirmqpar(line_)) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	string line=line_;
-	clean(line);
+	clean_and_trim(line);
 	char * startpar=strqchr(line.data(), '(');
 	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	*startpar=0;
@@ -95,7 +95,7 @@ void callmacro(const char * data)
 	macrodata * thismacro;
 	if (!confirmqpar(data)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	string line=data;
-	clean(line);
+	clean_and_trim(line);
 	char * startpar=strqchr(line.data(), '(');
 	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	*startpar=0;
