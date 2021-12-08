@@ -21,7 +21,7 @@ extern const int asarver_maj=2;
 extern const int asarver_min=0;
 extern const int asarver_bug=0;
 extern const bool asarver_beta=true;
-bool default_math_pri=false;
+bool default_math_pri=true;
 
 #ifdef _I_RELEASE
 extern char blockbetareleases[(!asarver_beta)?1:-1];
