@@ -1052,13 +1052,13 @@ void assembleblock(const char * block, bool isspecialline)
 				{
 					asar_throw_warning(0, warning_id_feature_deprecated, "old style conditional negation (if !condition) ", "the not function");
 					double val = getnumdouble(nextword[0]+1);
-					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 					thiscond = !(val > 0);
 				}
 				else
 				{
 					double val = getnumdouble(nextword[0]);
-					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 					thiscond = (val > 0);
 				}
 
@@ -1073,9 +1073,9 @@ void assembleblock(const char * block, bool isspecialline)
 			{
 				if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 				double par1=getnumdouble(nextword[0]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 				double par2=getnumdouble(nextword[2]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 				if(0);
 				else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
 				else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
@@ -1106,9 +1106,9 @@ void assembleblock(const char * block, bool isspecialline)
 		//if (numwords==4)
 		//{
 		//	int par1=getnum(word[1]);
-		//	if (foundlabel && !foundlabel_static) error(1, S"Label in "+lower(word[0])+" command");
+		//	if (foundlabel && !foundlabel_static) error(0, S"Label in "+lower(word[0])+" command");
 		//	int par2=getnum(word[3]);
-		//	if (foundlabel && !foundlabel_static) error(1, S"Label in "+lower(word[0])+" command");
+		//	if (foundlabel && !foundlabel_static) error(0, S"Label in "+lower(word[0])+" command");
 		//	if(0);
 		//	else if (!strcmp(word[2], ">"))  cond=(par1>par2);
 		//	else if (!strcmp(word[2], "<"))  cond=(par1<par2);
@@ -1123,13 +1123,13 @@ void assembleblock(const char * block, bool isspecialline)
 		//else if (*par=='!')
 		//{
 		//	int val=getnum(par+1);
-		//	if (foundlabel && !foundlabel_static) error(1, "Label in if or assert command");
+		//	if (foundlabel && !foundlabel_static) error(0, "Label in if or assert command");
 		//	cond=!(val>0);
 		//}
 		//else
 		//{
 		//	int val=getnum(par);
-		//	if (foundlabel && !foundlabel_static) error(1, "Label in if or assert command");
+		//	if (foundlabel && !foundlabel_static) error(0, "Label in if or assert command");
 		//	cond=(val>0);
 		//}
 
@@ -2419,6 +2419,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("padlong")) len=3;
 		if (is("paddword")) len=4;
 		unsigned int val=getnum(par);
+		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in padbyte", "just... don't.");
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -2450,6 +2451,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("filllong")) len=3;
 		if (is("filldword")) len=4;
 		unsigned int val= getnum(par);
+		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in fillbyte", "just... don't");
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
