@@ -2355,25 +2355,25 @@ void assembleblock(const char * block, bool isspecialline)
 				int codepoint;
 				linepos += utf8_val(&codepoint, linepos);
 				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-				if (*linepos != '=') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (*linepos != '=') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				linepos++;
-				if (linepos[1]=='x' || linepos[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (linepos[1]=='x' || linepos[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				char * end;
 				unsigned int val = (unsigned int)strtol(linepos, &end, 16);
-				if (*end != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (*end != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				thetable.set_val(codepoint, val);
 			}
 			else
 			{
-				if (tableline[1]=='x' || tableline[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (tableline[1]=='x' || tableline[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				char * eq;
 				unsigned int val=(unsigned int)strtol(tableline, &eq, 16);
-				if (eq[0]!='=') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (eq[0]!='=') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				const char* linepos = eq+1;
 				int codepoint;
 				linepos += utf8_val(&codepoint, linepos);
 				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-				if (*linepos != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (*linepos != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				thetable.set_val(codepoint, val);
 			}
 		}
