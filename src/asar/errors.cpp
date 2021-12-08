@@ -193,7 +193,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_broken_autoclean, "Broken autoclean command." },
 
 	{ error_id_pulltable_without_table, "Using pulltable when there is no table on the stack yet." },
-	{ error_id_invalid_table_file, "Invalid table file." },
+	{ error_id_invalid_table_file, "Invalid table file. Invalid entry on line: %i" },
 
 	{ error_id_pad_in_freespace, "pad does not make sense in a freespaced code." },
 
