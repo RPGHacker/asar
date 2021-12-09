@@ -18,6 +18,7 @@
 
 int arch=arch_65816;
 
+bool snespos_valid = false;
 int snespos;
 int realsnespos;
 int startpos;
@@ -74,7 +75,7 @@ int snestopc_pick(int addr)
 
 inline void verifysnespos()
 {
-	if (snespos<0 || realsnespos<0)
+	if (!snespos_valid)
 	{
 		asar_throw_warning(0, warning_id_missing_org);
 		snespos=0x008000;
@@ -630,7 +631,7 @@ static int getfreespaceid()
 
 void checkbankcross()
 {
-	if (snespos<0 && realsnespos<0 && startpos<0 && realstartpos<0) return;
+	if (!snespos_valid) return;
 	if (disable_bank_cross_errors) return;
 	unsigned int mask = 0x7FFF0000 | (check_half_banks_crossed ? 0x8000 : 0);
 	if (((snespos^    startpos) & mask) && (((snespos - 1) ^ startpos) & mask))
@@ -649,6 +650,7 @@ static void freespaceend()
 	{
 		freespacelen[freespaceid]=snespos-freespacestart+freespaceextra;
 		snespos=(int)0xFFFFFFFF;
+		snespos_valid = false;
 	}
 	freespaceextra=0;
 }
@@ -698,6 +700,7 @@ void initstuff()
 	bytes=0;
 	memset(fillbyte, 0, sizeof(fillbyte));
 	memset(padbyte, 0, sizeof(padbyte));
+	snespos_valid = false;
 	snespos=(int)0xFFFFFFFF;
 	realsnespos= (int)0xFFFFFFFF;
 	startpos= (int)0xFFFFFFFF;
@@ -1452,6 +1455,7 @@ void assembleblock(const char * block)
 		realsnespos=(int)num;
 		startpos=(int)num;
 		realstartpos=(int)num;
+		snespos_valid = true;
 	}
 #define ret_error(errid) { asar_throw_error(0, error_type_block, errid); return; }
 #define ret_error_params(errid, ...) { asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
@@ -1662,6 +1666,7 @@ void assembleblock(const char * block)
 		{
 			snespos=realsnespos;
 			startpos=realstartpos;
+			snespos_valid = realsnespos >= 0;
 			return;
 		}
 		unsigned int num=getnum(par);
@@ -1670,6 +1675,7 @@ void assembleblock(const char * block)
 		snespos=(int)num;
 		startpos=(int)num;
 		optimizeforbank=-1;
+		snespos_valid = realsnespos >= 0;
 	}
 	else if (is1("dpbase"))
 	{
@@ -1823,6 +1829,7 @@ void assembleblock(const char * block)
 		realsnespos=snespos;
 		optimizeforbank=-1;
 		ratsmetastate=ratsmeta_allow;
+		snespos_valid = true;
 	}
 	else if (is1("prot"))
 	{
@@ -1918,6 +1925,7 @@ void assembleblock(const char * block)
 	}
 	else if (is0("pushpc"))
 	{
+		verifysnespos();
 		pushpc[pushpcnum].arch=arch;
 		pushpc[pushpcnum].snespos=snespos;
 		pushpc[pushpcnum].snesstart=startpos;
@@ -1931,6 +1939,7 @@ void assembleblock(const char * block)
 		startpos= (int)0xFFFFFFFF;
 		realsnespos= (int)0xFFFFFFFF;
 		realstartpos= (int)0xFFFFFFFF;
+		snespos_valid = false;
 	}
 	else if (is0("pullpc"))
 	{
@@ -1945,6 +1954,7 @@ void assembleblock(const char * block)
 		freespaceid=pushpc[pushpcnum].freeid;
 		freespaceextra=pushpc[pushpcnum].freeex;
 		freespacestart=pushpc[pushpcnum].freest;
+		snespos_valid = true;
 	}
 	else if (is0("pushbase"))
 	{
