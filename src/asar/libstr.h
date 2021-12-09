@@ -537,28 +537,23 @@ inline const char * dequote(char * str)
 
 inline char * strqchr(const char * str, char key)
 {
-	while (*str)
+	const char *search = strchr(str, '"');
+	if (search)
 	{
-		if (*str=='"')
+		const char *key_search = strchr(str, key);
+		if(key_search < search) return (char *)key_search;
+
+		while((str = strchr(str + 1, '"')))
 		{
-			str++;
-			while (*str!='"')
-			{
-				if (!*str) return nullptr;
-				str++;
-			}
-			str++;
+			search = str;
 		}
-		else
-		{
-			if (*str==key) return const_cast<char*>(str);
-			str++;
-		}
+		return (char *)strchr(search, key);
 	}
-	return nullptr;
+	return (char *)strchr(str, key);
 }
 
 // RPG Hacker: WOW, these functions are poopy!
+//similar optimizations to the above could be done but this function is used pretty rarely I think....
 inline char * strqrchr(const char * str, char key)
 {
 	const char * ret= nullptr;
