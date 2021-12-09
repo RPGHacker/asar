@@ -537,19 +537,15 @@ inline const char * dequote(char * str)
 
 inline char * strqchr(const char * str, char key)
 {
-	const char *search = strchr(str, '"');
-	if (search)
+	const char *search = str - 1;
+	const char *key_search = strchr(str, key);
+	while((search = strchr(search + 1, '"')))
 	{
-		const char *key_search = strchr(str, key);
 		if(key_search < search) return (char *)key_search;
-
-		while((str = strchr(str + 1, '"')))
-		{
-			search = str;
-		}
-		return (char *)strchr(search, key);
+		search = strchr(search + 1, '"');
+		if(key_search < search) key_search = strchr(key_search + 1, key);
 	}
-	return (char *)strchr(str, key);
+	return (char *)key_search;
 }
 
 // RPG Hacker: WOW, these functions are poopy!
