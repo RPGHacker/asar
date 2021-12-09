@@ -7,8 +7,8 @@ option(ASAR_GEN_EXE "Build Asar standalone application" ON)
 option(ASAR_GEN_DLL "Build Asar shared library" ON)
 option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
 
-set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
-set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
 
 
 # This maro sets a number of properties required by both,
@@ -16,7 +16,7 @@ set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 
 macro(set_asar_shared_properties target)
 	target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-	
+
 	if(MSVC)
 		target_compile_definitions(${target} PRIVATE "strncasecmp=_strnicmp")
 		target_compile_definitions(${target} PRIVATE "strcasecmp=_stricmp")
@@ -42,24 +42,24 @@ macro(set_asar_shared_properties target)
 			)
 		endif()
 	endif()
-		
+
 	if (WIN32)
 		target_compile_definitions(${target} PRIVATE "windows")
 		# RPG Hacker: We define UNICODE on Windows, just to make sure we don't accidentally call an ANSI API somewhere.
 		target_compile_definitions(${target} PRIVATE "UNICODE" "_UNICODE")
 	endif()
-		
+
 	if (UNIX)
 		target_compile_definitions(${target} PRIVATE "linux")
 		target_compile_definitions(${target} PRIVATE "stricmp=strcasecmp")
 	endif()
-	
-	
+
+
 	# Enable maximum warning level
-	
+
 	if(MSVC)
 		target_compile_options(${target} PRIVATE /Wall /MT /EHa)
-		
+
 		# These certainly aren't worth a warning, though
 		target_compile_options(${target} PRIVATE
 			/wd4514 # unreferenced inline function removed
@@ -104,7 +104,7 @@ set(ASAR_SHARED_SOURCE_FILES "")
 
 list(
 	APPEND ASAR_SHARED_SOURCE_FILES
-	
+
 	"${CMAKE_CURRENT_SOURCE_DIR}/addr2line.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-65816.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-spc700.cpp"
@@ -124,7 +124,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/unicode.cpp"
 
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.cpp"
-	
+
 	# Not required in here, but useful so they're add to your VS solution
 	"${CMAKE_CURRENT_SOURCE_DIR}/addr2line.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/asar.h"
@@ -146,7 +146,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/dll_helper.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/table.h"
-	
+
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
 )
@@ -160,33 +160,33 @@ if(WIN32)
 	# Windos-specific files
 	list(
 		APPEND ASAR_SHARED_SOURCE_FILES
-		
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/file-helpers-win32.cpp"
 	)
-	
+
 	list(
-		APPEND ASAR_RESOURCE_FILES		
-	
+		APPEND ASAR_RESOURCE_FILES
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/res/windows/asar.rc"
 	)
 
 	list(
-		APPEND ASAR_LIB_RESOURCE_FILES		
-	
+		APPEND ASAR_LIB_RESOURCE_FILES
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/res/windows/asar_lib.rc"
 	)
 elseif(UNIX)
 	# Linux-specific files
 	list(
 		APPEND ASAR_SHARED_SOURCE_FILES
-		
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/linux/file-helpers-linux.cpp"
 	)
 else()
 	# Files for any other platform
 	list(
 		APPEND ASAR_SHARED_SOURCE_FILES
-		
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/file-helpers-generic.cpp"
 	)
 endif()
@@ -203,7 +203,7 @@ if(ASAR_GEN_EXE)
 
 		"${CMAKE_CURRENT_SOURCE_DIR}/interface-cli.cpp"
 
-		${ASAR_SHARED_SOURCE_FILES}	
+		${ASAR_SHARED_SOURCE_FILES}
 		${ASAR_RESOURCE_FILES}
 		)
 
@@ -223,10 +223,10 @@ endif(ASAR_GEN_EXE)
 
 if(ASAR_GEN_DLL)
 	add_library(
-		asar SHARED	
-		
+		asar SHARED
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.cpp"
-		
+
 		${ASAR_SHARED_SOURCE_FILES}
 		${ASAR_LIB_RESOURCE_FILES}
 	)

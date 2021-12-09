@@ -212,7 +212,7 @@
 ;P>Now the same number, but with a different precision: 10.3401734476
 ;P>Testing a few more numbers: 0, 0.1, -0.1, 1, -1
 ;P>
-@asar 1.40
+asar 1.40
 
 math round off
 lorom
@@ -305,7 +305,7 @@ elseif !testlabel == 3 && !anothertestlabel == 0
 	db $03
 else
 	db $FF
-	
+
 	while !testlabel > 0
 		db $0A
 	endif
@@ -342,13 +342,13 @@ endmacro
 
 while !cond1 < 10
 	!cond2 = 0
-	
+
 	while !cond2 < 10
 		db !cond1
 		db !cond2
 		!cond2 #= !cond2+1
 	endif
-	
+
 	!cond1 #= !cond1+1
 endif
 
@@ -359,7 +359,7 @@ db round(100.6414710, 0)
 
 function multilinefunction(x) = x+\		;;;;; This is a comment, getconnectedlines() should remove it
                                10
-							  
+
 db multilinefunction(1)
 
 
@@ -378,9 +378,9 @@ db $0B
 print ""
 print ";This is not a comment, ",\
     "so getconnectedlines() should ignore it and not remove it."
- 
+
 print ""
- 
+
 print "Let's have some random decimal number with fractional part: ",double(10.340173447601384024017510834015701571048)
 print "Now the same number, but with a different precision: ",double(10.340173447601384024017510834015701571048, 10)
 print "Testing a few more numbers: ",double(0.0),", ",double(0.1),", ",double(-0.1),", ",double(1.0),", ",double(-1.0)

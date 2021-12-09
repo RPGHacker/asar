@@ -117,7 +117,7 @@ bool asblock_superfx(char** word, int numwords)
 		string tmp=par;
 		int numwordsinner;
 		autoptr<char*> parcpy= duplicate_string(par);
-		autoptr<char**> arg=qpsplit(parcpy, ",", &numwordsinner);
+		autoptr<char**> arg=qpsplit(parcpy, ',', &numwordsinner);
 		bool ret=false;
 #define ok() ret=true
 #define op(op) if (is(op)) ok()
@@ -201,7 +201,7 @@ bool asblock_superfx(char** word, int numwords)
 				}
 				else
 				{
-					int pos=(int)getnum64(par)-((snespos&0xFFFFFF)+2);
+					int pos=(int)getnum(par)-((snespos&0xFFFFFF)+2);
 					write1((unsigned int)byte); write1((unsigned int)pos);
 					if (pass==2 && (pos<-128 || pos>127))
 					{

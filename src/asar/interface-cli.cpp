@@ -167,13 +167,6 @@ int main(int argc, const char * argv[])
 		if (strrchr(myname, '/')) myname=strrchr(myname, '/')+1;
 		//char * dot=strrchr(myname, '.');
 		//if (dot) *dot='\0';
-		if (!strncasecmp(myname, "xkas", strlen("xkas"))) {
-			// RPG Hacker: no asar_throw_Warning() here, because we didn't have a chance to disable warnings yet.
-			// Also seems like warning aren't even registered at this point yet.
-			puts("Warning: xkas support is being deprecated and will be removed in the next release of asar!!!");
-			puts("(this was triggered by renaming asar.exe to xkas.exe, which activated a compatibility feature.)");
-			errloc=stdout;
-		}
 		//if (dot) *dot='.';
 		libcon_init(argc, argv,
 			"[options] asm_file [rom_file]\n\n"
@@ -331,8 +324,8 @@ int main(int argc, const char * argv[])
 					// argument contains value, not only name
 					const char* eq_loc = strchr(postprocess_arg, '=');
 					string name = string(postprocess_arg, (int)(eq_loc - postprocess_arg));
-					name = strip_whitespace(name);
-					name = strip_prefix(name, '!', false); // remove leading ! if present
+					strip_whitespace(name);
+					name.strip_prefix('!'); // remove leading ! if present
 
 					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
 
@@ -347,8 +340,8 @@ int main(int argc, const char * argv[])
 				{
 					// argument doesn't have a value, only name
 					string name = postprocess_arg;
-					name = strip_whitespace(name);
-					name = strip_prefix(name, '!', false); // remove leading ! if present
+					strip_whitespace(name);
+					name.strip_prefix('!'); // remove leading ! if present
 
 					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
 
@@ -375,12 +368,12 @@ int main(int argc, const char * argv[])
 			string romnametmp = get_base_name(asmname);
 			if (file_exists(romnametmp+".sfc")) romname=romnametmp+".sfc";
 			else if (file_exists(romnametmp+".smc")) romname=romnametmp+".smc";
-			else romname=STR romnametmp+".sfc";
+			else romname=romnametmp+".sfc";
 		}
 		else if (!strchr(romname, '.') && !file_exists(romname))
 		{
-			if (file_exists(STR romname+".sfc")) romname+=".sfc";
-			else if (file_exists(STR romname+".smc")) romname+=".smc";
+			if (file_exists(romname+".sfc")) romname+=".sfc";
+			else if (file_exists(romname+".smc")) romname+=".smc";
 		}
 		if (!file_exists(romname))
 		{

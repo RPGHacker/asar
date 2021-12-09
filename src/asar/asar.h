@@ -20,8 +20,12 @@
 extern unsigned const char * romdata_r;
 extern int romlen_r;
 
-#define clean(string) do { string.qreplace(", ", ",", true); string.qreplace("  ", " ", true); \
-						strip_whitespace(string); string.qreplace("\t", " ", true);} while(0)
+#define clean(string) do { string.qnormalize(); } while(0)
+
+inline void verify_paren(autoptr<char **> &ptr)
+{
+	 if(!ptr) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
+}
 
 int getlen(const char * str, bool optimizebankextraction=false);
 bool is_hex_constant(const char * str);
@@ -72,9 +76,9 @@ extern const int asarver_maj;
 extern const int asarver_min;
 extern const int asarver_bug;
 extern const bool asarver_beta;
-extern bool default_math_pri;
 
 extern bool asarverallowed;
+extern bool parsing_macro;
 extern bool istoplevel;
 
 extern bool moreonline;

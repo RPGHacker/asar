@@ -17,7 +17,7 @@
 ;`8a
 ;`ac
 
-@asar 1.60
+asar 1.60
 
 lorom
 org $008000

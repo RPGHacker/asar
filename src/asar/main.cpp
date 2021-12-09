@@ -17,11 +17,10 @@
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
-extern const int asarver_maj=1;
-extern const int asarver_min=9;
+extern const int asarver_maj=2;
+extern const int asarver_min=0;
 extern const int asarver_bug=0;
 extern const bool asarver_beta=true;
-bool default_math_pri=false;
 
 #ifdef _I_RELEASE
 extern char blockbetareleases[(!asarver_beta)?1:-1];
@@ -112,7 +111,7 @@ string getdecor()
 	string e;
 	if (thisfilename)
 	{
-		e+=STR thisfilename;
+		e+=thisfilename;
 		if (thisline!=-1) e+=STR ":"+dec(thisline+1);
 		if (callerfilename) e+=STR" (called from "+callerfilename+":"+dec(callerline+1)+")";
 		e+=": ";
@@ -152,8 +151,6 @@ virtual_file_error asar_get_last_io_error()
 static bool freespaced;
 static int getlenforlabel(int insnespos, int thislabel, bool exists)
 {
-	if (warnxkas && (((unsigned int)(thislabel^insnespos)&0xFFFF0000)==0))
-		asar_throw_warning(1, warning_id_xkas_label_access);
 	unsigned int bank = thislabel>>16;
 	unsigned int word = thislabel&0xFFFF;
 	unsigned int relaxed_bank = optimizeforbank < 0 ? 0 : optimizeforbank;
@@ -325,16 +322,14 @@ void resolvedefines(string& out, const char * start)
 {
 	recurseblock rec;
 	const char * here=start;
+	if (!strchr(here, '!'))
+	{
+		out += here;
+		return;
+	}
 	while (*here)
 	{
-		if (*here=='"' && emulatexkas)
-		{
-			asar_throw_warning(0, warning_id_feature_deprecated, "xkas define quotes", "removing the quotes generally does what you want");
-			out+=*here++;
-			while (*here && *here!='"') out+=*here++;
-			out+=*here++;
-		}
-		else if (here[0] == '\\' && here[1] == '\\')
+		if (here[0] == '\\' && here[1] == '\\')
 		{
 			// allow using \\ as escape sequence
 			out += "\\";
@@ -372,9 +367,6 @@ void resolvedefines(string& out, const char * start)
 			{
 				while (is_ualnum(*here)) defname+=*here++;
 			}
-			if (warnxkas && here[0]=='(' && here[1]==')')
-				asar_throw_warning(0, warning_id_xkas_eat_parentheses);
-			//if (emulatexkas && here[0]=='(' && here[1]==')') here+=2;
 
 			if (first)
 			{
@@ -392,8 +384,6 @@ void resolvedefines(string& out, const char * start)
 				else if (stribegin(here, " #= ")) { here+=4; mode=domath; }
 				else if (stribegin(here, " ?= ")) { here+=4; mode=setifnotset; }
 				else goto notdefineset;
-				if (emulatexkas && mode != null) asar_throw_warning(0, warning_id_convert_to_asar);
-				//else if (stribegin(here, " equ ")) here+=5;
 				string val;
 				if (*here=='"')
 				{
@@ -478,6 +468,7 @@ void resolvedefines(string& out, const char * start)
 		}
 		else out+=*here++;
 	}
+	if (!confirmquotes(out)) { asar_throw_error(0, error_type_null, error_id_mismatched_quotes); out = ""; }
 }
 
 int repeatnext=1;
@@ -485,7 +476,8 @@ int repeatnext=1;
 bool moreonline;
 bool moreonlinecond;
 int fakeendif;
-bool asarverallowed;
+bool asarverallowed = false;
+bool parsing_macro;
 bool istoplevel;
 
 void assembleline(const char * fname, int linenum, const char * line)
@@ -505,11 +497,9 @@ void assembleline(const char * fname, int linenum, const char * line)
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);
 		else out=tmp;
-		// recheck quotes - defines can mess those up sometimes
-		if (!confirmquotes(out)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
-		out.qreplace(": :", ":  :", true);
+		out.qreplace(": :", ":  :");
 //puts(out);
-		autoptr<char**> blocks=qsplit(out.temp_raw(), " : ");
+		autoptr<char**> blocks=qsplitstr(out.temp_raw(), " : ");
 		moreonline=true;
 		moreonlinecond=true;
 		fakeendif=0;
@@ -522,22 +512,11 @@ void assembleline(const char * fname, int linenum, const char * line)
 			{
 				try
 				{
-					string stripped_block = blocks[block];
-					strip_both(stripped_block, ' ', true);
-					
+					string stripped_block = strip_whitespace(blocks[block]);
+
 					thisline=linenum;//do not optimize, this one is recursive
 					thisblock = stripped_block.data();
-					bool isspecialline = false;
-					if (thisblock[0] == '@')
-					{
-						isspecialline = true;
-						thisblock++;
-						while (is_space(*thisblock))
-						{
-							thisblock++;
-						}
-					}
-					assembleblock(thisblock, isspecialline);
+					assembleblock(thisblock);
 					checkbankcross();
 				}
 				catch (errblock&) {}
@@ -606,33 +585,22 @@ void assemblefile(const char * filename, bool toplevel)
 
 			return;
 		}
-		file.contents =split(temp, "\n");
+		file.contents =split(temp, '\n');
 		for (int i=0;file.contents[i];i++)
 		{
 			file.numlines++;
 			char * line= file.contents[i];
-			char * comment=line;
-			comment = strqchr(comment, ';');
-			while (comment != nullptr)
-			{
-				if (comment[1]!='@')
-				{
-					comment[0]='\0';
-				}
-				else
-				{
-					comment[0] = ' ';
-				}
-				comment = strqchr(comment, ';');
-			}
-			while (strqchr(line, '\t')) *strqchr(line, '\t')=' ';
+			char * comment = strqchr(line, ';');
+			if(comment) *comment = 0;
 			if (!confirmquotes(line)) { thisline = i; thisblock = line; asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
-			itrim(line, " ", " ", true);	//todo make use strip
+			file.contents[i] = strip_whitespace(line);
+
 		}
 		for(int i=0;file.contents[i];i++)
 		{
 			char* line = file.contents[i];
-			for (int j=1;strqrchr(line, ',') && !strqrchr(line, ',')[1] && file.contents[i+j];j++)
+			if(!*line) continue;
+			for (int j=1;line[strlen(line) - 1] == ',' && file.contents[i+j];j++)
 			{
 				// not using strcat because the source and dest overlap here
 				char* otherline = file.contents[i+j];
@@ -647,7 +615,6 @@ void assemblefile(const char * filename, bool toplevel)
 	} else { // filecontents.exists(absolutepath)
 		file = filecontents.find(absolutepath);
 	}
-	bool inmacro=false;
 	asarverallowed=true;
 	for (int i=0;file.contents[i] && i<file.numlines;i++)
 	{
@@ -657,19 +624,7 @@ void assemblefile(const char * filename, bool toplevel)
 			thisline=i;
 			thisblock= nullptr;
 			istoplevel=toplevel;
-			if (stribegin(file.contents[i], "macro ") && numif==numtrue)
-			{
-				if (inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
-				inmacro=true;
-				if (!pass) startmacro(file.contents[i]+6);
-			}
-			else if (!stricmp(file.contents[i], "endmacro") && numif==numtrue)
-			{
-				if (!inmacro) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
-				inmacro=false;
-				if (!pass) endmacro(true);
-			}
-			else if (inmacro)
+			if (parsing_macro && stricmp(file.contents[i], "endmacro"))
 			{
 				if (!pass) tomacro(file.contents[i]);
 			}
@@ -689,7 +644,7 @@ void assemblefile(const char * filename, bool toplevel)
 	}
 	thisline++;
 	thisblock= nullptr;
-	if (inmacro)
+	if (parsing_macro)
 	{
 		asar_throw_error(0, error_type_null, error_id_unclosed_macro);
 		if (!pass) endmacro(false);
@@ -720,7 +675,7 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 		{
 			string stdinclude;
 
-			do 
+			do
 			{
 				if (pos[0] != '\r' && pos[0] != '\n')
 				{
@@ -729,7 +684,7 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 				pos++;
 			} while (pos[0] != '\0' && pos[0] != '\n');
 
-			stdinclude = strip_whitespace(stdinclude);
+			strip_whitespace(stdinclude);
 
 			if (stdinclude != "")
 			{
@@ -777,8 +732,8 @@ void parse_std_defines(const char* textfile)
 			if (*pos != 0)
 				pos++; // skip \n
 			// clean define_name
-			define_name = strip_whitespace(define_name);
-			define_name = strip_prefix(define_name, '!', false); // remove leading ! if present
+			strip_whitespace(define_name);
+			define_name.strip_prefix('!'); // remove leading ! if present
 
 			if (define_name == "")
 			{
@@ -966,7 +921,7 @@ void reseteverything()
 	errored = false;
 	checksum_fix_enabled = true;
 	force_checksum_fix = false;
-	
+
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));
 	#endif

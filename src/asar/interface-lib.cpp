@@ -80,7 +80,7 @@ static void fillerror(errordata& myerr, int errid, const char * type, const char
 	if (thisblock) myerr.block= duplicate_string(thisblock);
 	else myerr.block= duplicate_string("");
 	myerr.rawerrdata= duplicate_string(str);
-	myerr.fullerrdata= duplicate_string(STR getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):""));
+	myerr.fullerrdata= duplicate_string(getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):""));
 	myerr.callerline=callerline;
 	myerr.callerfilename=callerfilename ? duplicate_string(callerfilename) : nullptr;
 	myerr.errid = errid;
@@ -361,8 +361,8 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 		for (int i = 0; i < paramscurrent.definecount; ++i)
 		{
 			string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
-			name = strip_whitespace(name);
-			name = strip_prefix(name, '!', false); // remove leading ! if present
+			strip_whitespace(name);
+			name.strip_prefix('!'); // remove leading ! if present
 			if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
 			if (clidefines.exists(name)) {
 				asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.data());

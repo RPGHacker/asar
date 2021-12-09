@@ -1,6 +1,8 @@
 #pragma once
 
 #include "std-includes.h"
+#include <cstdint>
+#include "errors.h"
 //ty alcaro
 extern const unsigned char char_props[256];
 static inline int to_lower(unsigned char c) { return c|(char_props[c]&0x20); }
@@ -18,7 +20,7 @@ inline bool is_xdigit(unsigned char c) { return char_props[c] & 0x01; }
 
 inline char *copy(const char *source, int copy_length, char *dest)
 {
-	memmove(dest, source, copy_length*sizeof(char));
+	memcpy(dest, source, copy_length*sizeof(char));
 	return dest;
 }
 
@@ -90,7 +92,7 @@ void assign(const string &newstr)
 void assign(const char * newstr, int end)
 {
 	resize(end);
-	copy(newstr, length(), raw());
+	copy(newstr, length(), cached_data);
 }
 
 
@@ -106,11 +108,27 @@ string& operator=(const string &newstr)
 	return *this;
 }
 
+string& append(const string& other, int start, int end)
+{
+	int current_end = length();
+	resize(length() + end - start);
+	copy(other.cached_data + start, end - start, cached_data + current_end);
+	return *this;
+}
+
+string& append(const char *other, int start, int end)
+{
+	int current_end = length();
+	resize(length() + end - start);
+	copy(other + start, end - start, cached_data + current_end);
+	return *this;
+}
+
 string& operator+=(const string& other)
 {
 	int current_end = length();
 	resize(length() + other.length());
-	copy(other.data(), other.length(), raw() + current_end);
+	copy(other.cached_data, other.length(), cached_data + current_end);
 	return *this;
 }
 
@@ -119,14 +137,14 @@ string& operator+=(const char *other)
 	int current_end = length();
 	int otherlen=(int)strlen(other);
 	resize(length() + otherlen);
-	copy(other, otherlen, raw() + current_end);
+	copy(other, otherlen, cached_data + current_end);
 	return *this;
 }
 
 string& operator+=(char c)
 {
 	resize(length() + 1);
-	raw()[length() - 1] = c;
+	cached_data[length() - 1] = c;
 	return *this;
 }
 
@@ -210,12 +228,12 @@ string& operator=(string&& move)
 		allocated.str = move.allocated.str;
 		allocated.bufferlen = move.allocated.bufferlen;
 		set_length(move.allocated.len);
-		
+
 		move.inlined.len = 0;
 		move.inlined.str[0] = 0;
 		cached_data = allocated.str;
 		next_resize = move.next_resize;
-		
+
 	}else{
 		inlined.len = 0;
 		cached_data = inlined.str;
@@ -232,8 +250,24 @@ string& operator=(string&& move)
 	}
 }
 
-string& replace(const char * instr, const char * outstr, bool all=true);
-string& qreplace(const char * instr, const char * outstr, bool all=true);
+//maybe these should return refs to chain.  but also good not to encourage chaining
+void strip_prefix(char c)
+{
+	if(cached_data[0] == c){
+		*this = string(cached_data + 1, length() - 1);
+	}
+}
+
+void strip_suffix(char c)
+{
+	if(cached_data[length() - 1] == c){
+		truncate(length() - 1);
+	}
+}
+
+string& replace(const char * instr, const char * outstr);
+string& qreplace(const char * instr, const char * outstr);
+string& qnormalize();
 
 // RPG Hacker: My hack shmeck to get around no longer supporting text mode.
 // Symbol files are currently the only thing that use text mode, anyways, and I don't even know
@@ -277,7 +311,7 @@ union{
 	si inlined;
 	sa allocated;
 };
-		
+
 
 void resize(int new_length)
 {
@@ -304,7 +338,7 @@ void resize(int new_length)
 		}
 	}
 	set_length(new_length);
-	
+
 	raw()[new_length] = 0; //always ensure null terminator
 }
 
@@ -318,20 +352,13 @@ bool is_inlined() const
 char * readfile(const char * fname, const char * basepath);
 char * readfilenative(const char * fname);
 bool readfile(const char * fname, const char * basepath, char ** data, int * len);//if you want an uchar*, cast it
-char ** nsplit(char * str, const char * key, int maxlen, int * len);
-char ** qnsplit(char * str, const char * key, int maxlen, int * len);
-char ** qpnsplit(char * str, const char * key, int maxlen, int * len);
-inline char ** split(char * str, const char * key, int * len= nullptr) { return nsplit(str, key, 0, len); }
-inline char ** qsplit(char * str, const char * key, int * len= nullptr) { return qnsplit(str, key, 0, len); }
-inline char ** qpsplit(char * str, const char * key, int * len= nullptr) { return qpnsplit(str, key, 0, len); }
-inline char ** split1(char * str, const char * key, int * len= nullptr) { return nsplit(str, key, 2, len); }
-inline char ** qsplit1(char * str, const char * key, int * len= nullptr) { return qnsplit(str, key, 2, len); }
-inline char ** qpsplit1(char * str, const char * key, int * len= nullptr) { return qpnsplit(str, key, 2, len); }
-//void replace(string& str, const char * instr, const char * outstr, bool all);
-//void qreplace(string& str, const char * instr, const char * outstr, bool all);
+char ** split(char * str, char key, int * len= nullptr);
+char ** qsplit(char * str, char key, int * len= nullptr);
+char ** qpsplit(char * str, char key, int * len= nullptr);
+char ** qsplitstr(char * str, const char * key, int * len= nullptr);
 bool confirmquotes(const char * str);
 bool confirmqpar(const char * str);
-char* strqpchr(const char* str, char key);
+char* strqpchr(char* str, char key);
 
 inline string hex(unsigned int value)
 {
@@ -434,7 +461,7 @@ inline string ftostrvar(double value, int precision)
 	int clampedprecision = precision;
 	if (clampedprecision < 0) clampedprecision = 0;
 	if (clampedprecision > 100) clampedprecision = 100;
-	
+
 	// see above
 	char rval[512];
 	sprintf(rval, "%.*f", clampedprecision, (double)value);
@@ -499,21 +526,13 @@ inline bool stricmpwithlower(const char *word1, const char *word2)
 inline const char * dequote(char * str)
 {
 	if (*str!='"') return str;
-	int inpos=1;
-	int outpos=0;
-	while (true)
+	char *end = strrchr(str, '"');
+	if (end)
 	{
-		if (str[inpos]=='"')
-		{
-			if (str[inpos+1]=='"') inpos++;
-			else if (str[inpos+1]=='\0') break;
-			else return nullptr;
-		}
-		if (!str[inpos]) return nullptr;
-		str[outpos++]=str[inpos++];
+		*end = 0;
+		return str + 1;
 	}
-	str[outpos]=0;
-	return str;
+	return nullptr;
 }
 
 inline char * strqchr(const char * str, char key)
@@ -569,20 +588,30 @@ inline string substr(const char * str, int len)
 	return string(str, len);
 }
 
-string &strip_prefix(string &str, char c, bool multi=false);
-string &strip_suffix(string &str, char c, bool multi=false);
-string &strip_both(string &str, char c, bool multi=false);
-string &strip_whitespace(string &str);
+//todo make these members
+string &strip_prefix(string &str, char c);
+string &strip_suffix(string &str, char c);
 
-char * itrim(char * str, const char * left, const char * right, bool multi=false);
-string &itrim(string &str, const char * left, const char * right, bool multi=false);
 
-inline string &upper(string &old)
+inline char *strip_whitespace(char *str)
 {
-	int length = old.length();
-	for (int i=0;i<length;i++) old.raw()[i]=(char)to_upper(old.data()[i]);
-	return old;
+	while(is_space(*str)) str++;
+	for(int i = strlen(str) - 1; i >= 0; i--)
+	{
+		if(!is_space(str[i]))
+		{
+			str[i + 1] = 0;
+			return str;
+		}
+	}
+	return str;
 }
+inline void strip_whitespace(string &str)
+{
+	str = string(strip_whitespace(str.temp_raw()));
+}
+
+string &itrim(string &str, const char * left, const char * right);
 
 inline string &lower(string &old)
 {
@@ -590,29 +619,6 @@ inline string &lower(string &old)
 	for (int i=0;i<length;i++) old.raw()[i]=(char)to_lower(old.data()[i]);
 	return old;
 }
-
-inline const char * stristr(const char * string, const char * pattern)
-{
-	if (!*pattern) return string;
-	const char * pptr;
-	const char * sptr;
-	const char * start;
-	for (start=string;*start!=0;start++)
-	{
-		for (;(*start && (to_lower(*start)!=to_lower(*pattern)));start++);
-		if (!*start) return nullptr;
-		pptr=pattern;
-		sptr=start;
-		while (to_lower(*sptr)==to_lower(*pptr))
-		{
-			sptr++;
-			pptr++;
-			if (!*pptr) return start;
-		}
-	}
-	return nullptr;
-}
-
 
 
 // Returns number of connected lines - 1

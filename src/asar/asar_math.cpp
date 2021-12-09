@@ -17,7 +17,6 @@
 #include <functional>
 #include <algorithm>
 
-bool math_pri=true;
 bool math_round=false;
 
 static const char * str;
@@ -101,7 +100,7 @@ static cachedfile * opencachedfile(string fname, bool should_error)
 
 	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) && should_error)
 	{
-		asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.data());
+		asar_throw_error(2, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.data());
 	}
 
 	return cachedfilehandle;
@@ -114,7 +113,7 @@ void closecachedfiles()
 	{
 		if (cachedfiles[i].used)
 		{
-			if (cachedfiles[i].filehandle != INVALID_VIRTUAL_FILE_HANDLE)
+			if (cachedfiles[i].filehandle != INVALID_VIRTUAL_FILE_HANDLE && filesystem)
 			{
 				filesystem->close_file(cachedfiles[i].filehandle);
 				cachedfiles[i].filehandle = INVALID_VIRTUAL_FILE_HANDLE;
@@ -130,14 +129,14 @@ void closecachedfiles()
 
 static int struct_size(const char *name)
 {
-       if(pass && !structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
+       if(pass && !structs.exists(name)) asar_throw_error(2, error_type_block, error_id_struct_not_found, name);
        else if(!structs.exists(name)) return 0;
        return structs.find(name).struct_size;
 }
 
 static int object_size(const char *name)
 {
-       if(pass && !structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
+       if(pass && !structs.exists(name)) asar_throw_error(2, error_type_block, error_id_struct_not_found, name);
        else if(!structs.exists(name)) return 0;
        return structs.find(name).object_size;
 }
@@ -146,7 +145,7 @@ static int data_size(const char *name)
 {
 	unsigned int label;
 	unsigned int next_label = 0xFFFFFF;
-	if(!labels.exists(name)) asar_throw_error(1, error_type_block, error_id_label_not_found, name);
+	if(!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_not_found, name);
 	foundlabel = true;
 	snes_label label_data = labels.find(name);
 	foundlabel_static &= label_data.is_static;
@@ -157,8 +156,8 @@ static int data_size(const char *name)
 			next_label = current_label.pos;
 		}
 	});
-	if(next_label == 0xFFFFFF) asar_throw_warning(1, warning_id_datasize_last_label, name);
-	if(next_label-label > 0xFFFF) asar_throw_warning(1, warning_id_datasize_exceeds_size, name);
+	if(next_label == 0xFFFFFF) asar_throw_warning(2, warning_id_datasize_last_label, name);
+	if(next_label-label > 0xFFFF) asar_throw_warning(2, warning_id_datasize_exceeds_size, name);
 	return next_label-label;
 }
 
@@ -168,22 +167,16 @@ string get_string_argument()
 	while (*str==' ') str++;
 	if (*str=='"')
 	{
-		const char * strpos = str;
+		const char * strpos = str + 1;
+		while (*str!='"' && *str!='\0') str++;
+		str = strchr(str + 1, '"');
+		string tempname(strpos , (int)(str - strpos));
 		str++;
-		while (*str!='"' && *str!='\0' && *str!='\n') str++;
-		if (*str == '"')
-		{
-			string tempname(strpos, (int)(str - strpos + 1));
-			str++;
-			while (*str==' ') str++;	//eat space
-			return string(safedequote(tempname.temp_raw()));
-		}
-		// RPG Hacker: AFAIK, this is never actually triggered, since unmatched quotes are already detected earlier,
-		// but since it does no harm here, I'll keep it in, just to be safe
-		else asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
-	}//make this error a better one later
-	
-	asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+		while (*str==' ') str++;	//eat space
+		return tempname;
+	}//todo make this error a better one later
+
+	asar_throw_error(2, error_type_block, error_id_string_literal_not_terminated);
 	return ""; //never actually called, but I don't feel like figuring out __attribute__ ((noreturn)) on MSVC
 }
 
@@ -192,23 +185,13 @@ string get_symbol_argument()
 {
 	while (*str==' ') str++;	//is this proper?  Dunno yet.
 	const char * strpos = str;
-	// hack: for backwards compat, allow strings as symbols
-	if(*str=='"') {
-		asar_throw_warning(1, warning_id_feature_deprecated, "quoted symbolic arguments", "Remove the quotations");
-		string arg = get_string_argument();
-		int i = 0;
-		if(is_alpha(arg[i]) || arg[i] == '_') i++;
-		while(is_alnum(arg[i]) || arg[i] == '_' || arg[i] == '.') i++;
-		if(arg[i] != '\0') asar_throw_error(1, error_type_block, error_id_invalid_label_name);
-                return arg;
-	}
 	if(is_alpha(*str) || *str == '_') str++;
 	while (is_alnum(*str) || *str == '_' || *str == '.') str++;
 	if(strpos == str){
 		//error nothing was read, this is a placeholder error
-		asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+		asar_throw_error(2, error_type_block, error_id_string_literal_not_terminated);
 	}
-	
+
 	string symbol = string(strpos, (int)(str - strpos));
 	while (*str==' ') str++;	//eat spaces
 	return symbol;
@@ -240,7 +223,7 @@ void require_next_parameter()
 		str++;
 		return;
 	}
-	asar_throw_error(1, error_type_block, error_id_require_parameter);
+	asar_throw_error(2, error_type_block, error_id_require_parameter);
 }
 
 template <typename F> double asar_unary_wrapper()
@@ -309,7 +292,7 @@ double asar_clamp()
 	double low = get_double_argument();
 	require_next_parameter();
 	double high = get_double_argument();
-	
+
 	return asar_max(low, asar_min(high, value));
 }
 
@@ -320,7 +303,7 @@ double asar_safediv()
 	double divisor = get_double_argument();
 	require_next_parameter();
 	double default_value = get_double_argument();
-	
+
 	return divisor == 0.0 ? default_value : dividend / divisor;
 }
 
@@ -331,7 +314,7 @@ double asar_select()
 	double a = get_double_argument();
 	require_next_parameter();
 	double b = get_double_argument();
-	
+
 	return selector == 0.0 ? b : a;
 }
 
@@ -360,14 +343,14 @@ template <int count> double asar_read()
 	{
 		double default_value = get_double_argument();
 		if (addr<0) return default_value;
-		else if (addr+count>romlen_r) return default_value;		
+		else if (addr+count>romlen_r) return default_value;
 	}
 	else
 	{
-		if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)target) + " in read function").data());
-		else if (addr+count>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6(target) + " in read function").data());
+		if (addr<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)target) + " in read function").data());
+		else if (addr+count>romlen_r) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, (hex6(target) + " in read function").data());
 	}
-	
+
 	unsigned int value = 0;
 	for(int i = 0; i < count; i++)
 	{
@@ -391,7 +374,7 @@ template <int count> double asar_canread()
 template <size_t count> double asar_readfile()
 {
 	static_assert(count && count <= 4, "invalid count"); //1-4 inclusive
-	
+
 	string name = get_string_argument();
 	require_next_parameter();
 	size_t offset = get_double_argument();
@@ -404,20 +387,20 @@ template <size_t count> double asar_readfile()
 		if (offset < 0 || offset + count > fhandle->filesize) return default_value;
 	}
 	else
-	{		
-		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
-		if (offset < 0 || offset + count > fhandle->filesize) asar_throw_error(1, error_type_block, error_id_file_offset_out_of_bounds, dec(offset).data(), name.data());
+	{
+		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(2, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
+		if (offset < 0 || offset + count > fhandle->filesize) asar_throw_error(2, error_type_block, error_id_file_offset_out_of_bounds, dec(offset).data(), name.data());
 	}
-	
+
 	unsigned char data[4] = { 0, 0, 0, 0 };
 	filesystem->read_file(fhandle->filehandle, data, offset, count);
-	
+
 	unsigned int value = 0;
 	for(size_t i = 0; i < count; i++)
 	{
 		value |= data[i] << (8 * i);
 	}
-	
+
 	return value;
 }
 
@@ -461,7 +444,7 @@ static double asar_filesize()
 {
 	string name = get_string_argument();
 	cachedfile * fhandle = opencachedfile(name, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(2, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 	return (double)fhandle->filesize;
 }
 
@@ -496,8 +479,8 @@ static double asar_structsize_wrapper()
 {
 	string symbol = get_symbol_argument();
 	if(symbol == "..."){
-		if(!inmacro) asar_throw_error(1, error_type_block, error_id_vararg_sizeof_nomacro);
-		if(numvarargs == -1) asar_throw_error(1, error_type_block, error_id_macro_not_varadic);
+		if(!inmacro) asar_throw_error(2, error_type_block, error_id_vararg_sizeof_nomacro);
+		if(numvarargs == -1) asar_throw_error(2, error_type_block, error_id_macro_not_varadic);
 		return numvarargs;
 	}
 	return (double)struct_size(symbol);
@@ -534,7 +517,7 @@ string copy_arg()
 		string t = "\"";
 		return (t += get_string_argument() + "\"");
 	}
-	
+
 	string result;
 	bool is_symbolic = true;
 	int parlevel=0;
@@ -548,7 +531,7 @@ string copy_arg()
 	}
 	result += string(str, i);
 	str += i;
-	
+
 	if(!is_symbolic)
 	{
 		const char *oldstr=str;
@@ -581,13 +564,13 @@ assocarr<double (*)()> builtin_functions =
 	{"read1", asar_read<1>},	//This handles the safe and unsafe variant
 	{"read2", asar_read<2>},
 	{"read3", asar_read<3>},
-	{"read4", asar_read<4>},			
+	{"read4", asar_read<4>},
 	{"canread", asar_canread<0>},
 	{"canread1", asar_canread<1>},
 	{"canread2", asar_canread<2>},
 	{"canread3", asar_canread<3>},
 	{"canread4", asar_canread<4>},
-	
+
 	{"readfile1", asar_readfile<1>},
 	{"readfile2", asar_readfile<2>},
 	{"readfile3", asar_readfile<3>},
@@ -597,22 +580,22 @@ assocarr<double (*)()> builtin_functions =
 	{"canreadfile2", asar_canreadfile<2>},
 	{"canreadfile3", asar_canreadfile<3>},
 	{"canreadfile4", asar_canreadfile<4>},
-	
+
 	{"filesize", asar_filesize},
 	{"getfilestatus", asar_filestatus},
-	
+
 	{"defined", asar_isdefined},
-	
+
 	{"snestopc", asar_snestopc_wrapper},
 	{"pctosnes", asar_pctosnes_wrapper},
 	{"realbase", asar_realbase_wrapper},
-	
+
 	{"max", asar_binary_wrapper<asar_max>},
 	{"min", asar_binary_wrapper<asar_min>},
 	{"clamp", asar_clamp},
-	
+
 	{"safediv", asar_safediv},
-	
+
 	{"select", asar_select},
 	{"bank", asar_unary_wrapper<asar_bank>},
 	{"not", asar_unary_wrapper<std::logical_not<unsigned int>>},
@@ -622,19 +605,19 @@ assocarr<double (*)()> builtin_functions =
 	{"lessequal", asar_binary_wrapper<std::less_equal<double>>},
 	{"greater", asar_binary_wrapper<std::greater<double>>},
 	{"greaterequal", asar_binary_wrapper<std::greater_equal<double>>},
-	
+
 	{"and", asar_binary_wrapper<std::logical_and<unsigned int>>},
 	{"or", asar_binary_wrapper<std::logical_or<unsigned int>>},
 	{"nand", asar_binary_wrapper<asar_logical_nand>},
 	{"nor", asar_binary_wrapper<asar_logical_nor>},
 	{"xor", asar_binary_wrapper<asar_logical_xor>},
-	
+
 	{"round", asar_round},
-	
+
 	{"sizeof", asar_structsize_wrapper},
 	{"objectsize", asar_objectsize_wrapper},
 	{"datasize", asar_datasize_wrapper},
-	
+
 	{"stringsequal", asar_stringsequal},
 	{"stringsequalnocase", asar_stringsequalnocase}
 };
@@ -655,25 +638,25 @@ static double asar_call_user_function()
 	autoarray<string> args;
 	funcdat &user_function = user_functions[current_user_function_name];
 	string real_content;
-	
+
 	while (*str==' ') str++;
 	bool has_next = *str != ')';
-	
+
 	for (int i=0;i<user_function.numargs;i++)
 	{
 		if(!has_next)
 		{
-			asar_throw_error(1, error_type_block, error_id_expected_parameter, current_user_function_name);
+			asar_throw_error(2, error_type_block, error_id_expected_parameter, current_user_function_name);
 		}
 		args[i] = copy_arg();
 		has_next = has_next_parameter();
 	}
-	
+
 	if(has_next)
 	{
-		asar_throw_error(1, error_type_block, error_id_unexpected_parameter, current_user_function_name);
+		asar_throw_error(2, error_type_block, error_id_unexpected_parameter, current_user_function_name);
 	}
-	
+
 	for(int i=0; user_function.content[i]; i++)
 	{
 		if(!is_alpha(user_function.content[i]) && user_function.content[i] != '_')
@@ -684,7 +667,7 @@ static double asar_call_user_function()
 		bool found = false;
 		for (int j=0;user_function.arguments[j];j++)
 		{
-			//this should *always* have a null term or another character after 
+			//this should *always* have a null term or another character after
 			bool potential_arg = stribegin(user_function.content+i, user_function.arguments[j]);
 			int next_char = i+strlen(user_function.arguments[j]);
 			if(potential_arg && (!is_alnum(user_function.content[next_char]) && user_function.content[next_char] != '_'))
@@ -694,7 +677,7 @@ static double asar_call_user_function()
 				found = true;
 			}
 		}
-		
+
 		if(!found){
 			for(; is_ualnum(user_function.content[i]); i++){
 				real_content += user_function.content[i];
@@ -714,13 +697,12 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 	if (!confirmqpar(content)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 	if(functions.exists(name)) //functions holds both types.
 	{
-		//asar_throw_error(0, error_type_block, error_id_function_redefined, name);
-		asar_throw_warning(1, warning_id_feature_deprecated, "overwriting a previously defined function", "change the function name");
+		asar_throw_error(0, error_type_block, error_id_function_redefined, name);
 	}
 	funcdat& user_function=user_functions[name];
 	user_function.name= duplicate_string(name);
 	user_function.argbuf= duplicate_string(arguments);
-	user_function.arguments=qsplit(user_function.argbuf, ",", &(user_function.numargs));
+	user_function.arguments=split(user_function.argbuf, ',', &(user_function.numargs));
 	user_function.content= duplicate_string(content);
 	for (int i=0;user_function.arguments[i];i++)
 	{
@@ -737,59 +719,34 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 			asar_throw_error(0, error_type_block, error_id_invalid_param_name);
 		}
 	}
-	
+
 	functions[name] = asar_call_user_function;
 }
 
+inline const long hextable[] = {
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1, 0,1,2,3,4,5,6,7,8,9,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1
+};
+
 static double getnumcore()
 {
-	if (*str=='(')
-	{
-		str++;
-		double rval=eval(0);
-		if (*str != ')') asar_throw_error(1, error_type_block, error_id_mismatched_parentheses);
-		str++;
-		return rval;
-	}
 	if (*str=='$')
 	{
-		if (!is_xdigit(str[1])) asar_throw_error(1, error_type_block, error_id_invalid_hex_value);
-		if (to_lower(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
-		return strtoull(str+1, const_cast<char**>(&str), 16);
-	}
-	if (*str=='%')
-	{
-		if (str[1] != '0' && str[1] != '1') asar_throw_error(1, error_type_block, error_id_invalid_binary_value);
-		return strtoull(str+1, const_cast<char**>(&str), 2);
-	}
-	if (*str=='\'')
-	{
-		if (!str[1]) asar_throw_error(1, error_type_block, error_id_invalid_character);
-		int orig_val;
-		str++;
-		str += utf8_val(&orig_val, str);
-		if (orig_val == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-		if (*str != '\'') asar_throw_error(1, error_type_block, error_id_invalid_character);
-		int64_t rval=thetable.get_val(orig_val);
-		if (rval == -1)
-		{
-			// RPG Hacker: Should be fine to not check return value of codepoint_to_utf8() here, because
-			// our error cases above already made sure that orig_val contains valid data at this point.
-			string u8_str;
-			codepoint_to_utf8(&u8_str, orig_val);
-			asar_throw_error(1, error_type_block, error_id_undefined_char, u8_str.data());
+		if (!is_xdigit(*++str)) asar_throw_error(2, error_type_block, error_id_invalid_hex_value);
+		uint64_t ret = 0;
+		while (hextable[0 + *str] >= 0) {
+			ret = (ret << 4) | hextable[0 + *str++];
 		}
-		str++;
-		return rval;
-	}
-	if (is_digit(*str))
-	{
-		const char* end = str;
-		while (is_digit(*end) || *end == '.') end++;
-		string number;
-		number.assign(str, (int)(end - str));
-		str = end;
-		return atof(number);
+		return ret;
 	}
 	if (is_alpha(*str) || *str=='_' || *str=='.' || *str=='?')
 	{
@@ -817,16 +774,16 @@ static double getnumcore()
 					str++;
 					break;
 				}
-				
+
 				if (*str==')')
 				{
 					str++;
 					return result;
 				}
-				asar_throw_error(1, error_type_block, error_id_malformed_function_call);
+				asar_throw_error(2, error_type_block, error_id_malformed_function_call);
 			}
 
-			asar_throw_error(1, error_type_block, error_id_function_not_found, start);
+			asar_throw_error(2, error_type_block, error_id_function_not_found, start);
 		}
 		else
 		{
@@ -845,13 +802,13 @@ static double getnumcore()
 				{
 					if (subscript_passed)
 					{
-						asar_throw_error(1, error_type_block, error_id_multiple_subscript_operators);
+						asar_throw_error(2, error_type_block, error_id_multiple_subscript_operators);
 						break;
 					}
 					subscript_passed = true;
 					if (scope_passed)
 					{
-						asar_throw_error(1, error_type_block, error_id_invalid_subscript);
+						asar_throw_error(2, error_type_block, error_id_invalid_subscript);
 						break;
 					}
 					string struct_name = substr(old_start, (int)(str - old_start - 1));
@@ -864,13 +821,55 @@ static double getnumcore()
 			return (int)i&0xFFFFFF;
 		}
 	}
-	asar_throw_error(1, error_type_block, error_id_invalid_number);
+	if (*str=='(')
+	{
+		str++;
+		double rval=eval(0);
+		if (*str != ')') asar_throw_error(2, error_type_block, error_id_mismatched_parentheses);
+		str++;
+		return rval;
+	}
+	if (*str=='%')
+	{
+		if (str[1] != '0' && str[1] != '1') asar_throw_error(2, error_type_block, error_id_invalid_binary_value);
+		return strtoull(str+1, const_cast<char**>(&str), 2);
+	}
+	if (*str=='\'')
+	{
+		if (!str[1]) asar_throw_error(2, error_type_block, error_id_invalid_character);
+		int orig_val;
+		str++;
+		str += utf8_val(&orig_val, str);
+		if (orig_val == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+		if (*str != '\'') asar_throw_error(2, error_type_block, error_id_invalid_character);
+		int64_t rval=thetable.get_val(orig_val);
+		if (rval == -1)
+		{
+			// RPG Hacker: Should be fine to not check return value of codepoint_to_utf8() here, because
+			// our error cases above already made sure that orig_val contains valid data at this point.
+			string u8_str;
+			codepoint_to_utf8(&u8_str, orig_val);
+			asar_throw_error(2, error_type_block, error_id_undefined_char, u8_str.data());
+		}
+		str++;
+		return rval;
+	}
+	if (is_digit(*str))
+	{
+		const char* end = str;
+		while (is_digit(*end) || *end == '.') end++;
+		string number;
+		number.assign(str, (int)(end - str));
+		str = end;
+		return atof(number);
+	}
+	asar_throw_error(2, error_type_block, error_id_invalid_number);
 	return 0.0;
 }
 
 static double sanitize(double val)
 {
-	if (val != val) asar_throw_error(1, error_type_block, error_id_nan);
+	if (val != val) asar_throw_error(2, error_type_block, error_id_nan);
 	if (math_round) return trunc(val); // originally used int cast, but that broke numbers > $8000_0000
 	return val;
 }
@@ -879,45 +878,18 @@ static double getnum()
 {
 	while (*str==' ') str++;
 #define prefix(sym, func) if (*str == sym) { str+=1; double val=getnum(); return sanitize(func); }
-#define prefix_dep(sym, func) if (*str == sym) { str+=1; asar_throw_warning(0, warning_id_feature_deprecated, "xkas style numbers ", "remove the #"); double val=getnum(); return sanitize(func); }
 #define prefix2(sym, sym2, func) if (*str == sym && *(str+1) == sym2) { str+=2; double val=getnum(); return sanitize(func); }
 	prefix('-', -val);
 	prefix('~', ~(int)val);
 	prefix2('<', ':', (int)val>>16);
 	prefix('+', val);
-	prefix_dep('#' && emulatexkas, val);
 #undef prefix
+#undef prefix2
 	return sanitize(getnumcore());
 }
 
 int64_t getnum(const char* instr)
 {
-	return getnum64(instr);
-	
-	// randomdude999: perform manual bounds-checking and 2's complement,
-	// to prevent depending on UB
-	double num = math(instr);
-	if(num < 0) {
-		// manual 2's complement
-		if((-num) > (double)UINT32_MAX) {
-			// out of bounds, return closest inbounds value
-			// (this value is the most negative value possible)
-			return ((uint32_t)INT32_MAX)+1;
-		}
-		return ~((uint32_t)(-num))+1;
-	} else {
-		if(num > (double)UINT32_MAX) {
-			// out of bounds, return closest inbounds value
-			return UINT32_MAX;
-		}
-		return (uint32_t)num;
-	}
-}
-
-int64_t getnum64(const char* instr)
-{
-	// randomdude999: perform manual bounds-checking
-	// to prevent depending on UB
 	double num = math(instr);
 	if(num < (double)INT64_MIN) {
 		return INT64_MIN;
@@ -936,7 +908,7 @@ double getnumdouble(const char * instr)
 
 static double oper_wrapped_throw(asar_error_id errid)
 {
-	asar_throw_error(1, error_type_block, errid);
+	asar_throw_error(2, error_type_block, errid);
 	return 0.0;
 }
 
@@ -970,20 +942,12 @@ notposneglabel:
 #define oper(name, thisdepth, contents)      \
 			if (!strncmp(str, name, strlen(name))) \
 			{                                      \
-				if (math_pri || default_math_pri)                        \
-				{                                    \
-					if (depth<=thisdepth)              \
-					{                                  \
-						str+=strlen(name);               \
-						right=eval(thisdepth+1);         \
-					}                                  \
-					else return left;                  \
-				}                                    \
-				else                                 \
-				{                                    \
-					str+=strlen(name);                 \
-					right=getnum();                    \
-				}                                    \
+				if (depth<=thisdepth)              \
+				{                                  \
+					str+=strlen(name);               \
+					right=eval(thisdepth+1);         \
+				}                                  \
+				else return left;                  \
 				left=sanitize(contents);             \
 				continue;                            \
 			}
@@ -998,7 +962,7 @@ notposneglabel:
 		oper("&", 0, (int64_t)left&(int64_t)right);
 		oper("|", 0, (int64_t)left|(int64_t)right);
 		oper("^", 0, (int64_t)left^(int64_t)right);
-		asar_throw_error(1, error_type_block, error_id_unknown_operator);
+		asar_throw_error(2, error_type_block, error_id_unknown_operator);
 #undef oper
 	}
 	return left;
@@ -1006,38 +970,18 @@ notposneglabel:
 
 //static autoptr<char*> freeme;
 double math(const char * s)
-{	
+{
 	//free(freeme);
 	//freeme=NULL;
 	foundlabel=false;
 	foundlabel_static=true;
 	forwardlabel=false;
-	double rval;
-	
-	if(math_pri || default_math_pri)
-	{
-		str = s;
-		rval = eval(0);
-	}
-	else
-	{
-		str = s;
-		double no_pri_rval = eval(0);
-		
-		math_pri = true;
-		str = s;
-		rval = eval(0);	
-		math_pri = false;
-		if(no_pri_rval != rval)
-		{
-			asar_throw_warning(2, warning_id_feature_deprecated, "xkas style left to right math ", "apply order of operations");
-			rval = no_pri_rval;
-		}
-	}
+	str = s;
+	double rval =  eval(0);
 	if (*str)
 	{
-		if (*str == ',') asar_throw_error(1, error_type_block, error_id_invalid_input);
-		else asar_throw_error(1, error_type_block, error_id_mismatched_parentheses);
+		if (*str == ',') asar_throw_error(2, error_type_block, error_id_invalid_input);
+		else asar_throw_error(2, error_type_block, error_id_mismatched_parentheses);
 	}
 	return rval;
 }
@@ -1047,7 +991,6 @@ void initmathcore()
 	functions.reset();
 	builtin_functions.each([](const char* key, double (*val)()) {
 		functions[key] = val;
-		functions[STR "_" + key] = val;
 	});
 	user_functions.reset();
 }

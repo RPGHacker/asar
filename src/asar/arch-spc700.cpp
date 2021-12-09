@@ -139,7 +139,7 @@ bool asblock_spc700(char** word, int numwords)
 	}
 	else if (arch==arch_spc700_inline && is1("skip"))
 	{
-		int num=snespos+(int)getnum64(par);
+		int num=snespos+(int)getnum(par);
 		if (foundlabel) asar_throw_error(0, error_type_block, error_id_skip_label_invalid);
 		inline_org(num);
 	}
@@ -149,7 +149,7 @@ bool asblock_spc700(char** word, int numwords)
 	}
 	else if (arch==arch_spc700_inline && is1("startpos"))
 	{
-		inlinestartpos=(int)getnum64(par);
+		inlinestartpos=(int)getnum(par);
 	}
 	else if (numwords==1)
 	{
@@ -188,7 +188,7 @@ bool asblock_spc700(char** word, int numwords)
 		} while ((opLen == 0) && (periodLocCount < strlen(word[0])));
 		if (opLen > 2) { asar_throw_error(0, error_type_block, error_id_opcode_length_too_long); }
 		autoptr<char*> parcpy= duplicate_string(par);
-		autoptr<char**> arg=qpsplit(parcpy, ",", &numwordsinner);
+		autoptr<char**> arg=qpsplit(parcpy, ',', &numwordsinner);
 		if (numwordsinner ==1)
 		{
 			string op;
@@ -202,7 +202,7 @@ bool asblock_spc700(char** word, int numwords)
 #define w1(hex) do { write1((unsigned int)hex); write1(getnum(math)); return true; } while(0)
 #define w2(hex) do { write1((unsigned int)hex); write2(getnum(math)); return true; } while(0)
 #define wv(hex1, hex2) do { if ((opLen == 1) || (opLen == 0 && getlen(math) == 1)) { write1((unsigned int)hex1); write1(getnum(math)); } else { write1((unsigned int)hex2); write2(getnum(math)); } return true; } while(0)
-#define wr(hex) do { int len=getlen(math); int num=(int)getnum64(math); int pos=(len==1)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)hex); write1((unsigned int)pos); \
+#define wr(hex) do { int len=getlen(math); int num=(int)getnum(math); int pos=(len==1)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)hex); write1((unsigned int)pos); \
 								if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								return true; } while(0)
 #define op0(str, hex) if (isop(str)) w0(hex)
@@ -330,10 +330,10 @@ bool asblock_spc700(char** word, int numwords)
 #define wv(opcode1, opcode2, math) do { if ((opLen == 1) || (opLen == 0 && getlen(math)==1)) { write1((unsigned int)opcode1); write1(getnum(math)); } \
 																	 else { write1((unsigned int)opcode2); write2(getnum(math)); } return true; } while(0)
 #define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1(getnum(math1)); write1(getnum(math2)); return true; } while(0)
-#define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum64(math); int pos=(len==1)?num:num-(snespos+2); \
+#define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum(math); int pos=(len==1)?num:num-(snespos+2); \
 								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								write1((unsigned int)opcode); write1((unsigned int)pos); return true; } while(0)
-#define w1r(opcode, math1, math2) do { int len=getlen(math2); int num=(int)getnum64(math2); int pos=(len==1)?num:num-(snespos+3); \
+#define w1r(opcode, math1, math2) do { int len=getlen(math2); int num=(int)getnum(math2); int pos=(len==1)?num:num-(snespos+3); \
 								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								write1((unsigned int)opcode); write1(getnum(math1)); write1((unsigned int)pos); return true; } while(0)
 			string s1;

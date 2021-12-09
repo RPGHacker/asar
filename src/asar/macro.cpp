@@ -46,7 +46,7 @@ void startmacro(const char * line_)
 	new(thisone) macrodata;
 	if (*startpar)
 	{
-		thisone->arguments=(const char* const*)qpsplit(duplicate_string(startpar), ",", &thisone->numargs);
+		thisone->arguments=(const char* const*)split(duplicate_string(startpar), ',', &thisone->numargs);
 	}
 	else
 	{
@@ -108,7 +108,7 @@ void callmacro(const char * data)
 	*endpar=0;
 	autoptr<const char * const*> args;
 	int numargs=0;
-	if (*startpar) args=(const char* const*)qpsplit(startpar, ",", &numargs);
+	if (*startpar) args=(const char* const*)qpsplit(startpar, ',', &numargs);
 	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_num_params);
 	// RPG Hacker: -1, because the ... is also counted as an argument, yet we want it to be entirely optional.
 	if (numargs < thismacro->numargs - 1 && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);

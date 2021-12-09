@@ -1,8 +1,6 @@
 ;`A9 03 00 A9 F3 7F A9 09 00 00 00 02
 ;`warnW1027
 ;`warnW1028
-;`warnW1027
-;`warnW1028
 org $008000
 main:
 

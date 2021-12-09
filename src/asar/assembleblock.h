@@ -76,7 +76,7 @@ void checkbankcross();
 void initstuff();
 void finishpass();
 
-void assembleblock(const char * block, bool isspecialline);
+void assembleblock(const char * block);
 
 extern int snespos;
 extern int realsnespos;
@@ -87,12 +87,8 @@ extern int bytes;
 
 extern int numopcodes;
 
-extern bool warnxkas;
-
 extern int numif;
 extern int numtrue;
-
-extern bool emulatexkas;
 
 extern int freespaceextra;
 

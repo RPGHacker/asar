@@ -87,23 +87,75 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 	return true;
 }
 
-#define dequote(var, next, error) if (var=='"') do { next; while (var!='"') { if (!var) error; next; } next; } while(0); else if (var=='\'') do { next; while (var!='\'') { if (!var) error; next; } next; } while(0)
-#define skippar(var, next, error) dequote(var, next, error); else if (var=='(') { int par=1; next; while (par) { dequote(var, next, error); \
-				if (var=='(') par++; if (var==')') par--; if (!var) error; next; } } else if (var==')') error
+#define isq(n) (((0x2227 ^ (0x0101 * (n))) - 0x0101UL) & ~(0x2227 ^ (0x0101 * (n))) & 0x8080UL)
+#define isqp(n) (((0x22272829 ^ (0x01010101 * (n))) - 0x01010101UL) & ~(0x22272829 ^ (0x01010101 * (n))) & 0x80808080UL)
 
-string& string::replace(const char * instr, const char * outstr, bool all)
+const bool qparlut[256] = {
+	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+};
+
+//this will leave the last char found as the one pointed at
+inline bool skip_quote(char *&str)
+{
+	if (isq(*str)){
+		str = strchr(str + 1, *str);
+	}
+	return str;
+}
+
+//eat 1 char or quote/par
+inline bool skip_par(char *&str)
+{
+	int par = 0;
+	if(*str != '\'' && *str != '"' && *str != '(' && *str != ')')
+	{
+		str++;
+		return true;
+	}
+	while(true)
+	{
+		char *t = str;
+		if(isq(*t))
+		{
+			t = strchr(t+1, *t);
+			if(!t) return false;
+		}
+		else if(*t == '(')
+		{
+			par++;
+		}
+		else if(*t == ')')
+		{
+			par--;
+			if(par < 0) return false;
+		}
+
+		str = t + 1;
+		if(!*str || !par) return par == 0 ? true : false;
+	}
+}
+
+string& string::replace(const char * instr, const char * outstr)
 {
 	string& thisstring=*this;
-	if (!all)
-	{
-		const char * ptr=strstr(thisstring, instr);
-		if (!ptr) return thisstring;
-		string out=STR substr(thisstring, (int)(ptr-thisstring.data()))+outstr+(ptr+strlen(instr));
-		thisstring =out;
-		return thisstring;
-	}
+	int inlen=(int)strlen(instr);
 	//performance hack (obviously for ", "->"," in asar, but who cares, it's a performance booster)
-	if (strlen(instr)==strlen(outstr)+1 && !memcmp(instr, outstr, strlen(outstr)))
+	if (inlen==strlen(outstr)+1 && !memcmp(instr, outstr, strlen(outstr)))
 	{
 		const char * indat= thisstring;
 		char * trueoutdat= typed_malloc(char, strlen(indat)+1);
@@ -169,7 +221,6 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 		replaced=false;
 		string out;
 		const char * in= thisstring;
-		int inlen=(int)strlen(instr);
 		while (*in)
 		{
 			if (!strncmp(in, instr, (size_t)inlen))
@@ -185,65 +236,197 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 	return thisstring;
 }
 
-string& string::qreplace(const char * instr, const char * outstr, bool all)
+//instr should not be duplicate chars.  Instr should also not be 1 char
+string& string::qreplace(const char * instr, const char * outstr)
 {
 	string& thisstring =*this;
 	if (!strstr(thisstring, instr)) return thisstring;
-	if (!strchr(thisstring, '"') && !strchr(thisstring, '\''))
+	int inlen = strlen(instr);
+	string out;
+	for (int i=0;thisstring[i];)
 	{
-		thisstring.replace(instr, outstr, all);
-		return thisstring;
-	}
-	bool replaced=true;
-	while (replaced)
-	{
-		replaced=false;
-		string out;
-		for (int i=0;thisstring[i];)
+		if (!strncmp((const char*)thisstring +i, instr, inlen))
 		{
-			dequote(thisstring[i], out+= thisstring[i++], return thisstring);
-			if (!strncmp((const char*)thisstring +i, instr, strlen(instr)))
-			{
-				replaced=true;
-				out+=outstr;
-				i+=(int)strlen(instr);
-				if (!all)
-				{
-					out+=((const char*)thisstring)+i;
-					thisstring =out;
-					return thisstring;
-				}
-			}
-			// randomdude999: prevent appending the null terminator to the output
-			else if(thisstring[i]) out+= thisstring[i++];
+			out+=outstr;
+			i+=inlen;
 		}
-		thisstring =out;
+		// randomdude999: prevent appending the null terminator to the output
+		else if(!isq(thisstring[i])) out+= thisstring[i++];
+		else
+		{
+			char *start = raw() + i;
+			char *end = start;
+			if(!skip_quote(end)) return thisstring;
+			out.append(raw(), i, end - start + i + 1);
+			i += end - start + 1;
+
+		}
+	}
+	thisstring =out;
+	return thisstring;
+}
+
+string& string::qnormalize()
+{
+	string& thisstring =*this;
+	string out;
+	char *startstr = thisstring.raw();
+	char *str = startstr;
+	while(str = strpbrk(str, "'\" \t,"))
+	{
+		if(is_space(*str))
+		{
+			if(str[0] == ' ' && !is_space(str[1]))
+			{
+				str++;
+				continue;
+			}
+			out.append(startstr, 0, str - startstr);
+			out += ' ';
+			while(is_space(*str)) str++;
+			startstr = str;
+		}else if(*str == ',')
+		{
+			str++;
+			if(is_space(*str))
+			{
+				out.append(startstr, 0, str - startstr);
+				while(is_space(*str)) str++;
+				startstr = str;
+			}
+		}
+		else
+		{
+			str = strchr(str + 1, *str);  //confirm quotes has already been run, so this should be okay
+			if(!str) return thisstring;
+			str++;
+		}
+	}
+	if(startstr != thisstring.raw())
+	{
+		out.append(startstr, 0, strlen(startstr)); //the remaining
+
+		thisstring = out;
 	}
 	return thisstring;
 }
 
 bool confirmquotes(const char * str)
 {
-	for (int i=0;str[i];)
+	while(*str)
 	{
-		dequote(str[i], i++, return false);
-		else i++;
+		char *dquote = strchr((char *)str, '"');
+		char *squote = strchr((char *)str, '\'');
+		if(dquote || squote)
+		{
+			if(dquote && (dquote < squote || !squote))
+			{
+				dquote = strchr(dquote+1, '"');
+				if(dquote) str = dquote+1;
+				else return false;
+			}
+			else
+			{
+				squote = strchr(squote+1, '\'');
+				if(squote) str = squote+1;
+				else return false;
+			}
+		}
+		else
+		{
+			return true;
+		}
 	}
 	return true;
 }
 
 bool confirmqpar(const char * str)
 {
-	for (int i=0;str[i];)
+	//todo fully optimize
+	int par = 0;
+	while(!qparlut[*str]) str++;
+	while(*str)
 	{
-		skippar(str[i], i++, return false);
-		else i++;
+		if(isq(*str))
+		{
+			str = strchr(str + 1, *str);
+			if(!str++) return false;
+		}
+		else
+		{
+			par += 1 - ((*str++ - '(') << 1);
+			if(par < 0) return false;
+		}
+		while(!qparlut[*str]) str++;
 	}
-	return true;
+	return !par;
 }
 
-char ** nsplit(char * str, const char * key, int maxlen, int * len)
+char ** split(char * str, char key, int * len)
 {
+	char *thisentry=strchr(str, key);
+	if (!thisentry)
+	{
+		char ** out= typed_malloc(char*, 2);
+		out[0]=str;
+		out[1]=nullptr;
+		if (len) *len=1;
+		return out;
+	}
+	int count=15; //makes the default alloc 8 elements, sounds fair.
+	char ** outdata= typed_malloc(char*, (size_t)count+1);
+
+	int newcount=0;
+	outdata[newcount++]=str;
+	do{
+		*thisentry = 0;
+		thisentry++;
+		outdata[newcount++]=thisentry;
+		if(newcount >= count)
+		{
+			count *= 2;
+			outdata = typed_realloc(char *, outdata, count);
+		}
+	}while((thisentry = strchr(thisentry, key)));
+
+	outdata[newcount]= nullptr;
+	if (len) *len=newcount;
+	return outdata;
+}
+
+char ** qsplit(char * str, char key, int * len)
+{
+	if (!strchr(str, '"') && !strchr(str, '\'')) return split(str, key, len);
+
+	int count=15;
+	char ** outdata= typed_malloc(char*, (size_t)count+1);
+	int newcount=0;
+	char * thisentry=str;
+	outdata[newcount++]=thisentry;
+	while (*thisentry) /*todo fix*/
+	{
+		if (*thisentry == key)
+		{
+			*thisentry=0;
+			thisentry++;
+			outdata[newcount++]=thisentry;
+			if(newcount >= count)
+			{
+				count *= 2;
+				outdata = typed_realloc(char *, outdata, count);
+			}
+		}
+		else if(skip_quote(thisentry)) thisentry++;
+		else return nullptr;
+	}
+	outdata[newcount]= nullptr;
+	if (len) *len=newcount;
+	return outdata;
+}
+
+char ** qsplitstr(char * str, const char * key, int * len)
+{
+	//check if the str is found first
 	if (!strstr(str, key))
 	{
 		char ** out= typed_malloc(char*, 2);
@@ -252,211 +435,109 @@ char ** nsplit(char * str, const char * key, int maxlen, int * len)
 		if (len) *len=1;
 		return out;
 	}
-	int keylen=(int)strlen(key);
-	int count=7; //makes the default alloc 8 elements, sounds fair.
-	if (maxlen && count>maxlen) count=maxlen;
-	char ** outdata= typed_malloc(char*, (size_t)count+1);
-	
-	int newcount=0;
-	char *thisentry=str;
-	outdata[newcount++]=thisentry;
-	while((thisentry = strstr(thisentry, key))){
-		*thisentry = 0;
-		thisentry += keylen;
-		outdata[newcount++]=thisentry;
-		if(newcount >= count)
-		{
-			outdata = typed_realloc(char *, outdata, count * 2);
-			count *= 2;
-		}
-	}
-	
-	outdata[newcount]= nullptr;
-	if (len) *len=newcount;
-	return outdata;
-}
 
-char ** qnsplit(char * str, const char * key, int maxlen, int * len)
-{
-	if (!strchr(str, '"') && !strchr(str, '\'')) return nsplit(str, key, maxlen, len);
 	int keylen=(int)strlen(key);
-	int count=7;
-	if (maxlen && count>maxlen) count=maxlen;
+	int count=15;
 	char ** outdata= typed_malloc(char*, (size_t)count+1);
 	int newcount=0;
 	char * thisentry=str;
 	outdata[newcount++]=thisentry;
 	while (*thisentry) /*todo fix*/
 	{
-		dequote(*thisentry, thisentry++, return nullptr);
-		else if (!strncmp(thisentry, key, (size_t)keylen))
+		if (!strncmp(thisentry, key, (size_t)keylen))
 		{
 			*thisentry=0;
 			thisentry+=keylen;
 			outdata[newcount++]=thisentry;
 			if(newcount >= count)
 			{
-				outdata = typed_realloc(char *, outdata, count * 2);
 				count *= 2;
+				outdata = typed_realloc(char *, outdata, count);
 			}
 		}
-		else thisentry++;
+		else if(skip_quote(thisentry)) thisentry++;
+		else return nullptr;
 	}
 	outdata[newcount]= nullptr;
 	if (len) *len=newcount;
 	return outdata;
 }
 
-char ** qpnsplit(char * str, const char * key, int maxlen, int * len)
+//this function is most commonly called in cases where additional chars are very likely
+char ** qpsplit(char * str, char key, int * len)
 {
-	int keylen=(int)strlen(key);
+	if (!strchr(str, '(') && !strchr(str, ')')) return qsplit(str, key, len);
 	int count=7;
-	if (maxlen && count>maxlen) count=maxlen;
 	char ** outdata= typed_malloc(char*, (size_t)count+1);
-	
+
 	int newcount=0;
 	char * thisentry=str;
 	outdata[newcount++]=thisentry;
 	while (*thisentry)
 	{
-		skippar(*thisentry, thisentry++, return nullptr);
-		else if (!strncmp(thisentry, key, (size_t)keylen))
+		//skippar(*thisentry, thisentry++, return nullptr;)
+		if (*thisentry == key)
 		{
 			*thisentry=0;
-			thisentry+=keylen;
+			thisentry++;
 			outdata[newcount++]=thisentry;
 			if(newcount >= count)
 			{
-				outdata = typed_realloc(char *, outdata, count * 2);
 				count *= 2;
+				outdata = typed_realloc(char *, outdata, count);
 			}
 		}
-		else thisentry++;
+		else if(!skip_par(thisentry)) return nullptr;
 	}
 	outdata[newcount]= nullptr;
 	if (len) *len=newcount;
 	return outdata;
 }
 
-string &strip_prefix(string &str, char c, bool multi)
-{
-	if(!multi){
-		if(str.data()[0] == c){
-			str = string(str.data() + 1, str.length() - 1);
-		}
-		return str;
-	}
-	int length = str.length();
-	for(int i = 0; i < length; i++){
-		if(str.data()[i] != c){
-			str = string(str.data() + i, str.length() - i);
-			return str;
-		}
-	}
-	return str;
-}
-
-string &strip_suffix(string &str, char c, bool multi)
-{
-	if(!multi){
-		if(str.data()[str.length() - 1] == c){
-			str.truncate(str.length() - 1);
-		}
-		return str;
-	}
-	for(int i = str.length() - 1; i >= 0; i--){
-		if(str.data()[i] != c){
-			str.truncate(i + 1);
-			return str;
-		}
-	}
-	return str;
-}
-
-string &strip_both(string &str, char c, bool multi)
-{
-	return strip_suffix(strip_prefix(str, c, multi), c, multi);
-}
-
-string &strip_whitespace(string &str)
-{
-	for(int i = str.length() - 1; i >= 0; i--){
-		if(str.data()[i] != ' ' && str.data()[i] != '\t'){
-			str.truncate(i + 1);
-			break;
-		}
-	}
-	
-	int length = str.length();
-	for(int i = 0; i < length; i++){
-		if(str.data()[i] != ' ' && str.data()[i] != '\t'){
-			str = string(str.data() + i, str.length() - i);
-			return str;
-		}
-	}
-	return str;
-}
-
-char * itrim(char * str, const char * left, const char * right, bool multi)
-{
-	string tmp(str);
-	return strcpy(str, itrim(tmp, left, right, multi).data());
-}
-
-//todo merge above with this
-string &itrim(string &input, const char * left, const char * right, bool multi)
+string &itrim(string &input, const char * left, const char * right)
 {
 	bool nukeright=true;
 	int totallen=input.length();
 	int rightlen=(int)strlen(right);
 	if (rightlen && rightlen<=totallen)
 	{
-		do
+		const char * rightend=right+rightlen;
+		const char * strend=input.data()+totallen;
+		while (right!=rightend)
 		{
-			const char * rightend=right+rightlen;
-			const char * strend=input.data()+totallen;
-			while (right!=rightend)
-			{
-				rightend--;
-				strend--;
-				if (to_lower(*strend)!=to_lower(*rightend)) nukeright=false;
-			}
-			if (nukeright)
-			{
-				totallen-=rightlen;
-				input.truncate(totallen);
-			}
-		} while (multi && nukeright && rightlen<=totallen);
+			rightend--;
+			strend--;
+			if (to_lower(*strend)!=to_lower(*rightend)) nukeright=false;
+		}
+		if (nukeright)
+		{
+			totallen-=rightlen;
+			input.truncate(totallen);
+		}
 	}
 	bool nukeleft=true;
 	int leftlen = strlen(left);
-	if(!multi && leftlen == 1 && input.data()[0] == left[0])
+	if(leftlen == 1 && input.data()[0] == left[0])
 	{
 		return input = string(input.data()+1, (input.length()-1));
 	}
 	else
 	{
-		do
+		for (int i = 0; i < leftlen; i++)
 		{
-			
-			for (int i = 0; i < leftlen; i++)
-			{
-				if (to_lower(input.data()[i])!=to_lower(left[i])) nukeleft=false;
-			}
-			if (nukeleft) input = string(input.data()+leftlen, (input.length()-leftlen));
-		} while (multi && nukeleft);
+			if (to_lower(input.data()[i])!=to_lower(left[i])) nukeleft=false;
+		}
+		if (nukeleft) input = string(input.data()+leftlen, (input.length()-leftlen));
 	}
 	return input;
 }
 
-char* strqpchr(const char* str, char key)
+char* strqpchr(char* str, char key)
 {
 	while (*str)
 	{
-		skippar(*str, str++, return nullptr);
-		else if (*str == key) return const_cast<char*>(str);
-		else if (!*str) return nullptr;
-		else str++;
+		if (*str == key) return const_cast<char*>(str);
+		else if(!skip_par(str)) return nullptr;
 	}
 	return nullptr;
 }

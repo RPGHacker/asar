@@ -13,7 +13,7 @@
 ;`warnW1029
 ;`warnW1029
 ;`warnW1029
-@asar 1.50
+asar 1.50
 
 lorom
 	org $008000
@@ -29,11 +29,11 @@ lorom
 	dl pctosnes($008000)
 	dl pctosnes($200000)
 	dl pctosnes($3FFFFF)
-	
+
 
 hirom
 	org $400100
-	
+
 	dl snestopc($008000)
 	dl snestopc($018000)
 	dl snestopc($400000)
@@ -47,11 +47,11 @@ hirom
 	dl pctosnes($008000)
 	dl pctosnes($018000)
 	dl pctosnes($3FFFFF)
-	
+
 
 exlorom
 	org $808200
-	
+
 	dl snestopc($008000)
 	dl snestopc($018000)
 	dl snestopc($408000)
@@ -65,11 +65,11 @@ exlorom
 	dl pctosnes($400000)
 	dl pctosnes($408000)
 	dl pctosnes($600000)
-	
+
 
 exhirom
 	org $C00300
-	
+
 	dl snestopc($008000)
 	dl snestopc($018000)
 	dl snestopc($400000)
@@ -85,21 +85,20 @@ exhirom
 	dl pctosnes($400000)
 	dl pctosnes($408000)
 	dl pctosnes($418000)
-	
+
 lorom
 	org $018000
-	
+
 	dl $FFFFFF
-	
+
 	table "data/pushtable1.tbl"
 	db "ABCD"
-	
+
 	pushtable
-	
+
 	table "data/pushtable2.tbl"
 	db "ABCD"
-	
+
 	pulltable
-	
+
 	db "ABCD"
-	

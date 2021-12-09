@@ -23,10 +23,8 @@ int realsnespos;
 int startpos;
 int realstartpos;
 
-bool emulatexkas;
 bool mapper_set = false;
 bool warn_endwhile = true;
-static bool specifiedasarver = false;
 
 static int old_snespos;
 static int old_startpos;
@@ -271,11 +269,6 @@ int getlenfromchar(char c)
 	if (c=='b') return 1;
 	if (c=='w') return 2;
 	if (c=='l') return 3;
-	if (c=='d')
-	{
-		asar_throw_warning(1, warning_id_feature_deprecated, ".d opcode suffix", "this doesn't even make sense");
-		return 4;
-	}
 	asar_throw_error(0, error_type_block, error_id_invalid_opcode_length);
 	return -1;
 }
@@ -355,14 +348,14 @@ string posneglabelname(const char ** input, bool define)
 				if (first == '+')
 				{
 					*input = label;
-					output = STR":macro_" + dec(calledmacros) + STR"_pos_" + dec(depth) + "_" + dec((*macroposlabels)[depth]);
+					output = STR":macro_" + dec(calledmacros) + "_pos_" + dec(depth) + "_" + dec((*macroposlabels)[depth]);
 					if (define) (*macroposlabels)[depth]++;
 				}
 				else
 				{
 					*input = label;
 					if (define) (*macroneglabels)[depth]++;
-					output = STR":macro_" + dec(calledmacros) + STR"_neg_" + dec(depth) + "_" + dec((*macroneglabels)[depth]);
+					output = STR":macro_" + dec(calledmacros) + "_neg_" + dec(depth) + "_" + dec((*macroneglabels)[depth]);
 				}
 			}
 		}
@@ -402,7 +395,6 @@ static string labelname(const char ** rawname, bool define=false)
 	{
 		for (i=0;(*deref_rawname =='.');i++) deref_rawname++;
 		if (!is_ualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
-		if (emulatexkas && i>1) asar_throw_warning(1, warning_id_convert_to_asar);
 		if (i)
 		{
 			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(1, error_type_block, error_id_label_missing_parent);
@@ -472,7 +464,7 @@ inline bool labelvalcore(const char ** rawname, snes_label * rval, bool define, 
 {
 	string name=labelname(rawname, define);
 	snes_label rval_;
-	if (ns && labels.exists(STR ns+name)) {rval_ = labels.find(STR ns+name);}
+	if (ns && labels.exists(ns+name)) {rval_ = labels.find(ns+name);}
 	else if (labels.exists(name)) {rval_ = labels.find(name);}
 	else
 	{
@@ -663,8 +655,6 @@ static void freespaceend()
 
 int numopcodes;
 
-bool warnxkas;
-
 static void adddefine(const string & key, string & value)
 {
 	if (!defines.exists(key)) defines.create(key) = value;
@@ -717,7 +707,6 @@ void initstuff()
 	freespaceid=1;
 	freespaceextra=0;
 	numopcodes=0;
-	specifiedasarver = false;
 	incsrcdepth = 0;
 
 	optimizeforbank = -1;
@@ -729,7 +718,6 @@ void initstuff()
 	in_sub_struct = false;
 	in_spcblock = false;
 
-	math_pri=false;
 	math_round=true;
 
 	if (arch==arch_65816) asinit_65816();
@@ -737,8 +725,6 @@ void initstuff()
 	if (arch==arch_spc700_inline) asinit_spc700();
 	if (arch==arch_superfx) asinit_superfx();
 
-	warnxkas=false;
-	emulatexkas=false;
 	disable_bank_cross_errors = false;
 	check_half_banks_crossed = false;
 	nested_namespaces = false;
@@ -813,7 +799,7 @@ static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 		else if (requirecolon) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
 		else if (global_label) return false;
 		if (label[0]) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
-		if (ns && !global_label) name=STR ns+name;
+		if (ns && !global_label) name=ns+name;
 		setlabel(name, pos, ((in_struct || in_sub_struct) && static_struct));
 		return true;
 	}
@@ -857,9 +843,9 @@ static void pop_pc()
 
 string handle_print(char* input)
 {
-	if (!confirmqpar(input)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 	string out;
-	autoptr<char**> pars = qpsplit(input, ",");
+	autoptr<char**> pars = qpsplit(input, ',');
+	verify_paren(pars);
 	for (int i = 0; pars[i]; i++)
 	{
 		if (0);
@@ -879,13 +865,14 @@ string handle_print(char* input)
 			string paramstr = string(arg1pos, (int)(endpos - arg1pos));
 
 			int numargs;
-			autoptr<char**> params = qpsplit(paramstr.temp_raw(), ",", &numargs);
+			autoptr<char**> params = qpsplit(paramstr.temp_raw(), ',', &numargs);
+			verify_paren(params);
 			if (numargs > 2) asar_throw_error(0, error_type_block, error_id_wrong_num_parameters);
 			int precision = 0;
 			bool hasprec = numargs == 2;
 			if (hasprec)
 			{
-				precision = getnum64(params[1]);
+				precision = getnum(params[1]);
 				if (precision < 0) precision = 0;
 				if (precision > 64) precision = 64;
 			}
@@ -893,7 +880,7 @@ string handle_print(char* input)
 			if (!stricmp(pars[i], "bin"))
 			{
 				// sadly printf doesn't have binary, so let's roll our own
-				int64_t value = getnum64(params[0]);
+				int64_t value = getnum(params[0]);
 				char buffer[65];
 				if (value < 0) {
 					out += '-';
@@ -913,14 +900,14 @@ string handle_print(char* input)
 			}
 			else if (!stricmp(pars[i], "dec"))
 			{
-				int64_t value = getnum64(params[0]);
+				int64_t value = getnum(params[0]);
 				char buffer[65];
 				snprintf(buffer, 65, "%0*" PRId64, precision, value);
 				out += buffer;
 			}
 			else if (!stricmp(pars[i], "hex"))
 			{
-				int64_t value = getnum64(params[0]);
+				int64_t value = getnum(params[0]);
 				char buffer[65];
 				snprintf(buffer, 65, "%0*" PRIX64, precision, value);
 				out += buffer;
@@ -936,13 +923,11 @@ string handle_print(char* input)
 	return out;
 }
 
-
-void assembleblock(const char * block, bool isspecialline)
+void assembleblock(const char * block)
 {
 	string tmp=block;
 	int numwords;
-	char ** word = qsplit(tmp.temp_raw(), " ", &numwords);
-	string resolved;
+	char ** word = qsplit(tmp.temp_raw(), ' ', &numwords);
 	// when writing out the data for the addrToLine mapping,
 	// we want to write out the snespos we had before writing opcodes
 	int addrToLinePos = realsnespos & 0xFFFFFF;
@@ -954,20 +939,21 @@ void assembleblock(const char * block, bool isspecialline)
 #define is3(test) (numwords==4 && !stricmpwithlower(word[0], test))
 #define par word[1]
 
+	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
+	// This really seems like the only possible place for the fix
+	if (numtrue+1==numif && is("elseif"))
+	{
+		tmp = "";
+		resolvedefines(tmp, block);
+		free(word);
+		word = qsplit(tmp.temp_raw(), ' ', &numwords);
+	}
+	autoptr<char **> scope_word = word;
+
 	if(!moreonlinecond && !(is("elseif") || is("else"))){
 		return;
 	}
 
-	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
-	// This really seems like the only possible place for the fix
-	if (is("elseif") && numtrue+1==numif)
-	{
-		resolvedefines(resolved, block);
-		free(word);
-		word = qsplit(resolved.temp_raw(), " ", &numwords);
-	}
-
-	autoptr<char**> wordcopy=word;
 	if (numif==numtrue && is1("global")) {
 		if (!addlabel(word[1], -1, true)) {
 			asar_throw_error(1, error_type_block, error_id_invalid_global_label, word[1]);
@@ -1002,7 +988,6 @@ void assembleblock(const char * block, bool isspecialline)
 	if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
 		if(is("if") && moreonline) fakeendif++;
-		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		string errmsg;
 		whiletracker wstatus;
 		wstatus.startline = thisline;
@@ -1012,7 +997,8 @@ void assembleblock(const char * block, bool isspecialline)
 		whiletracker& addedwstatus = (whilestatus[numif] = wstatus);
 		if (is("assert"))
 		{
-			autoptr<char**> tokens = qpsplit(word[numwords - 1], ",");
+			autoptr<char**> tokens = qpsplit(word[numwords - 1], ',');
+			verify_paren(tokens);
 			if (tokens[0] != NULL && tokens[1] != NULL)
 			{
 				string rawerrmsg;
@@ -1048,19 +1034,10 @@ void assembleblock(const char * block, bool isspecialline)
 			bool thiscond = false;
 			if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
 			{
-				if (nextword[0][0] == '!')
-				{
-					asar_throw_warning(0, warning_id_feature_deprecated, "old style conditional negation (if !condition) ", "the not function");
-					double val = getnumdouble(nextword[0]+1);
-					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
-					thiscond = !(val > 0);
-				}
-				else
-				{
-					double val = getnumdouble(nextword[0]);
-					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
-					thiscond = (val > 0);
-				}
+
+				double val = getnumdouble(nextword[0]);
+				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+				thiscond = (val > 0);
 
 				if (condstr && nextword[1])
 				{
@@ -1103,35 +1080,6 @@ void assembleblock(const char * block, bool isspecialline)
 			cond=thiscond;
 			break;
 		}
-		//if (numwords==4)
-		//{
-		//	int par1=getnum(word[1]);
-		//	if (foundlabel && !foundlabel_static) error(1, S"Label in "+lower(word[0])+" command");
-		//	int par2=getnum(word[3]);
-		//	if (foundlabel && !foundlabel_static) error(1, S"Label in "+lower(word[0])+" command");
-		//	if(0);
-		//	else if (!strcmp(word[2], ">"))  cond=(par1>par2);
-		//	else if (!strcmp(word[2], "<"))  cond=(par1<par2);
-		//	else if (!strcmp(word[2], ">=")) cond=(par1>=par2);
-		//	else if (!strcmp(word[2], "<=")) cond=(par1<=par2);
-		//	else if (!strcmp(word[2], "="))  cond=(par1==par2);
-		//	else if (!strcmp(word[2], "==")) cond=(par1==par2);
-		//	else if (!strcmp(word[2], "!=")) cond=(par1!=par2);
-		//	//else if (!stricmp(word[2], "<>")) cond=(par1!=par2);
-		//	else error(0, S"Broken "+lower(word[0])+" command");
-		//}
-		//else if (*par=='!')
-		//{
-		//	int val=getnum(par+1);
-		//	if (foundlabel && !foundlabel_static) error(1, "Label in if or assert command");
-		//	cond=!(val>0);
-		//}
-		//else
-		//{
-		//	int val=getnum(par);
-		//	if (foundlabel && !foundlabel_static) error(1, "Label in if or assert command");
-		//	cond=(val>0);
-		//}
 
 		if (is("if") || is("while"))
 		{
@@ -1177,6 +1125,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (whilestatus[numif].iswhile && is("endif") && warn_endwhile){
 			warn_endwhile = false;
 			asar_throw_warning(0, warning_id_feature_deprecated, "endif terminating while statements", "use endwhile instead");
+			//todo make error msg
 		}
 	}
 	else if (is("else"))
@@ -1202,20 +1151,54 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		numopcodes++;
 	}
+	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
+	{
+		autoptr<char**> pars=qpsplit(par, ',');
+		verify_paren(pars);
+
+		void (*do_write)(unsigned int);
+		if (word[0][1]  == 'b') do_write = &write1;
+		else if (word[0][1]  == 'w') do_write = &write2;
+		else if (word[0][1]  == 'l') do_write = &write3;
+		else do_write = &write4;
+
+		for (int i=0;pars[i];i++)
+		{
+			if (pars[i][0]=='"')
+			{
+				char * str=const_cast<char*>(safedequote(pars[i]));
+				int codepoint = 0u;
+				str += utf8_val(&codepoint, str);
+				while ( codepoint != 0 && codepoint != -1 )
+				{
+					do_write(thetable.get_val(codepoint));
+					str += utf8_val(&codepoint, str);
+				}
+				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+			}
+			else
+			{
+				do_write((pass==2)?getnum(pars[i]):0);
+			}
+		}
+	}
+	else if (is("macro"))
+	{
+		//todo better error
+		if (moreonline)  asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
+		if (parsing_macro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
+		parsing_macro=true;
+		if (!pass) startmacro(block+6);
+	}
+	else if (is("endmacro"))
+	{
+		if (!parsing_macro) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
+		parsing_macro=false;
+		if (!pass) endmacro(true);
+	}
 	else if (is1("undef"))
 	{
-		string def;
-		// RPG Hacker: Not sure if we should allow this?
-		// Currently, the manual states that we should not include the
-		// exclamation mark, and I believe that this is for the better
-		// because I can see this leading to ambiguities or causing
-		// problems. If we add this back in, we should definitely
-		// also added it to the defined() function for consistency, though.
-		// Well, actually I just check and we can't support this in
-		// defined() (the defined is already replaced at that point), so
-		// I think we should not support it here, either.
-		/*if (*par == '!') def = S safedequote(par) + 1;
-		else*/ def = STR safedequote(par);
+		string def = safedequote(par);
 
 		if (defines.exists(def))
 		{
@@ -1296,7 +1279,6 @@ void assembleblock(const char * block, bool isspecialline)
 			string expected_title = safedequote(word[2]);
 			// randomdude999: this also removes leading spaces because itrim gets stuck in an endless
 			// loop when multi is true and one argument is empty
-			//expected_title = itrim(expected_title.data(), " ", " ", true); // remove trailing spaces
 			// in hirom the rom needs to be an entire bank for it to have a title, other modes only need 0x8000 bytes
 			if (romlen < ((mapper == hirom || mapper == exhirom) ? 0x10000 : 0x8000)) // too short
 			{
@@ -1321,8 +1303,6 @@ void assembleblock(const char * block, bool isspecialline)
 					if (c == '\0') c = 155;
 					actual_display_title += (char)c;
 				}
-				//actual_display_title = itrim(actual_display_title.data(), " ", " ", true); // remove trailing spaces
-				//actual_title = itrim(actual_title.data(), " ", " ", true); // remove trailing spaces
 				if (strncmp(expected_title, actual_title, 21) != 0)
 				{
 					if (!ignoretitleerrors) // title errors shouldn't be ignored
@@ -1335,10 +1315,6 @@ void assembleblock(const char * block, bool isspecialline)
 		else if (stricmp(word[1], "bankcross") == 0)
 		{
 			if (0);
-			else if (!stricmp(word[2], "on"))
-			{
-				asar_throw_warning(0, warning_id_feature_deprecated, "bankcheck on", "bankcheck full or bankcheck half");
-			}
 			else if (!stricmp(word[2], "off"))
 			{
 				 disable_bank_cross_errors = true;
@@ -1365,7 +1341,6 @@ void assembleblock(const char * block, bool isspecialline)
 	{
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (!par) return;
-		if (emulatexkas) asar_throw_error(0, error_type_block, error_id_xkas_asar_conflict);
 		int dots=0;
 		int dig=0;
 		for (int i=0;par[i];i++)
@@ -1380,7 +1355,7 @@ void assembleblock(const char * block, bool isspecialline)
 			else asar_throw_error(0, error_type_block, error_id_invalid_version_number);
 		}
 		if (!dig || !dots || dots>2) asar_throw_error(0, error_type_block, error_id_invalid_version_number);
-		autoptr<char**> vers=split(par, ".");
+		autoptr<char**> vers=split(par, '.');
 		int vermaj=atoi(vers[0]);
 		if (vermaj > asarver_maj) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
 		if (vermaj<asarver_maj) return;
@@ -1392,7 +1367,6 @@ void assembleblock(const char * block, bool isspecialline)
 			int tmpver=asarver_bug;
 			if (tmpver>9) tmpver=9;
 			if (asarver_min*10+tmpver<verminbug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
-			if(vermaj == 1 && verminbug >= 90) default_math_pri = true;
 		}
 		else
 		{
@@ -1400,28 +1374,14 @@ void assembleblock(const char * block, bool isspecialline)
 			if (vermin>asarver_min) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
 			int verbug=atoi(vers[2]);
 			if (vermin==asarver_min && verbug>asarver_bug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
-			if(vermaj == 1 && vermin >= 9) default_math_pri = true;
 		}
-		specifiedasarver = true;
-	}
-	else if (is0("xkas"))
-	{
-		asar_throw_warning(0, warning_id_feature_deprecated, "xkas compatibility mode", "UPGRADE YOUR PATCH ITS 2021!!!");
-		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
-		if (incsrcdepth != 1 && !emulatexkas) asar_throw_error(0, error_type_block, error_id_command_in_non_root_file);
-		if (specifiedasarver) asar_throw_error(0, error_type_block, error_id_xkas_asar_conflict);
-		emulatexkas=true;
-		optimizeforbank=0x100;
-		if(!force_checksum_fix)
-			checksum_fix_enabled = false;
-		sublabels[0]=":xkasdefault:";
 	}
 	else if (is0("include") || is1("includefrom"))
 	{
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (istoplevel)
 		{
-			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string(" The main file is '") + STR par + STR "'.").data());
+			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string(" The main file is '") + par + "'.").data());
 			else asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, "");
 		}
 	}
@@ -1430,46 +1390,6 @@ void assembleblock(const char * block, bool isspecialline)
 		if (!file_included_once(thisfilename))
 		{
 			includeonce.append(thisfilename);
-		}
-	}
-	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
-	{
-		int len = 0;
-		if (!confirmqpar(par)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
-		if (is1("db")) len=1;
-		if (is1("dw")) len=2;
-		if (is1("dl")) len=3;
-		if (is1("dd")) len=4;
-		autoptr<char**> pars=qpsplit(par, ",");
-		for (int i=0;pars[i];i++)
-		{
-			if (pars[i][0]=='"')
-			{
-				if (!strcmp(pars[i],"\"STAR\"") && !emulatexkas)
-					asar_throw_warning(0, warning_id_xkas_patch);
-				char * str=const_cast<char*>(safedequote(pars[i]));
-				int codepoint = 0u;
-				str += utf8_val(&codepoint, str);
-				while ( codepoint != 0 && codepoint != -1 )
-				{
-					if (len==1) write1(thetable.get_val(codepoint));
-					if (len==2) write2(thetable.get_val(codepoint));
-					if (len==3) write3(thetable.get_val(codepoint));
-					if (len==4) write4(thetable.get_val(codepoint));
-					str += utf8_val(&codepoint, str);
-				}
-				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-			}
-			else
-			{
-				const char * math=pars[i];
-				if (math[0]=='#') math++;
-				unsigned int num=(pass!=0)?getnum(math):0;
-				if (len == 1) write1(num);
-				if (len == 2) write2(num);
-				if (len == 3) write3(num);
-				if (len == 4) write4(num);
-			}
 		}
 	}
 	else if (numwords==3 && !stricmp(word[1], "="))
@@ -1734,7 +1654,7 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (is1("startpos"))
 	{
 		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_startpos_without_spcblock);
-		spcblock.execute_address=getnum64(par);
+		spcblock.execute_address=getnum(par);
 	}
 	else if (is1("base"))
 	{
@@ -1821,14 +1741,13 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (is("freespace") || is("freecode") || is("freedata"))
 	{
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		string parstr;
 		if (numwords==1) parstr="\n";//crappy hack: impossible character to cut out extra commas
 		else if (numwords==2) parstr=word[1];
 		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 		if (is("freecode")) parstr=STR"ram,"+parstr;
 		if (is("freedata")) parstr=STR"noram,"+parstr;
-		autoptr<char**> pars=split(parstr.temp_raw(), ",");
+		autoptr<char**> pars=split(parstr.temp_raw(), ',');
 		unsigned char fsbyte = 0x00;
 		int useram=-1;
 		bool fixedpos=false;
@@ -1847,9 +1766,8 @@ void assembleblock(const char * block, bool isspecialline)
 				if (useram!=-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 				useram=0;
 			}
-			else if (!stricmp(pars[i], "static") || !stricmp(pars[i], "fixed"))
+			else if (!stricmp(pars[i], "static"))
 			{
-				if (!stricmp(pars[i], "fixed")) asar_throw_warning(0, warning_id_feature_deprecated, "freespace/code/data fixed", "freespace/code/data static");
 				if (fixedpos) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 				fixedpos=true;
 			}
@@ -1909,11 +1827,11 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (is1("prot"))
 	{
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-		if (!confirmqpar(par)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 		if (!ratsmetastate) asar_throw_error(2, error_type_block, error_id_prot_not_at_freespace_start);
 		if (ratsmetastate==ratsmeta_used) step(-5);
 		int num;
-		autoptr<char**> pars=qpsplit(par, ",", &num);
+		autoptr<char**> pars=qpsplit(par, ',', &num);
+		verify_paren(pars);
 		write1('P');
 		write1('R');
 		write1('O');
@@ -1937,10 +1855,9 @@ void assembleblock(const char * block, bool isspecialline)
 		write1(0);
 		ratsmetastate=ratsmeta_used;
 	}
-	else if (is1("autoclean") || is2("autoclean") || is1("autoclear") || is2("autoclear"))
+	else if (is1("autoclean") || is2("autoclean"))
 	{
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-		if (is1("autoclear") || is2("autoclear")) asar_throw_warning(0, warning_id_autoclear_deprecated);
 		if (numwords==3)
 		{
 			if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
@@ -2001,7 +1918,6 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is0("pushpc"))
 	{
-		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		pushpc[pushpcnum].arch=arch;
 		pushpc[pushpcnum].snespos=snespos;
 		pushpc[pushpcnum].snesstart=startpos;
@@ -2032,7 +1948,6 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is0("pushbase"))
 	{
-		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		basestack[basestacknum] = snespos;
 		basestacknum++;
 	}
@@ -2102,7 +2017,7 @@ void assembleblock(const char * block, bool isspecialline)
 				{
 					namespace_list.reset();
 				}
-				namespace_list.append(STR tmpstr);
+				namespace_list.append(tmpstr);
 			}
 		}
 		else
@@ -2127,7 +2042,7 @@ void assembleblock(const char * block, bool isspecialline)
 		for (int i = 0; i < namespace_list.count; i++)
 		{
 			ns += namespace_list[i];
-			ns += STR"_";
+			ns += "_";
 		}
 	}
 	else if (is1("warnpc"))
@@ -2136,26 +2051,14 @@ void assembleblock(const char * block, bool isspecialline)
 		if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
 		if ((unsigned int)maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);
 		if ((unsigned int)snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex6((unsigned int)snespos).data(), hex6((unsigned int)maxpos).data());
-		if (warnxkas && (unsigned int)snespos == maxpos) asar_throw_warning(0, warning_id_xkas_warnpc_relaxed);
-		if (emulatexkas && (unsigned int)snespos==maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed_equal, hex6((unsigned int)snespos).data(), hex6((unsigned int)maxpos).data());
 	}
 	else if (is1("rep"))
 	{
-		int rep = (int)getnum64(par);
+		int rep = (int)getnum(par);
 		if (foundlabel) asar_throw_error(0, error_type_block, error_id_rep_label);
-		if (rep<=1)
+		if (rep<0)
 		{
-			if(rep < 0){
-				asar_throw_warning(0, warning_id_feature_deprecated, "rep condition < 0", "You probably want conditionals");
-			}
-			if (emulatexkas)
-			{
-				asar_throw_warning(0, warning_id_feature_deprecated, "rep <= 1 xkas behaviour", "You probably want conditionals");
-				if (rep==0) rep=1;
-				if (rep<0) rep=0;
-				repeatnext=rep;
-				return;
-			}
+			//todo new error for negative reps
 		}
 		repeatnext=rep;
 	}
@@ -2168,24 +2071,14 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (is1("incsrc"))
 	{
 		string name;
-		if (warnxkas && (strchr(thisfilename, '/') || strchr(thisfilename, '\\')))
-			asar_throw_warning(0, warning_id_xkas_incsrc_relative);
+#ifdef _WIN32
 		if (strchr(par, '\\'))
 		{
-			if (emulatexkas)
-			{
-				asar_throw_warning(0, warning_id_feature_deprecated, "xkas style paths", "convert paths to crossplatform style");
-				for (int i=0;par[i];i++)
-				{
-					if (par[i]=='\\') par[i]='/';//let's just hope nobody finds I could just enable this for everything.
-				}
-			}
-#ifdef _WIN32
-			else asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
-#endif
+			//todo throw error
+			asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
 		}
-		if (emulatexkas) name= safedequote(par);
-		else name=STR safedequote(par);
+#endif
+		name=safedequote(par);
 		assemblefile(name, false);
 	}
 	else if (is1("incbin") || is3("incbin"))
@@ -2203,7 +2096,7 @@ void assembleblock(const char * block, bool isspecialline)
 			if(*lengths=='(') {
 				char* tmp = strqpchr(lengths, '-');
 				if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				start = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+				start = (int)getnum(string(lengths+1, tmp-1-lengths-1));
 				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 				lengths = tmp;
 			} else {
@@ -2214,7 +2107,7 @@ void assembleblock(const char * block, bool isspecialline)
 			if(*lengths=='(') {
 				char* tmp = strchr(lengths, '\0');
 				if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				end = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+				end = (int)getnum(string(lengths+1, tmp-1-lengths-1));
 				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 				// no need to check end-of-string here
 			} else {
@@ -2223,24 +2116,14 @@ void assembleblock(const char * block, bool isspecialline)
 			}
 		}
 		string name;
-		if (warnxkas && (strchr(thisfilename, '/') || strchr(thisfilename, '\\')))
-			asar_throw_warning(0, warning_id_xkas_incsrc_relative);
+#ifdef _WIN32
 		if (strchr(par, '\\'))
 		{
-			if (emulatexkas)
-			{
-				asar_throw_warning(0, warning_id_feature_deprecated, "xkas style paths", "convert paths to crossplatform style");
-				for (int i=0;par[i];i++)
-				{
-					if (par[i]=='\\') par[i]='/';//let's just hope nobody finds I could just enable this for everything.
-				}
-			}
-#ifdef _WIN32
-			else asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
-#endif
+			//todo throw error
+			asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
 		}
-		if (emulatexkas) name= safedequote(par);
-		else name=STR safedequote(par);
+#endif
+		name = safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
 		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char*> datacopy=data;
@@ -2297,12 +2180,12 @@ void assembleblock(const char * block, bool isspecialline)
 		int amount;
 		if(numwords > 2)
 		{
-			int alignment = getnum64(word[2]);
+			int alignment = getnum(word[2]);
 			if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 			int offset = 0;
 			if(numwords==5)
 			{
-				offset = getnum64(word[4]);
+				offset = getnum(word[4]);
 				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 			}
 			if(alignment > 0x800000) asar_throw_error(0, error_type_block, error_id_alignment_too_big);
@@ -2313,7 +2196,7 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		else
 		{
-			amount = (int)getnum64(par);
+			amount = (int)getnum(par);
 			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		}
 		if(is("skip")) step(amount);
@@ -2338,12 +2221,12 @@ void assembleblock(const char * block, bool isspecialline)
 	{
 		bool fliporder=false;
 		if(0);
-		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }
-		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
-		string name=STR safedequote(par);
+		else if (striend(par, ",ltr")) { par[strlen(par)-4] = 0; }
+		else if (striend(par, ",rtl")) { par[strlen(par)-4] = 0; fliporder=true; }
+		string name=safedequote(par);
 		autoptr<char*> tablecontents=readfile(name, thisfilename);
 		if (!tablecontents) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
-		autoptr<char**> tablelines=split(tablecontents, "\n");
+		autoptr<char**> tablelines=split(tablecontents, '\n');
 		cleartable();
 		for (int i=0;tablelines[i];i++)
 		{
@@ -2463,19 +2346,8 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (is1("arch"))
 	{
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
-		if (!stricmp(par, "spc700-inline")) { asar_throw_warning(1, warning_id_feature_deprecated, "spc700-inline", " Use spcblock and spcblockend"); arch=arch_spc700_inline; return; }
-		if (!stricmp(par, "spc700-raw")) {
-			asar_throw_warning(1, warning_id_feature_deprecated, "spc700-raw", " Use arch spc700 with norom");
-			arch=arch_spc700;
-			mapper=norom;
-			mapper_set = false;
-			if(!force_checksum_fix)
-				checksum_fix_enabled = false;
-			return;
-		}
 		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
 	}
 	else if (is2("math"))
@@ -2486,43 +2358,13 @@ void assembleblock(const char * block, bool isspecialline)
 		else if (!stricmp(word[2], "off")) val=false;
 		else asar_throw_error(0, error_type_block, error_id_invalid_math);
 		if(0);
-		else if (!stricmp(word[1], "pri")){ math_pri=val; asar_throw_warning(2, warning_id_feature_deprecated, "math pri ", "use ;@asar1.9 to indicate proper math"); }
 		else if (!stricmp(word[1], "round")) math_round=val;
 		else asar_throw_error(0, error_type_block, error_id_invalid_math);
-	}
-	else if (is2("warn"))
-	{
-		bool val = false;
-		if(0);
-		else if (!stricmp(word[2], "on")) val=true;
-		else if (!stricmp(word[2], "off")) val=false;
-		else asar_throw_error(0, error_type_block, error_id_invalid_warn);
-		if(0);
-		else if (!stricmp(word[1], "xkas")) {
-			asar_throw_warning(0, warning_id_feature_deprecated, "xkas compatibility warning", "If you worry about xkas I worry about you.  Just stop.");
-			warnxkas=val;
-		}
-		else asar_throw_error(0, error_type_block, error_id_invalid_warn);
-	}
-	else if (is0("fastrom"))
-	{
-			asar_throw_warning(0, warning_id_feature_deprecated, "fastrom", "This feature has been disabled for years and is a lie. Sorry.");
-		//removed due to causing more trouble than it's worth.
-		//if (emulatexkas) warn0("Convert the patch to native Asar format instead of making an Asar-only xkas patch.");
-		//if (mapper==lorom || mapper==hirom) fastrom=true;
-		//else error(0, "Can't use fastrom in this mapper.");
 	}
 	else if (is0("{") || is0("}")) {}
 	else
 	{
-		if (isspecialline)
-		{
-			asar_throw_warning(0, warning_id_unrecognized_special_command);
-		}
-		else
-		{
-			asar_throw_error(1, error_type_block, error_id_unknown_command);
-		}
+		asar_throw_error(1, error_type_block, error_id_unknown_command);
 	}
 
 }
@@ -2578,7 +2420,8 @@ bool assemblemapper(char** word, int numwords)
 					!is_digit(par[4]) || par[5]!=',' ||
 					!is_digit(par[6]) || par[7]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
 			int len;
-			autoptr<char**> pars=qpsplit(par, ",", &len);
+			autoptr<char**> pars=qpsplit(par, ',', &len);
+			verify_paren(pars);
 			if (len!=4) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
 			sa1banks[0]=(par[0]-'0')<<20;
 			sa1banks[1]=(par[2]-'0')<<20;
@@ -2593,11 +2436,6 @@ bool assemblemapper(char** word, int numwords)
 			sa1banks[5]=3<<20;
 		}
 		mapper=sa1rom;
-	}
-	else if (is0("header"))
-	{
-		//headers are detected elsewhere; ignoring for familiarity
-		asar_throw_warning(0, warning_id_feature_deprecated, "header", "Remove command, unnecessary.");
 	}
 	else return false;
 
