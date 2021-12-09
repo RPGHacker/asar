@@ -17,8 +17,6 @@
 #include <functional>
 #include <algorithm>
 
-bool math_round=false;
-
 static const char * str;
 //save before calling eval if needed after
 static const char * current_user_function_name;
@@ -867,10 +865,9 @@ static double getnumcore()
 	return 0.0;
 }
 
-static double sanitize(double val)
+inline double sanitize(double val)
 {
 	if (val != val) asar_throw_error(2, error_type_block, error_id_nan);
-	if (math_round) return trunc(val); // originally used int cast, but that broke numbers > $8000_0000
 	return val;
 }
 
@@ -937,8 +934,6 @@ notposneglabel:
 	while (*str && *str != ')' && *str != ','&& *str != ']')
 	{
 		while (*str==' ') str++;
-		// why was this an int cast
-		if (math_round) left=trunc(left);
 #define oper(name, thisdepth, contents)      \
 			if (!strncmp(str, name, strlen(name))) \
 			{                                      \

@@ -537,13 +537,14 @@ inline const char * dequote(char * str)
 
 inline char * strqchr(const char * str, char key)
 {
-	const char *search = str - 1;
+	const char *search = strchr(str, '"');
 	const char *key_search = strchr(str, key);
-	while((search = strchr(search + 1, '"')))
+	while(search && key_search)
 	{
 		if(key_search < search) return (char *)key_search;
 		search = strchr(search + 1, '"');
-		if(key_search < search) key_search = strchr(key_search + 1, key);
+		while(key_search && key_search < search) key_search = strchr(key_search + 1, key);
+		search = strchr(search + 1, '"');
 	}
 	return (char *)key_search;
 }

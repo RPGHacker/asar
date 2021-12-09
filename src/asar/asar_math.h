@@ -16,5 +16,3 @@ double math(const char * mystr);
 extern bool foundlabel;
 extern bool foundlabel_static;
 extern bool forwardlabel;
-
-extern bool math_round;

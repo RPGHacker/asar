@@ -721,8 +721,6 @@ void initstuff()
 	in_sub_struct = false;
 	in_spcblock = false;
 
-	math_round=true;
-
 	if (arch==arch_65816) asinit_65816();
 	if (arch==arch_spc700) asinit_spc700();
 	if (arch==arch_spc700_inline) asinit_spc700();
@@ -2359,17 +2357,6 @@ void assembleblock(const char * block)
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
 		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
-	}
-	else if (is2("math"))
-	{
-		bool val = false;
-		if(0);
-		else if (!stricmp(word[2], "on")) val=true;
-		else if (!stricmp(word[2], "off")) val=false;
-		else asar_throw_error(0, error_type_block, error_id_invalid_math);
-		if(0);
-		else if (!stricmp(word[1], "round")) math_round=val;
-		else asar_throw_error(0, error_type_block, error_id_invalid_math);
 	}
 	else if (is0("{") || is0("}")) {}
 	else

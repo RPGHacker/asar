@@ -214,7 +214,6 @@
 ;P>
 asar 1.40
 
-math round off
 lorom
 
 org $008000
