@@ -24,15 +24,15 @@ void startmacro(const char * line_)
 	if (!confirmqpar(line_)) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	string line=line_;
 	clean(line);
-	char * startpar=strqchr(line.data(), '(');
+	char * startpar=(char *)strchr(line.data(), '(');
 	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	*startpar=0;
 	startpar++;
 	if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_invalid_macro_name);
 	thisname=line;
-	char * endpar=strqrchr(startpar, ')');
+	char * endpar=startpar+strlen(startpar)-1;
 	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nullptrs
-	if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+	if (*endpar != ')') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	*endpar=0;
 	for (int i=0;startpar[i];i++)
 	{
@@ -96,15 +96,16 @@ void callmacro(const char * data)
 	if (!confirmqpar(data)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	string line=data;
 	clean(line);
-	char * startpar=strqchr(line.data(), '(');
+	char * startpar=(char *)strchr(line.data(), '(');
 	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	*startpar=0;
 	startpar++;
 	if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	if (!macros.exists(line)) asar_throw_error(0, error_type_block, error_id_macro_not_found, line.data());
 	thismacro = macros.find(line);
-	char * endpar=strqrchr(startpar, ')');
-	if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
+	char * endpar=startpar+strlen(startpar)-1;
+	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nullptrs
+	if (*endpar != ')') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	*endpar=0;
 	autoptr<const char * const*> args;
 	int numargs=0;

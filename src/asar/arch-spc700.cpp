@@ -71,7 +71,7 @@ static bool matchandwrite(const char * str, const char * left, const char * righ
 static bool bitmatch(const char * opnamein, string& opnameout, const char * str, string& math, int& bit)
 {
 	const char * opnameend=strchr(opnamein, '\0');
-	const char * dot=strqrchr(str, '.');
+	const char * dot=strrchr(str, '.');
 	if (dot && is_digit(dot[1]) && !dot[2])
 	{
 		bit=atoi(dot+1);
