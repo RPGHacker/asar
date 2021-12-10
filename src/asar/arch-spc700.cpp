@@ -74,7 +74,7 @@ static bool bitmatch(const char * opnamein, string& opnameout, const char * str,
 	const char * dot=strrchr(str, '.');
 	if (dot && is_digit(dot[1]) && !dot[2])
 	{
-		bit=atoi(dot+1);
+		bit = dot[1]-'0';
 		if (bit>=8) return false;
 		math=substr(str, (int)(dot-str));
 		if (opnameend[-1]=='1') opnameout=substr(opnamein, (int)(opnameend-opnamein-1));

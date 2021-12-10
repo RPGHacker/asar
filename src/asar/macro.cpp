@@ -201,8 +201,8 @@ void callmacro(const char * data)
 						int arg_num = getnum(in);
 
 						if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
-
-						if(numif<=numtrue){
+						//conditionals deserve all my hate
+						if(numif==numtrue || (numif==numtrue+1 && !stricmpwithlower(out.data(), "elseif "))){
 							if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
 							if (arg_num > numargs-thismacro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
 							if (args[arg_num+thismacro->numargs-1][0]=='"')
