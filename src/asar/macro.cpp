@@ -140,9 +140,8 @@ void callmacro(const char * data)
 			thisline= thismacro->startline+i+1;
 			thisblock= nullptr;
 			string out;
-			string connectedline;
-			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, connectedline);
-			string intmp = connectedline;
+			string intmp;
+			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, intmp);
 			for (char * in=intmp.temp_raw();*in;)
 			{
 				if (*in=='<' && in[1]=='<' && in[2] != ':')
@@ -184,12 +183,7 @@ void callmacro(const char * data)
 						if (!strcmp(in, thismacro->arguments[j]))
 						{
 							found=true;
-							if (args[j][0]=='"')
-							{
-								string s=args[j];
-								out+=safedequote(s.temp_raw());
-							}
-							else out+=args[j];
+							out+=(char *)safedequote((char *)args[j]);
 							break;
 						}
 					}
@@ -202,15 +196,10 @@ void callmacro(const char * data)
 
 						if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
 						//conditionals deserve all my hate
-						if(numif==numtrue || (numif==numtrue+1 && !stricmpwithlower(out.data(), "elseif "))){
+						if(numif==numtrue || (numif==numtrue+1 && stribegin(out.data(), "elseif "))){
 							if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
 							if (arg_num > numargs-thismacro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
-							if (args[arg_num+thismacro->numargs-1][0]=='"')
-							{
-								string s=args[arg_num+thismacro->numargs-1];
-								out+=safedequote(s.temp_raw());
-							}
-							else out+=args[arg_num+thismacro->numargs-1];
+							out+=(char *)safedequote((char *)args[arg_num+thismacro->numargs-1]);
 						}
 					}
 					in=end+1;

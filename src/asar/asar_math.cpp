@@ -935,15 +935,15 @@ notposneglabel:
 	{
 		while (*str==' ') str++;
 #define oper(name, thisdepth, contents)      \
-			if (!strncmp(str, name, strlen(name))) \
-			{                                      \
-				if (depth<=thisdepth)              \
-				{                                  \
-					str+=strlen(name);               \
-					right=eval(thisdepth+1);         \
-				}                                  \
-				else return left;                  \
-				left=sanitize(contents);             \
+			if (!strncmp(str, name, strlen(name)))       \
+			{                                            \
+				if (depth<=thisdepth)                \
+				{                                    \
+					str+=strlen(name);           \
+					right=eval(thisdepth+1);     \
+				}                                    \
+				else return left;                    \
+				left=contents;                       \
 				continue;                            \
 			}
 		oper("**", 4, pow((double)left, (double)right));
