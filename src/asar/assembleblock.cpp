@@ -926,13 +926,6 @@ string handle_print(char* input)
 
 void assembleblock(const char * block)
 {
-	string tmp=block;
-	int numwords;
-	char ** word = qsplit(tmp.temp_raw(), ' ', &numwords);
-	// when writing out the data for the addrToLine mapping,
-	// we want to write out the snespos we had before writing opcodes
-	int addrToLinePos = realsnespos & 0xFFFFFF;
-
 #define is(test) (!stricmpwithlower(word[0], test))
 #define is0(test) (numwords==1 && !stricmpwithlower(word[0], test))
 #define is1(test) (numwords==2 && !stricmpwithlower(word[0], test))
@@ -942,50 +935,32 @@ void assembleblock(const char * block)
 
 	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
 	// This really seems like the only possible place for the fix
-	if (numtrue+1==numif && is("elseif"))
+	string tmp;
+	if (numtrue+1==numif && stribegin(block, "elseif "))
 	{
-		tmp = "";
 		resolvedefines(tmp, block);
-		free(word);
-		word = qsplit(tmp.temp_raw(), ' ', &numwords);
 	}
+	else
+	{
+		tmp=block;
+	}
+	int numwords;
+	char ** word = qsplit(tmp.temp_raw(), ' ', &numwords);
 	autoptr<char **> scope_word = word;
+	// when writing out the data for the addrToLine mapping,
+	// we want to write out the snespos we had before writing opcodes
+	int addrToLinePos = realsnespos & 0xFFFFFF;
 
 	if(!moreonlinecond && !(is("elseif") || is("else"))){
 		return;
 	}
 
-	if (numif==numtrue && is1("global")) {
-		if (!addlabel(word[1], -1, true)) {
-			asar_throw_error(1, error_type_block, error_id_invalid_global_label, word[1]);
-		}
-		return;
-	}
 	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
 	{
 		word++;
 		numwords--;
 	}
 	if (!word[0] || !word[0][0]) return;
-	if (numif==numtrue && word[0][0]=='%')
-	{
-		if (!macrorecursion)
-		{
-			callerfilename=thisfilename;
-			callerline=thisline;
-		}
-		int fakeendif_prev = fakeendif;
-		int moreonlinecond_prev = moreonlinecond;
-		callmacro(strchr(block, '%')+1);
-		fakeendif = fakeendif_prev;
-		moreonlinecond = moreonlinecond_prev;
-		if (!macrorecursion)
-		{
-			callerfilename="";
-			callerline=-1;
-		}
-		return;
-	}
 	if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
 		if(is("if") && moreonline) fakeendif++;
@@ -1183,6 +1158,24 @@ void assembleblock(const char * block)
 			}
 		}
 	}
+	else if(word[0][0]=='%')
+	{
+		if (!macrorecursion)
+		{
+			callerfilename=thisfilename;
+			callerline=thisline;
+		}
+		int fakeendif_prev = fakeendif;
+		int moreonlinecond_prev = moreonlinecond;
+		callmacro(strchr(block, '%')+1);
+		fakeendif = fakeendif_prev;
+		moreonlinecond = moreonlinecond_prev;
+		if (!macrorecursion)
+		{
+			callerfilename="";
+			callerline=-1;
+		}
+	}
 	else if (is("macro"))
 	{
 		//todo better error
@@ -1269,6 +1262,13 @@ void assembleblock(const char * block)
 			{
 				asar_throw_error(0, error_type_null, error_id_invalid_warning_id, "warnings disable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
 			}
+		}
+	}
+	else if(is1("global"))
+	{
+		if (!addlabel(word[1], -1, true))
+		{
+			asar_throw_error(1, error_type_block, error_id_invalid_global_label, word[1]);
 		}
 	}
 	else if (is2("check"))
