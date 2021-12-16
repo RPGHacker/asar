@@ -47,6 +47,7 @@ void startmacro(const char * line_)
 	if (*startpar)
 	{
 		char **arguments = split(duplicate_string(startpar), ',', &thisone->numargs);
+		thisone->arguments_buffer = arguments[0];
 		for (int i=0;arguments[i];i++)
 		{
 			arguments[i] = strip_whitespace(arguments[i]);
@@ -58,6 +59,7 @@ void startmacro(const char * line_)
 		const char ** noargs=(const char**)malloc(sizeof(const char**));
 		*noargs=nullptr;
 		thisone->arguments=noargs;
+		thisone->arguments_buffer = nullptr;
 		thisone->numargs=0;
 	}
 	thisone->variadic = false;

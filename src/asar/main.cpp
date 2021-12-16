@@ -804,7 +804,7 @@ static void clearmacro(const string & key, macrodata* & macro)
 	(void)key;
 	macro->lines.~autoarray();
 	cfree(macro->fname);
-	cfree(macro->arguments[0]);
+	cfree(macro->arguments_buffer);
 	cfree(macro->arguments);
 	cfree(macro);
 }

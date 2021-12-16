@@ -18,6 +18,7 @@ struct macrodata
 	int startline;
 	const char * fname;
 	const char * const* arguments;
+	const char *arguments_buffer;
 	int numargs;
 	bool variadic;
 };
