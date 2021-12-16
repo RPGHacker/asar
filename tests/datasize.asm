@@ -5,8 +5,6 @@ org $008000
 main:
 
 lda #datasize(my_table)		;3
-; RPG Hacker: Don't quite get why this throws each warning twice.
-; Seems a bit buggy, but I couldn't find anything out, and really don't care enough.
 lda #datasize(other_label)	;0xFFFFFF
 lda #datasize(main)		;9
 

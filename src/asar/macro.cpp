@@ -23,7 +23,7 @@ void startmacro(const char * line_)
 	thisone= nullptr;
 	if (!confirmqpar(line_)) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	string line=line_;
-	clean(line);
+	line.qnormalize();
 	char * startpar=(char *)strchr(line.data(), '(');
 	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	*startpar=0;
@@ -37,7 +37,7 @@ void startmacro(const char * line_)
 	for (int i=0;startpar[i];i++)
 	{
 		char c=startpar[i];
-		if (!is_alnum(c) && c!='_' && c!=','&& c!='.') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+		if (!is_alnum(c) && c!='_' && c!=','&& c!='.'&& c!=' ') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 		if (c==',' && is_digit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	}
 	if (*startpar==',' || is_digit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
@@ -46,7 +46,12 @@ void startmacro(const char * line_)
 	new(thisone) macrodata;
 	if (*startpar)
 	{
-		thisone->arguments=(const char* const*)split(duplicate_string(startpar), ',', &thisone->numargs);
+		char **arguments = split(duplicate_string(startpar), ',', &thisone->numargs);
+		for (int i=0;arguments[i];i++)
+		{
+			arguments[i] = strip_whitespace(arguments[i]);
+		}
+		thisone->arguments=(const char* const*)arguments;
 	}
 	else
 	{
@@ -95,7 +100,7 @@ void callmacro(const char * data)
 	macrodata * thismacro;
 	if (!confirmqpar(data)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	string line=data;
-	clean(line);
+	line.qnormalize();
 	char * startpar=(char *)strchr(line.data(), '(');
 	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	*startpar=0;
@@ -183,7 +188,7 @@ void callmacro(const char * data)
 						if (!strcmp(in, thismacro->arguments[j]))
 						{
 							found=true;
-							out+=(char *)safedequote((char *)args[j]);
+							out+=(char *)safedequote(strip_whitespace((char *)args[j]));
 							break;
 						}
 					}
@@ -199,7 +204,7 @@ void callmacro(const char * data)
 						if(numif==numtrue || (numif==numtrue+1 && stribegin(out.data(), "elseif "))){
 							if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
 							if (arg_num > numargs-thismacro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
-							out+=(char *)safedequote((char *)args[arg_num+thismacro->numargs-1]);
+							out+=(char *)safedequote(strip_whitespace((char *)args[arg_num+thismacro->numargs-1]));
 						}
 					}
 					in=end+1;

@@ -20,8 +20,6 @@
 extern unsigned const char * romdata_r;
 extern int romlen_r;
 
-#define clean(string) do { string.qnormalize(); } while(0)
-
 inline void verify_paren(autoptr<char **> &ptr)
 {
 	 if(!ptr) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);

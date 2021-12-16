@@ -406,7 +406,7 @@ void resolvedefines(string& out, const char * start)
 				}
 				//if (strqchr(val.data(), ';')) *strqchr(val.data(), ';')=0;
 				if (*here && !stribegin(here, " : ")) asar_throw_error(0, error_type_line, error_id_broken_define_declaration);
-				clean(val);
+				val.qnormalize();
 
 				// RPG Hacker: throw an error if we're trying to overwrite built-in defines.
 				if (builtindefines.exists(defname))
@@ -493,7 +493,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	try
 	{
 		string tmp=line;
-		clean(tmp);
+		tmp.qnormalize();
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);
 		else out=tmp;

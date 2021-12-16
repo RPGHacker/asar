@@ -1010,7 +1010,6 @@ void assembleblock(const char * block)
 			bool thiscond = false;
 			if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
 			{
-
 				double val = getnumdouble(nextword[0]);
 				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 				thiscond = (val > 0);
@@ -1026,9 +1025,9 @@ void assembleblock(const char * block)
 			{
 				if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 				double par1=getnumdouble(nextword[0]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 				double par2=getnumdouble(nextword[2]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 				if(0);
 				else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
 				else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
@@ -1056,7 +1055,6 @@ void assembleblock(const char * block)
 			cond=thiscond;
 			break;
 		}
-
 		if (is("if") || is("while"))
 		{
 			if(0);
@@ -2246,25 +2244,25 @@ void assembleblock(const char * block)
 				int codepoint;
 				linepos += utf8_val(&codepoint, linepos);
 				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-				if (*linepos != '=') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (*linepos != '=') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				linepos++;
-				if (linepos[1]=='x' || linepos[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (linepos[1]=='x' || linepos[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				char * end;
 				unsigned int val = (unsigned int)strtol(linepos, &end, 16);
-				if (*end != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (*end != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				thetable.set_val(codepoint, val);
 			}
 			else
 			{
-				if (tableline[1]=='x' || tableline[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (tableline[1]=='x' || tableline[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				char * eq;
 				unsigned int val=(unsigned int)strtol(tableline, &eq, 16);
-				if (eq[0]!='=') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (eq[0]!='=') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				const char* linepos = eq+1;
 				int codepoint;
 				linepos += utf8_val(&codepoint, linepos);
 				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-				if (*linepos != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file);
+				if (*linepos != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
 				thetable.set_val(codepoint, val);
 			}
 		}
@@ -2276,7 +2274,7 @@ void assembleblock(const char * block)
 			if (stricmp(word[2], "=")) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			if (!confirmqpar(word[1])) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			string line=word[1];
-			clean(line);
+			line.qnormalize();
 			char * startpar=strqchr(line.data(), '(');
 			if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			*startpar=0;
@@ -2310,6 +2308,7 @@ void assembleblock(const char * block)
 		if (is("padlong")) len=3;
 		if (is("paddword")) len=4;
 		unsigned int val=getnum(par);
+		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in padbyte", "just... don't.");
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -2341,6 +2340,7 @@ void assembleblock(const char * block)
 		if (is("filllong")) len=3;
 		if (is("filldword")) len=4;
 		unsigned int val= getnum(par);
+		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in fillbyte", "just... don't");
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
