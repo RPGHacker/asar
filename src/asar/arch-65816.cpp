@@ -68,7 +68,6 @@ bool asblock_65816(char** word, int numwords)
 	bool explicitlen = false;
 	bool hexconstant = false;
 	if(0);
-	else if (assemblemapper(word, numwords)) {}
 #define getvars(optbank) num=(pass!=0)?getnum(par):0; hexconstant=is_hex_constant(par); if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
 #define match(left, right) (word[1] && stribegin(par, left) && striend(par, right))
 #define init(left, right) strip_suffix(par, right); strip_prefix(par, left); getvars(false)
@@ -211,10 +210,10 @@ bool asblock_65816(char** word, int numwords)
 		if (false)
 		{
 opAFallback:
-			unsigned int tmp=0;
+			snes_label tmp;
 			if (pass && !labelval(par, &tmp)) return false;
 			len=getlen(par);
-			num=tmp;
+			num=tmp.pos;
 		}
 		if (is("JSR") || is("JMP"))
 		{
@@ -245,6 +244,7 @@ opAFallback:
 		as2("PEA", 0xF4);
 		if (emulatexkas)
 		{
+			asar_throw_warning(0, warning_id_feature_deprecated, "usage of jmp instead of jml ", "use jml instead");
 			as3("JMP", 0x5C);//all my hate
 			//as3("JSR", 0x22);
 		}

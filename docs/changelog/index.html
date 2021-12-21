@@ -38,8 +38,47 @@
 
 		<hr />
 
+		<div><h2>v1.90</h2>
+		<b>Release:</b> ???
+
+		<h3>Contributors:</h3>
+		<ul>
+			<li>RPG Hacker</li>
+		</ul>
+
+		<h3>New features:</h3>
+		<ul>
+			<li>The Asar test suite can now verify user-printable strings. (RPG Hacker)</li>
+			<li>The <code>error</code>, <code>warn</code> and <code>assert</code> commands now support the same functions as the print command. (RPG Hacker)</li>
+			<li>Static labels (i.e. labels that don't move between passes) can now be used in more places, including if statements. (RPG Hacker)</li>
+		</ul>
+
+		<h3>Bug fixes:</h3>
+		<ul>
+			<li>Variadic arguments in macros can now also take zero arguments, which can be used to implement optional arguments. (RPG Hacker)</li>
+			<li>Escaping quotes in macro calls now works more reliably. (RPG Hacker)</li>
+			<li>Macro calls & definitions no longer break as easily from including whitespace. (RPG Hacker)</li>
+			<li>For invalid table files, Asar now prints the line number of the first invalid entry. (RPG Hacker)</li>
+		</ul></div>
+
+		<hr />
+
+		<div><h2>v1.81</h2>
+		<b>Release:</b> January 20, 2021
+
+		<h3>Contributors:</h3>
+		<ul><li>p4plus2</li></ul>
+
+		<h3>Bug fixes:</h3>
+		<ul>
+			<li>Prevent defines from being resolved in false branches of if statements when inside variadic macros</li>
+			<li>Fix a phantom error when referencing a struct before defining it</li>
+		</ul></div>
+
+		<hr />
+
 		<div><h2>v1.80</h2>
-		<b>Release:</b> ?
+		<b>Release:</b> January 18, 2021
 
 		<h3>Contributors:</h3>
 		<ul>
@@ -48,6 +87,9 @@
 			<li>p4plus2</li>
 			<li>CypherSignal</li>
 			<li>LDAsuku</li>
+			<li>Katrina</li>
+			<li>Atari2.0</li>
+			<li>Vitor Vilela</li>
 		</ul>
 
 		<h3>New features:</h3>
@@ -59,11 +101,13 @@
 			<li>The <code>sizeof()</code> and <code>objectsize()</code> functions don't need quotes around the struct name anymore. For backwards compatibilty, quotes are still allowed. (p4plus2)</li>
 			<li>There is a new label optimizer, which can convert RAM labels to direct page or word accesses where possible. For this there are 3 new commands: <code>dpbase</code>, <code>optimize dp</code> and <code>optimize address</code>. (p4plus2)</li>
 			<li>The <code>floor()</code> and <code>ceil()</code> functions have been added. (randomdude999)</li>
-			<li>The <code>bank()</code> and <code><:</code> function and math operator have been added (p4plus2)</li>
+			<li>The <code>bank()</code> and <code>&lt;:</code> function and math operator have been added (p4plus2)</li>
 			<li>The <code>datasize()</code> function has been added. (p4plus2)</li>
 			<li>Warning if the mapper mode is changed after being set (p4plus2)</li>
 			<li>Major improvements to internal string handling in asar (makes asar significantly faster) (p4plus2)</li>
 			<li>Variadic macro support (p4plus2)</li>
+			<li>Support for global labels (p4plus2)</li>
+			<li>Errors about crossing banks have been improved, now they print the exact line where the bank border was crossed instead of saying it was "somewhere before this point". (randomdude999)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
@@ -88,7 +132,14 @@
 			<li>Fixed a memory corruption in spc700 processing (p4plus2)</li>
 			<li>Fixed various memory bugs (found via valgrind/fsanitize) (p4plus2)</li>
 			<li>Fixed a case where if statements wouldn't always throw an error (randomdude999)</li>
-		</ul>
+			<li>Fixed a case where you could get invisible errors when prefixing commands with <code>@</code> (randomdude999)</li>
+			<li>Fixed <code>arch superfx</code> ignoring all commands with more than 2 words (randomdude999)</li>
+			<li>Fixed non-ASCII characters in strings being written as garbage (Katrina)</li>
+			<li>Fixed crashes when getting into an infinite recursion loop (randomdude999)</li>
+			<li>Improvements to syntax highlighting in the Asar manual (Atari2.0)</li>
+			<li>The C# wrapper has been updated to work with Asar versions 1.60 and newer. (Vitor Vilela)</li>
+			<li>Improved error message for SPC instructions with out of range arguments (randomdude999)</li>
+		</ul></div>
 
 		<hr />
 
@@ -104,7 +155,7 @@
 			<li>The <code>canread()</code> functions returned true for the first byte after the end of the ROM. That has been fixed.</li>
 			<li>Using <code>check bankcross off</code> now should mess with the PC less (i.e. no forced fastrom addressing).</li>
 			<li>Using the <code>error</code> command now doesn't print the line of code that caused the error. All warnings except for the one from the <code>warn</code> command should now print the line of code that caused the warning. (note that not all warnings or errors are associated with a specific line of code.)</li>
-		</ul>
+		</ul></div>
 
 		<hr />
 
@@ -136,7 +187,7 @@
 			<li>Values larger than $80000000 in things like <code>dd</code> should work better (randomdude999)</li>
 			<li>Fixed a freespace leak when using <code>prot</code> (randomdude999, found by WhiteYoshiEgg)</li>
 			<li>Fixed Windows header includes, to make cross-compilation of Asar on Linux work better (boldowa)</li>
-		</ul>
+		</ul></div>
 		
 		<hr />
 
@@ -385,7 +436,7 @@ $FF</code></pre>
 
 		<div><h2>v1.37</h2>
 		
-		<b>Release:</b> April 30, 2016
+		<b>Release:</b> March 26, 2016
 
 		<h3>Contributors:</h3>
 		<ul>
@@ -422,29 +473,30 @@ $FF</code></pre>
 	
 			<div><h2>v1.36</h2>
 			
-			<b>Release:</b> December 22, 2013
+			<b>Release:</b> November 28, 2013
 	
 			<h3>Contributors:</h3>
 			<ul>
 				<li>Alcaro</li>
 			</ul></div>
-			
+
+			<h3>New features:</h3>
+			<ul>
+				<li>Added the fullsa1rom mapper.</li>
+				<li>Asar now halts if more than 20 errors are detected.</li>
+			</ul>
+
+
+			<h3>Bug fixes:</h3>
+			<ul>
+				<li>Fixed a warning about $xx,y not existing if $xxxx,y doesn't exist either</li>
+				<li>Fixed sublabels requiring a parent label even in xkas compatibility mode</li>
+				<li>Fixed a memory leak in the DLL</li>
+			</ul>
 	
 			<hr />
 	
 			<div><h2>v1.35</h2>
-			
-			<b>Release:</b> March 13, 2013
-	
-			<h3>Contributors:</h3>
-			<ul>
-				<li>Alcaro</li>
-			</ul></div>
-			
-			
-			<hr />
-			
-			<div><h2>v?.??</h2>
 			
 			<b>Release:</b> December 13, 2012
 	

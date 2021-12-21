@@ -9,8 +9,11 @@
 #include "interface-shared.h"
 #include "assembleblock.h"
 #include "asar_math.h"
-#include <cstdint>
+#if defined(_WIN32)
+#include "dll_helper.h"
+#endif
 
+#include <cstdint>
 #if defined(CPPCLI)
 #define EXPORT extern "C"
 #elif defined(_WIN32)
@@ -23,6 +26,10 @@ static autoarray<const char *> prints;
 static string symbolsfile;
 static int numprint;
 static uint32_t romCrc;
+
+struct patchparams_base {
+	int structsize;
+};
 
 struct errordata {
 	const char * fullerrdata;
@@ -73,9 +80,9 @@ static void fillerror(errordata& myerr, int errid, const char * type, const char
 	if (thisblock) myerr.block= duplicate_string(thisblock);
 	else myerr.block= duplicate_string("");
 	myerr.rawerrdata= duplicate_string(str);
-	myerr.fullerrdata= duplicate_string(S getdecor()+type+str+((thisblock&&show_block)?(S" ["+thisblock+"]"):""));
+	myerr.fullerrdata= duplicate_string(STR getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):""));
 	myerr.callerline=callerline;
-	myerr.callerfilename=callerfilename;
+	myerr.callerfilename=callerfilename ? duplicate_string(callerfilename) : nullptr;
 	myerr.errid = errid;
 }
 
@@ -89,7 +96,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 	else if (pass == whichpass) {
 		// don't show current block if the error came from an error command
 		bool show_block = (errid != error_id_error_command);
-		fillerror(errors[numerror++], errid, S "error: (E" + dec(errid) + "): ", e_, show_block);
+		fillerror(errors[numerror++], errid, STR "error: (E" + dec(errid) + "): ", e_, show_block);
 	}
 	else {}//ignore anything else
 }
@@ -98,7 +105,7 @@ void warn(int errid, const char * str)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (errid != warning_id_warn_command);
-	fillerror(warnings[numwarn++], errid, S "warning: (W" + dec(errid) + "): ", str, show_block);
+	fillerror(warnings[numwarn++], errid, STR "warning: (W" + dec(errid) + "): ", str, show_block);
 }
 
 static void resetdllstuff()
@@ -116,6 +123,7 @@ static void resetdllstuff()
 		free_and_null(errors[i].filename);
 		free_and_null(errors[i].rawerrdata);
 		free_and_null(errors[i].fullerrdata);
+		free_and_null(errors[i].callerfilename);
 		free_and_null(errors[i].block);
 	}
 	errors.reset();
@@ -126,6 +134,7 @@ static void resetdllstuff()
 		free_and_null(warnings[i].filename);
 		free_and_null(warnings[i].rawerrdata);
 		free_and_null(warnings[i].fullerrdata);
+		free_and_null(warnings[i].callerfilename);
 		free_and_null(warnings[i].block);
 	}
 	warnings.reset();
@@ -145,20 +154,13 @@ static autoarray<labeldata> ldata;
 static int labelsinldata = 0;
 static bool expectsNewAPI = false;
 
-static void addlabel(const string & name, unsigned int & value)
+static void addlabel(const string & name, const snes_label & label_data)
 {
 	labeldata label;
 	label.name = strdup(name);
-	label.location = (int)(value & 0xFFFFFF);
+	label.location = (int)(label_data.pos & 0xFFFFFF);
 	ldata[labelsinldata++] = label;
 }
-
-
-
-struct patchparams_base
-{
-	int structsize;
-};
 
 struct patchparams_v160 : public patchparams_base
 {
@@ -281,120 +283,134 @@ EXPORT void asar_close()
 	resetdllstuff();
 }
 
-EXPORT bool asar_patch(const char * patchloc, char * romdata_, int buflen, int * romlen_)
+EXPORT bool asar_patch(const char *patchloc, char *romdata_, int buflen, int *romlen_)
 {
-	asar_patch_begin(romdata_, buflen, romlen_, true);
+	auto execute_patch = [&]() {
+		asar_patch_begin(romdata_, buflen, romlen_, true);
 
-	virtual_filesystem new_filesystem;
-	new_filesystem.initialize(nullptr, 0);
-	filesystem = &new_filesystem;
-	
-	asar_patch_main(patchloc);
+		virtual_filesystem new_filesystem;
+		new_filesystem.initialize(nullptr, 0);
+		filesystem = &new_filesystem;
 
-	new_filesystem.destroy();
-	filesystem = nullptr;
+		asar_patch_main(patchloc);
 
-	return asar_patch_end(romdata_, buflen, romlen_);
+		new_filesystem.destroy();
+		filesystem = nullptr;
+
+		return asar_patch_end(romdata_, buflen, romlen_);
+	};
+#if defined(_WIN32)
+	return run_as_fiber(execute_patch);
+#else
+	return execute_patch();
+#endif
 }
 
-EXPORT bool asar_patch_ex(const patchparams_base* params)
+EXPORT bool asar_patch_ex(const patchparams_base *params)
 {
-	if (params == nullptr)
-	{
-		asar_throw_error(pass, error_type_null, error_id_params_null);
-	}
-
-	if (params->structsize != sizeof(patchparams_v160))
-	{
-		asar_throw_error(pass, error_type_null, error_id_params_invalid_size);
-	}
-
-	patchparams paramscurrent;
-	memset(&paramscurrent, 0, sizeof(paramscurrent));
-	memcpy(&paramscurrent, params, (size_t)params->structsize);
-
-
-	asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen, paramscurrent.should_reset);
-
-	autoarray<string> includepaths;
-	autoarray<const char*> includepath_cstrs;
-
-	for (int i = 0; i < paramscurrent.numincludepaths; ++i)
-	{
-		if (!path_is_absolute(paramscurrent.includepaths[i])) asar_throw_warning(pass, warning_id_relative_path_used, "include search");
-		string& newpath = includepaths.append(paramscurrent.includepaths[i]);
-		includepath_cstrs.append((const char*)newpath);
-	}
-
-	if (paramscurrent.stdincludesfile != nullptr) {
-		if (!path_is_absolute(paramscurrent.stdincludesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std includes file");
-		string stdincludespath = paramscurrent.stdincludesfile;
-		parse_std_includes(stdincludespath, includepaths);
-	}
-
-	for (int i = 0; i < includepaths.count; ++i)
-	{
-		includepath_cstrs.append((const char*)includepaths[i]);
-	}
-
-	size_t includepath_count = (size_t)includepath_cstrs.count;
-	virtual_filesystem new_filesystem;
-	new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
-	filesystem = &new_filesystem;
-
-	for(int i = 0; i < paramscurrent.memory_file_count; ++i) {
-		memoryfile f = paramscurrent.memory_files[i];
-		filesystem->add_memory_file(f.path, f.buffer, f.length);
-	}
-
-	clidefines.reset();
-	for (int i = 0; i < paramscurrent.definecount; ++i)
-	{
-		string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
-		name = strip_whitespace(name);
-		name = strip_prefix(name, '!', false); // remove leading ! if present
-		if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
-		if (clidefines.exists(name)) {
-			asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.data());
-			return false;
-		}
-		string contents = (paramscurrent.additional_defines[i].contents != nullptr ? paramscurrent.additional_defines[i].contents : "");
-		clidefines.create(name) = contents;
-	}
-
-	if (paramscurrent.stddefinesfile != nullptr) {
-		if (!path_is_absolute(paramscurrent.stddefinesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std defines file");
-		string stddefinespath = paramscurrent.stddefinesfile;
-		parse_std_defines(stddefinespath);
-	} else {
-		parse_std_defines(nullptr); // needed to populate builtin defines
-	}
-
-	for (int i = 0; i < paramscurrent.warning_setting_count; ++i)
-	{
-		asar_warning_id warnid = parse_warning_id_from_string(paramscurrent.warning_settings[i].warnid);
-
-		if (warnid != warning_id_end)
+	auto execute_patch = [&]() {
+		if (params == nullptr)
 		{
-			set_warning_enabled(warnid, paramscurrent.warning_settings[i].enabled);
+			asar_throw_error(pass, error_type_null, error_id_params_null);
 		}
-		else
+
+		if (params->structsize != sizeof(patchparams_v160))
 		{
-			asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "asar_patch_ex() warning_settings", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+			asar_throw_error(pass, error_type_null, error_id_params_invalid_size);
 		}
-	}
 
-	if(paramscurrent.override_checksum_gen) {
-		checksum_fix_enabled = paramscurrent.generate_checksum;
-		force_checksum_fix = true;
-	}
+		patchparams paramscurrent;
+		memset(&paramscurrent, 0, sizeof(paramscurrent));
+		memcpy(&paramscurrent, params, (size_t)params->structsize);
 
-	asar_patch_main(paramscurrent.patchloc);
 
-	new_filesystem.destroy();
-	filesystem = nullptr;
+		asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen, paramscurrent.should_reset);
 
-	return asar_patch_end(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
+		autoarray<string> includepaths;
+		autoarray<const char*> includepath_cstrs;
+
+		for (int i = 0; i < paramscurrent.numincludepaths; ++i)
+		{
+			if (!path_is_absolute(paramscurrent.includepaths[i])) asar_throw_warning(pass, warning_id_relative_path_used, "include search");
+			string& newpath = includepaths.append(paramscurrent.includepaths[i]);
+			includepath_cstrs.append((const char*)newpath);
+		}
+
+		if (paramscurrent.stdincludesfile != nullptr) {
+			if (!path_is_absolute(paramscurrent.stdincludesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std includes file");
+			string stdincludespath = paramscurrent.stdincludesfile;
+			parse_std_includes(stdincludespath, includepaths);
+		}
+
+		for (int i = 0; i < includepaths.count; ++i)
+		{
+			includepath_cstrs.append((const char*)includepaths[i]);
+		}
+
+		size_t includepath_count = (size_t)includepath_cstrs.count;
+		virtual_filesystem new_filesystem;
+		new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
+		filesystem = &new_filesystem;
+
+		for(int i = 0; i < paramscurrent.memory_file_count; ++i) {
+			memoryfile f = paramscurrent.memory_files[i];
+			filesystem->add_memory_file(f.path, f.buffer, f.length);
+		}
+
+		clidefines.reset();
+		for (int i = 0; i < paramscurrent.definecount; ++i)
+		{
+			string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
+			name = strip_whitespace(name);
+			name = strip_prefix(name, '!', false); // remove leading ! if present
+			if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
+			if (clidefines.exists(name)) {
+				asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.data());
+				return false;
+			}
+			string contents = (paramscurrent.additional_defines[i].contents != nullptr ? paramscurrent.additional_defines[i].contents : "");
+			clidefines.create(name) = contents;
+		}
+
+		if (paramscurrent.stddefinesfile != nullptr) {
+			if (!path_is_absolute(paramscurrent.stddefinesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std defines file");
+			string stddefinespath = paramscurrent.stddefinesfile;
+			parse_std_defines(stddefinespath);
+		} else {
+			parse_std_defines(nullptr); // needed to populate builtin defines
+		}
+
+		for (int i = 0; i < paramscurrent.warning_setting_count; ++i)
+		{
+			asar_warning_id warnid = parse_warning_id_from_string(paramscurrent.warning_settings[i].warnid);
+
+			if (warnid != warning_id_end)
+			{
+				set_warning_enabled(warnid, paramscurrent.warning_settings[i].enabled);
+			}
+			else
+			{
+				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "asar_patch_ex() warning_settings", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+			}
+		}
+
+		if(paramscurrent.override_checksum_gen) {
+			checksum_fix_enabled = paramscurrent.generate_checksum;
+			force_checksum_fix = true;
+		}
+
+		asar_patch_main(paramscurrent.patchloc);
+
+		new_filesystem.destroy();
+		filesystem = nullptr;
+
+		return asar_patch_end(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
+};
+#if defined(_WIN32)
+	return run_as_fiber(execute_patch);
+#else
+	return execute_patch();
+#endif
 }
 
 EXPORT int asar_maxromsize()
@@ -432,7 +448,7 @@ EXPORT const labeldata * asar_getalllabels(int * count)
 EXPORT int asar_getlabelval(const char * name)
 {
 	if (!stricmp(name, ":$:opcodes:$:")) return numopcodes;//aaah, you found me
-	int i=(int)labelval(&name);
+	int i=(int)labelval(&name).pos;
 	if (*name || i<0) return -1;
 	else return i&0xFFFFFF;
 }

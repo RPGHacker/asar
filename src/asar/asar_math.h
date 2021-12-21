@@ -4,7 +4,7 @@
 void initmathcore();
 void deinitmathcore();
 
-unsigned int getnum(const char * str);
+int64_t getnum(const char * str);
 int64_t getnum64(const char * str);
 double getnumdouble(const char * str);
 
@@ -15,6 +15,7 @@ void closecachedfiles();
 double math(const char * mystr);
 
 extern bool foundlabel;
+extern bool foundlabel_static;
 extern bool forwardlabel;
 
 extern bool math_pri;

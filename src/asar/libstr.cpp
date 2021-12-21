@@ -2,9 +2,102 @@
 #include "libstr.h"
 #include "virtualfile.h"
 #include "asar.h"
+#include "warnings.h"
 
 #define typed_malloc(type, count) (type*)malloc(sizeof(type)*(count))
 #define typed_realloc(type, ptr, count) (type*)realloc(ptr, sizeof(type)*(count))
+
+
+// RPG Hacker: Functions below are copied over from Asar 2.0 branch for the sole purpose of generating
+// non-UTF-8 deprecation warnings in 1.9. Don't know if there's a better way to handle this, but it means
+// we should delete all of this again once we merge branches.
+
+// vvvvvvvvvvvvvvvvvvvvvv
+
+// Detects if str starts with a UTF-8 byte order mark.
+// If so, throws a warning, then returns the number of bytes we should skip ahead in the string.
+size_t check_bom(const char* str)
+{
+	// RPG Hacker: We could also check for BoMs of incompatible encodings here (like UTF-16)
+	// and throw errors, but not sure if that's worth adding. Asar never supported any wide
+	// encodings to begin with, so it's unreasonable to assume that any UTF-16 patches currently
+	// exist for it. As for future patches, those should be caught by the "must be UTF-8" checks
+	// I have already implemented further below.
+	// I think UTF-8 + BoM is the only case that could lead to confusion if we didn't handle it,
+	// so that's why I have added this.
+	if (str[0u] == '\xEF' && str[1u] == '\xBB' && str[2u] == '\xBF')
+	{
+		asar_throw_warning(0, warning_id_byte_order_mark_utf8);
+		return 3u;
+	}
+
+	return 0u;
+}
+
+
+size_t utf8_val(int* codepoint, const char* inp) {
+	unsigned char c = *inp++;
+	int val;
+	if (c < 0x80) {
+		// plain ascii
+		*codepoint = c;
+		return 1u;
+	}
+	// RPG Hacker: Byte sequences starting with 0xC0 or 0xC1 are invalid.
+	// So are byte sequences starting with anything >= 0xF5.
+	// And anything below 0xC0 indicates a follow-up byte and should never be at the start of a sequence.
+	else if (c > 0xC1 && c < 0xF5) {
+		// 1, 2 or 3 continuation bytes
+		int cont_byte_count = (c >= 0xF0) ? 3 : (c >= 0xE0) ? 2 : 1;
+		// bit hack to extract the significant bits from the start byte
+		val = (c & ((1 << (6 - cont_byte_count)) - 1));
+		for (int i = 0; i < cont_byte_count; i++) {
+			unsigned char next = *inp++;
+			if ((next & 0xC0) != 0x80) {
+				*codepoint = -1;
+				return 0u;
+			}
+			val = (val << 6) | (next & 0x3F);
+		}
+		if (// too many cont.bytes
+			(*inp & 0xC0) == 0x80 ||
+
+			// invalid codepoints
+			val > 0x10FFFF ||
+
+			// check overlong encodings
+			(cont_byte_count == 3 && val < 0x1000) ||
+			(cont_byte_count == 2 && val < 0x800) ||
+			(cont_byte_count == 1 && val < 0x80) ||
+
+			// UTF16 surrogates
+			(val >= 0xD800 && val <= 0xDFFF)
+			) {
+			*codepoint = -1;
+			return 0u;
+		};
+		*codepoint = val;
+		return 1u + cont_byte_count;
+	}
+
+	// if none of the above, this couldn't possibly be a valid encoding
+	*codepoint = -1;
+	return 0u;
+}
+
+bool is_valid_utf8(const char* inp) {
+	while (*inp != '\0') {
+		int codepoint;
+		inp += utf8_val(&codepoint, inp);
+
+		if (codepoint == -1) return false;
+	}
+
+	return true;
+}
+
+// ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 
 char * readfile(const char * fname, const char * basepath)
 {
@@ -16,12 +109,14 @@ char * readfile(const char * fname, const char * basepath)
 	filesystem->close_file(myfile);
 	int inpos=0;
 	int outpos=0;
+	inpos += check_bom(data + inpos);
 	while (data[inpos])
 	{
 		if (data[inpos]!='\r') data[outpos++]=data[inpos];
 		inpos++;
 	}
 	data[outpos]=0;
+	if (!is_valid_utf8(data)) asar_throw_warning(0, warning_id_feature_deprecated, "non-UTF-8 source files", "Re-save the file as UTF-8 in a text editor of choice and avoid using non-ASCII characters in Asar versions < 2.0");
 	return data;
 }
 
@@ -39,12 +134,14 @@ char * readfilenative(const char * fname)
 	fclose(myfile);
 	int inpos = 0;
 	int outpos = 0;
+	inpos += check_bom(data + inpos);
 	while (data[inpos])
 	{
 		if (data[inpos] != '\r') data[outpos++] = data[inpos];
 		inpos++;
 	}
 	data[outpos] = 0;
+	if (!is_valid_utf8(data)) asar_throw_warning(0, warning_id_feature_deprecated, "non-UTF-8 source files", "Re-save the file as UTF-8 in a text editor of choice and avoid using non-ASCII characters in Asar versions < 2.0");
 	return data;
 }
 
@@ -60,8 +157,8 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 }
 
 #define dequote(var, next, error) if (var=='"') do { next; while (var!='"') { if (!var) error; next; } next; } while(0); else if (var=='\'') do { next; while (var!='\'') { if (!var) error; next; } next; } while(0)
-#define skippar(var, next, error) dequote(var, next, error); else if (var=='(') { int par=1; next; while (par) { dequote(var, next, error); \
-				if (var=='(') par++; if (var==')') par--; if (!var) error; next; } } else if (var==')') error
+#define skippar(var, next, error) dequote(var, next, error); else if (var=='(') { int par=1; next; while (par) { dequote(var, next, error); else { \
+				if (var=='(') par++; if (var==')') par--; if (!var) error; next; } } } else if (var==')') error
 
 string& string::replace(const char * instr, const char * outstr, bool all)
 {
@@ -70,7 +167,7 @@ string& string::replace(const char * instr, const char * outstr, bool all)
 	{
 		const char * ptr=strstr(thisstring, instr);
 		if (!ptr) return thisstring;
-		string out=S substr(thisstring, (int)(ptr-thisstring.data()))+outstr+(ptr+strlen(instr));
+		string out=STR substr(thisstring, (int)(ptr-thisstring.data()))+outstr+(ptr+strlen(instr));
 		thisstring =out;
 		return thisstring;
 	}
@@ -174,20 +271,23 @@ string& string::qreplace(const char * instr, const char * outstr, bool all)
 		for (int i=0;thisstring[i];)
 		{
 			dequote(thisstring[i], out+= thisstring[i++], return thisstring);
-			if (!strncmp((const char*)thisstring +i, instr, strlen(instr)))
+			else
 			{
-				replaced=true;
-				out+=outstr;
-				i+=(int)strlen(instr);
-				if (!all)
+				if (!strncmp((const char*)thisstring + i, instr, strlen(instr)))
 				{
-					out+=((const char*)thisstring)+i;
-					thisstring =out;
-					return thisstring;
+					replaced = true;
+					out += outstr;
+					i += (int)strlen(instr);
+					if (!all)
+					{
+						out += ((const char*)thisstring) + i;
+						thisstring = out;
+						return thisstring;
+					}
 				}
+				// randomdude999: prevent appending the null terminator to the output
+				else if (thisstring[i]) out += thisstring[i++];
 			}
-			// randomdude999: prevent appending the null terminator to the output
-			else if(thisstring[i]) out+= thisstring[i++];
 		}
 		thisstring =out;
 	}

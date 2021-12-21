@@ -4,8 +4,8 @@
 
 warnings push
 
-warnings disable W1008
-warnings enable W1008
+warnings disable Wmissing_org
+warnings enable Wmissing_org
 
 db $01
 

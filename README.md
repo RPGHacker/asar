@@ -1,7 +1,7 @@
 # Asar
-[![Travis build](https://travis-ci.org/RPGHacker/asar.svg?branch=master)](https://travis-ci.org/RPGHacker/asar) [![Appveyor build](https://ci.appveyor.com/api/projects/status/github/RPGHacker/asar?svg=true)](https://ci.appveyor.com/project/RPGHacker/asar)
+[![Windows builds (AppVeyor)](https://ci.appveyor.com/api/projects/status/github/RPGHacker/asar?svg=true)](https://ci.appveyor.com/project/RPGHacker/asar) ![Ubuntu build (GitHub Actions)](https://github.com/RPGHacker/asar/actions/workflows/cmake.yml/badge.svg)
 
-Asar is an SNES assembler designed for applying patches to existing ROM images, or creating new ROM images from scratch. It supports 65c816, SPC700, and Super FX architextures. It was originally created by Alcaro, who based it on [xkas v0.06](https://www.romhacking.net/utilities/269/) by byuu.
+Asar is an SNES assembler designed for applying patches to existing ROM images, or creating new ROM images from scratch. It supports 65c816, SPC700, and Super FX architextures. It was originally created by Alcaro, modelled after [xkas v0.06](https://www.romhacking.net/utilities/269/) by byuu.
 
 For a guide on using Asar (including how to write patches), see [`README.txt`](https://github.com/RPGHacker/asar/blob/master/README.txt). This readme was made with tool programmers and contributors in mind.
 
@@ -39,7 +39,15 @@ These two characters should precede each test line, so that Asar sees them as co
 * 2 hex digits - a byte for it to check for 
   * You can specify more than one, like in the examples below, and it will automatically increment the offset.
 * A line starting with `+` tells the testing app to patch the SMW ROM instead of creating a new ROM
-* `errEXXXX` and `warnWXXXX` (where `XXXX` is an ID number) means that the test is expected to throw that specific error or warning while patching. The test will succeed if only these errors and warnings are thrown.
+* `errEXXXX` and `warnWXXXX` (where `XXXX` is an ID number) means that the test is expected to throw that specific error or warning while patching. The test will succeed only if the number and order of errors and warnings thrown exactly matches what's specified here. Be wary that Asar uses multiple passes and throws errors and warnings across multiple of them. This can make the actual order in which errors and warnings are thrown a bit unintuitive.
+
+In addition to the format mentioned above, it's also possible to check for user prints a patch is expected to output (by `print`, `error`, `warn` or `assert` commands). This is done by starting the line with one of the following sequences:
+```
+;E>
+;W>
+;P>
+```
+Where E is for errors/asserts, W is for warnings and P is for prints. Following this sequence, every character up to the end of the current line is a part of the expected string to be output. Note that the test suite also verifies the order of prints within the respective type. So if your patch is expected to output two user-defined errors, they need to be specified exactly in the order in which they are expected to be output.
 
 **Example tests:**
 
@@ -51,4 +59,19 @@ This line tests that the bytes `5A`, `40` and `00` (in that order) were written 
 This line tests that `22`, `20`, `80` and `90` were written to the ROM offset `0x007606`.
 ```
 ;`007606 22 20 80 90
+```
+
+This line tests that assembling the patch throws error `5117` twice and warning `1030` once.
+```
+;`errE5117
+;`errE5117
+;`warnW1030
+```
+
+This line tests that the byte `FF` was written to the start of the ROM, that the string `This is a print.` was printed and that the string `This is a user error.` was output via the error command (which itself also causes error `E5159`to be thrown once).
+```
+;`FF
+;P>This is a print.
+;E>This is a user error.
+;`errE5159
 ```

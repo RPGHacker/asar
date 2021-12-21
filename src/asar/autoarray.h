@@ -94,7 +94,7 @@ public:
 		memset(ptr + keep, 0, (size_t)(count - keep) * sizeof(T));
 		if (keep < bufferlen / 2)
 		{
-			while (keep < bufferlen / 2 && bufferlen>4) bufferlen /= 2;
+			while (keep < bufferlen / 2 && bufferlen>8) bufferlen /= 2;
 			T *old = ptr;
 			ptr = (T*)malloc(sizeof(T)*(size_t)bufferlen);
 			for(int i = 0; i < keep; i++){
@@ -173,7 +173,7 @@ public:
 	autoarray()
 	{
 		ptr = (T*)malloc(sizeof(T) * default_size);
-		memset(ptr, default_size, sizeof(T));
+		memset(ptr, 0, default_size*sizeof(T));
 		bufferlen = default_size;
 		count = 0;
 	}

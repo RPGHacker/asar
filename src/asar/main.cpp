@@ -18,9 +18,10 @@
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
 extern const int asarver_maj=1;
-extern const int asarver_min=7;
-extern const int asarver_bug=1;
-extern const bool asarver_beta=false;
+extern const int asarver_min=9;
+extern const int asarver_bug=0;
+extern const bool asarver_beta=true;
+bool default_math_pri=false;
 
 #ifdef _I_RELEASE
 extern char blockbetareleases[(!asarver_beta)?1:-1];
@@ -41,10 +42,9 @@ int optimize_address = optimize_address_flag::DEFAULT;
 
 string thisfilename;
 int thisline;
-int lastspecialline=-1;
 const char * thisblock;
 
-const char * callerfilename= nullptr;
+string callerfilename;
 int callerline=-1;
 
 bool errored=false;
@@ -112,9 +112,9 @@ string getdecor()
 	string e;
 	if (thisfilename)
 	{
-		e+=S thisfilename;
-		if (thisline!=-1) e+=S ":"+dec(thisline+1);
-		if (callerfilename) e+=S" (called from "+callerfilename+":"+dec(callerline+1)+")";
+		e+=STR thisfilename;
+		if (thisline!=-1) e+=STR ":"+dec(thisline+1);
+		if (callerfilename) e+=STR" (called from "+callerfilename+":"+dec(callerline+1)+")";
 		e+=": ";
 	}
 	return e;
@@ -156,6 +156,7 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 		asar_throw_warning(1, warning_id_xkas_label_access);
 	unsigned int bank = thislabel>>16;
 	unsigned int word = thislabel&0xFFFF;
+	unsigned int relaxed_bank = optimizeforbank < 0 ? 0 : optimizeforbank;
 	if (!exists)
 	{
 		if (!freespaced) freespaceextra++;
@@ -174,7 +175,11 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 	{
 		return 2;
 	}
-	else if (optimize_address == optimize_address_flag::MIRRORS && (bank == 0x7E || !(bank & 0x40)) && word < 0x8000)
+	else if (optimize_address == optimize_address_flag::MIRRORS && (bank == relaxed_bank || (!(bank & 0x40) && !(relaxed_bank & 0x40))) && word < 0x2000)
+	{
+		return 2;
+	}
+	else if (optimize_address == optimize_address_flag::MIRRORS && !(bank & 0x40) && !(relaxed_bank & 0x40) && word < 0x8000)
 	{
 		return 2;
 	}
@@ -221,9 +226,11 @@ int getlen(const char * orgstr, bool optimizebankextraction)
 		if (*posneglabel != '\0') goto notposneglabel;
 
 		if (!pass) return 2;
-		unsigned int labelpos=31415926;
-		bool found = labelval(posnegname, &labelpos);
-		return getlenforlabel(snespos, (int)labelpos, found);
+		snes_label label_data;
+		// RPG Hacker: Umm... what kind of magic constant is this?
+		label_data.pos = 31415926;
+		bool found = labelval(posnegname, &label_data);
+		return getlenforlabel(snespos, (int)label_data.pos, found);
 	}
 notposneglabel:
 	int len=0;
@@ -264,9 +271,9 @@ notposneglabel:
 		}
 		else if (is_alpha(*str) || *str=='_' || *str=='.' || *str=='?')
 		{
-			unsigned int thislabel;
+			snes_label thislabel;
 			bool exists=labelval(&str, &thislabel);
-			thislen=getlenforlabel(snespos, (int)thislabel, exists);
+			thislen=getlenforlabel(snespos, (int)thislabel.pos, exists);
 		}
 		else str++;
 		if (optimizebankextraction && maybebankextraction &&
@@ -322,6 +329,7 @@ void resolvedefines(string& out, const char * start)
 	{
 		if (*here=='"' && emulatexkas)
 		{
+			asar_throw_warning(0, warning_id_feature_deprecated, "xkas define quotes", "removing the quotes generally does what you want");
 			out+=*here++;
 			while (*here && *here!='"') out+=*here++;
 			out+=*here++;
@@ -443,7 +451,7 @@ void resolvedefines(string& out, const char * start)
 						string newval;
 						resolvedefines(newval, val);
 						double num= getnumdouble(newval);
-						if (foundlabel) asar_throw_error(0, error_type_line, error_id_define_label_math);
+						if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_line, error_id_define_label_math);
 						defines.create(defname) = ftostr(num);
 						break;
 					}
@@ -475,6 +483,8 @@ void resolvedefines(string& out, const char * start)
 int repeatnext=1;
 
 bool moreonline;
+bool moreonlinecond;
+int fakeendif;
 bool asarverallowed;
 bool istoplevel;
 
@@ -501,6 +511,8 @@ void assembleline(const char * fname, int linenum, const char * line)
 //puts(out);
 		autoptr<char**> blocks=qsplit(out.temp_raw(), " : ");
 		moreonline=true;
+		moreonlinecond=true;
+		fakeendif=0;
 		for (int block=0;moreonline;block++)
 		{
 			moreonline=(blocks[block+1] != nullptr);
@@ -514,21 +526,28 @@ void assembleline(const char * fname, int linenum, const char * line)
 					strip_both(stripped_block, ' ', true);
 					
 					thisline=linenum;//do not optimize, this one is recursive
-					const char *thisblock = stripped_block.data();
+					thisblock = stripped_block.data();
+					bool isspecialline = false;
 					if (thisblock[0] == '@')
 					{
-						lastspecialline = thisline;
+						isspecialline = true;
 						thisblock++;
 						while (is_space(*thisblock))
 						{
 							thisblock++;
 						}
 					}
-					assembleblock(thisblock);
+					assembleblock(thisblock, isspecialline);
+					checkbankcross();
 				}
 				catch (errblock&) {}
 				if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
 			}
+		}
+		if(fakeendif)
+		{
+			if (numif==numtrue) numtrue--;
+			numif--;
 		}
 	}
 	catch (errline&) {}
@@ -670,7 +689,6 @@ void assemblefile(const char * filename, bool toplevel)
 	}
 	thisline++;
 	thisblock= nullptr;
-	checkbankcross();
 	if (inmacro)
 	{
 		asar_throw_error(0, error_type_null, error_id_unclosed_macro);
@@ -850,15 +868,15 @@ static void adddefine(const string & key, string & value)
 
 static string symbolfile;
 
-static void printsymbol_wla(const string& key, unsigned int& address)
+static void printsymbol_wla(const string& key, snes_label& label)
 {
-	string line = hex2((address & 0xFF0000)>>16)+":"+hex4(address & 0xFFFF)+" "+key+"\n";
+	string line = hex2((label.pos & 0xFF0000)>>16)+":"+hex4(label.pos & 0xFFFF)+" "+key+"\n";
 	symbolfile += line;
 }
 
-static void printsymbol_nocash(const string& key, unsigned int& address)
+static void printsymbol_nocash(const string& key, snes_label& label)
 {
-	string line = hex8(address & 0xFFFFFF)+" "+key+"\n";
+	string line = hex8(label.pos & 0xFFFFFF)+" "+key+"\n";
 	symbolfile += line;
 }
 
@@ -949,7 +967,6 @@ void reseteverything()
 	checksum_fix_enabled = true;
 	force_checksum_fix = false;
 	
-	lastspecialline = -1;
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));
 	#endif

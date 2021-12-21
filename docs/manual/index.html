@@ -36,7 +36,7 @@
 		
 		<h1>Asar</h1>
 		
-		<p>A multi-architecture SNES assembler by <i>Alcaro</i>, based on <b>xkas v0.06</b> by <i>byuu</i>.<br />
+		<p>A multi-architecture SNES assembler by <i>Alcaro</i>, modelled after <b>xkas v0.06</b> by <i>byuu</i>.<br />
 		This manual was written by <i>RPG Hacker</i>, so if you find something that is wrong or weird, make sure to blame me instead of Alcaro.</p>
 		<p>As a general rule, the manual uses <code>{}</code> to denote required parameters and <code>[]</code> to denote optional parameters (where optional parameters ending in <code>...</code> mean &quot;zero or more&quot; of that parameter). Everything else refers to keywords/names.</p>
 		<hr />
@@ -92,6 +92,7 @@
 					<li><a href="#optimize-address">optimize address</a></li>
 					<li><a href="#pushpc">pushpc/pullpc</a></li>
 					<li><a href="#pushbase">pushbase/pullbase</a></li>
+					<li><a href="#arch-spc700-inline">The spc700-inline architecture</a></li>
 				</ul>
 			</li>
 			<li><a href="#math">Math</a></li>
@@ -104,14 +105,16 @@
 					<li><a href="#macro-labels">Macro Labels</a></li>
 					<li><a href="#structs">Structs</a></li>
 					<li><a href="#namespaces">Namespaces</a></li>
+					<li><a href="#global-labels">Global labels</a></li>
 				</ul>
 			</li>
 			<li>
-				<a href="#defines">Defines</a></li>
+				<a href="#defines">Defines</a>
 				<ul>
 					<li><a href="#nested-defines">Nested Defines</a></li>
 					<li><a href="#built-in-defines">Built-in Defines</a></li>
 				</ul>
+			</li>
 			<li><a href="#macros">Macros</a></li>
 			<li>
 				<a href="#functions">Functions</a>
@@ -891,7 +894,7 @@ XCN A</code>
 				<td>SPC700</td>
 				<td><code class="65c816_asar">arch&nbsp;spc700-inline</code></td>
 				<td></td>
-				<td>Same as above, but implements the standard upload system (16bit length, then location, with a terminator at the end) automatically.</td>
+				<td>Same as above, but implements the standard upload system (16bit length, then location, with a terminator at the end) automatically. See the <a href="#arch-spc700-inline">spc700-inline</a> section for more information.</td>
 			</tr>
 			<tr>
 				<td>Super FX</td>
@@ -1650,7 +1653,7 @@ endif</code></pre>
 		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>warn xkas on</code> to enable these warnings and <code>warn xkas off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
 		<h4 id="math-pri">math pri</h4>
 		<pre><code class="65c816_asar">math pri {on/off}</code></pre>
-		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always enable this flag.
+		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">@asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. When writing patches specifially for Asar, it is recommended to always enable this flag.
 		<pre><code class="65c816_asar">math pri off
 db 1+(6/3)*5	; db 15
 
@@ -1763,11 +1766,11 @@ warnpc $008100		; Throws an error if datafile.bin is larger than $100 bytes.</co
 		The bank command makes Asar's label optimizer act as though the current data bank was set to <code>data_bank</code>. Consider the following example:		
 		<pre><code class="65c816_asar">bank $FF
 		
-lda Table,x
+lda DataTable,x
 
-Table:
+DataTable:
 	db $01,$02,$03,$04</code></pre>
-		Asar will always assemble the <code class="65c816_asar">lda Table,x</code> with 24-bit addressing, unless the current pc (or <a href="#base">base address</a>) is inside bank <code>$FF</code> itself. This is intended for code that uses a data bank register different from the code bank register. You can use <code>bank noassume</code> to make Asar act as though the data bank was always in a different bank. Using <code>bank auto</code> restores the default behavior of assuming that the data bank register and the code bank register are the same. Note that the bank command can't point to freespace areas.		
+		Asar will always assemble the <code class="65c816_asar">lda DataTable,x</code> with 24-bit addressing, unless the current pc (or <a href="#base">base address</a>) is inside bank <code>$FF</code> itself. This is intended for code that uses a data bank register different from the code bank register. You can use <code>bank noassume</code> to make Asar act as though the data bank was always in a different bank. Using <code>bank auto</code> restores the default behavior of assuming that the data bank register and the code bank register are the same. Note that the bank command can't point to freespace areas.		
 		<pre><code class="65c816_asar">org $008000
 phb
 lda #$FF
@@ -1791,12 +1794,12 @@ org $008000
 lda SpriteTable,x</code></pre>
 
 		<h4 id="optimize-dp">optimize dp</h4>
-                <pre><code class="65c816_asar">optimize dp {none/ram/always}</code></pre>
+		<pre><code class="65c816_asar">optimize dp {none/ram/always}</code></pre>
 		This command changes how aggressive Asar's direct page access optimizer is. With <code class="65c816_asar">optimize dp none</code> (the default), the direct page optimizer is disabled and direct page accesses will only be done with the <code class="65c816_asar">.b</code> instruction suffix or with explicit addresses like <code class="65c816_asar">lda $42</code>. With <code class="65c816_asar">optimize dp ram</code>, direct page optimization will be performed according to the <a href="#dpbase">dpbase</a> setting, but only on labels in bank <code class="65c816_asar">$7E</code>. With <code class="65c816_asar">optimize dp always</code>, direct page optimization will be performed on all labels in banks that have RAM mirrors, i.e. 00-3F and 80-BF, and also on labels in bank 7E.
 
 		<h4 id="optimize-address">optimize address</h4>
-                <pre><code class="65c816_asar">optimize address {default/ram/mirrors}</code></pre>
-		TODO: document this
+		<pre><code class="65c816_asar">optimize address {default/ram/mirrors}</code></pre>
+		This command changes how aggressive Asar's label optimizer is. With <code>optimize address default</code>, references to labels will be shortened to 2 bytes only if the label is in the current bank. With <code>optimize address ram</code>, labels between <code>$7E:0000-$7E:1FFF</code> will be shortened to 2 bytes. With <code>optimize address mirrors</code>, labels between <code>$7E:0000-$7E:7FFF</code> and also labels in <code>$00-3F:0000-7FFF</code> will be shortened to 2 bytes.
 
 		<h4 id="pushpc">pushpc/pullpc</h4>
 		The pushpc command pushes the current pc to the stack, the pullpc command restores the pc by pulling its value from the stack. This can be useful for inserting code in another location and then continuing at the original location.
@@ -1842,6 +1845,27 @@ InRamAgain:
 	rtl
 
 base off</code></pre>
+
+		<h4 id="arch-spc700-inline">The spc700-inline architecture</h4>
+		Using <code>arch spc700-inline</code> changes the way most program-counter-related commands work. It is meant for use with the default program loader on the SPC700. In this mode, data is always written sequentially to the ROM. The <code>org</code> command causes Asar to write out a command instructing the loader program to start writing to the specified address in the SPC700's memory. There is also a special <code>startpos</code> command which writes out a command that tells the SPC to jump to this address after all of the code has been uploaded. Asar also writes the necessary header and terminator for the data, so it's possible to just upload the entire written block of data to the SPC. Here is a basic usage example:
+		<pre><code class="65c816_asar">
+spcdata_start:
+arch spc700-inline
+org $0400 ; position in APU RAM to copy block to
+startpos main ; label (or address in APU RAM) to jump to after uploading
+main:
+; any spc code here
+mov a,$00
+ret
+org $0600
+; this label will end up at $0600 in APU RAM
+data:
+db $00,$01,$02
+arch 65816
+spcdata_end:
+; now, you can copy each byte from spcdata_start to spcdata_end to $2141
+		</code></pre>
+		A few notes: <code>skip</code> will act like <code>org</code> in that it starts a new block and has the effect that the uploader program will leave the jumped-over part of APU RAM unchanged. The <code>base</code> command is disabled in this mode.<br>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="math"><h3>Math</h3>
@@ -2150,7 +2174,7 @@ endstruct</code></pre>
 		<h4 id="namespaces">Namespaces</h4>
 		Namespaces are a feature which makes it easier to avoid name conflicts between different labels without having to give them long or cryptic names. They work similarly to C++ namespaces and accomplish this by automatically adding a prefix to all labels declared or accessed within them. This prefix consists of an identifier, followed by an underscore <code>_</code> . Namespaces can be stacked if desired by enabling the <a href="#namespace-nested">namespace nested</a> setting. When you try to access a label from within a namespace and Asar doesn't find it in there, it automatically looks in the upper namespaces (up to the global namespace). Use<br/>
 		<pre><code class="65c816_asar">namespace {identifier}</code></pre>
-		to enter a namspace, where <code>identifier</code> can contain any of the following characters:<br/>		
+		to enter a namespace, where <code>identifier</code> can contain any of the following characters:<br/>		
 		<code class="65c816_asar">a-z A-Z 0-9 _</code><br />
 		Use
 		<pre><code class="65c816_asar">namespace off</code></pre>
@@ -2221,6 +2245,29 @@ dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main
 dl TheFirst_Main                ; TheFirst_Main
 dl TheSecond_Main               ; TheSecond_Main
 dl TheThird_Main                ; TheThird_Main</code></pre>
+		<h4 id="global-labels">Global labels</h4>
+		While in a namespace, you can use the keyword <code class="65c816_asar">global</code> to define labels outside all namespaces. The syntax is <code class="65c816_asar">global [#]{identifier}:</code>. For example:
+		<pre><code class="65c816_asar">
+namespace NS
+global GlobalLabel:
+.Sub: ; this is a sublabel of GlobalLabel
+
+LocalLabel:
+
+global #AnotherGlobal: ; this global won't modify the sublabel hierarchy
+
+.Sub: ; this is a sublabel of LocalLabel
+namespace off
+
+; these are all valid:
+dl NS_LocalLabel
+dl NS_LocalLabel_Sub
+dl GlobalLabel
+dl GlobalLabel_Sub
+dl AnotherGlobal
+		</code></pre>
+		Note that <code>#</code> acts the same way as it does for regular labels.<br>
+		Note that you cannot use the <code>global</code> command with sublabels or macro labels. Outside of a namespace, <code>global</code> acts just like a regular label definition.<br>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="defines"><h3>Defines</h3>
@@ -2310,7 +2357,7 @@ db !{hex}FF   ; OK</code></pre>
 		<pre><code class="65c816_asar">; Please specifiy a mode from 0 to 3
 !mode = 1
 
-assert !mode >= 0 && !mode <= 3, "Please specify a mode from 0 to 3!"
+assert !mode &gt;= 0 && !mode &lt;= 3, "Please specify a mode from 0 to 3!"
 
 !modename0 = "Default"
 !modename1 = "Debug"
@@ -2384,7 +2431,7 @@ endmacro
 </code></pre>
 
 In addition to named substitutions if the variadic token <code class="65c816_asar">...</code> is specified as the last parameter asar will allow an arbitrary number of parameters after all prior parameters have been satisfied.
-To access unnamed arguments of a variadic function they are declared numerically starting from 0 up to the number of provided parameters.  To access the number of provided variadic arguments one may use <code class="65c816_asar">sizeof(...)</code>.
+To access unnamed arguments of a variadic function they are declared numerically starting from 0 up to the number of provided parameters. To access the number of provided variadic arguments one may use <code class="65c816_asar">sizeof(...)</code>.
 Lastly, it is important to note that while traditionally macros do not parse defines at their creation variadic macros will.  This is to allow iteration of arguments by using defines.
 
 <pre><code class="65c816_asar">
@@ -2408,9 +2455,19 @@ macro example2(named_parameter, ...)
 	endif
 	db &lt;named_parameter&gt;	;01
 endmacro
+
+macro macro_with_optional_arguments(required, ...)
+	db &lt;required&gt;
+	if sizeof(...) &gt; 0
+		db &lt;0&gt;
+	end
+end
+
 %example0(1,2,3,4)
 %example1(1,2,3)
 %example2(1,2,3,4,5,6,7)
+%macro_with_optional_arguments(1)
+%macro_with_optional_arguments(2, 3)
 </code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
@@ -2767,6 +2824,22 @@ endif</code></pre>
 	if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball
 	rtl
 		</code></pre>
+		If you plan to use labels in if commands, note that there's certain restrictions that apply. More specifically, only static labels can be used. That is, only labels whose address can't change between Asar's passes, as demonstrated by the following example:
+		<pre><code class="65c816_asar">FirstLabel = $018000
+		
+freecode
+	lda SecondLabel,x
+	
+SecondLabel:
+	db $00,$01,$02,$03
+	
+; All good. FirstLabel was statically defined.
+if FirstLabel == 0
+endif
+
+; Error E5107. The label could move between passes.
+if SecondLabel == 0
+endif</code></pre>
 		<h4 id="while">while</h4>
 		A special variation of if conditionals are while loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to <code>&lt;= 0</code>. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.
 		<pre><code class="65c816_asar">!counter = 0
@@ -2804,7 +2877,7 @@ dl $01,$0203,$04050607,Label,"ABC"
 ; $01 $00 $00 $00  $03 $02 $00 $00  $07 $06 $05 $04  $AB $89 $01 $00  $41 $00 $00 $00 $42 $00 $00 $00 $43 $00 $00 $00
 dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 		By default, each character in an ASCII string used in in a table maps onto the respective ASCII value. This mapping can be customized via the table command:
-		<pre><code class="65c816_asar">table {filename}[,ltr/rtl]</code></pre>
+		<pre><code class="65c816_asar">table {filename}[,rtl/ltr]</code></pre>
 		Where <code>filename</code> specifies the path to a table file (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and ltr/rtl specifies whether that file is in left-to-right or right-to left format (default: left-to-right).<br />
 		Format of left-to-right table files:
 		<pre><code>{character}={value}
@@ -3176,15 +3249,15 @@ SomeLargeData:
 		</table><br/>
 		<h4 id="warn">warn</h4>
 		The warn command lets you output a warning message to the user. Usage:
-		<pre><code class="65c816_asar">warn [custom_warning_text]</code></pre>
-		where <code>custom_warning_text</code> can be a custom warning text delimited by double quotes. A warning does not cause compilation to fail, so it can be used to inform the user about potential dangers. Warning messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
+		<pre><code class="65c816_asar">warn [text_or_function...]</code></pre>
+		where <code>custom_warning_text</code> can be a custom warning text and uses the same format as the <code>print</code> command. A warning does not cause compilation to fail, so it can be used to inform the user about potential dangers. Warning messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
 		<pre><code class="65c816_asar">if read1($00FFD5) == $23
 	warn "SA-1 compatibility of this patch is untested, use with caution!"
 endif</code></pre>
 		<h4 id="error">error</h4>
 		The error command lets you output an error message to the user. Usage:
-		<pre><code class="65c816_asar">error [custom_error_text]</code></pre>
-		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states. Error messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
+		<pre><code class="65c816_asar">error [text_or_function...]</code></pre>
+		where <code>custom_error_text</code> can be a custom error text and uses the same format as the <code>print</code> command. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states. Error messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
 		<pre><code class="65c816_asar">if read1($00FFD5) == $23
 	error "This patch is not SA-1 compatible!"
 endif</code></pre>
@@ -3192,11 +3265,11 @@ endif</code></pre>
 		An assert can be considered a short version of the code
 		<pre><code class="65c816_asar">if {condition}
 else
-	error [custom_error_text]
+	error [text_or_function...]
 endif</code></pre>
 		and is used via the syntax
-		<pre><code class="65c816_asar">assert {condition}[,custom_error_text]</code></pre>
-		where <code>custom_error_text</code> can be a custom error text delimited by double quotes. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
+		<pre><code class="65c816_asar">assert {condition}[,text_or_function...]</code></pre>
+		where <code>custom_error_text</code> can be a custom error text and uses the same format as the <code>print</code> command. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
 		<pre><code class="65c816_asar">assert read1($00FFD5) != $23,"This patch is not SA-1 compatible!"</code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />

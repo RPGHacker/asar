@@ -2,7 +2,7 @@
 ;`01
 
 warnings push
-warnings disable W1008
+warnings disable Wmissing_org
 
 db $01
 

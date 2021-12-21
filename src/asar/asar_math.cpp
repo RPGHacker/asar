@@ -30,6 +30,7 @@ static double eval(int depth);
 //userfunction
 
 bool foundlabel;
+bool foundlabel_static;
 bool forwardlabel;
 
 struct cachedfile {
@@ -127,18 +128,16 @@ void closecachedfiles()
 
 static int struct_size(const char *name)
 {
-	snes_struct structure;
-	if(!structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
-	structure = structs.find(name);
-	return structure.struct_size;
+       if(pass && !structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
+       else if(!structs.exists(name)) return 0;
+       return structs.find(name).struct_size;
 }
 
 static int object_size(const char *name)
 {
-	snes_struct structure;
-	if(!structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
-	structure = structs.find(name);
-	return structure.object_size;
+       if(pass && !structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
+       else if(!structs.exists(name)) return 0;
+       return structs.find(name).object_size;
 }
 
 static int data_size(const char *name)
@@ -146,11 +145,14 @@ static int data_size(const char *name)
 	unsigned int label;
 	unsigned int next_label = 0xFFFFFF;
 	if(!labels.exists(name)) asar_throw_error(1, error_type_block, error_id_label_not_found, name);
-	label = labels.find(name) & 0xFFFFFF;
-	labels.each([&next_label, label](const char *key, unsigned int current_label){
-		current_label &= 0xFFFFFF;
-		if(label < current_label && current_label < next_label){
-			next_label = current_label;
+	foundlabel = true;
+	snes_label label_data = labels.find(name);
+	foundlabel_static &= label_data.is_static;
+	label = label_data.pos & 0xFFFFFF;
+	labels.each([&next_label, label](const char *key, snes_label current_label){
+		current_label.pos &= 0xFFFFFF;
+		if(label < current_label.pos && current_label.pos < next_label){
+			next_label = current_label.pos;
 		}
 	});
 	if(next_label == 0xFFFFFF) asar_throw_warning(1, warning_id_datasize_last_label, name);
@@ -190,6 +192,7 @@ string get_symbol_argument()
 	const char * strpos = str;
 	// hack: for backwards compat, allow strings as symbols
 	if(*str=='"') {
+		asar_throw_warning(1, warning_id_feature_deprecated, "quoted symbolic arguments", "Remove the quotations");
 		string arg = get_string_argument();
 		int i = 0;
 		if(is_alpha(arg[i]) || arg[i] == '_') i++;
@@ -340,6 +343,13 @@ double asar_pctosnes_wrapper()
 	return pctosnes(get_double_argument());
 }
 
+double asar_realbase_wrapper()
+{
+	//need a better way to do this to make sure it is useful...
+	//foundlabel=true;  //Going to consider this an implicit label because we don't really have a better system
+	return realsnespos;
+}
+
 template <int count> double asar_read()
 {
 	int target = get_double_argument();
@@ -486,7 +496,7 @@ static double asar_structsize_wrapper()
 	if(symbol == "..."){
 		if(!inmacro) asar_throw_error(1, error_type_block, error_id_vararg_sizeof_nomacro);
 		if(numvarargs == -1) asar_throw_error(1, error_type_block, error_id_macro_not_varadic);
-		return numvarargs + 1;
+		return numvarargs;
 	}
 	return (double)struct_size(symbol);
 }
@@ -523,18 +533,28 @@ string copy_arg()
 		return (t += get_string_argument() + "\"");
 	}
 	
-	string result = "(";
+	string result;
+	bool is_symbolic = true;
 	int parlevel=0;
 	int i = 0;
 	while(parlevel > 0 || (str[i] != ',' && str[i] != ')'))
 	{
+		is_symbolic &= is_ualnum(str[i]);
 		if(str[i] == '(') parlevel++;
 		else if(str[i] == ')') parlevel--;
 		i++;
 	}
 	result += string(str, i);
 	str += i;
-	return result + ")";
+	
+	if(!is_symbolic)
+	{
+		const char *oldstr=str;
+		str = (const char *)result;
+		result = ftostr(eval(0));
+		str = oldstr;
+	}
+	return result;
 }
 
 assocarr<double (*)()> builtin_functions =
@@ -583,6 +603,7 @@ assocarr<double (*)()> builtin_functions =
 	
 	{"snestopc", asar_snestopc_wrapper},
 	{"pctosnes", asar_pctosnes_wrapper},
+	{"realbase", asar_realbase_wrapper},
 	
 	{"max", asar_binary_wrapper<asar_max>},
 	{"min", asar_binary_wrapper<asar_min>},
@@ -672,7 +693,12 @@ static double asar_call_user_function()
 			}
 		}
 		
-		if(!found) real_content += user_function.content[i];
+		if(!found){
+			for(; is_ualnum(user_function.content[i]); i++){
+				real_content += user_function.content[i];
+			}
+			real_content += user_function.content[i];
+		}
 	}
 	const char * oldstr=str;
 	str = (const char *)real_content;
@@ -687,7 +713,7 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 	if(functions.exists(name)) //functions holds both types.
 	{
 		//asar_throw_error(0, error_type_block, error_id_function_redefined, name);
-		asar_throw_warning(0, warning_id_function_redefined, name);
+		asar_throw_warning(1, warning_id_feature_deprecated, "overwriting a previously defined function", "change the function name");
 	}
 	funcdat& user_function=user_functions[name];
 	user_function.name= duplicate_string(name);
@@ -727,12 +753,12 @@ static double getnumcore()
 	{
 		if (!is_xdigit(str[1])) asar_throw_error(1, error_type_block, error_id_invalid_hex_value);
 		if (to_lower(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
-		return strtoul(str+1, const_cast<char**>(&str), 16);
+		return strtoull(str+1, const_cast<char**>(&str), 16);
 	}
 	if (*str=='%')
 	{
 		if (str[1] != '0' && str[1] != '1') asar_throw_error(1, error_type_block, error_id_invalid_binary_value);
-		return strtoul(str+1, const_cast<char**>(&str), 2);
+		return strtoull(str+1, const_cast<char**>(&str), 2);
 	}
 	if (*str=='\'')
 	{
@@ -759,36 +785,30 @@ static double getnumcore()
 		if (*str=='(')
 		{
 			str++;
-			while (*str==' ') str++;
-
 			// RPG Hacker: This is only here to assure that all strings are still
 			// alive in memory when we call our functions further down
 			double result;
-			if (*str!=')')
+			while (true)
 			{
-				while (true)
+				while (*str==' ') str++;
+				string function_name = string(start, len);
+				if(functions.exists(function_name))
 				{
-					while (*str==' ') str++;
-					string function_name = string(start, len);
-					if(functions.exists(function_name))
-					{
-						current_user_function_name = function_name;
-						result = functions[function_name]();
-					}
-					else
-					{
-						str++;
-						break;
-					}
-					
-					if (*str==')')
-					{
-						str++;
-						return result;
-						break;
-					}
-					asar_throw_error(1, error_type_block, error_id_malformed_function_call);
+					current_user_function_name = function_name;
+					result = functions[function_name]();
 				}
+				else
+				{
+					str++;
+					break;
+				}
+				
+				if (*str==')')
+				{
+					str++;
+					return result;
+				}
+				asar_throw_error(1, error_type_block, error_id_malformed_function_call);
 			}
 
 			asar_throw_error(1, error_type_block, error_id_function_not_found, start);
@@ -798,7 +818,9 @@ static double getnumcore()
 			foundlabel=true;
 
 			const char *old_start = start;
-			int i=(int)labelval(&start);
+			snes_label label_data = labelval(&start);
+			int i=(int)label_data.pos;
+			foundlabel_static &= label_data.is_static;
 			bool scope_passed = false;
 			bool subscript_passed = false;
 			while (str < start)
@@ -842,18 +864,21 @@ static double getnum()
 {
 	while (*str==' ') str++;
 #define prefix(sym, func) if (*str == sym) { str+=1; double val=getnum(); return sanitize(func); }
+#define prefix_dep(sym, func) if (*str == sym) { str+=1; asar_throw_warning(0, warning_id_feature_deprecated, "xkas style numbers ", "remove the #"); double val=getnum(); return sanitize(func); }
 #define prefix2(sym, sym2, func) if (*str == sym && *(str+1) == sym2) { str+=2; double val=getnum(); return sanitize(func); }
 	prefix('-', -val);
 	prefix('~', ~(int)val);
 	prefix2('<', ':', (int)val>>16);
 	prefix('+', val);
-	prefix('#' && emulatexkas, val);
+	prefix_dep('#' && emulatexkas, val);
 #undef prefix
 	return sanitize(getnumcore());
 }
 
-uint32_t getnum(const char* instr)
+int64_t getnum(const char* instr)
 {
+	return getnum64(instr);
+	
 	// randomdude999: perform manual bounds-checking and 2's complement,
 	// to prevent depending on UB
 	double num = math(instr);
@@ -913,7 +938,9 @@ static double eval(int depth)
 
 		foundlabel=true;
 		if (*(posneglabel-1) == '+') forwardlabel=true;
-		return labelval(posnegname) & 0xFFFFFF;
+		snes_label label_data = labelval(posnegname);
+		foundlabel_static &= label_data.is_static;
+		return label_data.pos & 0xFFFFFF;
 	}
 notposneglabel:
 	recurseblock rec;
@@ -928,7 +955,7 @@ notposneglabel:
 #define oper(name, thisdepth, contents)      \
 			if (!strncmp(str, name, strlen(name))) \
 			{                                      \
-				if (math_pri)                        \
+				if (math_pri || default_math_pri)                        \
 				{                                    \
 					if (depth<=thisdepth)              \
 					{                                  \
@@ -964,14 +991,34 @@ notposneglabel:
 
 //static autoptr<char*> freeme;
 double math(const char * s)
-{
+{	
 	//free(freeme);
 	//freeme=NULL;
 	foundlabel=false;
+	foundlabel_static=true;
 	forwardlabel=false;
-
-	str = s;
-	double rval = eval(0);
+	double rval;
+	
+	if(math_pri || default_math_pri)
+	{
+		str = s;
+		rval = eval(0);
+	}
+	else
+	{
+		str = s;
+		double no_pri_rval = eval(0);
+		
+		math_pri = true;
+		str = s;
+		rval = eval(0);	
+		math_pri = false;
+		if(no_pri_rval != rval)
+		{
+			asar_throw_warning(2, warning_id_feature_deprecated, "xkas style left to right math ", "apply order of operations");
+			rval = no_pri_rval;
+		}
+	}
 	if (*str)
 	{
 		if (*str == ',') asar_throw_error(1, error_type_block, error_id_invalid_input);
@@ -985,7 +1032,7 @@ void initmathcore()
 	functions.reset();
 	builtin_functions.each([](const char* key, double (*val)()) {
 		functions[key] = val;
-		functions[S "_" + key] = val;
+		functions[STR "_" + key] = val;
 	});
 	user_functions.reset();
 }

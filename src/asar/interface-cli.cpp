@@ -44,7 +44,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 		errnum++;
 		// don't show current block if the error came from an error command
 		bool show_block = (thisblock && (errid != error_id_error_command));
-		fputs(S getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
+		fputs(STR getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
 		static const int max_num_errors = 20;
 		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
@@ -57,7 +57,7 @@ void warn(int errid, const char * e_)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (thisblock && (errid != warning_id_warn_command));
-	fputs(S getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (S" [" + thisblock + "]") : "") + "\n", errloc);
+	fputs(STR getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
 	warned=true;
 }
 
@@ -77,15 +77,6 @@ void onsigxcpu(int ignored)
 
 int main(int argc, char * argv[])
 {
-	
-	//string test = "asdassdasdasdasd";
-	//test = "asdassd";
-	//test = "asdassdjghhjkjhjhjkhghjkgjhkgjhkgjhkjghkhjg";
-	//test = "123";
-	//test = "asdassdjghhjkjhjhjkhghjkgjhkgjhkgjhkjghkhfff";
-	//
-	//printf("%s\n", test.data());
-	//return -1;
 #ifdef TIMELIMIT
 #if defined(linux)
 	rlimit lim;
@@ -125,7 +116,7 @@ int main(int argc, char * argv[])
 	try
 	{
 		romdata_r = nullptr;
-		string version=S"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
+		string version=STR"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
 				dec(asarver_bug)+(asarver_beta?"pre":"")+", originally developed by Alcaro, maintained by Asar devs.\n"+
 				"Source code: https://github.com/RPGHacker/asar\n";
 		char * myname=argv[0];
@@ -135,7 +126,7 @@ int main(int argc, char * argv[])
 		if (!strncasecmp(myname, "xkas", strlen("xkas"))) {
 			// RPG Hacker: no asar_throw_Warning() here, because we didn't have a chance to disable warnings yet.
 			// Also seems like warning aren't even registered at this point yet.
-			puts("Warning: xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it.");
+			puts("Warning: xkas support is being deprecated and will be removed in the next release of asar!!!");
 			puts("(this was triggered by renaming asar.exe to xkas.exe, which activated a compatibility feature.)");
 			errloc=stdout;
 		}
@@ -176,7 +167,6 @@ int main(int argc, char * argv[])
 		bool verbose=libcon_interactive;
 		string symbols="";
 		string symfilename="";
-		bool printed_version=false;
 
 		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;
@@ -202,14 +192,8 @@ int main(int argc, char * argv[])
 			}
 			else if (par=="--version")
 			{
-				if (!printed_version)
-				{
-					puts(version);
-					printed_version = true;
-					// RPG Hacker: ...why?!?
-					// Keep finding these useless exit cases in all kinds of applications.
-					//return 0;
-				}
+				puts(version);
+				return 0;
 			}
 			else if (checkstartmatch(par, "--pause-mode="))
 			{
@@ -265,7 +249,7 @@ int main(int argc, char * argv[])
 				else if (checkstartmatch(w_param, "no"))
 				{
 					asar_warning_id warnid = parse_warning_id_from_string(w_param + strlen("no"));
-					
+
 					if (warnid != warning_id_end)
 					{
 						set_warning_enabled(warnid, false);
@@ -333,10 +317,9 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		if (verbose && !printed_version)
+		if (verbose)
 		{
 			puts(version);
-			printed_version = true;
 		}
 		string asmname=libcon_require_filename("Enter patch name:");
 		string romname=libcon_optional_filename("Enter ROM name:", nullptr);
@@ -348,12 +331,12 @@ int main(int argc, char * argv[])
 			string romnametmp = get_base_name(asmname);
 			if (file_exists(romnametmp+".sfc")) romname=romnametmp+".sfc";
 			else if (file_exists(romnametmp+".smc")) romname=romnametmp+".smc";
-			else romname=S romnametmp+".sfc";
+			else romname=STR romnametmp+".sfc";
 		}
 		else if (!strchr(romname, '.') && !file_exists(romname))
 		{
-			if (file_exists(S romname+".sfc")) romname+=".sfc";
-			else if (file_exists(S romname+".smc")) romname+=".smc";
+			if (file_exists(STR romname+".sfc")) romname+=".sfc";
+			else if (file_exists(STR romname+".smc")) romname+=".smc";
 		}
 		if (!file_exists(romname))
 		{
@@ -391,7 +374,7 @@ int main(int argc, char * argv[])
 				}
 				if (libcon_interactive)
 				{
-					if (!libcon_question_bool(S"Warning: The ROM title appears to be \""+title+"\", which looks like garbage. "
+					if (!libcon_question_bool(STR"Warning: The ROM title appears to be \""+title+"\", which looks like garbage. "
 							"Is this your ROM title? (Note that inproperly answering \"yes\" will crash your ROM.)", false))
 					{
 						puts("Assembling aborted. snespurify should be able to fix your ROM.");
@@ -400,7 +383,7 @@ int main(int argc, char * argv[])
 				}
 				else
 				{
-					puts(S"Error: The ROM title appears to be \""+title+"\", which looks like garbage. "
+					puts(STR"Error: The ROM title appears to be \""+title+"\", which looks like garbage. "
 								"If this is the ROM title, add --no-title-check to the command line options. If the ROM title is something else, use snespurify on your ROM.");
 					pause(err);
 					return 1;
@@ -411,7 +394,7 @@ int main(int argc, char * argv[])
 		romlen_r=romlen;
 		memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
 
-		string stdincludespath = S dir(argv[0]) + "stdincludes.txt";
+		string stdincludespath = STR dir(argv[0]) + "stdincludes.txt";
 		parse_std_includes(stdincludespath, includepaths);
 
 		for (int i = 0; i < includepaths.count; ++i)
@@ -424,7 +407,7 @@ int main(int argc, char * argv[])
 		new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
 		filesystem = &new_filesystem;
 
-		string stddefinespath = S dir(argv[0]) + "stddefines.txt";
+		string stddefinespath = STR dir(argv[0]) + "stddefines.txt";
 		parse_std_defines(stddefinespath);
 
 		for (pass=0;pass<3;pass++)

@@ -1,21 +1,20 @@
 1 VERSIONINFO
-    FILEVERSION    1,7,1,0
-    PRODUCTVERSION 1,7,1,0
+    FILEVERSION    1,9,0,0
+    PRODUCTVERSION 1,9,0,0
 {
     BLOCK "StringFileInfo"
     {
         BLOCK "040904b0" // en-US with UTF-8
         {
-            // might need to work on this one a bit more. Maybe some random SMWC in-joke?
-            VALUE "CompanyName",        "Random people on the internet\0"
+            VALUE "CompanyName",        "Asar devs\0"
             VALUE "FileDescription",    "SNES assembler\0"
             // explorer apparently always shows the file version with the numbers, but product version with text?
-            VALUE "FileVersion",        "v1.71\0"
+            VALUE "FileVersion",        "v1.90\0"
             // apparently this is required?
             VALUE "InternalName",       "asar\0"
             VALUE "OriginalFilename",   "asar.exe\0"
             VALUE "ProductName",        "Asar\0"
-            VALUE "ProductVersion",     "v1.71\0"
+            VALUE "ProductVersion",     "v1.90\0"
         }
     }
     BLOCK "VarFileInfo"

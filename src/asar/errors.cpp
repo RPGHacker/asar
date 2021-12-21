@@ -70,7 +70,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_rom_too_short, "ROM is too short to have a title. (Expected '%s')" },
 	{ error_id_rom_title_incorrect, "ROM title is incorrect. Expected '%s', got '%s'." },
 
-	{ error_id_bank_border_crossed, "A bank border was crossed somewhere prior to this point." },
+	{ error_id_bank_border_crossed, "A bank border was crossed, SNES address $%06X." },
 
 	{ error_id_start_of_file, "This command may only be used at the start of a file." },
 	{ error_id_xkas_asar_conflict, "Using @xkas and @asar in the same patch is not supported." },
@@ -106,7 +106,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_label_not_found, "Label '%s' wasn't found." },
 	{ error_id_label_redefined, "Label '%s' redefined." },
 	{ error_id_broken_label_definition, "Broken label definition." },
-	{ error_id_label_cross_assignment, "Setting labels to each other is not valid." },
+	{ error_id_label_cross_assignment, "Setting labels to other non-static labels is not valid." },
 	{ error_id_macro_label_outside_of_macro, "Macro label outside of a macro." },
 	{ error_id_label_on_third_pass, "Internal error: A label was created on the third pass. Please create an issue on the official GitHub repository and attach a patch which reproduces the error." },
 	{ error_id_label_moving, "Internal error: A label is moving around. Please create an issue on the official GitHub repository and attach a patch which reproduces the error." },
@@ -137,7 +137,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_define_not_found, "Define '%s' wasn't found." },
 	{ error_id_broken_define_declaration, "Broken define declaration." },
 	{ error_id_overriding_builtin_define, "Trying to set define '%s', which is the name of a built-in define and thus can't be modified." },
-	{ error_id_define_label_math, "!Define #= Label is not allowed." },
+	{ error_id_define_label_math, "!Define #= Label is not allowed with non-static labels." },
 	{ error_id_mismatched_braces, "Mismatched braces." },
 
 	{ error_id_invalid_macro_name, "Invalid macro name." },
@@ -155,7 +155,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_misplaced_endmacro, "Misplaced endmacro." },
 	{ error_id_unclosed_macro, "Unclosed macro." },
 
-	{ error_id_label_in_conditional, "Label in %s command." },
+	{ error_id_label_in_conditional, "Non-static label in %s command." },
 	{ error_id_broken_conditional, "Broken %s command." },
 	{ error_id_invalid_condition, "Invalid condition." },
 	{ error_id_misplaced_elseif, "Misplaced elseif." },
@@ -174,7 +174,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_recursion_limit, "Recursion limit reached." },
 	{ error_id_command_in_non_root_file, "This command may only be used in the root file." },
 	{ error_id_cant_be_main_file, "This file may not be used as the main file.%s" },
-	{ error_id_no_labels_here, "Can't use labels here." },
+	{ error_id_no_labels_here, "Can't use non-static labels here." },
 
 	{ error_id_invalid_freespace_request, "Invalid freespace request." },
 	{ error_id_no_banks_with_ram_mirrors, "No banks contain the RAM mirrors in hirom or exhirom." },
@@ -193,7 +193,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_broken_autoclean, "Broken autoclean command." },
 
 	{ error_id_pulltable_without_table, "Using pulltable when there is no table on the stack yet." },
-	{ error_id_invalid_table_file, "Invalid table file." },
+	{ error_id_invalid_table_file, "Invalid table file. Invalid entry on line: %i" },
 
 	{ error_id_pad_in_freespace, "pad does not make sense in a freespaced code." },
 
@@ -225,7 +225,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_error_command, "error command%s" },
 
-	{ error_id_invalid_print_function_syntax, "Invalid print function syntax." },
+	{ error_id_invalid_print_function_syntax, "Invalid printable string syntax." },
 	{ error_id_unknown_variable, "Unknown variable." },
 
 	{ error_id_invalid_warning_id, "Invalid warning ID passed to %s. Expected format is WXXXX where %d <= XXXX <= %d." },
@@ -235,12 +235,12 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_failed_to_open_file_access_denied, "Failed to open file '%s'. Access denied." },
 	{ error_id_failed_to_open_not_regular_file, "Failed to open file '%s'. Not a regular file (did you try to use a directory?)" },
-	
+
 	{ error_id_bad_dp_base, "The dp base should be page aligned (i.e. a multiple of 256)"},
 	{ error_id_bad_dp_optimize, "Bad dp optimize value %s, expected: [none, ram, always]"},
 	{ error_id_bad_address_optimize, "Bad dp optimize value %s, expected: [default, ram, mirrors]"},
 	{ error_id_bad_optimize, "Bad optimize value %s, expected: [dp, address]"},
-	
+
 	{ error_id_require_parameter, "Missing required function parameter"},
 	{ error_id_expected_parameter, "Not enough parameters in calling of function %s"},
 	{ error_id_unexpected_parameter, "Too many parameters in calling of function %s"},
@@ -250,14 +250,39 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_alignment_too_big, "Requested alignment too large." },
 
 	{ error_id_negative_shift, "Bitshift amount is negative." },
-	
+
 	{ error_id_macro_not_varadic, "Invalid use of sizeof(...), active macro is not variadic." },
 	{ error_id_vararg_sizeof_nomacro, "Invalid use of sizeof(...), no active macro." },
 	{ error_id_macro_wrong_min_params, "Variadic macro call with too few parameters" },
 	{ error_id_vararg_out_of_bounds, "Variadic macro parameter requested is out of bounds." },
-	{ error_id_vararg_must_be_last, "Variadic macro parameter must be the last parameter." }
-};
+	{ error_id_vararg_must_be_last, "Variadic macro parameter must be the last parameter." },
+	{ error_id_invalid_global_label, "Global label definition contains an invalid label [%s]."},
 
+	{ error_id_spc700_addr_out_of_range, "Address %s out of range for instruction, valid range is 0000-1FFF" },
+	{ error_id_label_ambiguous, "Label (%s) location is ambiguous due to straddling optimization border." },
+
+	{ error_id_feature_unavaliable_in_spcblock, "This feature may not be used while an spcblock is active" },
+	{ error_id_endspcblock_without_spcblock, "Use of endspcblock without matching spcblock" },
+	{ error_id_missing_endspcblock, "Use of endspcblock without matching spcblock" },
+	{ error_id_spcblock_bad_arch, "spcblock only valid inside spc700 arch" },
+	{ error_id_spcblock_inside_struct, "Can not start an spcblock while a struct is still open" },
+	{ error_id_spcblock_too_few_args, "Too few args passed to spcblock" },
+	{ error_id_spcblock_too_many_args, "Too many args passed to spcblock" },
+	{ error_id_unknown_spcblock_type, "Unknown spcblock format" },
+	{ error_id_custom_spcblock_missing_macro, "Custom spcblock types must refer to a valid macro" },
+	{ error_id_spcblock_macro_doesnt_exist, "Macro specified to custom spcblock was not found"},
+	{ error_id_extra_spcblock_arg_for_type, "Only custom spcblock type takes a fourth argument" },
+	{ error_id_spcblock_macro_must_be_varadic, "Custom spcblock macros must be variadic" },
+	{ error_id_spcblock_macro_invalid_static_args, "Custom spcblock macros must have three static arguments" },
+	{ error_id_spcblock_custom_types_incomplete, "Custom spcblock types are not yet supported. One day." },
+	{ error_id_startpos_without_spcblock, "The startpos command is only valid in spcblocks" },
+	{ error_id_internal_error, "An internal asar error occured (%s). Send help." },
+
+	{ error_id_pushns_without_pullns, "pushns without matching pullns." },
+	{ error_id_pullns_without_pushns, "pullns without matching pushns." },
+
+	{ error_id_label_forward, "The use of forward labels is not allowed in this context" },
+};
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
 // matches with the number of constants in asar_warning_id. This is important, because
 // we are going to access asar_warnings as an array.

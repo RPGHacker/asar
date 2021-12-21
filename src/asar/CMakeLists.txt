@@ -7,7 +7,8 @@ option(ASAR_GEN_EXE "Build Asar standalone application" ON)
 option(ASAR_GEN_DLL "Build Asar shared library" ON)
 option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
 
-
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 
 
 # This maro sets a number of properties required by both,
@@ -65,7 +66,7 @@ macro(set_asar_shared_properties target)
 			/wd4820 # 'bytes' bytes padding added after construct 'member_name'
 			/wd4464 # relativ include path contains '..'
 		)
-		
+		target_link_options(${target} PRIVATE /STACK:4194304)
 		if(MSVC_VERSION VERSION_LESS "1900")
 			target_compile_features(${target} PRIVATE cxx_std_11)
 		else()
@@ -138,6 +139,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/interface-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/dll_helper.h"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"

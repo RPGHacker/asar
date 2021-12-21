@@ -22,6 +22,7 @@ extern int romlen_r;
 
 #define clean(string) do { string.qreplace(", ", ",", true); string.qreplace("  ", " ", true); \
 						strip_whitespace(string); string.qreplace("\t", " ", true);} while(0)
+#define clean_and_trim(string) do { clean(string); string.qreplace(" ", "", true);} while(0)
 
 int getlen(const char * str, bool optimizebankextraction=false);
 bool is_hex_constant(const char * str);
@@ -60,7 +61,7 @@ public:
 	recurseblock()
 	{
 		recursioncount++;
-		if (recursioncount > 2500) asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
+		if (recursioncount > 250) asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
 	}
 	~recurseblock()
 	{
@@ -72,20 +73,22 @@ extern const int asarver_maj;
 extern const int asarver_min;
 extern const int asarver_bug;
 extern const bool asarver_beta;
+extern bool default_math_pri;
 
 extern bool asarverallowed;
 extern bool istoplevel;
 
 extern bool moreonline;
+extern bool moreonlinecond;
+extern int fakeendif;
 
 extern bool checksum_fix_enabled;
 extern bool force_checksum_fix;
 
-extern const char * callerfilename;
+extern string callerfilename;
 extern int callerline;
 extern string thisfilename;
 extern int thisline;
-extern int lastspecialline;
 extern const char * thisblock;
 
 extern int incsrcdepth;

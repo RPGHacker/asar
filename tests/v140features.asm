@@ -203,7 +203,15 @@
 ;`
 ;`0A
 ;`0B
-
+;`warnW1030
+;`
+;P>
+;P>;This is not a comment, so getconnectedlines() should ignore it and not remove it.
+;P>
+;P>Let's have some random decimal number with fractional part: 10.34017
+;P>Now the same number, but with a different precision: 10.3401734476
+;P>Testing a few more numbers: 0, 0.1, -0.1, 1, -1
+;P>
 @asar 1.40
 
 math round off
@@ -367,16 +375,14 @@ db $0A		; This is a comment as well, so getconnectedlines() should remove it and
 db $0B
 
 
-; RPG Hacker: Nevermind, those prints need to go. They will make test.cpp fail.
+print ""
+print ";This is not a comment, ",\
+    "so getconnectedlines() should ignore it and not remove it."
+ 
+print ""
+ 
+print "Let's have some random decimal number with fractional part: ",double(10.340173447601384024017510834015701571048)
+print "Now the same number, but with a different precision: ",double(10.340173447601384024017510834015701571048, 10)
+print "Testing a few more numbers: ",double(0.0),", ",double(0.1),", ",double(-0.1),", ",double(1.0),", ",double(-1.0)
 
-; print ""
-; print ";This is not a comment, ",\
-      ; "so getconnectedlines() should ignore it and not remove it."
-	  
-; print ""
-	  
-; print "Let's have some random decimal number with fractional part: ",double(10.340173447601384024017510834015701571048)
-; print "Now the same number, but with a different precision: ",double(10.340173447601384024017510834015701571048, 100)
-; print "Testing a few more numbers: ",double(0.0),", ",double(0.1),", ",double(-0.1),", ",double(1.0),", ",double(-1.0)
-
-; print ""
+print ""

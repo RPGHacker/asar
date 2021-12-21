@@ -151,7 +151,7 @@ void resizerats(int snesaddr, int newlen)
 {
 	int pos=snestopc(ratsstart(snesaddr));
 	if (pos<0) return;
-	if (newlen!=1) newlen--;
+	if (newlen!=0) newlen--;
 	writeromdata_byte(pos+4, (unsigned char)(newlen&0xFF));
 	writeromdata_byte(pos+5, (unsigned char)((newlen>>8)&0xFF));
 	writeromdata_byte(pos+6, (unsigned char)((newlen&0xFF)^0xFF));
@@ -284,19 +284,36 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 	}
 	if (mapper==hirom)
 	{
-		if (isforcode) return -1;
+		if (isforcode)
+		{
+			for(int i = 0x8000; i < min(romlen, 0x400000); i += 0xFFFF){
+				int space = trypcfreespace(i, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte);
+				if(space != -1) return space;
+			}
+			return -1;
+		}
 		return trypcfreespace(0, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte);
 	}
 	if (mapper==exlorom)
 	{
 		// RPG Hacker: Not really 100% sure what to do here, but I suppose this simplified code will do
 		// and we won't need all the complicated stuff from LoROM above?
-		if (isforcode) return -1;
+		if (isforcode)
+		{
+			trypcfreespace(0, min(romlen, 0x200000), size, 0x7FFF, align?0x7FFF:0, freespacebyte);
+		}
 		return trypcfreespace(0, romlen, size, 0x7FFF, align ? 0x7FFF : 0, freespacebyte);
 	}
 	if (mapper==exhirom)
 	{
-		if (isforcode) return -1;
+		if (isforcode)
+		{
+			for(int i = 0x8000; i < romlen && i < 0x400000; i += 0xFFFF){
+				int space = trypcfreespace(i, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte);
+				if(space != -1) return space;
+			}
+			return -1;
+		}
 		return trypcfreespace(0, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte);
 	}
 	if (mapper==sfxrom)
