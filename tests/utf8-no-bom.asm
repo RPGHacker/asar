@@ -1,6 +1,5 @@
 ;`00 01 02 02 03 04 05 06 07 05 03 08
 ;`10
-;`11
 
 'D' = $00
 'o' = $01
@@ -19,8 +18,3 @@ db "Doppelgänger"
 table "data/table.tbl"
 
 db "Ä"
-
-
-table "data/table-rtl.tbl",rtl
-
-db "Ü"

@@ -2209,10 +2209,6 @@ void assembleblock(const char * block)
 	}
 	else if (is1("table"))
 	{
-		bool fliporder=false;
-		if(0);
-		else if (striend(par, ",ltr")) { par[strlen(par)-4] = 0; }
-		else if (striend(par, ",rtl")) { par[strlen(par)-4] = 0; fliporder=true; }
 		string name=safedequote(par);
 		autoptr<char*> tablecontents=readfile(name, thisfilename);
 		if (!tablecontents) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
@@ -2220,35 +2216,18 @@ void assembleblock(const char * block)
 		cleartable();
 		for (int i=0;tablelines[i];i++)
 		{
-			string tableline=tablelines[i];
-			if (!*tableline) continue;
-			if (!fliporder)
-			{
-				const char* linepos = tableline;
-				int codepoint;
-				linepos += utf8_val(&codepoint, linepos);
-				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-				if (*linepos != '=') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
-				linepos++;
-				if (linepos[1]=='x' || linepos[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
-				char * end;
-				unsigned int val = (unsigned int)strtol(linepos, &end, 16);
-				if (*end != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
-				thetable.set_val(codepoint, val);
-			}
-			else
-			{
-				if (tableline[1]=='x' || tableline[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
-				char * eq;
-				unsigned int val=(unsigned int)strtol(tableline, &eq, 16);
-				if (eq[0]!='=') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
-				const char* linepos = eq+1;
-				int codepoint;
-				linepos += utf8_val(&codepoint, linepos);
-				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-				if (*linepos != '\0') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
-				thetable.set_val(codepoint, val);
-			}
+			const char* linepos = tablelines[i];
+			if (!*linepos) continue;
+			int codepoint;
+			linepos += utf8_val(&codepoint, linepos);
+			if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+			if (*linepos != '=') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
+			linepos++;
+			if (linepos[1]=='x' || linepos[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
+			char * end;
+			unsigned int val = (unsigned int)strtol(linepos, &end, 16);
+			if (*end != '\0' && strcmp("\r", end)) asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
+			thetable.set_val(codepoint, val);
 		}
 	}
 	else if (is3("function"))
