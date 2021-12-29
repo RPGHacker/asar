@@ -471,8 +471,6 @@ void resolvedefines(string& out, const char * start)
 	if (!confirmquotes(out)) { asar_throw_error(0, error_type_null, error_id_mismatched_quotes); out = ""; }
 }
 
-int repeatnext=1;
-
 bool moreonline;
 bool moreonlinecond;
 int fakeendif;
@@ -506,22 +504,17 @@ void assembleline(const char * fname, int linenum, const char * line)
 		for (int block=0;moreonline;block++)
 		{
 			moreonline=(blocks[block+1] != nullptr);
-			int repeatthis=repeatnext;
-			repeatnext=1;
-			for (int i=0;i<repeatthis;i++)
+			try
 			{
-				try
-				{
-					string stripped_block = strip_whitespace(blocks[block]);
+				string stripped_block = strip_whitespace(blocks[block]);
 
-					thisline=linenum;//do not optimize, this one is recursive
-					thisblock = stripped_block.data();
-					assembleblock(thisblock);
-					checkbankcross();
-				}
-				catch (errblock&) {}
-				if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
+				thisline=linenum;//do not optimize, this one is recursive
+				thisblock = stripped_block.data();
+				assembleblock(thisblock);
+				checkbankcross();
 			}
+			catch (errblock&) {}
+			if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
 		}
 		if(fakeendif)
 		{
@@ -648,11 +641,6 @@ void assemblefile(const char * filename, bool toplevel)
 	{
 		asar_throw_error(0, error_type_null, error_id_unclosed_macro);
 		if (!pass) endmacro(false);
-	}
-	if (repeatnext!=1)
-	{
-		repeatnext=1;
-		asar_throw_error(0, error_type_null, error_id_rep_at_file_end);
 	}
 	if (numif!=startif)
 	{
@@ -825,13 +813,13 @@ static string symbolfile;
 
 static void printsymbol_wla(const string& key, snes_label& label)
 {
-	string line = hex2((label.pos & 0xFF0000)>>16)+":"+hex4(label.pos & 0xFFFF)+" "+key+"\n";
+	string line = hex((label.pos & 0xFF0000)>>16, 2)+":"+hex(label.pos & 0xFFFF, 4)+" "+key+"\n";
 	symbolfile += line;
 }
 
 static void printsymbol_nocash(const string& key, snes_label& label)
 {
-	string line = hex8(label.pos & 0xFFFFFF)+" "+key+"\n";
+	string line = hex(label.pos & 0xFFFFFF, 8)+" "+key+"\n";
 	symbolfile += line;
 }
 

@@ -6,8 +6,8 @@
 ;`FFFFF 00
 freedata cleaned
 A:
-rep 30000 : db 0
+fill 30000
 
 freedata cleaned
 prot A
-rep 5000 : db 0
+fill 5000

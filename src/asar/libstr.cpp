@@ -40,17 +40,9 @@ char * readfile(const char * fname, const char * basepath)
 	char * data= typed_malloc(char, datalen+1);
 	data[filesystem->read_file(myfile, data, 0u, datalen)] = 0;
 	filesystem->close_file(myfile);
-	int inpos=0;
-	int outpos=0;
-	inpos += check_bom(data + inpos);
-	while (data[inpos])
-	{
-		if (data[inpos]!='\r') data[outpos++]=data[inpos];
-		inpos++;
-	}
-	data[outpos]=0;
+
 	if (!is_valid_utf8(data)) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-	return data;
+	return data + check_bom(data);
 }
 
 // RPG Hacker: like readfile(), but doesn't use virtual file system
@@ -63,17 +55,9 @@ char * readfilenative(const char * fname)
 	char * data = typed_malloc(char, datalen + 1);
 	data[read_file(myfile, data, datalen)] = 0;
 	close_file(myfile);
-	int inpos = 0;
-	int outpos = 0;
-	inpos += check_bom(data + inpos);
-	while (data[inpos])
-	{
-		if (data[inpos] != '\r') data[outpos++] = data[inpos];
-		inpos++;
-	}
-	data[outpos] = 0;
+
 	if (!is_valid_utf8(data)) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-	return data;
+	return data + check_bom(data);
 }
 
 bool readfile(const char * fname, const char * basepath, char ** data, int * len)
@@ -272,7 +256,7 @@ string& string::qnormalize()
 	string out;
 	char *startstr = thisstring.raw();
 	char *str = startstr;
-	while(str = strpbrk(str, "'\" \t,"))
+	while(str = strpbrk(str, "'\" \t,\r"))
 	{
 		if(is_space(*str))
 		{

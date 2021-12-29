@@ -114,7 +114,7 @@ static bool assinglebitwithc(const char * op, const char * math, int bits)
 		else return false;
 		num=getnum(math);
 	}
-	if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_spc700_addr_out_of_range, hex4(num).data());
+	if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_spc700_addr_out_of_range, hex(num, 4).data());
 	write2(((unsigned int)bits<<13)|num);
 	return true;
 }

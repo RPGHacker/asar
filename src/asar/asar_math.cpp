@@ -345,8 +345,8 @@ template <int count> double asar_read()
 	}
 	else
 	{
-		if (addr<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)target) + " in read function").data());
-		else if (addr+count>romlen_r) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, (hex6(target) + " in read function").data());
+		if (addr<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex((unsigned int)target, 6) + " in read function").data());
+		else if (addr+count>romlen_r) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, (hex(target, 6) + " in read function").data());
 	}
 
 	unsigned int value = 0;

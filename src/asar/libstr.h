@@ -378,55 +378,6 @@ inline string hex(unsigned int value, int width)
 	return buffer;
 }
 
-inline string hex0(unsigned int value)
-{
-	char buffer[64];
-	sprintf(buffer, "%X", value);
-	return buffer;
-}
-
-inline string hex2(unsigned int value)
-{
-	char buffer[64];
-	sprintf(buffer, "%.2X", value);
-	return buffer;
-}
-
-inline string hex3(unsigned int value)
-{
-	char buffer[64];
-	sprintf(buffer, "%.3X", value);
-	return buffer;
-}
-
-inline string hex4(unsigned int value)
-{
-	char buffer[64];
-	sprintf(buffer, "%.4X", value);
-	return buffer;
-}
-
-inline string hex5(unsigned int value)
-{
-	char buffer[64];
-	sprintf(buffer, "%.5X", value);
-	return buffer;
-}
-
-inline string hex6(unsigned int value)
-{
-	char buffer[64];
-	sprintf(buffer, "%.6X", value);
-	return buffer;
-}
-
-inline string hex8(unsigned int value)
-{
-	char buffer[64];
-	sprintf(buffer, "%.8X", value);
-	return buffer;
-}
-
 inline string dec(int value)
 {
 	char buffer[64];

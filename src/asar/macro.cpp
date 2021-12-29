@@ -228,12 +228,6 @@ void callmacro(const char * data)
 	macrosublabels = oldmacrosublabels;
 
 	macrorecursion--;
-	if (repeatnext!=1)
-	{
-		thisblock= nullptr;
-		repeatnext=1;
-		asar_throw_error(0, error_type_block, error_id_rep_at_macro_end);
-	}
 	if (numif!=startif)
 	{
 		thisblock= nullptr;

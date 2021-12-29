@@ -96,8 +96,6 @@ extern int incsrcdepth;
 
 extern bool ignoretitleerrors;
 
-extern int repeatnext;
-
 extern int optimizeforbank;
 
 //this is a trick to namespace an enum to avoid name collision without too much verbosity

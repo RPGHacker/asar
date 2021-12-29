@@ -179,7 +179,7 @@ inline void write1_65816(unsigned int num)
 		if (pcpos<0)
 		{
 			movinglabelspossible=true;
-			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).data());
+			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
 		}
 		writeromdata_byte(pcpos, (unsigned char)num);
 		if (pcpos>=romlen) romlen=pcpos+1;
@@ -680,7 +680,6 @@ void initstuff()
 	reallycalledmacros=0;
 	calledmacros=0;
 	macrorecursion=0;
-	repeatnext=1;
 	defines.reset();
 	builtindefines.each(adddefine);
 	clidefines.each(adddefine);
@@ -853,7 +852,7 @@ string handle_print(char* input)
 		else if (pars[i][0] == '"') out += safedequote(pars[i]);
 		else if (!stricmp(pars[i], "bytes")) out += dec(bytes);
 		else if (!stricmp(pars[i], "freespaceuse")) out += dec(freespaceuse);
-		else if (!stricmp(pars[i], "pc")) out += hex6((unsigned int)(snespos & 0xFFFFFF));
+		else if (!stricmp(pars[i], "pc")) out += hex((unsigned int)(snespos & 0xFFFFFF, 6));
 		else if (!strncasecmp(pars[i], "bin(", strlen("bin(")) ||
 			!strncasecmp(pars[i], "dec(", strlen("dec(")) ||
 			!strncasecmp(pars[i], "hex(", strlen("hex(")) ||
@@ -1444,7 +1443,7 @@ void assembleblock(const char * block)
 		freespaceend();
 		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
-		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
+		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex(num, 6).data());
 		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) asar_throw_warning(0, warning_id_set_middle_byte);
 		//if (fastrom) num|=0x800000;
 		snespos=(int)num;
@@ -1488,7 +1487,7 @@ void assembleblock(const char * block)
 
 		if (numwords == 3)
 		{
-			if (base&~0xFFFFFF) ret_error_params_cleanup(error_id_snes_address_out_of_bounds, hex6((unsigned int)base).data());
+			if (base&~0xFFFFFF) ret_error_params_cleanup(error_id_snes_address_out_of_bounds, hex((unsigned int)base, 6).data());
 			snespos = (int)base;
 			startpos = (int)base;
 		}
@@ -1571,7 +1570,7 @@ void assembleblock(const char * block)
 		spcblock.type = spcblock_nspc;
 		spcblock.macro_name = "";
 
-		if (spcblock.destination&~0xFFFF) asar_throw_error(0, error_type_block, error_id_snes_address_out_of_bounds, hex6(spcblock.destination).data());
+		if (spcblock.destination&~0xFFFF) asar_throw_error(0, error_type_block, error_id_snes_address_out_of_bounds, hex(spcblock.destination, 6).data());
 
 		if(numwords == 3)
 		{
@@ -1630,7 +1629,7 @@ void assembleblock(const char * block)
 				if (pass==2)
 				{
 					int pcpos=snestopc(spcblock.size_address&0xFFFFFF);
-					if (pcpos<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).data());
+					if (pcpos<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
 					int num=snespos-startpos;
 					writeromdata_byte(pcpos, (unsigned char)num);
 					writeromdata_byte(pcpos+1, (unsigned char)(num >> 8));
@@ -1667,7 +1666,7 @@ void assembleblock(const char * block)
 		}
 		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
-		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).data());
+		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num).data());
 		snespos=(int)num;
 		startpos=(int)num;
 		optimizeforbank=-1;
@@ -1677,7 +1676,7 @@ void assembleblock(const char * block)
 	{
 		unsigned int num=(int)getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
-		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex6((unsigned int)num).data());
+		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex((unsigned int)num, 6).data());
 		dp_base = (int)num;
 	}
 	else if (is2("optimize"))
@@ -1737,7 +1736,7 @@ void assembleblock(const char * block)
 		unsigned int num=getnum(par);
 		//if (forwardlabel) error(0, "bank Label is not valid");
 		//if (foundlabel) num>>=16;
-		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).data());
+		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num, 6).data());
 		optimizeforbank=(int)num;
 	}
 	else if (is("freespace") || is("freecode") || is("freedata"))
@@ -2056,17 +2055,7 @@ void assembleblock(const char * block)
 		unsigned int maxpos=getnum(par);
 		if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
 		if ((unsigned int)maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);
-		if ((unsigned int)snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex6((unsigned int)snespos).data(), hex6((unsigned int)maxpos).data());
-	}
-	else if (is1("rep"))
-	{
-		int rep = (int)getnum(par);
-		if (foundlabel) asar_throw_error(0, error_type_block, error_id_rep_label);
-		if (rep<0)
-		{
-			//todo new error for negative reps
-		}
-		repeatnext=rep;
+		if ((unsigned int)snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex((unsigned int)snespos).data(), hex((unsigned int)maxpos, 6).data());
 	}
 #ifdef SANDBOX
 	else if (is("incsrc") || is("incbin") || is("table"))
@@ -2323,7 +2312,7 @@ void assembleblock(const char * block)
 	{
 		if ((unsigned int)realsnespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
 		int num=(int)getnum(par);
-		if ((unsigned int)num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)num).data());
+		if ((unsigned int)num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)num, 6).data());
 		if (num>realsnespos)
 		{
 			int end=snestopc(num);
