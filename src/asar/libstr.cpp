@@ -39,7 +39,12 @@ char * readfile(const char * fname, const char * basepath)
 	filesystem->close_file(myfile);
 
 	if (!is_valid_utf8(data)) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-	return data + check_bom(data);
+	if(check_bom(data)){
+		data[0] = ' ';
+		data[1] = ' ';
+		data[2] = ' ';
+	}
+	return data;
 }
 
 // RPG Hacker: like readfile(), but doesn't use virtual file system
@@ -54,7 +59,12 @@ char * readfilenative(const char * fname)
 	close_file(myfile);
 
 	if (!is_valid_utf8(data)) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-	return data + check_bom(data);
+	if(check_bom(data)){
+		data[0] = ' ';
+		data[1] = ' ';
+		data[2] = ' ';
+	}
+	return data;
 }
 
 bool readfile(const char * fname, const char * basepath, char ** data, int * len)
