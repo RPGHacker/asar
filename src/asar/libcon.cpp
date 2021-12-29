@@ -1,8 +1,7 @@
-#include "std-includes.h"
 #include "libcon.h"
 #include "libstr.h"
 #include "unicode.h"
-#include <signal.h>
+#include <csignal>
 
 static const char * progname;
 static const char ** args;

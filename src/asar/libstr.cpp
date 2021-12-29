@@ -1,9 +1,6 @@
-#include "std-includes.h"
-#include "libstr.h"
-#include "virtualfile.h"
 #include "asar.h"
+#include "virtualfile.h"
 #include "unicode.h"
-#include "warnings.h"
 
 #include "platform/file-helpers.h"
 

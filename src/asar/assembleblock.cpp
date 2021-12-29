@@ -1,10 +1,5 @@
 #include "addr2line.h"
 #include "asar.h"
-#include "libstr.h"
-#include "libsmw.h"
-#include "assocarr.h"
-#include "autoarray.h"
-#include "warnings.h"
 #include "assembleblock.h"
 #include "asar_math.h"
 #include "macro.h"
@@ -852,7 +847,7 @@ string handle_print(char* input)
 		else if (pars[i][0] == '"') out += safedequote(pars[i]);
 		else if (!stricmp(pars[i], "bytes")) out += dec(bytes);
 		else if (!stricmp(pars[i], "freespaceuse")) out += dec(freespaceuse);
-		else if (!stricmp(pars[i], "pc")) out += hex((unsigned int)(snespos & 0xFFFFFF, 6));
+		else if (!stricmp(pars[i], "pc")) out += hex((unsigned int)(snespos & 0xFFFFFF), 6);
 		else if (!strncasecmp(pars[i], "bin(", strlen("bin(")) ||
 			!strncasecmp(pars[i], "dec(", strlen("dec(")) ||
 			!strncasecmp(pars[i], "hex(", strlen("hex(")) ||

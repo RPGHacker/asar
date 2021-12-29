@@ -1,19 +1,12 @@
 // "because satanism is best defeated by summoning a bigger satan"
 //   ~Alcaro, 2019 (discussing Asar)
 #include "addr2line.h"
-#include "std-includes.h"
-#include "libsmw.h"
-#include "libstr.h"
-#include "assocarr.h"
-#include "autoarray.h"
 #include "asar.h"
 #include "virtualfile.h"
-#include "warnings.h"
 #include "platform/file-helpers.h"
 #include "assembleblock.h"
 #include "asar_math.h"
 #include "macro.h"
-#include <cstdint>
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files

@@ -9,7 +9,6 @@
 
 #include "autoarray.h"
 #include "libstr.h"
-#include <cstdint>
 
 class AddressToLineMapping
 {
@@ -48,4 +47,3 @@ private:
 
 	autoarray<AddrToLineInfo> m_addrToLineInfo;
 };
-

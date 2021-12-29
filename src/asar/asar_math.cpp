@@ -1,19 +1,13 @@
 //Don't try using this in your own project, it's got a lot of Asar-specific tweaks. Use mathlib.cpp instead.
 #include "platform/file-helpers.h"
-#include "std-includes.h"
-#include "autoarray.h"
-#include "assocarr.h"
-#include "libstr.h"
-#include "libsmw.h"
 #include "asar.h"
 #include "virtualfile.h"
 #include "assembleblock.h"
 #include "macro.h"
 #include "asar_math.h"
-#include "warnings.h"
 #include "table.h"
 #include "unicode.h"
-#include <math.h>
+#include <cmath>
 #include <functional>
 #include <algorithm>
 

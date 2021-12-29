@@ -1,8 +1,4 @@
-#include "libstr.h"
 #include "asar.h"
-#include "autoarray.h"
-#include "assocarr.h"
-#include "errors.h"
 #include "assembleblock.h"
 #include "macro.h"
 #include "asar_math.h"

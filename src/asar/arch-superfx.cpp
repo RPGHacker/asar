@@ -1,9 +1,6 @@
 #include "asar.h"
-#include "errors.h"
 #include "assembleblock.h"
 #include "asar_math.h"
-
-#include "arch-shared.h"
 
 #define write1 write1_pick
 

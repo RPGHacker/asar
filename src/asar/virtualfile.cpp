@@ -3,8 +3,6 @@
 #include "platform/file-helpers.h"
 #include "warnings.h"
 
-
-
 class virtual_file
 {
 public:
@@ -24,7 +22,7 @@ class memory_file : public virtual_file
 public:
 	memory_file(const void* data, size_t length)
 		: m_data(data), m_length(length)
-	{		
+	{
 	}
 
 	virtual ~memory_file()
@@ -62,7 +60,7 @@ class physical_file : public virtual_file
 public:
 	physical_file()
 		: m_file_handle(InvalidFileHandle)
-	{		
+	{
 	}
 
 	virtual ~physical_file()
@@ -259,7 +257,7 @@ void virtual_filesystem::add_memory_file(const char* name, const void* buffer, s
 	memory_buffer mem_buf = { buffer, length };
 	m_memory_files.remove(name);
 	m_memory_files.create(name) = mem_buf;
-	
+
 }
 
 bool virtual_filesystem::is_path_absolute(const char* path)

@@ -1,8 +1,6 @@
 #include "addr2line.h"
 #include "asar.h"
 #include "crc32.h"
-#include "libstr.h"
-#include <cstdint>
 
 //////////////////////////////////////////////////////////////////////////
 // Class to store address-to-line mappings for richer symbolic information
@@ -57,4 +55,3 @@ int AddressToLineMapping::getFileIndex(const char* filename)
 
 	return m_fileList.count - 1;
 }
-

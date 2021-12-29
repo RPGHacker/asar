@@ -1,8 +1,6 @@
-#include "errors.h"
-
 #include "asar.h"
-#include <assert.h>
-#include <stdarg.h>
+#include <cassert>
+#include <cstdarg>
 
 #include "interface-shared.h"
 

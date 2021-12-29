@@ -1,10 +1,6 @@
 #include "asar.h"
-#include "assocarr.h"
 #include "crc32.h"
-#include "libstr.h"
-#include "libsmw.h"
 #include "virtualfile.h"
-#include "warnings.h"
 #include "platform/file-helpers.h"
 #include "interface-shared.h"
 #include "assembleblock.h"
@@ -13,7 +9,6 @@
 #include "dll_helper.h"
 #endif
 
-#include <cstdint>
 #if defined(CPPCLI)
 #define EXPORT extern "C"
 #elif defined(_WIN32)

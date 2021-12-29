@@ -1,10 +1,6 @@
 #include "asar.h"
-#include "warnings.h"
-#include "errors.h"
 #include "assembleblock.h"
 #include "asar_math.h"
-
-#include "arch-shared.h"
 
 #define write1 write1_pick
 
@@ -16,7 +12,7 @@ static void inline_finalizeorg()
 	if (writesizeto>=0 && pass==2)
 	{
 		int pcpos=snestopc(writesizeto&0xFFFFFF);
-		if (pcpos<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).data());
+		if (pcpos<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
 		int num=snespos-startpos;
 		writeromdata_byte(pcpos, (unsigned char)num);
 		writeromdata_byte(pcpos+1, (unsigned char)(num >> 8));
@@ -27,7 +23,7 @@ static void inline_finalizeorg()
 static void inline_org(unsigned int num)
 {
 	inline_finalizeorg();
-	if (num&~0xFFFF) asar_throw_error(0, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).data());
+	if (num&~0xFFFF) asar_throw_error(0, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num, 6).data());
 	writesizeto=realsnespos;
 	write2(0x0000);
 	write2(num);
@@ -262,7 +258,7 @@ bool asblock_spc700(char** word, int numwords)
 				else if (!stricmp(op, "clr")) write1((unsigned int)(0x12|(bits<<5)));
 				else return false;
 				unsigned int num=getnum(math);
-				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
+				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex(num, 6).data());
 				write1(num);
 				return true;
 			}
@@ -351,7 +347,7 @@ bool asblock_spc700(char** word, int numwords)
 				if (isop("mov") && !stricmp(arg[1], "c"))
 				{
 					unsigned int num=getnum(s1);
-					if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).data());
+					if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num, 6).data());
 					write1(0xCA);
 					write2(((unsigned int)bits<<13)|num);
 					return true;
@@ -361,7 +357,7 @@ bool asblock_spc700(char** word, int numwords)
 				else if (isop("bbc")) write1((unsigned int)(0x13|(bits<<5)));
 				else return false;
 				unsigned int num=getnum(s1);
-				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
+				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex(num, 6).data());
 				write1(num);
 				write1((getnum(arg[1])- (unsigned int)(snespos+1)));
 				return true;

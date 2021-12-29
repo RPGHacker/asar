@@ -70,7 +70,7 @@ private:
 		}
 		return ptr[id];
 	}
-	
+
 	void resize(int size)
 	{
 		int oldlen = count;
@@ -102,7 +102,7 @@ public:
 				ptr[i] = static_cast<T &&>(old[i]);
 			}
 			free(old);
-		
+
 		}
 		count = keep;
 	}

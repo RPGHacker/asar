@@ -1,5 +1,4 @@
 #pragma once
-#include <stdint.h> // for int64_t
 
 void initmathcore();
 void deinitmathcore();

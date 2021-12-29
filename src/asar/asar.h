@@ -9,11 +9,11 @@
 #pragma once
 #define Asar
 
-#include "autoarray.h"
 #include "assocarr.h"
 #include "libstr.h"
 #include "libsmw.h"
 #include "errors.h"
+#include "warnings.h"
 #include "virtualfile.h"
 #include <cstdint>
 

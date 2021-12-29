@@ -1,10 +1,5 @@
-#include "std-includes.h"
-#include "libsmw.h"
-#include "autoarray.h"
-#include "errors.h"
 #include "asar.h"
 #include "crc32.h"
-#include <cstdint>
 
 #include "platform/file-helpers.h"
 

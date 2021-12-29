@@ -2,7 +2,6 @@
 
 #include "std-includes.h"
 #include <cstdint>
-#include "errors.h"
 //ty alcaro
 extern const unsigned char char_props[256];
 static inline int to_lower(unsigned char c) { return c|(char_props[c]&0x20); }
@@ -545,41 +544,25 @@ inline string &lower(string &old)
 template<typename stringarraytype>
 inline int getconnectedlines(stringarraytype& lines, int startline, string& out)
 {
-	out = string("");
-	int count = 1;
+	int count = 0;
 
 	for (int i = startline; lines[i]; i++)
 	{
 		// The line should already be stripped of any comments at this point
 		int linestartpos = (int)strlen(lines[i]);
 
-		bool found = false;
-
-		for (int j = linestartpos; j > 0; j--)
+		if(linestartpos && lines[i][linestartpos - 1] == '\\')
 		{
-			if (!is_space(lines[i][j]) && lines[i][j] != '\0' && lines[i][j] != ';')
-			{
-				if (lines[i][j] == '\\')
-				{
-					count++;
-					out += string(lines[i], j);
-					found = true;
-					break;
-				}
-				else
-				{
-					out += string(lines[i], j + 1);
-					return count - 1;
-				}
-			}
+			count++;
+			out += string(lines[i], linestartpos - 1);
+			continue;
 		}
-
-		if (!found)
+		else
 		{
-			out += string(lines[i], 1);
-			return count - 1;
+			out += string(lines[i], linestartpos);
+			return count;
 		}
 	}
 
-	return count - 1;
+	return count;
 }
