@@ -9,6 +9,7 @@ option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
 
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
+set (CXX_STANDARD 17)
 
 
 # This maro sets a number of properties required by both,
@@ -69,12 +70,6 @@ macro(set_asar_shared_properties target)
 			/wd4464 # relativ include path contains '..'
 		)
 		target_link_options(${target} PRIVATE /STACK:4194304)
-		if(MSVC_VERSION VERSION_LESS "1900")
-			target_compile_features(${target} PRIVATE cxx_std_11)
-		else()
-			# MSVC throws errors in STL headers when building with MSVC 2017 without C++14...
-			target_compile_features(${target} PRIVATE cxx_std_14)
-		endif()
 	else()
 		target_compile_options(${target} PRIVATE -Wall -pedantic
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
@@ -90,8 +85,6 @@ macro(set_asar_shared_properties target)
 
 		# for some reason this isn't available on MSVC?
 		target_compile_features(${target} PRIVATE c_std_99)
-
-		target_compile_features(${target} PRIVATE cxx_std_11)
 	endif()
 endmacro()
 
