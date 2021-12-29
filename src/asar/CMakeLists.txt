@@ -9,7 +9,7 @@ option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
 
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
-set (CXX_STANDARD 17)
+set (CMAKE_CXX_STANDARD 17)
 
 
 # This maro sets a number of properties required by both,
