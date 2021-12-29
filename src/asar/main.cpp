@@ -290,6 +290,7 @@ struct stricompare {
 };
 
 struct sourcefile {
+	char *data;
 	char** contents;
 	int numlines;
 };
@@ -572,6 +573,7 @@ void assemblefile(const char * filename, bool toplevel)
 			return;
 		}
 		file.contents =split(temp, '\n');
+		file.data = temp;
 		for (int i=0;file.contents[i];i++)
 		{
 			file.numlines++;
@@ -793,7 +795,7 @@ static void clearmacro(const string & key, macrodata* & macro)
 static void clearfile(const string & key, sourcefile& filecontent)
 {
 	(void)key;
-	cfree(*filecontent.contents);
+	cfree(filecontent.data);
 	cfree(filecontent.contents);
 }
 
