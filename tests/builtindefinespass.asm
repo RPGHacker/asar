@@ -1,9 +1,9 @@
-;`01 03 06 07
+;`27 03 06 07
 
 org $008000
 
 if stringsequal("!assembler", "asar")
-	db $01
+	db '''
 else
 	db $02
 endif
