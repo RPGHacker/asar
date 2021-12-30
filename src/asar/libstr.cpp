@@ -103,14 +103,13 @@ const bool qparlut[256] = {
 //this will leave the last char found as the one pointed at
 inline bool skip_quote(char *&str)
 {
-	if (isq(*str)){
-		if(*str == '"') str = strchr(str + 1, '"');
-		else
-		{
-			int codepoint;
-			str += utf8_val(&codepoint, str + 1) + 1;
-			if(*str != '\'') return false;
-		}
+
+	if(*str == '"') str = strchr(str + 1, '"');
+	else if(*str == '\'')
+	{
+		int codepoint;
+		str += utf8_val(&codepoint, str + 1) + 1;
+		if(*str != '\'') return false;
 	}
 	return str;
 }
@@ -127,14 +126,12 @@ inline bool skip_par(char *&str)
 	while(true)
 	{
 		char *t = str;
-		if (isq(*str)){
-			if(*str == '"') t = strchr(t + 1, '"');
-			else
-			{
-				int codepoint;
-				t += utf8_val(&codepoint, t + 1) + 1;
-				if(*t != '\'') return false;
-			}
+		if(*str == '"') t = strchr(t + 1, '"');
+		else if(*str == '\'')
+		{
+			int codepoint;
+			t += utf8_val(&codepoint, t + 1) + 1;
+			if(*t != '\'') return false;
 		}
 		else if(*t == '(')
 		{
@@ -349,20 +346,17 @@ bool confirmqpar(const char * str)
 	while(!qparlut[*str]) str++;
 	while(*str)
 	{
-		if(isq(*str))
+		if(*str == '"')
 		{
-			if(*str == '"')
-			{
-				str = strchr(str + 1, '"');
-				if(!str++) return false;
-			}
-			else
-			{
-				int codepoint;
-				str += utf8_val(&codepoint, str + 1) + 1;
-				if(*str == '\'') str++;
-				else return false;
-			}
+			str = strchr(str + 1, '"');
+			if(!str++) return false;
+		}
+		else if(*str == '\'')
+		{
+			int codepoint;
+			str += utf8_val(&codepoint, str + 1) + 1;
+			if(*str == '\'') str++;
+			else return false;
 		}
 		else
 		{
