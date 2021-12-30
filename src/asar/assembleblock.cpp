@@ -2209,20 +2209,20 @@ void assembleblock(const char * block)
 	}
 	else if (is3("function"))
 	{
-			if (stricmp(word[2], "=")) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
-			if (!confirmqpar(word[1])) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
-			string line=word[1];
-			line.qnormalize();
-			char * startpar=strqchr(line.data(), '(');
-			if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
-			*startpar=0;
-			startpar++;
-			if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_invalid_function_name);
-			char * endpar=strqchr(startpar, ')');
-			//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nulls
-			if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
-			*endpar=0;
-			createuserfunc(line, startpar, word[3]);
+		if (stricmp(word[2], "=")) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
+		if (!confirmqpar(word[1])) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
+		string line=word[1];
+		line.qnormalize();
+		char * startpar=strqchr(line.data(), '(');
+		if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
+		*startpar=0;
+		startpar++;
+		if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_invalid_function_name);
+		char * endpar=strqchr(startpar, ')');
+		//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nulls
+		if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
+		*endpar=0;
+		createuserfunc(line, startpar, word[3]);
 	}
 	else if (is1("print"))
 	{
