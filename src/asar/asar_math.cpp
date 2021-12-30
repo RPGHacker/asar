@@ -177,8 +177,8 @@ string get_symbol_argument()
 {
 	while (*str==' ') str++;	//is this proper?  Dunno yet.
 	const char * strpos = str;
-	if(is_alpha(*str) || *str == '_') str++;
-	while (is_alnum(*str) || *str == '_' || *str == '.') str++;
+	if(is_ualpha(*str)) str++;
+	while (is_ualnum(*str) || *str == '.') str++;
 	if(strpos == str){
 		//error nothing was read, this is a placeholder error
 		asar_throw_error(2, error_type_block, error_id_string_literal_not_terminated);
@@ -651,7 +651,7 @@ static double asar_call_user_function()
 
 	for(int i=0; user_function.content[i]; i++)
 	{
-		if(!is_alpha(user_function.content[i]) && user_function.content[i] != '_')
+		if(!is_ualpha(user_function.content[i]))
 		{
 			real_content += user_function.content[i];
 			continue;
@@ -662,7 +662,7 @@ static double asar_call_user_function()
 			//this should *always* have a null term or another character after
 			bool potential_arg = stribegin(user_function.content+i, user_function.arguments[j]);
 			int next_char = i+strlen(user_function.arguments[j]);
-			if(potential_arg && (!is_alnum(user_function.content[next_char]) && user_function.content[next_char] != '_'))
+			if(potential_arg && !is_ualnum(user_function.content[next_char]))
 			{
 				real_content += args[j];
 				i = next_char - 1;
@@ -740,10 +740,10 @@ static double getnumcore()
 		}
 		return ret;
 	}
-	if (is_alpha(*str) || *str=='_' || *str=='.' || *str=='?')
+	if (is_ualpha(*str) || *str=='.' || *str=='?')
 	{
 		const char * start=str;
-		while (is_alnum(*str) || *str == '_' || *str == '.') str++;
+		while (is_ualnum(*str) || *str == '.') str++;
 		int len=(int)(str-start);
 		while (*str==' ') str++;
 		if (*str=='(')
@@ -785,25 +785,12 @@ static double getnumcore()
 			snes_label label_data = labelval(&start);
 			int i=(int)label_data.pos;
 			foundlabel_static &= label_data.is_static;
-			bool scope_passed = false;
-			bool subscript_passed = false;
-			while (str < start)
+			if(str < start)
 			{
-				if (*str == '.') scope_passed = true;
-				if (*(str++) == '[')
+				if ((str = strchr(str, '[')))
 				{
-					if (subscript_passed)
-					{
-						asar_throw_error(2, error_type_block, error_id_multiple_subscript_operators);
-						break;
-					}
-					subscript_passed = true;
-					if (scope_passed)
-					{
-						asar_throw_error(2, error_type_block, error_id_invalid_subscript);
-						break;
-					}
-					string struct_name = substr(old_start, (int)(str - old_start - 1));
+					string struct_name = substr(old_start, (int)(str - old_start));
+					str++;
 					i += (int)(eval(0) * object_size(struct_name));
 				}
 			}

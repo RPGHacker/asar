@@ -257,9 +257,8 @@ notposneglabel:
 			if (val>=0) thislen=1;
 			if (val>=256) thislen=2;
 			if (val>=65536) thislen=3;
-			if (val>=16777216) thislen=4;
 		}
-		else if (is_alpha(*str) || *str=='_' || *str=='.' || *str=='?')
+		else if (is_ualpha(*str) || *str=='.' || *str=='?')
 		{
 			snes_label thislabel;
 			bool exists=labelval(&str, &thislabel);
@@ -271,7 +270,6 @@ notposneglabel:
 					return 1;
 		if (thislen>len) len=thislen;
 	}
-	if (len>3) return 3;
 	return len;
 }
 

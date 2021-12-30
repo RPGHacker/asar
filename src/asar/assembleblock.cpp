@@ -294,7 +294,7 @@ bool confirmname(const char * name)
 	if (is_digit(name[0])) return false;
 	for (int i=0;name[i];i++)
 	{
-		if (!is_alnum(name[i]) && name[i]!='_') return false;
+		if (!is_ualnum(name[i])) return false;
 	}
 	return true;
 }
@@ -363,23 +363,19 @@ string posneglabelname(const char ** input, bool define)
 static string labelname(const char ** rawname, bool define=false)
 {
 #define deref_rawname (*rawname)
+	autoarray<string>* sublabellist = &sublabels;
+
 	bool ismacro = (deref_rawname[0] == '?');
+	bool issublabel = false;
 
 	if (ismacro)
 	{
 		deref_rawname++;
+		sublabellist = macrosublabels;
 	}
-
-	bool issublabel = false;
 
 	string name;
 	int i=-1;
-
-	autoarray<string>* sublabellist = &sublabels;
-	if (ismacro)
-	{
-		sublabellist = macrosublabels;
-	}
 
 	if (is_digit(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 	if (*deref_rawname ==':')
@@ -430,17 +426,17 @@ static string labelname(const char ** rawname, bool define=false)
 	if(!define && *deref_rawname == '[')
 	{
 		while (*deref_rawname && *deref_rawname != ']') deref_rawname++;
-		if (*deref_rawname != ']')
-		{
-			asar_throw_error(1, error_type_block, error_id_invalid_label_missing_closer);
-		}
+		if(*deref_rawname != ']') asar_throw_error(1, error_type_block, error_id_invalid_label_missing_closer);
 		deref_rawname++;
+		if(*deref_rawname != '.') asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 	}
 
 	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
 	{
 		name+=*(deref_rawname++);
 	}
+
+	if(*deref_rawname == '[') asar_throw_error(2, error_type_block, error_id_invalid_subscript);
 
 	if (define && i>=0)
 	{
@@ -454,22 +450,17 @@ static string labelname(const char ** rawname, bool define=false)
 inline bool labelvalcore(const char ** rawname, snes_label * rval, bool define, bool shouldthrow)
 {
 	string name=labelname(rawname, define);
-	snes_label rval_;
-	if (ns && labels.exists(ns+name)) {rval_ = labels.find(ns+name);}
-	else if (labels.exists(name)) {rval_ = labels.find(name);}
+	if (ns && labels.exists(ns+name)) {*rval = labels.find(ns+name);}
+	else if (labels.exists(name)) {*rval = labels.find(name);}
 	else
 	{
 		if (shouldthrow && pass)
 		{
 			asar_throw_error(1, error_type_block, error_id_label_not_found, name.data());
 		}
-		if (rval) { rval->pos = (unsigned int)-1; rval->is_static = false; }
+		rval->pos = (unsigned int)-1;
+		rval->is_static = false;
 		return false;
-	}
-	if (rval)
-	{
-		*rval=rval_;
-		//if (fastrom && (rval_&0x700000)!=0x700000) *rval|=0x800000;
 	}
 	return true;
 }
@@ -478,13 +469,6 @@ snes_label labelval(const char ** rawname, bool define)
 {
 	snes_label rval;
 	labelvalcore(rawname, &rval, define, true);
-	return rval;
-}
-
-snes_label labelval(char ** rawname, bool define)
-{
-	snes_label rval;
-	labelvalcore(const_cast<const char**>(rawname), &rval, define, true);
 	return rval;
 }
 
@@ -499,11 +483,6 @@ snes_label labelval(string name, bool define)
 bool labelval(const char ** rawname, snes_label * rval, bool define)
 {
 	return labelvalcore(rawname, rval, define, false);
-}
-
-bool labelval(char ** rawname, snes_label * rval, bool define)
-{
-	return labelvalcore(const_cast<const char**>(rawname), rval, define, false);
 }
 
 bool labelval(string name, snes_label * rval, bool define)

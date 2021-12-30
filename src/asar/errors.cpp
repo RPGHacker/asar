@@ -118,7 +118,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_struct_invalid_parent_name, "Invalid parent name." },
 	{ error_id_invalid_label_missing_closer, "Invalid label name, missing array closer." },
 	{ error_id_multiple_subscript_operators, "Multiple subscript operators is invalid." },
-	{ error_id_invalid_subscript, "Invalid array subscript after first scope resolution." },
+	{ error_id_invalid_subscript, "Invalid array subscript." },
 	{ error_id_label_missing_parent, "This label has no parent." },
 	{ error_id_array_invalid_inside_structs, "Array syntax invalid inside structs." },
 	{ error_id_struct_without_endstruct, "struct without matching endstruct." },

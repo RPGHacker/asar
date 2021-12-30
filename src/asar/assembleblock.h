@@ -63,10 +63,8 @@ int snestopc_pick(int addr);
 int getlenfromchar(char c);
 
 snes_label labelval(const char ** rawname, bool define = false);
-snes_label labelval(char ** rawname, bool define = false);
 snes_label labelval(string name, bool define = false);
 bool labelval(const char ** rawname, snes_label * rval, bool define = false);
-bool labelval(char ** rawname, snes_label * rval, bool define = false);
 bool labelval(string name, snes_label * rval, bool define = false);
 
 const char * safedequote(char * str);

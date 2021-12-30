@@ -1,8 +1,8 @@
-;`errE5062
-;`errE5062
-;`errE5062
-;`errE5062
 ;`errE5059
+;`errE5075
+;`errE5075
+;`errE5075
+;`errE5075
 org $008000
 test[2]:
 struct asdf
