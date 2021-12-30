@@ -407,13 +407,13 @@ static string labelname(const char ** rawname, bool define=false)
 		name = STR":macro_" + dec(calledmacros) + "_" + name;
 	}
 
-	if(in_sub_struct)
-	{
-		name += struct_parent + ".";
-	}
 
 	if (in_struct || in_sub_struct)
 	{
+		if(in_sub_struct)
+		{
+			name += struct_parent + ".";
+		}
 		name += struct_name;
 		name += '.';
 		if(*deref_rawname != '.') asar_throw_error(1, error_type_block, error_id_invalid_label_name);  //probably should be a better error. TODO!!!
@@ -422,31 +422,26 @@ static string labelname(const char ** rawname, bool define=false)
 
 	if (!is_ualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
 
-	while (is_ualnum(*deref_rawname) || *deref_rawname == '.' || *deref_rawname == '[')
+	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
 	{
-		if(!in_struct && !in_sub_struct && *deref_rawname == '[')
-		{
-			bool invalid = true;
-			while (isprint(*deref_rawname))
-			{
-				if (*(deref_rawname++) == ']')
-				{
-					invalid = false;
-					break;
-				}
-			}
-			if (invalid)
-			{
-				asar_throw_error(1, error_type_block, error_id_invalid_label_missing_closer);
-			}
-		}
-		else if (*deref_rawname == '{')
-		{
-			asar_throw_error(1, error_type_block, error_id_array_invalid_inside_structs);
-		}
-
 		name+=*(deref_rawname++);
 	}
+
+	if(!define && *deref_rawname == '[')
+	{
+		while (*deref_rawname && *deref_rawname != ']') deref_rawname++;
+		if (*deref_rawname != ']')
+		{
+			asar_throw_error(1, error_type_block, error_id_invalid_label_missing_closer);
+		}
+		deref_rawname++;
+	}
+
+	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
+	{
+		name+=*(deref_rawname++);
+	}
+
 	if (define && i>=0)
 	{
 		(*sublabellist).reset(i);

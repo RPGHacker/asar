@@ -292,7 +292,7 @@ void serialize(serializer & s)
 #define SERIALIZER_BANNED
 
 private:
-static const int scale_factor = 3; //scale sso
+static const int scale_factor = 4; //scale sso
 static const int max_inline_length_ = ((sizeof(char *) + sizeof(int) * 2) * scale_factor) - 2;
 char *cached_data;
 int next_resize;

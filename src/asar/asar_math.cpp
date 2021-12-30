@@ -868,6 +868,7 @@ inline double sanitize(double val)
 static double getnum()
 {
 	while (*str==' ') str++;
+	if(*str == '$') return sanitize(getnumcore());	//optimize for the common case
 #define prefix(sym, func) if (*str == sym) { str+=1; double val=getnum(); return sanitize(func); }
 #define prefix2(sym, sym2, func) if (*str == sym && *(str+1) == sym2) { str+=2; double val=getnum(); return sanitize(func); }
 	prefix('-', -val);
