@@ -1,4 +1,4 @@
-;`errE5139
-;`errE5139
-table "data/invalid-table-1.tbl"
-table "data/invalid-table-2.tbl"
+;`errE5059
+;`errE5050
+incsrc "data/invalid-table-1.tbl"
+incsrc "data/invalid-table-2.tbl"

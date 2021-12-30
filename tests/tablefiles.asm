@@ -8,7 +8,7 @@
 
 org $008000
 
-table "data/table.tbl"
+incsrc "data/table.tbl"
 db "ABCD"
 dw "ABCD"
 dl "ABCD"

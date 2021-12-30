@@ -5,7 +5,7 @@
 ;P>日本語🇯🇵
 
 org $008000
-table "data/日本語😳.tbl"
+incsrc "data/日本語😳.tbl"
 
 '💩' = $DEADBEEF
 

@@ -2207,33 +2207,8 @@ void assembleblock(const char * block)
 		thetable=tablestack[tablestack.count-1];
 		tablestack.remove(tablestack.count-1);
 	}
-	else if (is1("table"))
-	{
-		string name=safedequote(par);
-		autoptr<char*> tablecontents=readfile(name, thisfilename);
-		if (!tablecontents) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
-		autoptr<char**> tablelines=split(tablecontents, '\n');
-		cleartable();
-		for (int i=0;tablelines[i];i++)
-		{
-			const char* linepos = tablelines[i];
-			if (!*linepos) continue;
-			int codepoint;
-			linepos += utf8_val(&codepoint, linepos);
-			if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-			if (*linepos != '=') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
-			linepos++;
-			if (linepos[1]=='x' || linepos[1]=='X') asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
-			char * end;
-			unsigned int val = (unsigned int)strtol(linepos, &end, 16);
-			if (*end != '\0' && strcmp("\r", end)) asar_throw_error(0, error_type_block, error_id_invalid_table_file, i+1);
-			thetable.set_val(codepoint, val);
-		}
-	}
 	else if (is3("function"))
 	{
-		//if (!pass)
-		//{
 			if (stricmp(word[2], "=")) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			if (!confirmqpar(word[1])) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			string line=word[1];
@@ -2248,13 +2223,11 @@ void assembleblock(const char * block)
 			if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 			*endpar=0;
 			createuserfunc(line, startpar, word[3]);
-		//}
 	}
 	else if (is1("print"))
 	{
 		string out = handle_print(par);
-		if (pass!=2) return;
-		print(out);
+		if (pass==2) print(out);
 	}
 	else if (is1("reset"))
 	{

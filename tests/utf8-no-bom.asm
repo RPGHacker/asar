@@ -15,6 +15,6 @@ org $008000
 db "Doppelgänger"
 
 
-table "data/table.tbl"
+incsrc "data/table.tbl"
 
 db "Ä"

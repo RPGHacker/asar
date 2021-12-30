@@ -91,12 +91,12 @@ lorom
 
 	dl $FFFFFF
 
-	table "data/pushtable1.tbl"
+	incsrc "data/pushtable1.tbl"
 	db "ABCD"
 
 	pushtable
 
-	table "data/pushtable2.tbl"
+	incsrc "data/pushtable2.tbl"
 	db "ABCD"
 
 	pulltable
