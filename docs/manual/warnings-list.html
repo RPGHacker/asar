@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Asar User Manual</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" href="../shared/highlight_js/styles/default.css" />
+    <script src="../shared/highlight_js/highlight.pack.js"></script>
+    <script>
+      hljs.configure({
+        tabReplace: "    ",
+      });
+      hljs.initHighlightingOnLoad();
+
+      function toggle_visibility(id) {
+        var e = document.getElementById(id);
+        var label = document.getElementById(id.concat("-toggle"));
+
+        if (e.style.display == "none") {
+          label.innerHTML = label.innerHTML.replace(
+            "[+] Expand",
+            "[-] Collapse"
+          );
+          e.style.display = "block";
+        } else {
+          label.innerHTML = label.innerHTML.replace(
+            "[-] Collapse",
+            "[+] Expand"
+          );
+          e.style.display = "none";
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <table>
+      <tr>
+        <th style="width: 150px">Warning ID</th>
+        <th>Internal name</th>
+        <th>Warning message</th>
+        <th>Enabled by default</th>
+      </tr>
+      <tr>
+        <td><code>W1001</code></td>
+        <td>relative_path_used</td>
+        <td>
+          "Relative %s path passed to asar_patch_ex() - please use
+          absolute paths only to prevent undefined behavior!"
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1002</code></td>
+        <td>rom_too_short</td>
+        <td>
+          "ROM is too short to have a title. (Expected '%d')"
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1003</code></td>
+        <td>rom_title_incorrect</td>
+        <td>
+          "ROM title is incorrect. Expected '%s', got '%s'."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1004</code></td>
+        <td>65816_yy_x_does_not_exist</td>
+        <td>"($yy),x does not exist, assuming $yy,x."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1005</code></td>
+        <td>65816_xx_y_assume_16_bit</td>
+        <td>
+          "%s $xx,y is not valid with 8-bit parameters, assuming
+          16-bit."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1006</code></td>
+        <td>spc700_assuming_8_bit</td>
+        <td>
+          "This opcode does not exist with 16-bit parameters, assuming 8-bit."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1007</code></td>
+        <td>cross_platform_path</td>
+        <td>
+          "This patch may not assemble cleanly on all platforms. Please use /
+          instead."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1008</code></td>
+        <td>missing_org</td>
+        <td>"Missing org or freespace command."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1009</code></td>
+        <td>set_middle_byte</td>
+        <td>"It would be wise to set the 008000 bit of this address."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1010</code></td>
+        <td>unrecognized_special_command</td>
+        <td>
+          "Unrecognized special command - your version of Asar might be
+          outdated."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1011</code></td>
+        <td>freespace_leaked</td>
+        <td>"This freespace appears to be leaked."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1012</code></td>
+        <td>warn_command</td>
+        <td>"warn command%s"</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1013</code></td>
+        <td>implicitly_sized_immediate</td>
+        <td>"Implicitly sized immediate."</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td><code>W1014</code></td>
+        <td>xkas_deprecated</td>
+        <td>
+          "xkas support is being deprecated and will be removed in a future
+          version of Asar. Please use an older version of Asar (&lt;=1.50) if
+          you need it."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1015</code></td>
+        <td>xkas_eat_parentheses</td>
+        <td>
+          "xkas compatibility warning: Unlike xkas, Asar does not eat
+          parentheses after defines."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1016</code></td>
+        <td>xkas_label_access</td>
+        <td>
+          "xkas compatibility warning: Label access is always 24bit in emulation
+          mode, but may be 16bit in native mode."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1017</code></td>
+        <td>xkas_warnpc_relaxed</td>
+        <td>"xkas conversion warning : warnpc is relaxed one byte in Asar."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1018</code></td>
+        <td>xkas_style_conditional</td>
+        <td>
+          "xkas-style conditional compilation detected. Please use the if
+          command instead."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1019</code></td>
+        <td>xkas_patch</td>
+        <td>
+          "If you want to assemble an xkas patch, add ;@xkas at the top or you
+          may run into a couple of problems."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1020</code></td>
+        <td>xkas_incsrc_relative</td>
+        <td>
+          "xkas compatibility warning: incsrc and incbin look for files relative
+          to the patch in Asar, but xkas looks relative to the assembler."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1021</code></td>
+        <td>convert_to_asar</td>
+        <td>
+          "Convert the patch to native Asar format instead of making an
+          Asar-only xkas patch."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1022</code></td>
+        <td>fixed_deprecated</td>
+        <td>
+          "the 'fixed' parameter on freespace/freecode/freedata is deprecated -
+          please use 'static' instead."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1023</code></td>
+        <td>autoclear_deprecated</td>
+        <td>"'autoclear' is deprecated - please use 'autoclean' instead."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1024</code></td>
+        <td>check_memory_file</td>
+        <td>
+          "Accessing file '%s' which is not in memory while
+          W%d is enabled.", false
+        </td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td><code>W1025</code></td>
+        <td>if_not_condition_deprecated</td>
+        <td>
+          "'if !condition' is deprecated - please use 'if not(condition)'
+          instead."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1026</code></td>
+        <td>function_redefined</td>
+        <td>"Function '%s' redefined."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1027</code></td>
+        <td>datasize_last_label</td>
+        <td>"Datasize used on last detected label '%s'."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1028</code></td>
+        <td>datasize_exceeds_size</td>
+        <td>"Datasize exceeds 0xFFFF for label '%s'."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1029</code></td>
+        <td>mapper_already_set</td>
+        <td>"A mapper has already been selected."</td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1030</code></td>
+        <td>feature_deprecated</td>
+        <td>
+          "DEPRECATION NOTIFICATION: Feature \"%s\" is
+          deprecated and will be REMOVED in the future. Please update your code
+          to conform to newer styles. Suggested work around:
+          &lt;workaround&gt;."
+        </td>
+        <td>Yes</td>
+      </tr>
+      <tr>
+        <td><code>W1031</code></td>
+        <td>byte_order_mark_utf8</td>
+        <td>"UTF-8 byte order mark detected and skipped."</td>
+        <td>Yes</td>
+      </tr>
+    </table>
+  </body>
+</html>

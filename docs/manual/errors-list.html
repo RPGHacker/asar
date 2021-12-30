@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Asar User Manual</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <link rel="stylesheet" href="../shared/highlight_js/styles/default.css" />
+    <script src="../shared/highlight_js/highlight.pack.js"></script>
+    <script>
+      hljs.configure({
+        tabReplace: "    ",
+      });
+      hljs.initHighlightingOnLoad();
+
+      function toggle_visibility(id) {
+        var e = document.getElementById(id);
+        var label = document.getElementById(id.concat("-toggle"));
+
+        if (e.style.display == "none") {
+          label.innerHTML = label.innerHTML.replace(
+            "[+] Expand",
+            "[-] Collapse"
+          );
+          e.style.display = "block";
+        } else {
+          label.innerHTML = label.innerHTML.replace(
+            "[-] Collapse",
+            "[+] Expand"
+          );
+          e.style.display = "none";
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <table>
+      <tr>
+        <th style="width: 150px">Error ID</th>
+        <th>Internal name</th>
+        <th>Error message</th>
+      </tr>
+      <tr>
+        <td><code>W5001</code></td>
+        <td>limit_reached</td>
+        <td>"Over %d errors detected. Aborting."</td>
+      </tr>
+      <tr>
+        <td><code>W5002</code></td>
+        <td>werror</td>
+        <td>"One or more warnings was detected with werror on."</td>
+      </tr>
+      <tr>
+        <td><code>W5003</code></td>
+        <td>16mb_rom_limit</td>
+        <td>"Can't create ROMs larger than 16MB."</td>
+      </tr>
+      <tr>
+        <td><code>W5004</code></td>
+        <td>buffer_too_small</td>
+        <td>"The given buffer is too small to contain the resulting ROM."</td>
+      </tr>
+      <tr>
+        <td><code>W5005</code></td>
+        <td>params_null</td>
+        <td>"params passed to asar_patch_ex() is null."</td>
+      </tr>
+      <tr>
+        <td><code>W5006</code></td>
+        <td>params_invalid_size</td>
+        <td>"Size of params passed to asar_patch_ex() is invalid."</td>
+      </tr>
+      <tr>
+        <td><code>W5007</code></td>
+        <td>cmdl_define_invalid</td>
+        <td>"Invalid define name in %s: '%s'."</td>
+      </tr>
+      <tr>
+        <td><code>W5008</code></td>
+        <td>cmdl_define_override</td>
+        <td>
+          "%s '%s' overrides a previous define. Did you specify the same define
+          twice?"
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5009</code></td>
+        <td>create_rom_failed</td>
+        <td>"Couldn't create ROM."</td>
+      </tr>
+      <tr>
+        <td><code>W5010</code></td>
+        <td>open_rom_failed</td>
+        <td>"Couldn't open ROM."</td>
+      </tr>
+      <tr>
+        <td><code>W5011</code></td>
+        <td>open_rom_not_smw_extension</td>
+        <td>"Doesn't look like an SMW ROM. (Maybe its extension is wrong?)"</td>
+      </tr>
+      <tr>
+        <td><code>W5012</code></td>
+        <td>open_rom_not_smw_header</td>
+        <td>"Doesn't look like an SMW ROM. (Maybe it's headered?)"</td>
+      </tr>
+      <tr>
+        <td><code>W5013</code></td>
+        <td>stddefines_no_identifier</td>
+        <td>
+          "stddefines.txt contains a line with a value, but no identifier."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5014</code></td>
+        <td>stddefine_after_closing_quote</td>
+        <td>"Broken std defines. (Something after closing quote)"</td>
+      </tr>
+      <tr>
+        <td><code>W5015</code></td>
+        <td>failed_to_open_file</td>
+        <td>"Failed to open file '%s'."</td>
+      </tr>
+      <tr>
+        <td><code>W5016</code></td>
+        <td>file_not_found</td>
+        <td>"File '%s' wasn't found."</td>
+      </tr>
+      <tr>
+        <td><code>W5017</code></td>
+        <td>readfile_1_to_4_bytes</td>
+        <td>"Can only read chunks of 1 to 4 bytes."</td>
+      </tr>
+      <tr>
+        <td><code>W5018</code></td>
+        <td>canreadfile_0_bytes</td>
+        <td>"Number of bytes to check must be > 0."</td>
+      </tr>
+      <tr>
+        <td><code>W5019</code></td>
+        <td>file_offset_out_of_bounds</td>
+        <td>"File offset %s out of bounds for file '%s'."</td>
+      </tr>
+      <tr>
+        <td><code>W5020</code></td>
+        <td>rep_at_file_end</td>
+        <td>"rep at the end of a file"</td>
+      </tr>
+      <tr>
+        <td><code>W5021</code></td>
+        <td>mismatched_parentheses</td>
+        <td>"Mismatched parentheses."</td>
+      </tr>
+      <tr>
+        <td><code>W5022</code></td>
+        <td>invalid_hex_value</td>
+        <td>"Invalid hex value."</td>
+      </tr>
+      <tr>
+        <td><code>W5023</code></td>
+        <td>invalid_binary_value</td>
+        <td>"Invalid binary value."</td>
+      </tr>
+      <tr>
+        <td><code>W5024</code></td>
+        <td>invalid_character</td>
+        <td>"Invalid character."</td>
+      </tr>
+      <tr>
+        <td><code>W5025</code></td>
+        <td>string_literal_not_terminated</td>
+        <td>"String literal not terminated."</td>
+      </tr>
+      <tr>
+        <td><code>W5026</code></td>
+        <td>malformed_function_call</td>
+        <td>"Malformed function call."</td>
+      </tr>
+      <tr>
+        <td><code>W5027</code></td>
+        <td>invalid_number</td>
+        <td>"Invalid number."</td>
+      </tr>
+      <tr>
+        <td><code>W5028</code></td>
+        <td>garbage_near_quoted_string</td>
+        <td>"Garbage near quoted string."</td>
+      </tr>
+      <tr>
+        <td><code>W5029</code></td>
+        <td>mismatched_quotes</td>
+        <td>"Mismatched quotes."</td>
+      </tr>
+      <tr>
+        <td><code>W5030</code></td>
+        <td>rom_too_short</td>
+        <td>"ROM is too short to have a title. (Expected '%s')"</td>
+      </tr>
+      <tr>
+        <td><code>W5031</code></td>
+        <td>rom_title_incorrect</td>
+        <td>"ROM title is incorrect. Expected '%s', got '%s'."</td>
+      </tr>
+      <tr>
+        <td><code>W5032</code></td>
+        <td>bank_border_crossed</td>
+        <td>"A bank border was crossed, SNES address $%06X."</td>
+      </tr>
+      <tr>
+        <td><code>W5033</code></td>
+        <td>start_of_file</td>
+        <td>"This command may only be used at the start of a file."</td>
+      </tr>
+      <tr>
+        <td><code>W5034</code></td>
+        <td>xkas_asar_conflict</td>
+        <td>"Using @xkas and @asar in the same patch is not supported."</td>
+      </tr>
+      <tr>
+        <td><code>W5035</code></td>
+        <td>invalid_version_number</td>
+        <td>"Invalid version number."</td>
+      </tr>
+      <tr>
+        <td><code>W5036</code></td>
+        <td>asar_too_old</td>
+        <td>"This version of Asar is too old for this patch."</td>
+      </tr>
+      <tr>
+        <td><code>W5037</code></td>
+        <td>relative_branch_out_of_bounds</td>
+        <td>"Relative branch out of bounds. (Distance is %s)."</td>
+      </tr>
+      <tr>
+        <td><code>W5038</code></td>
+        <td>snes_address_doesnt_map_to_rom</td>
+        <td>"SNES address %s doesn't map to ROM."</td>
+      </tr>
+      <tr>
+        <td><code>W5039</code></td>
+        <td>snes_address_out_of_bounds</td>
+        <td>"SNES address %s out of bounds."</td>
+      </tr>
+      <tr>
+        <td><code>W5040</code></td>
+        <td>invalid_tcall</td>
+        <td>"Invalid tcall."</td>
+      </tr>
+      <tr>
+        <td><code>W5041</code></td>
+        <td>use_xplus</td>
+        <td>"Use (x+) instead."</td>
+      </tr>
+      <tr>
+        <td><code>W5042</code></td>
+        <td>opcode_length_too_long</td>
+        <td>"Opcode length is too long."</td>
+      </tr>
+      <tr>
+        <td><code>W5043</code></td>
+        <td>superfx_invalid_short_address</td>
+        <td>
+          "Invalid short address parameter: $%s. (Must be even number and
+          $0000-$01FE)"
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5044</code></td>
+        <td>superfx_invalid_register</td>
+        <td>"Invalid register for opcode; valid range is %d-%d."</td>
+      </tr>
+      <tr>
+        <td><code>W5045</code></td>
+        <td>invalid_opcode_length</td>
+        <td>"Invalid opcode length specification."</td>
+      </tr>
+      <tr>
+        <td><code>W5046</code></td>
+        <td>invalid_mapper</td>
+        <td>"Invalid mapper."</td>
+      </tr>
+      <tr>
+        <td><code>W5047</code></td>
+        <td>nan</td>
+        <td>"NaN encountered."</td>
+      </tr>
+      <tr>
+        <td><code>W5048</code></td>
+        <td>division_by_zero</td>
+        <td>"Division by zero."</td>
+      </tr>
+      <tr>
+        <td><code>W5049</code></td>
+        <td>modulo_by_zero</td>
+        <td>"Modulo by zero."</td>
+      </tr>
+      <tr>
+        <td><code>W5050</code></td>
+        <td>unknown_operator</td>
+        <td>"Unknown operator."</td>
+      </tr>
+      <tr>
+        <td><code>W5051</code></td>
+        <td>invalid_input</td>
+        <td>"Invalid input."</td>
+      </tr>
+      <tr>
+        <td><code>W5052</code></td>
+        <td>invalid_function_name</td>
+        <td>"Invalid function name."</td>
+      </tr>
+      <tr>
+        <td><code>W5053</code></td>
+        <td>function_not_found</td>
+        <td>"Function '%s' wasn't found."</td>
+      </tr>
+      <tr>
+        <td><code>W5054</code></td>
+        <td>function_redefined</td>
+        <td>"Function '%s' redefined."</td>
+      </tr>
+      <tr>
+        <td><code>W5055</code></td>
+        <td>broken_function_declaration</td>
+        <td>"Broken function declaration."</td>
+      </tr>
+      <tr>
+        <td><code>W5056</code></td>
+        <td>wrong_num_parameters</td>
+        <td>"Wrong number of parameters to function."</td>
+      </tr>
+      <tr>
+        <td><code>W5057</code></td>
+        <td>invalid_param_name</td>
+        <td>"Invalid parameter name."</td>
+      </tr>
+      <tr>
+        <td><code>W5058</code></td>
+        <td>math_invalid_type</td>
+        <td>"Wrong type for parameter %s, expected %s."</td>
+      </tr>
+      <tr>
+        <td><code>W5059</code></td>
+        <td>invalid_label_name</td>
+        <td>"Invalid label name."</td>
+      </tr>
+      <tr>
+        <td><code>W5060</code></td>
+        <td>label_not_found</td>
+        <td>"Label '%s' wasn't found."</td>
+      </tr>
+      <tr>
+        <td><code>W5061</code></td>
+        <td>label_redefined</td>
+        <td>"Label '%s' redefined."</td>
+      </tr>
+      <tr>
+        <td><code>W5062</code></td>
+        <td>broken_label_definition</td>
+        <td>"Broken label definition."</td>
+      </tr>
+      <tr>
+        <td><code>W5063</code></td>
+        <td>label_cross_assignment</td>
+        <td>"Setting labels to other non-static labels is not valid."</td>
+      </tr>
+      <tr>
+        <td><code>W5064</code></td>
+        <td>macro_label_outside_of_macro</td>
+        <td>"Macro label outside of a macro."</td>
+      </tr>
+      <tr>
+        <td><code>W5065</code></td>
+        <td>label_on_third_pass</td>
+        <td>
+          "Internal error: A label was created on the third pass. Please create
+          an issue on the official GitHub repository and attach a patch which
+          reproduces the error."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5066</code></td>
+        <td>label_moving</td>
+        <td>
+          "Internal error: A label is moving around. Please create an issue on
+          the official GitHub repository and attach a patch which reproduces the
+          error."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5067</code></td>
+        <td>invalid_namespace_name</td>
+        <td>"Invalid namespace name."</td>
+      </tr>
+      <tr>
+        <td><code>W5068</code></td>
+        <td>invalid_namespace_use</td>
+        <td>"Invalid use of namespace command."</td>
+      </tr>
+      <tr>
+        <td><code>W5069</code></td>
+        <td>invalid_struct_name</td>
+        <td>"Invalid struct name."</td>
+      </tr>
+      <tr>
+        <td><code>W5070</code></td>
+        <td>struct_not_found</td>
+        <td>"Struct '%s' wasn't found."</td>
+      </tr>
+      <tr>
+        <td><code>W5071</code></td>
+        <td>struct_redefined</td>
+        <td>"Struct '%s' redefined."</td>
+      </tr>
+      <tr>
+        <td><code>W5072</code></td>
+        <td>struct_invalid_parent_name</td>
+        <td>"Invalid parent name."</td>
+      </tr>
+      <tr>
+        <td><code>W5073</code></td>
+        <td>invalid_label_missing_closer</td>
+        <td>"Invalid label name, missing array closer."</td>
+      </tr>
+      <tr>
+        <td><code>W5074</code></td>
+        <td>multiple_subscript_operators</td>
+        <td>"Multiple subscript operators is invalid."</td>
+      </tr>
+      <tr>
+        <td><code>W5075</code></td>
+        <td>invalid_subscript</td>
+        <td>"Invalid array subscript after first scope resolution."</td>
+      </tr>
+      <tr>
+        <td><code>W5076</code></td>
+        <td>label_missing_parent</td>
+        <td>"This label has no parent."</td>
+      </tr>
+      <tr>
+        <td><code>W5077</code></td>
+        <td>array_invalid_inside_structs</td>
+        <td>"Array syntax invalid inside structs."</td>
+      </tr>
+      <tr>
+        <td><code>W5078</code></td>
+        <td>struct_without_endstruct</td>
+        <td>"struct without matching endstruct."</td>
+      </tr>
+      <tr>
+        <td><code>W5079</code></td>
+        <td>nested_struct</td>
+        <td>"Can not nest structs."</td>
+      </tr>
+      <tr>
+        <td><code>W5080</code></td>
+        <td>missing_struct_params</td>
+        <td>"Missing struct parameters."</td>
+      </tr>
+      <tr>
+        <td><code>W5081</code></td>
+        <td>too_many_struct_params</td>
+        <td>"Too many struct parameters."</td>
+      </tr>
+      <tr>
+        <td><code>W5082</code></td>
+        <td>missing_extends</td>
+        <td>"Missing extends keyword."</td>
+      </tr>
+      <tr>
+        <td><code>W5083</code></td>
+        <td>invalid_endstruct_count</td>
+        <td>"Invalid endstruct parameter count."</td>
+      </tr>
+      <tr>
+        <td><code>W5084</code></td>
+        <td>expected_align</td>
+        <td>"Expected align parameter."</td>
+      </tr>
+      <tr>
+        <td><code>W5085</code></td>
+        <td>endstruct_without_struct</td>
+        <td>"endstruct can only be used in combination with struct."</td>
+      </tr>
+      <tr>
+        <td><code>W5086</code></td>
+        <td>alignment_too_small</td>
+        <td>"Alignment must be >= 1."</td>
+      </tr>
+      <tr>
+        <td><code>W5087</code></td>
+        <td>invalid_define_name</td>
+        <td>"Invalid define name."</td>
+      </tr>
+      <tr>
+        <td><code>W5088</code></td>
+        <td>define_not_found</td>
+        <td>"Define '%s' wasn't found."</td>
+      </tr>
+      <tr>
+        <td><code>W5089</code></td>
+        <td>broken_define_declaration</td>
+        <td>"Broken define declaration."</td>
+      </tr>
+      <tr>
+        <td><code>W5090</code></td>
+        <td>overriding_builtin_define</td>
+        <td>
+          "Trying to set define '%s', which is the name of a built-in define and
+          thus can't be modified."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5091</code></td>
+        <td>define_label_math</td>
+        <td>"!Define #= Label is not allowed with non-static labels."</td>
+      </tr>
+      <tr>
+        <td><code>W5092</code></td>
+        <td>mismatched_braces</td>
+        <td>"Mismatched braces."</td>
+      </tr>
+      <tr>
+        <td><code>W5093</code></td>
+        <td>invalid_macro_name</td>
+        <td>"Invalid macro name."</td>
+      </tr>
+      <tr>
+        <td><code>W5094</code></td>
+        <td>macro_not_found</td>
+        <td>"Macro '%s' wasn't found."</td>
+      </tr>
+      <tr>
+        <td><code>W5095</code></td>
+        <td>macro_redefined</td>
+        <td>"Macro '%s' redefined."</td>
+      </tr>
+      <tr>
+        <td><code>W5096</code></td>
+        <td>broken_macro_declaration</td>
+        <td>"Broken macro declaration."</td>
+      </tr>
+      <tr>
+        <td><code>W5097</code></td>
+        <td>invalid_macro_param_name</td>
+        <td>"Invalid macro parameter name."</td>
+      </tr>
+      <tr>
+        <td><code>W5098</code></td>
+        <td>macro_param_not_found</td>
+        <td>"Macro parameter '%s' wasn't found."</td>
+      </tr>
+      <tr>
+        <td><code>W5099</code></td>
+        <td>macro_param_redefined</td>
+        <td>"Macro parameter '%s' redefined"</td>
+      </tr>
+      <tr>
+        <td><code>W5100</code></td>
+        <td>broken_macro_usage</td>
+        <td>"Broken macro usage."</td>
+      </tr>
+      <tr>
+        <td><code>W5101</code></td>
+        <td>macro_wrong_num_params</td>
+        <td>"Wrong number of parameters to macro."</td>
+      </tr>
+      <tr>
+        <td><code>W5102</code></td>
+        <td>broken_macro_contents</td>
+        <td>"Broken macro contents."</td>
+      </tr>
+      <tr>
+        <td><code>W5103</code></td>
+        <td>rep_at_macro_end</td>
+        <td>"rep or if at the end of a macro."</td>
+      </tr>
+      <tr>
+        <td><code>W5104</code></td>
+        <td>nested_macro_definition</td>
+        <td>"Nested macro definition."</td>
+      </tr>
+      <tr>
+        <td><code>W5105</code></td>
+        <td>misplaced_endmacro</td>
+        <td>"Misplaced endmacro."</td>
+      </tr>
+      <tr>
+        <td><code>W5106</code></td>
+        <td>unclosed_macro</td>
+        <td>"Unclosed macro."</td>
+      </tr>
+      <tr>
+        <td><code>W5107</code></td>
+        <td>label_in_conditional</td>
+        <td>"Non-static label in %s command."</td>
+      </tr>
+      <tr>
+        <td><code>W5108</code></td>
+        <td>broken_conditional</td>
+        <td>"Broken %s command."</td>
+      </tr>
+      <tr>
+        <td><code>W5109</code></td>
+        <td>invalid_condition</td>
+        <td>"Invalid condition."</td>
+      </tr>
+      <tr>
+        <td><code>W5110</code></td>
+        <td>misplaced_elseif</td>
+        <td>"Misplaced elseif."</td>
+      </tr>
+      <tr>
+        <td><code>W5111</code></td>
+        <td>elseif_in_while</td>
+        <td>"Can't use elseif in a while loop."</td>
+      </tr>
+      <tr>
+        <td><code>W5112</code></td>
+        <td>elseif_in_singleline</td>
+        <td>"Can't use elseif on single-line statements."</td>
+      </tr>
+      <tr>
+        <td><code>W5113</code></td>
+        <td>misplaced_endif</td>
+        <td>"Misplaced endif."</td>
+      </tr>
+      <tr>
+        <td><code>W5114</code></td>
+        <td>misplaced_else</td>
+        <td>"Misplaced else."</td>
+      </tr>
+      <tr>
+        <td><code>W5115</code></td>
+        <td>else_in_while_loop</td>
+        <td>"Can't use else in a while loop."</td>
+      </tr>
+      <tr>
+        <td><code>W5116</code></td>
+        <td>unclosed_if</td>
+        <td>"Unclosed if statement."</td>
+      </tr>
+      <tr>
+        <td><code>W5117</code></td>
+        <td>unknown_command</td>
+        <td>"Unknown command."</td>
+      </tr>
+      <tr>
+        <td><code>W5118</code></td>
+        <td>command_disabled</td>
+        <td>"This command is disabled." }</td>
+      </tr>
+      <tr>
+        <td><code>W5119</code></td>
+        <td>broken_incbin</td>
+        <td>"Broken incbin command."</td>
+      </tr>
+      <tr>
+        <td><code>W5120</code></td>
+        <td>incbin_64kb_limit</td>
+        <td>"Can't include more than 64 kilobytes at once."</td>
+      </tr>
+      <tr>
+        <td><code>W5121</code></td>
+        <td>recursion_limit</td>
+        <td>"Recursion limit reached."</td>
+      </tr>
+      <tr>
+        <td><code>W5122</code></td>
+        <td>command_in_non_root_file</td>
+        <td>"This command may only be used in the root file."</td>
+      </tr>
+      <tr>
+        <td><code>W5123</code></td>
+        <td>cant_be_main_file</td>
+        <td>"This file may not be used as the main file.%s"</td>
+      </tr>
+      <tr>
+        <td><code>W5124</code></td>
+        <td>no_labels_here</td>
+        <td>"Can't use non-static labels here."</td>
+      </tr>
+      <tr>
+        <td><code>W5125</code></td>
+        <td>invalid_freespace_request</td>
+        <td>"Invalid freespace request."</td>
+      </tr>
+      <tr>
+        <td><code>W5126</code></td>
+        <td>no_banks_with_ram_mirrors</td>
+        <td>"No banks contain the RAM mirrors in hirom or exhirom."</td>
+      </tr>
+      <tr>
+        <td><code>W5127</code></td>
+        <td>no_freespace_norom</td>
+        <td>"Can't find freespace in norom."</td>
+      </tr>
+      <tr>
+        <td><code>W5128</code></td>
+        <td>static_freespace_autoclean</td>
+        <td>
+          "A static freespace must be targeted by at least one autoclean."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5129</code></td>
+        <td>static_freespace_growing</td>
+        <td>"A static freespace may not grow."</td>
+      </tr>
+      <tr>
+        <td><code>W5130</code></td>
+        <td>no_freespace_in_mapped_banks</td>
+        <td>"No freespace found in the mapped banks. (Requested size: %s)"</td>
+      </tr>
+      <tr>
+        <td><code>W5131</code></td>
+        <td>no_freespace</td>
+        <td>"No freespace found. (Requested size: %s)"</td>
+      </tr>
+      <tr>
+        <td><code>W5132</code></td>
+        <td>freespace_limit_reached</td>
+        <td>"A patch may not contain more than %d freespaces."</td>
+      </tr>
+      <tr>
+        <td><code>W5133</code></td>
+        <td>prot_not_at_freespace_start</td>
+        <td>"PROT must be used at the start of a freespace block."</td>
+      </tr>
+      <tr>
+        <td><code>W5134</code></td>
+        <td>prot_too_many_entries</td>
+        <td>"Too many entries to PROT."</td>
+      </tr>
+      <tr>
+        <td><code>W5135</code></td>
+        <td>autoclean_in_freespace</td>
+        <td>"autoclean used in freespace."</td>
+      </tr>
+      <tr>
+        <td><code>W5136</code></td>
+        <td>autoclean_label_at_freespace_end</td>
+        <td>
+          "Don't autoclean a label at the end of a freespace block, you'll
+          remove some stuff you're not supposed to remove."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5137</code></td>
+        <td>broken_autoclean</td>
+        <td>"Broken autoclean command."</td>
+      </tr>
+      <tr>
+        <td><code>W5138</code></td>
+        <td>pulltable_without_table</td>
+        <td>"Using pulltable when there is no table on the stack yet."</td>
+      </tr>
+      <tr>
+        <td><code>W5139</code></td>
+        <td>invalid_table_file</td>
+        <td>"Invalid table file. Invalid entry on line: %i"</td>
+      </tr>
+      <tr>
+        <td><code>W5140</code></td>
+        <td>pad_in_freespace</td>
+        <td>"pad does not make sense in a freespaced code."</td>
+      </tr>
+      <tr>
+        <td><code>W5141</code></td>
+        <td>org_label_invalid</td>
+        <td>"org Label is not valid."</td>
+      </tr>
+      <tr>
+        <td><code>W5142</code></td>
+        <td>org_label_forward</td>
+        <td>"org Label is only valid for labels earlier in the patch."</td>
+      </tr>
+      <tr>
+        <td><code>W5143</code></td>
+        <td>skip_label_invalid</td>
+        <td>"skip Label is not valid."</td>
+      </tr>
+      <tr>
+        <td><code>W5144</code></td>
+        <td>spc700_inline_no_base</td>
+        <td>"base is not implemented for architecture spc700-inline."</td>
+      </tr>
+      <tr>
+        <td><code>W5145</code></td>
+        <td>base_label_invalid</td>
+        <td>"base Label is not valid."</td>
+      </tr>
+      <tr>
+        <td><code>W5146</code></td>
+        <td>rep_label</td>
+        <td>"rep Label is not valid."</td>
+      </tr>
+      <tr>
+        <td><code>W5147</code></td>
+        <td>pushpc_without_pullpc</td>
+        <td>"pushpc without matching pullpc."</td>
+      </tr>
+      <tr>
+        <td><code>W5148</code></td>
+        <td>pullpc_without_pushpc</td>
+        <td>"pullpc without matching pushpc."</td>
+      </tr>
+      <tr>
+        <td><code>W5149</code></td>
+        <td>pullpc_different_arch</td>
+        <td>"pullpc in another architecture than the pushpc."</td>
+      </tr>
+      <tr>
+        <td><code>W5150</code></td>
+        <td>pullbase_without_pushbase</td>
+        <td>"pullbase without matching pushbase."</td>
+      </tr>
+      <tr>
+        <td><code>W5151</code></td>
+        <td>invalid_math</td>
+        <td>"Invalid math command."</td>
+      </tr>
+      <tr>
+        <td><code>W5152</code></td>
+        <td>invalid_warn</td>
+        <td>"Invalid warn command."</td>
+      </tr>
+      <tr>
+        <td><code>W5153</code></td>
+        <td>invalid_check</td>
+        <td>"Invalid check command."</td>
+      </tr>
+      <tr>
+        <td><code>W5154</code></td>
+        <td>warnpc_in_freespace</td>
+        <td>"warnpc used in freespace."</td>
+      </tr>
+      <tr>
+        <td><code>W5155</code></td>
+        <td>warnpc_broken_param</td>
+        <td>"Broken warnpc parameter."</td>
+      </tr>
+      <tr>
+        <td><code>W5156</code></td>
+        <td>warnpc_failed</td>
+        <td>
+          "warnpc failed: Current position (%s) is after end position (%s)."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5157</code></td>
+        <td>warnpc_failed_equal</td>
+        <td>
+          "warnpc failed: Current position (%s) is equal to end position (%s)."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5158</code></td>
+        <td>assertion_failed</td>
+        <td>"Assertion failed%s"</td>
+      </tr>
+      <tr>
+        <td><code>W5159</code></td>
+        <td>error_command</td>
+        <td>"error command%s"</td>
+      </tr>
+      <tr>
+        <td><code>W5160</code></td>
+        <td>invalid_print_function_syntax</td>
+        <td>"Invalid printable string syntax."</td>
+      </tr>
+      <tr>
+        <td><code>W5161</code></td>
+        <td>unknown_variable</td>
+        <td>"Unknown variable."</td>
+      </tr>
+      <tr>
+        <td><code>W5162</code></td>
+        <td>invalid_warning_id</td>
+        <td>
+          "Invalid warning ID passed to %s. Expected format is WXXXX where %d <=
+          XXXX <= %d."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5163</code></td>
+        <td>pushwarnings_without_pullwarnings</td>
+        <td>"warnings push without matching warnings pull."</td>
+      </tr>
+      <tr>
+        <td><code>W5164</code></td>
+        <td>pullwarnings_without_pushwarnings</td>
+        <td>"warnings pull without matching warnings push."</td>
+      </tr>
+      <tr>
+        <td><code>W5165</code></td>
+        <td>failed_to_open_file_access_denied</td>
+        <td>"Failed to open file '%s'. Access denied."</td>
+      </tr>
+      <tr>
+        <td><code>W5166</code></td>
+        <td>failed_to_open_not_regular_file</td>
+        <td>
+          "Failed to open file '%s'. Not a regular file (did you try to use a
+          directory?)"
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5167</code></td>
+        <td>bad_dp_base</td>
+        <td>"The dp base should be page aligned (i.e. a multiple of 256)"},</td>
+      </tr>
+      <tr>
+        <td><code>W5168</code></td>
+        <td>bad_dp_optimize</td>
+        <td>"Bad dp optimize value %s, expected: [none, ram, always]"},</td>
+      </tr>
+      <tr>
+        <td><code>W5169</code></td>
+        <td>bad_address_optimize</td>
+        <td>"Bad dp optimize value %s, expected: [default, ram, mirrors]"},</td>
+      </tr>
+      <tr>
+        <td><code>W5170</code></td>
+        <td>bad_optimize</td>
+        <td>"Bad optimize value %s, expected: [dp, address]"},</td>
+      </tr>
+      <tr>
+        <td><code>W5171</code></td>
+        <td>require_parameter</td>
+        <td>"Missing required function parameter"},</td>
+      </tr>
+      <tr>
+        <td><code>W5172</code></td>
+        <td>expected_parameter</td>
+        <td>"Not enough parameters in calling of function %s"},</td>
+      </tr>
+      <tr>
+        <td><code>W5173</code></td>
+        <td>unexpected_parameter</td>
+        <td>"Too many parameters in calling of function %s"},</td>
+      </tr>
+      <tr>
+        <td><code>W5174</code></td>
+        <td>duplicate_param_name</td>
+        <td>"Duplicated parameter name: %s in creation of function %s"},</td>
+      </tr>
+      <tr>
+        <td><code>W5175</code></td>
+        <td>invalid_alignment</td>
+        <td>"Invalid alignment. Expected a power of 2."</td>
+      </tr>
+      <tr>
+        <td><code>W5176</code></td>
+        <td>alignment_too_big</td>
+        <td>"Requested alignment too large."</td>
+      </tr>
+      <tr>
+        <td><code>W5177</code></td>
+        <td>negative_shift</td>
+        <td>"Bitshift amount is negative."</td>
+      </tr>
+      <tr>
+        <td><code>W5178</code></td>
+        <td>macro_not_varadic</td>
+        <td>"Invalid use of sizeof(...), active macro is not variadic."</td>
+      </tr>
+      <tr>
+        <td><code>W5179</code></td>
+        <td>vararg_sizeof_nomacro</td>
+        <td>"Invalid use of sizeof(...), no active macro."</td>
+      </tr>
+      <tr>
+        <td><code>W5180</code></td>
+        <td>macro_wrong_min_params</td>
+        <td>"Variadic macro call with too few parameters"</td>
+      </tr>
+      <tr>
+        <td><code>W5181</code></td>
+        <td>vararg_out_of_bounds</td>
+        <td>"Variadic macro parameter requested is out of bounds."</td>
+      </tr>
+      <tr>
+        <td><code>W5182</code></td>
+        <td>vararg_must_be_last</td>
+        <td>"Variadic macro parameter must be the last parameter."</td>
+      </tr>
+      <tr>
+        <td><code>W5183</code></td>
+        <td>invalid_global_label</td>
+        <td>"Global label definition contains an invalid label [%s]."},</td>
+      </tr>
+      <tr>
+        <td><code>W5184</code></td>
+        <td>spc700_addr_out_of_range</td>
+        <td>
+          "Address %s out of range for instruction, valid range is 0000-1FFF"
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5185</code></td>
+        <td>label_ambiguous</td>
+        <td>
+          "Label (%s) location is ambiguous due to straddling optimization
+          border."
+        </td>
+      </tr>
+      <tr>
+        <td><code>W5186</code></td>
+        <td>feature_unavaliable_in_spcblock</td>
+        <td>"This feature may not be used while an spcblock is active"</td>
+      </tr>
+      <tr>
+        <td><code>W5187</code></td>
+        <td>endspcblock_without_spcblock</td>
+        <td>"Use of endspcblock without matching spcblock"</td>
+      </tr>
+      <tr>
+        <td><code>W5188</code></td>
+        <td>missing_endspcblock</td>
+        <td>"Use of endspcblock without matching spcblock"</td>
+      </tr>
+      <tr>
+        <td><code>W5189</code></td>
+        <td>spcblock_bad_arch</td>
+        <td>"spcblock only valid inside spc700 arch"</td>
+      </tr>
+      <tr>
+        <td><code>W5190</code></td>
+        <td>spcblock_inside_struct</td>
+        <td>"Can not start an spcblock while a struct is still open"</td>
+      </tr>
+      <tr>
+        <td><code>W5191</code></td>
+        <td>spcblock_too_few_args</td>
+        <td>"Too few args passed to spcblock"</td>
+      </tr>
+      <tr>
+        <td><code>W5192</code></td>
+        <td>spcblock_too_many_args</td>
+        <td>"Too many args passed to spcblock"</td>
+      </tr>
+      <tr>
+        <td><code>W5193</code></td>
+        <td>unknown_spcblock_type</td>
+        <td>"Unknown spcblock format"</td>
+      </tr>
+      <tr>
+        <td><code>W5194</code></td>
+        <td>custom_spcblock_missing_macro</td>
+        <td>"Custom spcblock types must refer to a valid macro"</td>
+      </tr>
+      <tr>
+        <td><code>W5195</code></td>
+        <td>spcblock_macro_doesnt_exist</td>
+        <td>"Macro specified to custom spcblock was not found"},</td>
+      </tr>
+      <tr>
+        <td><code>W5196</code></td>
+        <td>extra_spcblock_arg_for_type</td>
+        <td>"Only custom spcblock type takes a fourth argument"</td>
+      </tr>
+      <tr>
+        <td><code>W5197</code></td>
+        <td>spcblock_macro_must_be_varadic</td>
+        <td>"Custom spcblock macros must be variadic"</td>
+      </tr>
+      <tr>
+        <td><code>W5198</code></td>
+        <td>spcblock_macro_invalid_static_args</td>
+        <td>"Custom spcblock macros must have three static arguments"</td>
+      </tr>
+      <tr>
+        <td><code>W5199</code></td>
+        <td>spcblock_custom_types_incomplete</td>
+        <td>"Custom spcblock types are not yet supported. One day."</td>
+      </tr>
+      <tr>
+        <td><code>W5200</code></td>
+        <td>startpos_without_spcblock</td>
+        <td>"The startpos command is only valid in spcblocks"</td>
+      </tr>
+      <tr>
+        <td><code>W5201</code></td>
+        <td>internal_error</td>
+        <td>"An internal asar error occured (%s). Send help."</td>
+      </tr>
+      <tr>
+        <td><code>W5202</code></td>
+        <td>pushns_without_pullns</td>
+        <td>"pushns without matching pullns."</td>
+      </tr>
+      <tr>
+        <td><code>W5203</code></td>
+        <td>pullns_without_pushns</td>
+        <td>"pullns without matching pushns."</td>
+      </tr>
+      <tr>
+        <td><code>W5204</code></td>
+        <td>label_forward</td>
+        <td>"The use of forward labels is not allowed in this context"</td>
+      </tr>
+    </table>
+  </body>
+</html>

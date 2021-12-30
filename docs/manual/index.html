@@ -173,11 +173,18 @@
 			<li>
 				<a href="#warnings">Warnings</a>
 				<ul>
+                    <li><a href="#warnings-list">List of warnings with IDs</a></li>
 					<li><a href="#disabled-warnings">Disabled Warnings</a></li>
 					<li><a href="#warnings-push-pull">warnings {push/pull}</a></li>
 					<li><a href="#warnings-enable-disable">warnings {enable/disable}</a></li>
 				</ul>
 			</li>
+            <li>
+                <a href="#errors">Errors</a>
+                <ul>
+                    <li><a href="#errors-list">List of errors with IDs</a></li>
+                </ul>
+            </li>
 		</ul>
 		</div>
 		<hr />
@@ -3303,7 +3310,9 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 		<hr />
 		<div id="warnings"><h3>Warnings</h3>
 		Warnings are messages that Asar outputs to inform the user about potentially unintended or risky code that isn't critical and thus doesn't cause assembly to fail on its own. These messages can be useful for detecting potential problems in the code, but in some situations may be undesirable. For this reason, Asar supports a few methods of explicitly enabling or disabling certain warnings (see section <a href="#usage">Usage</a> for details on how to configure warnings via the command line). Additionally, there are warnings which may be useful in some situations, but would be intrusive in most other situations. They are disabled by default and have to be enabled explicitly to be used. Commands that enable or disable warnings refer to them via their ID. This ID is in the format <code>WXXXX</code>, where <code>XXXX</code> is a number uniquely identifying a warning. The easiest way of finding the ID for a specific warning is to look at the console output of a patch producing it. Asar will always output the warning ID along with the respective warning.
-		<h4 id="disabled-warnings">Disabled Warnings</h4>
+		<h4 id="warnings-list">List of warnings</h4>
+        <a href="warnings-list.html">This</a> is a list of all warnings along with their IDs.
+        <h4 id="disabled-warnings">Disabled Warnings</h4>
 		This is a list of all warnings that are disabled by default and have to be enabled explicitly.<br/><br/>
 		<table>
 			<tr>
@@ -3340,5 +3349,9 @@ warn "This text in invisible!"
 
 warn enable W1012</code></pre>
 		<a href="#contents">Return to top</a></div>
+        <div id="errors>"><h3>Errors</h3>
+        <h4 id="errors-list">List of errors</h4>
+        <a href="errors-list.html">This</a> is a list of all errors along with their IDs.</br></br>
+        <a href="#contents">Return to top</a></div>
 	</body>
 </html>
