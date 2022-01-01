@@ -197,7 +197,7 @@ std::vector<char> read_file_into_buffer(const char *filename)
 }
 
 void write_buffer_to_file(const char *filename, const void* data, size_t data_size)
-{	
+{
 	FILE* handle = fopen(filename, "wb");
 
 	if (handle != nullptr)
@@ -526,11 +526,11 @@ static bool execute_command_line(char * commandline, const char * stdout_log_fil
 	// Currently, I expect tests to just fail on Linux.
 
 	fflush(stdout);
-	
+
 	std::string line = commandline;
 	line += std::string(" 2>\"") + stderr_log_file + "\" 1>\"" + stdout_log_file + "\"";
 	FILE * fp = popen(line.c_str(), "r");
-	
+
 	pclose(fp);
 
 #endif
@@ -669,6 +669,8 @@ int main(int argc, char * argv[])
 	standard_prints.insert("Errors were detected while assembling the patch. Assembling aborted. Your ROM has not been modified.");
 	standard_prints.insert("A fatal error was detected while assembling the patch. Assembling aborted. Your ROM has not been modified.");
 
+	bool all_lib_test_passed = false;
+
 	for (size_t testno = 0; testno < input_files.size(); ++testno)
 	{
 		char * fname = input_files[testno].file_path;
@@ -718,7 +720,7 @@ int main(int argc, char * argv[])
 			std::string line;
 
 			long int line_start_pos = asm_file_pos;
-			
+
 			while (asm_file_pos < (int)asmfile.size() && asmfile[asm_file_pos] != '\n')
 			{
 				// RPG Hacker: We ignore \r, because we don't support text mode and we want our checks
@@ -731,7 +733,7 @@ int main(int argc, char * argv[])
 			}
 
 			// If we haven't reached EoF yet, last read must have been a \n, so skip it.
-			if (asm_file_pos < (int)asmfile.size()) asm_file_pos++;			
+			if (asm_file_pos < (int)asmfile.size()) asm_file_pos++;
 
 			if (line[0] == ';' && line[1] == '`')
 			{
@@ -859,40 +861,53 @@ int main(int argc, char * argv[])
 			asar_patch_params.additional_defines = libdefines;
 			asar_patch_params.additional_define_count = sizeof(libdefines) / sizeof(libdefines[0]);
 
+			const char memory_file_path[] = "file.memory";
+			const char memory_file_buffer[] = "!fancy_memory_file_define = $123456";
+
+			const memoryfile libmemoryfiles[] =
+			{
+				{memory_file_path, (const void *)memory_file_buffer, sizeof(memory_file_buffer) }
+			};
+
+			asar_patch_params.memory_files = libmemoryfiles;
+			asar_patch_params.memory_file_count = sizeof(libmemoryfiles) / sizeof(libmemoryfiles[0]);
+
+
 			asar_patch_params.warning_settings = nullptr;
 			asar_patch_params.warning_setting_count = 0;
-			
+
 			for (int i = 0;i < numiter;i++)
 			{
-				
+
 				if (numiter > 1)
 				{
 					printf("Iteration %d of %d\n", i+1, numiter);
 				}
-				
-				if (!asar_patch_ex(&asar_patch_params))
+
+				if (!asar_patch(&asar_patch_params))
 				{
 					//printf("asar_patch_ex() failed on file '%s':\n", fname);
 				}
 				else
 				{
-					/*
+					bool test_status = true;
 					// Applying patch via DLL succeeded; print some stuff (mainly to verify most of our functions)
 					mappertype mapper = asar_getmapper();
 
-					printf("Detected mapper: %u\n", (unsigned int)mapper);
+					test_status &= (unsigned int)mapper == lorom ? 1 : 0;
 
 					int count = 0;
 					const labeldata * labels = asar_getalllabels(&count);
 
 					if (count > 0)
 					{
-						printf("Found labels:\n");
-
+						bool current_test = false;
 						for (int j = 0; j < count; ++j)
 						{
-							printf("  %s: %X\n", labels[j].name, (unsigned int)labels[j].location);
+							if(!strcmp("lib_test_file_label", labels[j].name) &&
+							labels[j].location == 0x008000 && asar_getlabelval("lib_test_file_label") == 0x8000)  current_test = true;
 						}
+						test_status &= current_test;
 					}
 
 
@@ -900,11 +915,17 @@ int main(int argc, char * argv[])
 
 					if (count > 0)
 					{
-						printf("Found defines:\n");
-
+						bool current_test = false;
 						for (int j = 0; j < count; ++j)
 						{
-							printf("  %s=%s\n", defines[j].name, defines[j].contents);
+							if(!strcmp("lib_test_file_define", defines[j].name) &&
+								!strcmp("$123456", defines[j].contents)) current_test = true;
+						}
+						test_status &= !strcmp(asar_getdefine("lib_test_file_define"), "$123456");
+						test_status &= current_test;
+						if(test_status)
+						{
+							test_status &= !strcmp(asar_resolvedefines("!lib_test_file_define"), "$123456");
 						}
 					}
 
@@ -913,13 +934,25 @@ int main(int argc, char * argv[])
 
 					if (count > 0)
 					{
-						printf("Written blocks:\n");
-
+						bool current_test = false;
 						for (int j = 0; j < count; ++j)
 						{
-							printf("  %u bytes at %X\n", (unsigned int)writtenblocks[j].numbytes, (unsigned int)writtenblocks[j].pcoffset);
+							if(writtenblocks[j].numbytes == 3 && writtenblocks[j].pcoffset == 0) current_test = true;
 						}
-					}*/
+						test_status &= current_test;
+					}
+
+					const char *error_buffer = new char[512];
+					test_status &= (int64_t)asar_math("1+0", &error_buffer) == 1;
+					delete [] error_buffer;
+
+					test_status &= asar_version() >= 20000;
+					test_status &= asar_maxromsize() == 16*1024*1024;
+
+					//the cli test verifies the symbol file, just make sure something generated
+					test_status &= asar_getsymbolsfile("wla")[0] == ';';
+
+					if(test_status) all_lib_test_passed = true;
 				}
 
 				std::string stderr_buff;
@@ -967,7 +1000,7 @@ int main(int argc, char * argv[])
 			char cmd[1024];
 			// randomdude999: temp workaround: using $ in command line is unsafe on linux, so use dec representation instead (for !cmddefined3)
 			snprintf(cmd, sizeof(cmd),
-				"\"%s\" -I\"%s\" -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \""
+				"\"%s\" -I\"%s\" -Dcli_only=\\$1 -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \""
 				// RPG Hacker: 日本語🇯🇵 in UTF-8
 				" -Dcmdl_define_utf8=\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xf0\x9f\x87\xaf\xf0\x9f\x87\xb5"
 				" \"%s\" \"%s\"",
@@ -980,6 +1013,7 @@ int main(int argc, char * argv[])
 					dief("Failed executing command line:\n    %s\n", cmd);
 				}
 			}
+			all_lib_test_passed = true;
 		}
 #endif
 
@@ -1225,8 +1259,9 @@ int main(int argc, char * argv[])
 
 	printf("%u out of %u performed tests succeeded.\n", (unsigned int)(input_files.size() - (size_t)numfailed), (unsigned int)input_files.size());
 
-	if (numfailed > 0)
+	if (numfailed > 0 || !all_lib_test_passed)
 	{
+		if(!all_lib_test_passed) printf("Library API failed to verify.\n");
 		printf("Some tests failed!\n");
 		return 1;
 	}

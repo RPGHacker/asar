@@ -278,30 +278,7 @@ EXPORT void asar_close()
 	resetdllstuff();
 }
 
-EXPORT bool asar_patch(const char *patchloc, char *romdata_, int buflen, int *romlen_)
-{
-	auto execute_patch = [&]() {
-		asar_patch_begin(romdata_, buflen, romlen_, true);
-
-		virtual_filesystem new_filesystem;
-		new_filesystem.initialize(nullptr, 0);
-		filesystem = &new_filesystem;
-
-		asar_patch_main(patchloc);
-
-		new_filesystem.destroy();
-		filesystem = nullptr;
-
-		return asar_patch_end(romdata_, buflen, romlen_);
-	};
-#if defined(_WIN32)
-	return run_as_fiber(execute_patch);
-#else
-	return execute_patch();
-#endif
-}
-
-EXPORT bool asar_patch_ex(const patchparams_base *params)
+EXPORT bool asar_patch(const patchparams_base *params)
 {
 	auto execute_patch = [&]() {
 		if (params == nullptr)

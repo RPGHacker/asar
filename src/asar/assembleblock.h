@@ -1,6 +1,6 @@
 #pragma once
 
-enum { arch_65816, arch_spc700, arch_spc700_inline, arch_superfx };
+enum { arch_65816, arch_spc700, arch_superfx };
 extern int arch;
 
 bool assemblemapper(char** word, int numwords);
@@ -53,10 +53,6 @@ void write1_pick(unsigned int num);
 void write2(unsigned int num);
 void write3(unsigned int num);
 void write4(unsigned int num);
-
-int read1(int snespos);
-int read2(int snespos);
-int read3(int snespos);
 
 int snestopc_pick(int addr);
 

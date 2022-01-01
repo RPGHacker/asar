@@ -157,10 +157,8 @@ asarfunc bool (*asar_reset)(void);
 // be altered by this function; if this is undesirable, set romlen equal to buflen.
 //The return value is whether any errors appeared (false=errors, call asar_geterrors for details).
 // If there is an error, romdata and romlen will be left unchanged.
-asarfunc bool(*asar_patch)(const char * patchloc, char * romdata, int buflen, int * romlen);
-
-// An extended version of asar_patch() with a future-proof parameter format.
-asarfunc bool(*asar_patch_ex)(const struct patchparams * params);
+// see patchparams struct for details.
+asarfunc bool(*asar_patch)(const struct patchparams * params);
 
 //Returns the maximum possible size of the output ROM from asar_patch(). Giving this size to buflen
 // guarantees you will not get any buffer too small errors; however, it is safe to give smaller
@@ -197,7 +195,7 @@ asarfunc const struct definedata * (*asar_getalldefines)(int * count);
 
 //Parses all defines in the parameter. The parameter controls whether it'll learn new defines in
 // this string if it finds any. Note that it may emit errors.
-asarfunc const char * (*asar_resolvedefines)(const char * data, bool learnnew);
+asarfunc const char * (*asar_resolvedefines)(const char * data);
 
 //Parses a string containing math. It automatically assumes global scope (no namespaces), and has
 // access to all functions and labels from the last call to asar_patch. Remember to check error to

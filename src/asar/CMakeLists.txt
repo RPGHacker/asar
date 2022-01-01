@@ -5,10 +5,15 @@ cmake_minimum_required(VERSION 3.9.0)
 
 option(ASAR_GEN_EXE "Build Asar standalone application" ON)
 option(ASAR_GEN_DLL "Build Asar shared library" ON)
-option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
+option(ASAR_COVERAGE "Build Asar with coverage tracking support" ON)
 
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
+
+#Maybe make these conditional.  Not sure.
+set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage")
+set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -lgcov --coverage -fprofile-arcs")
+
 set (CMAKE_CXX_STANDARD 17)
 
 
@@ -201,11 +206,6 @@ if(ASAR_GEN_EXE)
 		)
 
 	set_asar_shared_properties(asar-standalone)
-
-	if(ASAR_COVERAGE)
-		target_compile_options(asar-standalone PRIVATE -fprofile-arcs -ftest-coverage)
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov --coverage -fprofile-arcs")
-	endif()
 endif(ASAR_GEN_EXE)
 
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "std-includes.h"
+#include "libmisc.h"
 #include <cstdint>
 //ty alcaro
 extern const unsigned char char_props[256];
@@ -21,23 +22,6 @@ inline char *copy(const char *source, int copy_length, char *dest)
 {
 	memcpy(dest, source, copy_length*sizeof(char));
 	return dest;
-}
-
-inline int min_val(int a, int b)
-{
-	return a > b ? b : a;
-}
-
-inline int bit_round(int v)
-{
-	v--;
-	v |= v >> 1;
-	v |= v >> 2;
-	v |= v >> 4;
-	v |= v >> 8;
-	v |= v >> 16;
-	v++;
-	return v;
 }
 
 class string {
@@ -264,7 +248,6 @@ void strip_suffix(char c)
 	}
 }
 
-string& replace(const char * instr, const char * outstr);
 string& qreplace(const char * instr, const char * outstr);
 string& qnormalize();
 
@@ -276,7 +259,7 @@ string& convert_line_endings_to_native()
 #if defined(windows)
 	// RPG Hacker: This is quite stinky, but doing the replacement directly will lead to a dead-lock.
 	// \x08 = backspace should never appear inside a string, so I'm abusing it here.
-	return replace("\n", "\x08").replace("\x08", "\r\n");
+	return qreplace("\n", "\x08").qreplace("\x08", "\r\n");
 #else
 	return *this;
 #endif
@@ -317,9 +300,9 @@ void resize(int new_length)
 	const char *old_data = data();
 	if(new_length >= next_resize || (!is_inlined() && new_length <= max_inline_length_)) {
 		if(new_length > max_inline_length_ && (is_inlined() || allocated.bufferlen <= new_length)){ //SSO or big to big
-			int new_size = bit_round(new_length + 1);
+			int new_size = bitround(new_length + 1);
 			if(old_data == inlined.str){
-				allocated.str = copy(old_data, min_val(length(), new_length), (char *)malloc(new_size));
+				allocated.str = copy(old_data, min(length(), new_length), (char *)malloc(new_size));
 			}else{
 				allocated.str = (char *)realloc(allocated.str, new_size);
 				old_data = inlined.str;	//this will prevent freeing a dead realloc ptr

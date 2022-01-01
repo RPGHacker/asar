@@ -7,44 +7,12 @@
 static int writesizeto=-1;
 static int inlinestartpos=0;
 
-static void inline_finalizeorg()
-{
-	if (writesizeto>=0 && pass==2)
-	{
-		int pcpos=snestopc(writesizeto&0xFFFFFF);
-		if (pcpos<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
-		int num=snespos-startpos;
-		writeromdata_byte(pcpos, (unsigned char)num);
-		writeromdata_byte(pcpos+1, (unsigned char)(num >> 8));
-	}
-	writesizeto=-1;
-}
-
-static void inline_org(unsigned int num)
-{
-	inline_finalizeorg();
-	if (num&~0xFFFF) asar_throw_error(0, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num, 6).data());
-	writesizeto=realsnespos;
-	write2(0x0000);
-	write2(num);
-	snespos=(int)num;
-	startpos=(int)num;
-}
-
-static void inline_leavearch()
-{
-	inline_finalizeorg();
-	write2(0x0000);
-	write2((unsigned int)inlinestartpos);
-}
-
 void asinit_spc700()
 {
 }
 
 void asend_spc700()
 {
-	if (arch==arch_spc700_inline) inline_leavearch();
 }
 
 static bool matchandwrite(const char * str, const char * left, const char * right, string& remainder)
@@ -121,33 +89,7 @@ bool asblock_spc700(char** word, int numwords)
 #define is(test) (!stricmp(word[0], test))
 #define is1(test) (!stricmp(word[0], test) && numwords==2)
 #define par word[1]
-	if(0);
-	else if (arch==arch_spc700_inline && is1("org"))
-	{
-		unsigned int num=getnum(par);
-		if (foundlabel) asar_throw_error(0, error_type_block, error_id_org_label_invalid);
-		inline_org(num);
-	}
-	else if (arch==arch_spc700_inline && is1("arch"))
-	{
-		inline_leavearch();
-		return false;
-	}
-	else if (arch==arch_spc700_inline && is1("skip"))
-	{
-		int num=snespos+(int)getnum(par);
-		if (foundlabel) asar_throw_error(0, error_type_block, error_id_skip_label_invalid);
-		inline_org(num);
-	}
-	else if (arch==arch_spc700_inline && is1("base"))
-	{
-		asar_throw_error(0, error_type_block, error_id_spc700_inline_no_base);
-	}
-	else if (arch==arch_spc700_inline && is1("startpos"))
-	{
-		inlinestartpos=(int)getnum(par);
-	}
-	else if (numwords==1)
+	if (numwords==1)
 	{
 #define op(name, val) else if (is(name)) do { write1(val); } while(0)
 		if(0);

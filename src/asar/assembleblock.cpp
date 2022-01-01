@@ -41,6 +41,7 @@ static bool disable_bank_cross_errors = false;
 static bool check_half_banks_crossed = false;
 
 int bytes;
+static int freespaceuse=0;
 
 static enum {
 	ratsmeta_ban,
@@ -192,7 +193,6 @@ static bool asblock_pick(char** word, int numwords)
 {
 	if (arch==arch_65816) return asblock_65816(word, numwords);
 	if (arch==arch_spc700) return asblock_spc700(word, numwords);
-	if (arch==arch_spc700_inline) return asblock_spc700(word, numwords);
 	if (arch==arch_superfx) return asblock_superfx(word, numwords);
 	return true;
 }
@@ -232,14 +232,6 @@ void write4(unsigned int num)
 }
 
 //these are NOT used by the math parser - see math.cpp for that
-int read1(int insnespos)
-{
-	int addr=snestopc(insnespos);
-	if (addr<0 || addr+1>romlen_r) return -1;
-	return
-			 romdata_r[addr  ]     ;
-}
-
 int read2(int insnespos)
 {
 	int addr=snestopc(insnespos);
@@ -456,7 +448,7 @@ inline bool labelvalcore(const char ** rawname, snes_label * rval, bool define, 
 	{
 		if (shouldthrow && pass)
 		{
-			asar_throw_error(1, error_type_block, error_id_label_not_found, name.data());
+			asar_throw_error(2, error_type_block, error_id_label_not_found, name.data());
 		}
 		rval->pos = (unsigned int)-1;
 		rval->is_static = false;
@@ -666,6 +658,7 @@ void initstuff()
 	pushns.reset();
 	pushnsnum = 0;
 	bytes=0;
+	freespaceuse=0;
 	memset(fillbyte, 0, sizeof(fillbyte));
 	memset(padbyte, 0, sizeof(padbyte));
 	snespos_valid = false;
@@ -691,7 +684,6 @@ void initstuff()
 
 	if (arch==arch_65816) asinit_65816();
 	if (arch==arch_spc700) asinit_spc700();
-	if (arch==arch_spc700_inline) asinit_spc700();
 	if (arch==arch_superfx) asinit_superfx();
 
 	disable_bank_cross_errors = false;
@@ -726,7 +718,6 @@ void finishpass()
 	freespaceend();
 	if (arch==arch_65816) asend_65816();
 	if (arch==arch_spc700) asend_spc700();
-	if (arch==arch_spc700_inline) asend_spc700();
 	if (arch==arch_superfx) asend_superfx();
 
 	deinitmathcore();
@@ -780,8 +771,6 @@ int numtrue=0;//if 1 -> increase both
 int numif = 0;  //if 0 or inside if 0 -> increase only numif
 
 autoarray<whiletracker> whilestatus;
-
-static int freespaceuse=0;
 
 
 static void push_pc()

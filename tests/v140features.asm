@@ -298,9 +298,9 @@ if !testlabel == 0
 	db $00
 elseif !testlabel == 1 && !anothertestlabel == 2
 	db $01
-elseif !testlabel == 2 && !anothertestlabel == 1
+elseif !testlabel == 2 || !anothertestlabel == 1
 	db $02
-elseif !testlabel == 3 && !anothertestlabel == 0
+elseif !testlabel != 3 && !anothertestlabel == 0
 	db $03
 else
 	db $FF

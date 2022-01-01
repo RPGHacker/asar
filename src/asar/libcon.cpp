@@ -43,26 +43,6 @@ static const char * getarg(bool tellusage, const char * defval= nullptr)
 	return args[0];
 }
 
-static const char * getfname(bool tellusage, const char * defval= nullptr)
-{
-	return getarg(tellusage, defval);
-	//char * rval=malloc(char, 256);
-	//char * rvalend=rval;
-	//*rval=0;
-	//while (!strchr(rval, '.'))
-	//{
-	//	char * thisword=getarg(false, nullptr);
-	//	if (!thisword)
-	//	{
-	//		if (tellusage) libcon_badusage();
-	//		else return defval;
-	//	}
-	//	if (rval!=rvalend) *(rvalend++)=' ';
-	//	rvalend+=sprintf(rvalend, "%s", thisword);
-	//}
-	//return rval;
-}
-
 void u8_fgets(char* buffer, int buffer_size, FILE* handle)
 {
 #if defined(windows)
@@ -115,7 +95,13 @@ static const char * requeststrfromuser(const char * question, bool filename, con
 	*rval=0;
 	printf("%s ", question);
 	u8_fgets(rval, 250, stdin);
-	*strchr(rval, '\n')=0;
+	char *eol = strchr(rval, '\n');
+	if(!eol)
+	{
+		printf("Unexpected end of input");
+		exit(-1);
+	}
+	*eol = 0;
 	confirmclose=true;
 	if (!*rval) return defval;
 #ifdef _WIN32
@@ -150,7 +136,7 @@ const char * libcon_require(const char * desc)
 const char * libcon_require_filename(const char * desc)
 {
 	if (libcon_interactive) return requirestrfromuser(desc, true);
-	else return getfname(true);
+	else return getarg(true);
 }
 
 const char * libcon_optional(const char * desc, const char * defval)
@@ -162,7 +148,7 @@ const char * libcon_optional(const char * desc, const char * defval)
 const char * libcon_optional_filename(const char * desc, const char * defval)
 {
 	if (libcon_interactive) return requeststrfromuser(desc, true, defval);
-	else return getfname(false, defval);
+	else return getarg(false, defval);
 }
 
 const char * libcon_option()

@@ -4,6 +4,9 @@
 ;`AD 00 00 A5 00
 ;`AF 00 10 01 AD 00 10
 ;`AD 00 10
+;`AF 1D 80 00
+;`AD 1D 80
+;`AF 1D 80 00
 
 ;1 line above = 1 block of code below
 ;namespace optimize_dp_flag {
@@ -51,7 +54,7 @@ base $7E0000
 struct test_7E
 	.test: skip $1000
 	.word: skip 1
-	
+
 endstruct
 
 base off
@@ -80,3 +83,13 @@ lda test_7E.word
 
 optimize address mirrors
 lda test_word.up
+
+bank noassume
+asdf:
+lda asdf
+bank auto
+lda asdf
+bank $10
+lda asdf
+
+warnpc $009000
