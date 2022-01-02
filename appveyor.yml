@@ -17,7 +17,7 @@ environment:
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "Win32"
       CMAKE_ARCH: "-A Win32"
-      CMAKE_PLATFORM_TOOLSET: "-T clang-cl"
+      CMAKE_PLATFORM_TOOLSET: "-T ClangCL"
 
 install:
 - cmd: >-
