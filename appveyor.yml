@@ -8,15 +8,16 @@ environment:
     - JOB_NAME: "win32"
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "Win32"
-      CMAKE_PLATFORM_TOOLSET: "-T v142"
+      CMAKE_ARCH: "-A Win32"
     - JOB_NAME: "win64"
-      CMAKE_TARGET: "Visual Studio 16 2019 Win64"
+      CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "x64"
-      CMAKE_PLATFORM_TOOLSET: "-T v142"
+      CMAKE_ARCH: "-A x64"
     - JOB_NAME: "clang"
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "Win32"
-      CMAKE_PLATFORM_TOOLSET: "-T llvm"
+      CMAKE_ARCH: "-A Win32"
+      CMAKE_PLATFORM_TOOLSET: "-T clang-cl"
 
 install:
 - cmd: >-
@@ -28,7 +29,7 @@ install:
 
     vcpkg integrate remove
     
-    cmake %CMAKE_EXTRA_FLAGS% -G "%CMAKE_TARGET%" %CMAKE_PLATFORM_TOOLSET% ..\src
+    cmake %CMAKE_EXTRA_FLAGS% -G "%CMAKE_TARGET%" %CMAKE_PLATFORM_TOOLSET% %CMAKE_ARCH% ..\src
 
 on_failure:
 - cmd: >-
