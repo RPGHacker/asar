@@ -8,6 +8,7 @@
 #	pragma warning(disable : 4987)
 #endif
 
+#define NOMINMAX
 #include <windows.h>
 #include <ctype.h>
 
@@ -174,7 +175,7 @@ uint32_t read_file(FileHandleType handle, void* buffer, uint32_t num_bytes)
 uint32_t write_file(FileHandleType handle, const void* buffer, uint32_t num_bytes)
 {
 	if (handle == InvalidFileHandle) return 0u;
-	
+
 	DWORD bytes_written = 0u;
 
 	// TODO: Some error handling would be wise here.

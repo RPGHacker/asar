@@ -8,6 +8,7 @@
 #include "unicode.h"
 
 #if defined(windows)
+#	define NOMINMAX
 #	include <windows.h>
 #   include <io.h>
 #   include <fcntl.h>
@@ -22,6 +23,7 @@
 // tasks like this; it's only checked approximately every seven seconds on the machine I tested on,
 // and it kills the process instantly once this happens. (Additionally, due to an implementation
 // quirk, it'll bug up if you ask for anything above about seven minutes, so don't do that.)
+#  define NOMINMAX
 #  include <windows.h>
 # else
 #  error Time limits not configured for this OS.
