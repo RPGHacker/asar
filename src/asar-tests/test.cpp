@@ -629,6 +629,10 @@ int main(int argc, char * argv[])
 		return 1;
 	}
 
+	std::sort(input_files.begin(), input_files.end(), [](const wrapped_file& a, const wrapped_file& b) {
+		return strcmp(a.file_path, b.file_path) < 0;
+	});
+
 	if (!file_exists(unheadered_rom_file))
 	{
 		printf("Error: '%s' doesn't exist!\n", unheadered_rom_file);
