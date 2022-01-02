@@ -1,26 +1,20 @@
 version: '{build}'
-image: Visual Studio 2015
+image: Visual Studio 2019
 environment:
   matrix:
     # job names are used for FTP uploads, try to not change them
     - JOB_NAME: "mingw"
       CMAKE_TARGET: "MinGW Makefiles"
     - JOB_NAME: "win32"
-      CMAKE_TARGET: "Visual Studio 14 2015"
+      CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "Win32"
-      CMAKE_PLATFORM_TOOLSET: "-T v140"
+      CMAKE_PLATFORM_TOOLSET: "-T v142"
     - JOB_NAME: "win64"
-      CMAKE_TARGET: "Visual Studio 14 2015 Win64"
+      CMAKE_TARGET: "Visual Studio 16 2019 Win64"
       PLATFORM: "x64"
-      CMAKE_PLATFORM_TOOLSET: "-T v140"
-    - JOB_NAME: "xp_compat"
-      CMAKE_TARGET: "Visual Studio 14 2015"
-      PLATFORM: "Win32"
-      CMAKE_PLATFORM_TOOLSET: "-T v140_xp"
-    # needs to be VS2017 because the LLVM toolset only exists there
+      CMAKE_PLATFORM_TOOLSET: "-T v142"
     - JOB_NAME: "clang"
-      CMAKE_TARGET: "Visual Studio 15 2017"
-      APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+      CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "Win32"
       CMAKE_PLATFORM_TOOLSET: "-T llvm"
 
