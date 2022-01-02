@@ -634,6 +634,7 @@ void initstuff()
 			freespaceorglen[i]=-1;
 			freespacebyte[i] = 0x00;
 		}
+		movinglabelspossible = false;
 	}
 	arch=arch_65816;
 	mapper=lorom;
