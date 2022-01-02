@@ -41,6 +41,7 @@ src/asar/res/windows/asar_lib.aps
 !src/asar
 CMakefiles/
 asar-tests/
+!src/asar-tests
 .vs
 ALL_BUILD.*
 ZERO_CHECK.*
