@@ -30,7 +30,7 @@ macro(set_asar_shared_properties target)
 		target_compile_definitions(${target} PRIVATE "_CRT_NONSTDC_NO_WARNINGS")
 		target_compile_definitions(${target} PRIVATE "_ALLOW_KEYWORD_MACROS")
 
-                if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "llvm" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "ClangCL")
+		if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "llvm" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "ClangCL")
 			target_compile_options(${target} PRIVATE
 				-Wno-old-style-cast # use of old-style-cast
 				-Wno-unknown-argument # unknown argument ignored in clang-cl
@@ -41,6 +41,14 @@ macro(set_asar_shared_properties target)
 				-Wno-float-equal # comparting floating point with == or != is unsafe
 				-Wno-covered-switch-default # default label in switch which covers all enumeration values
 				-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
+				-Wno-extra-semi-stmt # remove unnecessary ';'
+
+				# a bunch of warnings about casts which we honestly should deal with at some point, but there's just way too many of them
+				-Wno-sign-conversion # implicit conversion changes signedness
+				-Wno-shorten-64-to-32 # implicit conversion of int64_t to int32_t
+				-Wno-old-style-cast # use of old-style cast
+				-Wno-cast-qual # cast drops const qualifier
+				-Wno-implicit-int-conversion # implicit conversion loses precision
 
 				# RPG Hacker: These two are really nasty, but not easily fixable in Asar, so have to disable them...
 				-Wno-exit-time-destructors # declaration requires an exit-time destructor
@@ -73,6 +81,13 @@ macro(set_asar_shared_properties target)
 			/wd4711 # function selected for automatic inline expansion
 			/wd4820 # 'bytes' bytes padding added after construct 'member_name'
 			/wd4464 # relativ include path contains '..'
+			/wd4668 # undefined define used in #if (thrown in windows headers)
+			/wd5045 # compiler will insert spectre mitigation
+			/wd4365 # implicit conversion changes signedness
+			/wd4242 # implicit conversion loses precision
+			/wd4244 # implicit conversion loses precision
+			/wd4267 # implicit conversion loses precision
+			/wd4800 # implicit conversion to bool
 		)
 		target_link_options(${target} PRIVATE /STACK:4194304)
 	else()
