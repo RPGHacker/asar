@@ -30,7 +30,7 @@ macro(set_asar_shared_properties target)
 		target_compile_definitions(${target} PRIVATE "_CRT_NONSTDC_NO_WARNINGS")
 		target_compile_definitions(${target} PRIVATE "_ALLOW_KEYWORD_MACROS")
 
-		if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "llvm")
+                if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "llvm" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "ClangCL")
 			target_compile_options(${target} PRIVATE
 				-Wno-old-style-cast # use of old-style-cast
 				-Wno-unknown-argument # unknown argument ignored in clang-cl
