@@ -424,6 +424,8 @@ inline bool striend(const char * str, const char * key)
 {
 	const char * keyend=strrchr(key, '\0');
 	const char * strend=strrchr(str, '\0');
+	if(keyend-key > strend-str) return false;
+
 	while (key!=keyend)
 	{
 		keyend--;
