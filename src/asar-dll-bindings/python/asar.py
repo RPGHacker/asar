@@ -133,9 +133,9 @@ class _AsarDLL:
             self.setup_func("apiversion", (), c_int)
             self.setup_func("init", (), ctypes.c_bool)
             self.setup_func("reset", (), ctypes.c_bool)
-            self.setup_func("patch", (c_char_p, c_char_p, c_int, c_int_ptr),
-                            ctypes.c_bool)
-            self.setup_func("patch_ex", (POINTER(_patchparams),), ctypes.c_bool)
+            #self.setup_func("patch", (c_char_p, c_char_p, c_int, c_int_ptr),
+            #                ctypes.c_bool)
+            self.setup_func("patch", (POINTER(_patchparams),), ctypes.c_bool)
             self.setup_func("maxromsize", (), c_int)
             self.setup_func("close", (), None)
             self.setup_func("geterrors", (c_int_ptr,), POINTER(errordata))
@@ -329,7 +329,7 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
         pp.override_checksum_gen = False
         pp.generate_checksum = False
 
-    result = _asar.dll.asar_patch_ex(ctypes.byref(pp))
+    result = _asar.dll.asar_patch(ctypes.byref(pp))
     return result, rom_ptr.raw[:romlen.value]
 
 
