@@ -516,9 +516,9 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 		labelpos = labels.find(name).pos;
 		if ((int)labelpos != loc && !movinglabelspossible)
 		{
-			if((unsigned int)loc < labelpos && (unsigned int)loc>>16 != labelpos>>16)  asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
-			else if((unsigned int)loc < labelpos && labelpos == (dp_base + 0xFFu))   asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
-			if(errored) return;
+			if((unsigned int)loc>>16 != labelpos>>16)  asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
+			else if(labelpos == (dp_base + 0xFFu))   asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
+			else if(errored) return;
 			else asar_throw_error(2, error_type_block, error_id_label_moving);
 		}
 	}
