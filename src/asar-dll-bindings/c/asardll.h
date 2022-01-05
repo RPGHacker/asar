@@ -86,12 +86,6 @@ struct patchparams
 	const char** includepaths;
 	int numincludepaths;
 
-	// should everything be reset before patching? Setting it to false will make asar
-	// act like the currently patched file was directly appended to the previous one.
-	// note that you can't use the previous run's defines - you can use getalldefines()
-	// and additional_defines for that.
-	bool should_reset;
-
 	// A list of additional defines to make available to the patch.
 	const struct definedata * additional_defines;
 	int additional_define_count;

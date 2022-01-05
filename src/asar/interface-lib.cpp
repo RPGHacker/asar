@@ -157,7 +157,7 @@ static void addlabel(const string & name, const snes_label & label_data)
 	ldata[labelsinldata++] = label;
 }
 
-struct patchparams_v160 : public patchparams_base
+struct patchparams_v200 : public patchparams_base
 {
 	const char * patchloc;
 	char * romdata;
@@ -185,12 +185,12 @@ struct patchparams_v160 : public patchparams_base
 	bool generate_checksum;
 };
 
-struct patchparams : public patchparams_v160
+struct patchparams : public patchparams_v200
 {
 
 };
 
-static void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool should_reset)
+static void asar_patch_begin(char * romdata_, int buflen, int * romlen_)
 {
 	if (buflen != maxromsize)
 	{
@@ -202,8 +202,7 @@ static void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool sh
 	// RPG Hacker: Without this memset, freespace commands can (and probably will) fail.
 	memset((void*)romdata, 0, maxromsize);
 	memcpy(const_cast<unsigned char*>(romdata), romdata_, (size_t)*romlen_);
-	if (should_reset)
-		resetdllstuff();
+	resetdllstuff();
 	romlen = *romlen_;
 	romlen_r = *romlen_;
 }
@@ -286,7 +285,7 @@ EXPORT bool asar_patch(const patchparams_base *params)
 			asar_throw_error(pass, error_type_null, error_id_params_null);
 		}
 
-		if (params->structsize != sizeof(patchparams_v160))
+		if (params->structsize != sizeof(patchparams_v200))
 		{
 			asar_throw_error(pass, error_type_null, error_id_params_invalid_size);
 		}
@@ -296,7 +295,7 @@ EXPORT bool asar_patch(const patchparams_base *params)
 		memcpy(&paramscurrent, params, (size_t)params->structsize);
 
 
-		asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen, paramscurrent.should_reset);
+		asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
 
 		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;

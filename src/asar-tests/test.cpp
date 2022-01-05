@@ -848,8 +848,6 @@ int main(int argc, char * argv[])
 			asar_patch_params.includepaths = &base_path;
 			asar_patch_params.numincludepaths = 1;
 
-			asar_patch_params.should_reset = true;
-
 			asar_patch_params.stdincludesfile = stdincludespath.c_str();
 			asar_patch_params.stddefinesfile = stddefinespath.c_str();
 
