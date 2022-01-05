@@ -15,7 +15,7 @@
 
 #define asarfunc extern
 
-#define expectedapiversion 303
+#define expectedapiversion 400
 
 #include <stdbool.h>
 #include <stddef.h> // for size_t

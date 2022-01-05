@@ -167,8 +167,6 @@ struct patchparams_v200 : public patchparams_base
 	const char** includepaths;
 	int numincludepaths;
 
-	bool should_reset;
-
 	const definedata* additional_defines;
 	int definecount;
 
@@ -262,7 +260,7 @@ EXPORT int asar_version()
 EXPORT int asar_apiversion()
 {
 	expectsNewAPI=true;
-	return 303;
+	return 400;
 }
 
 EXPORT bool asar_reset()
