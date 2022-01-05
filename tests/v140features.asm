@@ -203,6 +203,7 @@
 ;`
 ;`0A
 ;`0B
+;`0C
 ;`warnW1030
 ;`
 ;P>
@@ -373,6 +374,11 @@ endmacro
 db $0A		; This is a comment as well, so getconnectedlines() should remove it and ignore this backslah right here -> \
 db $0B
 
+if 0.5 == 0.6
+	db $0D
+else
+	db $0C
+endif
 
 print ""
 print ";This is not a comment, ",\

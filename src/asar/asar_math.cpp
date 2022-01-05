@@ -948,8 +948,8 @@ notposneglabel:
 		oper("<=", 1, left<=right);
 		oper(">", 1, left>right);
 		oper("<", 1, left<right);
-		oper("==", 1, (int64_t)left==(int64_t)right);
-		oper("!=", 1, (int64_t)left!=(int64_t)right);
+		oper("==", 1, left==right);
+		oper("!=", 1, left!=right);
 
 		asar_throw_error(2, error_type_block, error_id_unknown_operator);
 #undef oper
