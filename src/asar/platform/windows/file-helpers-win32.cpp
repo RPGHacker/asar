@@ -142,23 +142,6 @@ void set_file_pos(FileHandleType handle, uint64_t pos)
 	SetFilePointerEx(handle, new_pos, NULL, FILE_BEGIN);
 }
 
-uint64_t get_file_pos(FileHandleType handle)
-{
-	if (handle == InvalidFileHandle) return 0u;
-
-	// TODO: Some error handling would be wise here.
-
-	LARGE_INTEGER no_move;
-	no_move.QuadPart = 0u;
-
-	LARGE_INTEGER f_pos;
-	f_pos.QuadPart = 0u;
-
-	SetFilePointerEx(handle, no_move, &f_pos, FILE_CURRENT);
-
-	return (uint64_t)f_pos.QuadPart;
-}
-
 uint32_t read_file(FileHandleType handle, void* buffer, uint32_t num_bytes)
 {
 	if (handle == InvalidFileHandle) return 0u;

@@ -356,21 +356,6 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 	return -1;
 }
 
-void WalkRatsTags(void(*func)(int loc, int len))
-{
-	int pos=snestopc(0x108000);
-	while (pos<romlen)
-	{
-		if (!strncmp((const char*)romdata+pos, "STAR", 4) &&
-					(romdata[pos+4]^romdata[pos+6])==0xFF && (romdata[pos+5]^romdata[pos+7])==0xFF)
-		{
-			func(pctosnes(pos+8), (romdata[pos+4]|(romdata[pos+5]<<8))+1);
-			pos+=(romdata[pos+4]|(romdata[pos+5]<<8))+1+8;
-		}
-		else pos++;
-	}
-}
-
 void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsigned char * contents))
 {
 	int pcoff=snestopc(loc);
@@ -487,13 +472,6 @@ static unsigned int getchecksum()
 		checksum += secondpart_sum * repeatcount;
 	}
 	return checksum&0xFFFF;
-}
-
-bool goodchecksum()
-{
-	int checksum=(int)getchecksum();
-	return ((romdata[snestopc(0x00FFDE)]^romdata[snestopc(0x00FFDC)])==0xFF) && ((romdata[snestopc(0x00FFDF)]^romdata[snestopc(0x00FFDD)])==0xFF) &&
-					((romdata[snestopc(0x00FFDE)]&0xFF)==(checksum&0xFF)) && ((romdata[snestopc(0x00FFDF)]&0xFF)==((checksum>>8)&0xFF));
 }
 
 void fixchecksum()

@@ -127,12 +127,6 @@ void libcon_init(int argc, const char ** argv, const char * usage_)
 #endif
 }
 
-const char * libcon_require(const char * desc)
-{
-	if (libcon_interactive) return requirestrfromuser(desc, false);
-	else return getarg(true);
-}
-
 const char * libcon_require_filename(const char * desc)
 {
 	if (libcon_interactive) return requirestrfromuser(desc, true);
@@ -161,12 +155,6 @@ const char * libcon_option_value()
 {
 	if (!libcon_interactive) return getarg(false);
 	return nullptr;
-}
-
-const char * libcon_question(const char * desc, const char * defval)
-{
-	if (libcon_interactive) return libcon_optional(desc, defval);
-	return defval;
 }
 
 bool libcon_question_bool(const char * desc, bool defval)

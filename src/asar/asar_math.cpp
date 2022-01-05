@@ -928,17 +928,29 @@ notposneglabel:
 				left=contents;                       \
 				continue;                            \
 			}
-		oper("**", 4, pow((double)left, (double)right));
-		oper("*", 3, left*right);
-		oper("/", 3, right != 0.0 ? left / right : oper_wrapped_throw(error_id_division_by_zero));
-		oper("%", 3, right != 0.0 ? fmod((double)left, (double)right) : oper_wrapped_throw(error_id_modulo_by_zero));
-		oper("+", 2, left+right);
-		oper("-", 2, left-right);
-		oper("<<", 1, right >= 0.0 ? (int64_t)left<<(uint64_t)right : oper_wrapped_throw(error_id_negative_shift));
-		oper(">>", 1, right >= 0.0 ? (int64_t)left>>(uint64_t)right : oper_wrapped_throw(error_id_negative_shift));
-		oper("&", 0, (int64_t)left&(int64_t)right);
-		oper("|", 0, (int64_t)left|(int64_t)right);
-		oper("^", 0, (int64_t)left^(int64_t)right);
+		oper("**", 6, pow((double)left, (double)right));
+		oper("*", 5, left*right);
+		oper("/", 5, right != 0.0 ? left / right : oper_wrapped_throw(error_id_division_by_zero));
+		oper("%", 5, right != 0.0 ? fmod((double)left, (double)right) : oper_wrapped_throw(error_id_modulo_by_zero));
+		oper("+", 4, left+right);
+		oper("-", 4, left-right);
+		oper("<<", 3, right >= 0.0 ? (int64_t)left<<(uint64_t)right : oper_wrapped_throw(error_id_negative_shift));
+		oper(">>", 3, right >= 0.0 ? (int64_t)left>>(uint64_t)right : oper_wrapped_throw(error_id_negative_shift));
+
+		//these two needed checked early to avoid bitwise from eating a operator
+		oper("&&", 0, (int64_t)left&&(int64_t)right);
+		oper("||", 0, (int64_t)left||(int64_t)right);
+		oper("&", 2, (int64_t)left&(int64_t)right);
+		oper("|", 2, (int64_t)left|(int64_t)right);
+		oper("^", 2, (int64_t)left^(int64_t)right);
+
+		oper(">=", 1, left>=right);
+		oper("<=", 1, left<=right);
+		oper(">", 1, left>right);
+		oper("<", 1, left<right);
+		oper("==", 1, (int64_t)left==(int64_t)right);
+		oper("!=", 1, (int64_t)left!=(int64_t)right);
+
 		asar_throw_error(2, error_type_block, error_id_unknown_operator);
 #undef oper
 	}

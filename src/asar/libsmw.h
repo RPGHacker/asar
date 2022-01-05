@@ -201,8 +201,6 @@ void resizerats(int snesaddr, int newlen);
 void removerats(int snesaddr, unsigned char clean_byte);
 int ratsstart(int pcaddr);
 
-bool goodchecksum();
 void fixchecksum();
 
-void WalkRatsTags(void(*func)(int loc, int len));//This one calls func() for each RATS tag in the ROM. The pointer is SNES format.
 void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsigned char * contents));//This one calls func() for each metadata block in the RATS tag whose contents (metadata) start at loc in the ROM. Do not replace name with an invalid metadata name, and note that name is not null terminated.

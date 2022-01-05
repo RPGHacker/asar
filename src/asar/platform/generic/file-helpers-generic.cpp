@@ -83,7 +83,7 @@ void close_file(FileHandleType handle)
 uint64_t get_file_size(FileHandleType handle)
 {
 	if (handle == InvalidFileHandle) return 0u;
-	
+
 	long int f_pos = ftell(handle);
 	fseek(handle, 0, SEEK_END);
 	long int f_size = ftell(handle);
@@ -99,15 +99,6 @@ void set_file_pos(FileHandleType handle, uint64_t pos)
 	// TODO: Some error handling would be wise here.
 
 	fseek(handle, pos, SEEK_SET);
-}
-
-uint64_t get_file_pos(FileHandleType handle)
-{
-	if (handle == InvalidFileHandle) return 0u;
-
-	// TODO: Some error handling would be wise here.
-
-	return (uint64_t)ftell(handle);
 }
 
 uint32_t read_file(FileHandleType handle, void* buffer, uint32_t num_bytes)

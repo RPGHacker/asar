@@ -956,63 +956,14 @@ void assembleblock(const char * block)
 			return;
 		}
 		if ((is("if") || is("while"))) numif++;
-		bool cond;
 
-		bool isassert = is("assert");
-
-		char ** nextword=word+1;
-		char * condstr= nullptr;
-		while (true)
+		for(int i = 1; i < numwords - 1; i++)
 		{
-			if (!nextword[0]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-			bool thiscond = false;
-			if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
-			{
-				double val = getnumdouble(nextword[0]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
-				thiscond = (val > 0);
-
-				if (condstr && nextword[1])
-				{
-					if (strcmp(condstr, nextword[1])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
-				}
-				else condstr=nextword[1];
-				nextword+=2;
-			}
-			else
-			{
-				if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-				double par1=getnumdouble(nextword[0]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-				double par2=getnumdouble(nextword[2]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-				if(0);
-				else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
-				else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
-				else if (!strcmp(nextword[1], ">=")) thiscond=(par1>=par2);
-				else if (!strcmp(nextword[1], "<=")) thiscond=(par1<=par2);
-				else if (!strcmp(nextword[1], "="))  thiscond=(par1==par2);
-				else if (!strcmp(nextword[1], "==")) thiscond=(par1==par2);
-				else if (!strcmp(nextword[1], "!=")) thiscond=(par1!=par2);
-				//else if (!strcmp(nextword[1], "<>")) thiscond=(par1!=par2);
-				else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-
-				if (condstr && nextword[3])
-				{
-					if (strcmp(condstr, nextword[3])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
-				}
-				else condstr=nextword[3];
-				nextword+=4;
-			}
-			if (condstr)
-			{
-				if (!strcmp(condstr, "&&")) { if(thiscond) continue; }
-				else if (!strcmp(condstr, "||")) { if(!thiscond) continue; }
-				else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-			}
-			cond=thiscond;
-			break;
+			word[i][strlen(word[i])] = ' ';
 		}
+		numwords = 2;
+		bool cond = getnum(word[1]);
+		if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
 		if (is("if") || is("while"))
 		{
 			if(0);
