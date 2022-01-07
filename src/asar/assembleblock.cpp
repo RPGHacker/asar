@@ -998,10 +998,9 @@ void assembleblock(const char * block)
 			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
-	else if (is("endif") || is("endwhile"))
+	else if (is0("endif") || is0("endwhile"))
 	{
 		if(fakeendif) fakeendif--;
-		if (numwords != 1) asar_throw_error(1, error_type_block, error_id_unknown_command);
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
 		if (numif==numtrue) numtrue--;
 		numif--;
@@ -1011,10 +1010,9 @@ void assembleblock(const char * block)
 			//todo make error msg
 		}
 	}
-	else if (is("else"))
+	else if (is0("else"))
 	{
 		if(!moreonlinecond) moreonlinecond = true;
-		if (numwords != 1) asar_throw_error(1, error_type_block, error_id_unknown_command);
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_else);
 		if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
 		else if (numif==numtrue) numtrue--;
@@ -1141,6 +1139,10 @@ void assembleblock(const char * block)
 		{
 			pull_warnings();
 		}
+		else
+		{
+			asar_throw_error(0, error_type_block, error_id_broken_command, "warnings", "Unknown parameter");
+		}
 	}
 	else if (is2("warnings"))
 	{
@@ -1154,7 +1156,7 @@ void assembleblock(const char * block)
 			}
 			else
 			{
-				asar_throw_error(0, error_type_null, error_id_invalid_warning_id, "warnings enable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+				asar_throw_error(0, error_type_block, error_id_invalid_warning_id, "warnings enable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
 			}
 		}
 		else if (stricmp(word[1], "disable") == 0)
@@ -1167,8 +1169,12 @@ void assembleblock(const char * block)
 			}
 			else
 			{
-				asar_throw_error(0, error_type_null, error_id_invalid_warning_id, "warnings disable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+				asar_throw_error(0, error_type_block, error_id_invalid_warning_id, "warnings disable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
 			}
+		}
+		else
+		{
+			asar_throw_error(0, error_type_block, error_id_broken_command, "warnings", "Unknown parameter");
 		}
 	}
 	else if(is1("global"))
