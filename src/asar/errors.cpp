@@ -287,9 +287,9 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_broken_command, "Broken %s command. %s" },
 };
-// RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
-// matches with the number of constants in asar_warning_id. This is important, because
-// we are going to access asar_warnings as an array.
+// RPG Hacker: Sanity check. This makes sure that the element count of asar_errors
+// matches with the number of constants in asar_error_id. This is important, because
+// we are going to access asar_errors as an array.
 static_assert(sizeof(asar_errors) / sizeof(asar_errors[0]) == error_id_count, "asar_errors and asar_error_id are not in sync");
 
 template<typename t>
