@@ -909,10 +909,6 @@ void assembleblock(const char * block)
 	// we want to write out the snespos we had before writing opcodes
 	int addrToLinePos = realsnespos & 0xFFFFFF;
 
-	if(!moreonlinecond && !(is("elseif") || is("else"))){
-		return;
-	}
-
 	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
 	{
 		word++;
@@ -921,13 +917,11 @@ void assembleblock(const char * block)
 	if (!word[0] || !word[0][0]) return;
 	if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
-		if(is("if") && moreonline) fakeendif++;
 		string errmsg;
 		whiletracker wstatus;
 		wstatus.startline = thisline;
-		wstatus.iswhile = false;
+		wstatus.iswhile = is("while");
 		wstatus.cond = false;
-		if (is("while")) wstatus.iswhile = true;
 		whiletracker& addedwstatus = (whilestatus[numif] = wstatus);
 		if (is("assert"))
 		{
@@ -974,7 +968,6 @@ void assembleblock(const char * block)
 			}
 			else if (!cond)
 			{
-				if(moreonline)  moreonlinecond=false;
 				elsestatus[numif]=false;
 			}
 			addedwstatus.cond = cond;
@@ -986,7 +979,6 @@ void assembleblock(const char * block)
 			if (numif==numtrue) numtrue--;
 			if (cond && !elsestatus[numif])
 			{
-				if(moreonline) moreonlinecond = true;
 				numtrue++;
 				elsestatus[numif]=true;
 			}
@@ -1000,7 +992,6 @@ void assembleblock(const char * block)
 	}
 	else if (is0("endif") || is0("endwhile"))
 	{
-		if(fakeendif) fakeendif--;
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
 		if (numif==numtrue) numtrue--;
 		numif--;
@@ -1012,7 +1003,6 @@ void assembleblock(const char * block)
 	}
 	else if (is0("else"))
 	{
-		if(!moreonlinecond) moreonlinecond = true;
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_else);
 		if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
 		else if (numif==numtrue) numtrue--;
@@ -1070,11 +1060,7 @@ void assembleblock(const char * block)
 			callerfilename=thisfilename;
 			callerline=thisline;
 		}
-		int fakeendif_prev = fakeendif;
-		int moreonlinecond_prev = moreonlinecond;
 		callmacro(strchr(block, '%')+1);
-		fakeendif = fakeendif_prev;
-		moreonlinecond = moreonlinecond_prev;
 		if (!macrorecursion)
 		{
 			callerfilename="";

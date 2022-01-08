@@ -1,4 +1,5 @@
 ;`01
+;`02
 
 !count = 0
 
@@ -177,4 +178,5 @@ else
 	endif
 endif
 
-if !count == 4**2 : db 1
+if !count == 4**2 : db 1 : endif
+if 0 : db 0 : elseif !count == 4**2 : db 2 : endif
