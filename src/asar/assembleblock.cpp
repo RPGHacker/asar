@@ -893,17 +893,9 @@ void assembleblock(const char * block)
 
 	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
 	// This really seems like the only possible place for the fix
-	string tmp;
-	if (numtrue+1==numif && stribegin(block, "elseif "))
-	{
-		resolvedefines(tmp, block);
-	}
-	else
-	{
-		tmp=block;
-	}
 	int numwords;
-	char ** word = qsplit(tmp.temp_raw(), ' ', &numwords);
+	string splitblock = block;
+	char ** word = qsplit(splitblock.temp_raw(), ' ', &numwords);
 	autoptr<char **> scope_word = word;
 	// when writing out the data for the addrToLine mapping,
 	// we want to write out the snespos we had before writing opcodes
@@ -944,6 +936,8 @@ void assembleblock(const char * block)
 				errmsg = handle_print(rawerrmsg.raw());
 			}
 		}
+
+		//handle nested if statements
 		if (numtrue!=numif && !(is("elseif") && numtrue+1==numif))
 		{
 			if ((is("if") || is("while"))) numif++;
@@ -992,14 +986,9 @@ void assembleblock(const char * block)
 	}
 	else if (is0("endif") || is0("endwhile"))
 	{
-		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
+		if (!numif || (whilestatus[numif - 1].iswhile && is("endif"))) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
 		if (numif==numtrue) numtrue--;
 		numif--;
-		if (whilestatus[numif].iswhile && is("endif") && warn_endwhile){
-			warn_endwhile = false;
-			asar_throw_warning(0, warning_id_feature_deprecated, "endif terminating while statements", "use endwhile instead");
-			//todo make error msg
-		}
 	}
 	else if (is0("else"))
 	{

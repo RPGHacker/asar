@@ -474,8 +474,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	bool moreonlinetmp=moreonline;
 	// randomdude999: redundant, assemblefile already converted the path to absolute
 	//string absolutepath = filesystem->create_absolute_path("", fname);
-	string absolutepath = fname;
-	thisfilename = absolutepath;
+	thisfilename = fname;
 	thisline=linenum;
 	thisblock= nullptr;
 	try
@@ -483,7 +482,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 		string tmp=line;
 		tmp.qnormalize();
 		string out;
-		if (numif==numtrue) resolvedefines(out, tmp);
+		if (numif==numtrue || (numtrue+1==numif && stribegin(tmp, "elseif "))) resolvedefines(out, tmp);
 		else out=tmp;
 		out.qreplace(": :", ":  :");
 //puts(out);
@@ -502,7 +501,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 				checkbankcross();
 			}
 			catch (errblock&) {}
-			if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
+			if (blocks[block][0]!='\0') asarverallowed=false;
 		}
 	}
 	catch (errline&) {}

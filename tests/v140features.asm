@@ -204,7 +204,6 @@
 ;`0A
 ;`0B
 ;`0C
-;`warnW1030
 ;`
 ;P>
 ;P>;This is not a comment, so getconnectedlines() should ignore it and not remove it.
@@ -308,7 +307,7 @@ else
 
 	while !testlabel > 0
 		db $0A
-	endif
+	endwhile
 endif
 
 !mathlabel #= 0.01+0.01
@@ -320,14 +319,14 @@ db !mathlabel
 while !whiletestvar > 0
 	db !whiletestvar
 	!whiletestvar #= !whiletestvar-1
-endif
+endwhile
 
 macro whilemacro1(numloops)
 	!loopdyloop = <numloops>
 	while !loopdyloop > 0
 		db !loopdyloop
 		!loopdyloop #= !loopdyloop-1
-	endif
+	endwhile
 endmacro
 
 macro whilemacro2()
@@ -347,10 +346,10 @@ while !cond1 < 10
 		db !cond1
 		db !cond2
 		!cond2 #= !cond2+1
-	endif
+	endwhile
 
 	!cond1 #= !cond1+1
-endif
+endwhile
 
 
 db round(1.719247114, 2)*100
