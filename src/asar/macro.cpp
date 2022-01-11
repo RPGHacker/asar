@@ -113,15 +113,18 @@ void callmacro(const char * data)
 	autoptr<const char * const*> args;
 	int numargs=0;
 	if (*startpar) args=(const char* const*)qpsplit(startpar, ',', &numargs);
-	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_num_params);
+	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_wrong_num_params);
 	// RPG Hacker: -1, because the ... is also counted as an argument, yet we want it to be entirely optional.
-	if (numargs < thismacro->numargs - 1 && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);
+	if (numargs < thismacro->numargs - 1 && thismacro->variadic) asar_throw_error(0, error_type_block, error_id_macro_wrong_min_params);
 	macrorecursion++;
 	int startif=numif;
 
 	// RPG Hacker: -1 to take the ... into account, which is also being counted.
 	if(thismacro->variadic) numvarargs = numargs-(thismacro->numargs-1);
 	else numvarargs = -1;
+	block_ir[blockid++] = string("$$$numvarargs ") + dec(numvarargs);
+	block_ir[blockid++] = string("$$$filename \"") + thismacro->fname + '"';
+	string prevthisfilename = thisfilename;
 
 	autoarray<int>* oldmacroposlabels = macroposlabels;
 	autoarray<int>* oldmacroneglabels = macroneglabels;
@@ -200,8 +203,8 @@ void callmacro(const char * data)
 						if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
 						//conditionals deserve all my hate
 						if(numif==numtrue || (numif==numtrue+1 && stribegin(out.data(), "elseif "))){
-							if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
-							if (arg_num > numargs-thismacro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
+							if (arg_num < 0) asar_throw_error(0, error_type_block, error_id_vararg_out_of_bounds);
+							if (arg_num > numargs-thismacro->numargs) asar_throw_error(0, error_type_block, error_id_vararg_out_of_bounds);
 							out+=(char *)safedequote(strip_whitespace((char *)args[arg_num+thismacro->numargs-1]));
 						}
 					}
@@ -233,4 +236,6 @@ void callmacro(const char * data)
 	}
 	inmacro = macrorecursion;
 	numvarargs = prev_numvarargs;
+	block_ir[blockid++] = string("$$$numvarargs ") + dec(numvarargs);
+	block_ir[blockid++] = string("$$$filename \"") + prevthisfilename + '"';
 }

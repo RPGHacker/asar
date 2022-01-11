@@ -88,6 +88,8 @@ extern string callerfilename;
 extern int callerline;
 extern string thisfilename;
 extern int thisline;
+extern int blockid;
+extern autoarray<string> block_ir;
 extern const char * thisblock;
 
 extern int incsrcdepth;

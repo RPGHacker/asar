@@ -271,6 +271,10 @@ autoarray<int>* macroneglabels;
 autoarray<string> sublabels;
 autoarray<string>* macrosublabels;
 
+autoarray<autoarray<int>*> macroposlist;
+autoarray<autoarray<int>*> macroneglist;
+autoarray<autoarray<string>*> macrosublist;
+
 // randomdude999: ns is still the string to prefix to all labels, it's calculated whenever namespace_list is changed
 string ns;
 string ns_backup;
@@ -653,6 +657,9 @@ void initstuff()
 	macroposlabels = nullptr;
 	macroneglabels = nullptr;
 	macrosublabels = nullptr;
+	macroposlist.reset();
+	macroneglist.reset();
+	macrosublist.reset();
 	cleartable();
 	pushpc.reset();
 	pushpcnum=0;
@@ -1049,7 +1056,18 @@ void assembleblock(const char * block)
 			callerfilename=thisfilename;
 			callerline=thisline;
 		}
-		callmacro(strchr(block, '%')+1);
+		if(!pass) callmacro(strchr(block, '%')+1);
+		else
+		{
+			inmacro = true;
+			macroposlist.append(macroposlabels);
+			macroneglist.append(macroneglabels);
+			macrosublist.append(macrosublabels);
+			macroposlabels = new autoarray<int>;
+			macroneglabels = new autoarray<int>;
+			macrosublabels = new autoarray<string>;
+			macrorecursion++;
+		}
 		if (!macrorecursion)
 		{
 			callerfilename="";
@@ -1059,19 +1077,39 @@ void assembleblock(const char * block)
 	else if (is("macro"))
 	{
 		//todo better error
+		if(pass) return;
 		if (moreonline)  asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
 		if (parsing_macro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
 		parsing_macro=true;
-		if (!pass) startmacro(block+6);
+		startmacro(block+6);
+	}
+	else if (is("$$$numvarargs"))
+	{
+		numvarargs = getnum(par);
+	}
+	else if (is("$$$endmacro"))
+	{
+		macrorecursion--;
+		inmacro = macrorecursion;
+		calledmacros++;
+		macroposlabels = macroposlist[macroposlist.count - 1];
+		macroneglabels = macroneglist[macroneglist.count - 1];
+		macrosublabels = macrosublist[macrosublist.count - 1];
+		macroposlist.remove(macroposlist.count - 1);
+		macroneglist.remove(macroneglist.count - 1);
+		macrosublist.remove(macrosublist.count - 1);
 	}
 	else if (is("endmacro"))
 	{
+		if(pass) return;
+		tomacro("$$$endmacro");
 		if (!parsing_macro) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
 		parsing_macro=false;
-		if (!pass) endmacro(true);
+		endmacro(true);
 	}
 	else if (is1("undef"))
 	{
+		if(pass) return;
 		string def = safedequote(par);
 
 		if (defines.exists(def))
@@ -1228,6 +1266,7 @@ void assembleblock(const char * block)
 	}
 	else if (is0("asar") || is1("asar"))
 	{
+		if(pass) return;
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (!par) return;
 		int dots=0;
@@ -1267,6 +1306,7 @@ void assembleblock(const char * block)
 	}
 	else if (is0("include") || is1("includefrom"))
 	{
+		if(pass) return;
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
 		if (istoplevel)
 		{
@@ -1276,6 +1316,7 @@ void assembleblock(const char * block)
 	}
 	else if (is0("includeonce"))
 	{
+		if(pass) return;
 		if (!file_included_once(thisfilename))
 		{
 			includeonce.append(thisfilename);
@@ -1954,8 +1995,13 @@ void assembleblock(const char * block)
 		asar_throw_error(0, error_type_block, error_id_command_disabled);
 	}
 #endif
+	else if(is("$$$filename"))
+	{
+		thisfilename=safedequote(par);
+	}
 	else if (is1("incsrc"))
 	{
+		if(pass) return;
 		string name;
 #ifdef _WIN32
 		if (strchr(par, '\\'))
@@ -1965,7 +2011,10 @@ void assembleblock(const char * block)
 		}
 #endif
 		name=safedequote(par);
+		block_ir[blockid++] = string("$$$filename \"") + name + '"';
+		string prevthisfilename = thisfilename;
 		assemblefile(name, false);
+		block_ir[blockid++] = string("$$$filename \"") + prevthisfilename + '"';
 	}
 	else if (is1("incbin") || is3("incbin"))
 	{

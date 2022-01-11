@@ -211,14 +211,30 @@ static void asar_patch_main(const char * patchloc)
 
 	try
 	{
-		for (pass = 0;pass < 3;pass++)
+		pass = 0;
+		initstuff();
+		assemblefile(patchloc, true);
+		finishpass();
+
+		for(pass = 1; pass < 3; pass++)
 		{
 			initstuff();
-			assemblefile(patchloc, true);
+			thisfilename=patchloc;
+			for (int block=0;block<blockid;block++)
+			{
+				try
+				{
+					thisblock = block_ir[block];
+					assembleblock(block_ir[block]);
+					checkbankcross();
+				}
+				catch (errblock&) {}
+			}
 			finishpass();
 		}
 	}
 	catch (errfatal&) {}
+	block_ir.reset();
 }
 
 static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)

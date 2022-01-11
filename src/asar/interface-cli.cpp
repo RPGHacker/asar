@@ -444,14 +444,25 @@ int main(int argc, const char * argv[])
 		string stddefinespath = STR dir(argv[0]) + "stddefines.txt";
 		parse_std_defines(stddefinespath);
 
-		for (pass=0;pass<3;pass++)
+		pass = 0;
+		initstuff();
+		assemblefile(asmname, true);
+		finishpass();
+
+		for(pass = 1; pass < 3; pass++)
 		{
-			//pass 1: find which bank all labels are in, for label optimizations
-			//  freespaces are listed as above 0xFFFFFF, to find if it's in the ROM or if it's dynamic
-			//pass 2: find where exactly all labels are
-			//pass 3: assemble it all
 			initstuff();
-			assemblefile(asmname, true);
+			thisfilename=asmname;
+			for (int block=0;block<blockid;block++)
+			{
+				try
+				{
+					thisblock = block_ir[block];
+					assembleblock(block_ir[block]);
+					checkbankcross();
+				}
+				catch (errblock&) {}
+			}
 			finishpass();
 		}
 
