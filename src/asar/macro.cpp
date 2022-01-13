@@ -122,8 +122,8 @@ void callmacro(const char * data)
 	// RPG Hacker: -1 to take the ... into account, which is also being counted.
 	if(thismacro->variadic) numvarargs = numargs-(thismacro->numargs-1);
 	else numvarargs = -1;
-	block_ir[blockid++] = string("$$$numvarargs ") + dec(numvarargs);
-	block_ir[blockid++] = string("$$$filename \"") + thismacro->fname + '"';
+	new_block(string("$$$numvarargs ") + dec(numvarargs));
+	new_block(string("$$$filename \"") + thismacro->fname + '"');
 	string prevthisfilename = thisfilename;
 
 	autoarray<int>* oldmacroposlabels = macroposlabels;
@@ -236,6 +236,6 @@ void callmacro(const char * data)
 	}
 	inmacro = macrorecursion;
 	numvarargs = prev_numvarargs;
-	block_ir[blockid++] = string("$$$numvarargs ") + dec(numvarargs);
-	block_ir[blockid++] = string("$$$filename \"") + prevthisfilename + '"';
+	new_block(string("$$$numvarargs ") + dec(numvarargs));
+	new_block(string("$$$filename \"") + prevthisfilename + '"');
 }

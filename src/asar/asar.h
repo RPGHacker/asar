@@ -84,12 +84,19 @@ extern bool moreonline;
 extern bool checksum_fix_enabled;
 extern bool force_checksum_fix;
 
+struct ir_block
+{
+	autoptr <char *>block;
+	autoptr <char **>word;
+	int numwords;
+};
+
 extern string callerfilename;
 extern int callerline;
 extern string thisfilename;
 extern int thisline;
 extern int blockid;
-extern autoarray<string> block_ir;
+extern autoarray<ir_block> block_ir;
 extern const char * thisblock;
 
 extern int incsrcdepth;

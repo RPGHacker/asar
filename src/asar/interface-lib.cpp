@@ -224,8 +224,8 @@ static void asar_patch_main(const char * patchloc)
 			{
 				try
 				{
-					thisblock = block_ir[block];
-					assembleblock(block_ir[block]);
+					thisblock = block_ir[block].block;
+					assemble_ir(block_ir[block]);
 					checkbankcross();
 				}
 				catch (errblock&) {}

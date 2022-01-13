@@ -86,8 +86,9 @@ static bool assinglebitwithc(const char * op, const char * math, int bits)
 
 bool asblock_spc700(char** word, int numwords)
 {
-#define is(test) (!stricmp(word[0], test))
-#define is1(test) (!stricmp(word[0], test) && numwords==2)
+	autoptr<char *> opc = duplicate_string(word[0]);
+#define is(test) (!stricmp(opc, test))
+#define is1(test) (!stricmp(opc, test) && numwords==2)
 #define par word[1]
 	if (numwords==1)
 	{
@@ -118,12 +119,12 @@ bool asblock_spc700(char** word, int numwords)
 		int opLen=0; //In case of .b or .w, this overwrites auto-detection of opcode length
 		unsigned int periodLocCount=0;
 		do {
-			if (word[0][periodLocCount] == '.') {
-				opLen=getlenfromchar(word[0][periodLocCount+1]);
-				word[0][periodLocCount]='\0';
+			if (opc[periodLocCount] == '.') {
+				opLen=getlenfromchar(opc[periodLocCount+1]);
+				opc[periodLocCount]='\0';
 			}
 			periodLocCount++;
-		} while ((opLen == 0) && (periodLocCount < strlen(word[0])));
+		} while ((opLen == 0) && (periodLocCount < strlen(opc)));
 		if (opLen > 2) { asar_throw_error(0, error_type_block, error_id_opcode_length_too_long); }
 		autoptr<char*> parcpy= duplicate_string(par);
 		autoptr<char**> arg=qpsplit(parcpy, ',', &numwordsinner);
@@ -132,7 +133,7 @@ bool asblock_spc700(char** word, int numwords)
 			string op;
 			string math;
 			int bits;
-#define isop(str) (!stricmp(word[0], str))
+#define isop(str) (!stricmp(opc, str))
 #define isam(str) (!stricmp(arg[0], str))
 #define ismatch(left, right) (matchandwrite(arg[0], left, right, math))
 #define eq(str) if (isam(str))
@@ -193,7 +194,7 @@ bool asblock_spc700(char** word, int numwords)
 				op1("rol", 0x3B);
 				op1("ror", 0x7B);
 			}
-			if (bitmatch(word[0], op, arg[0], math, bits))
+			if (bitmatch(opc, op, arg[0], math, bits))
 			{
 				if (assinglebitwithc(op, math, bits)) return true;
 				else if (!stricmp(op, "set")) write1((unsigned int)(0x02|(bits<<5)));
@@ -280,11 +281,11 @@ bool asblock_spc700(char** word, int numwords)
 			string math;
 			int bits;
 #define isop(test) (!stricmp(op, test))
-			if (!stricmp(arg[0], "c") && bitmatch(word[0], op, arg[1], math, bits))
+			if (!stricmp(arg[0], "c") && bitmatch(opc, op, arg[1], math, bits))
 			{
 				if (assinglebitwithc(op, math, bits)) return true;
 			}
-			if (bitmatch(word[0], op, arg[0], s1, bits))
+			if (bitmatch(opc, op, arg[0], s1, bits))
 			{
 				if (isop("mov") && !stricmp(arg[1], "c"))
 				{

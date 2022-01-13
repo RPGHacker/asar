@@ -70,7 +70,10 @@ void checkbankcross();
 void initstuff();
 void finishpass();
 
-void assembleblock(const char * block);
+void new_block(char *block, char **word, int numwords);
+void new_block(string block);
+void build_ir(const char * block);
+void assemble_ir(ir_block &block);
 
 extern int snespos;
 extern int realsnespos;

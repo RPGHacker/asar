@@ -35,7 +35,7 @@ int optimize_address = optimize_address_flag::DEFAULT;
 string thisfilename;
 int thisline;
 int blockid = 0;
-autoarray<string> block_ir;
+autoarray<ir_block> block_ir;
 const char * thisblock;
 
 string callerfilename;
@@ -499,8 +499,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 
 				thisline=linenum;//do not optimize, this one is recursive
 				thisblock = stripped_block.data();
-				block_ir[blockid++] = stripped_block;
-				assembleblock(thisblock);
+				build_ir(thisblock);
 				checkbankcross();
 			}
 			catch (errblock&) {}
