@@ -928,6 +928,7 @@ void build_ir(const char * block)
 
 	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
 	{
+		new_internal_block("", COMMAND_LABEL).params.append(new ir_string(word[0]));
 		word++;
 		numwords--;
 	}
@@ -972,6 +973,7 @@ void build_ir(const char * block)
 
 				errmsg = handle_print(rawerrmsg.raw());
 			}
+			ir.params.append(new ir_string(errmsg));
 		}
 
 		//handle nested if statements
@@ -980,22 +982,18 @@ void build_ir(const char * block)
 			if ((is("if") || is("while"))) numif++;
 			return;
 		}
-		if ((is("if") || is("while"))) numif++;
 
 		bool cond = getnum(arg);
-		if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+		ir.params.append(new ir_num(cond));
+		if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 		if (is("if") || is("while"))
 		{
-			if(0);
-			else if (cond)
+			numif++;
+			if (cond)
 			{
 				numtrue++;
-				elsestatus[numif]=true;
 			}
-			else if (!cond)
-			{
-				elsestatus[numif]=false;
-			}
+			elsestatus[numif] = cond;
 			addedwstatus.cond = cond;
 		}
 		else if (is("elseif"))
@@ -1048,12 +1046,14 @@ void build_ir(const char * block)
 		autoptr<char *> dup_par = duplicate_string(par);
 		autoptr<char**> pars=qpsplit(dup_par, ',');
 		verify_paren(pars);
+		verifysnespos();
 
-		void (*do_write)(unsigned int);
-		if (word[0][1]  == 'b') do_write = &write1;
-		else if (word[0][1]  == 'w') do_write = &write2;
-		else if (word[0][1]  == 'l') do_write = &write3;
-		else do_write = &write4;
+		int size;
+		int param_count = 0;
+		if (word[0][1] == 'b') size = 1;
+		else if (word[0][1] == 'w') size = 2;
+		else if (word[0][1] == 'l') size = 3;
+		else size = 4;
 
 		for (int i=0;pars[i];i++)
 		{
@@ -1064,16 +1064,19 @@ void build_ir(const char * block)
 				str += utf8_val(&codepoint, str);
 				while ( codepoint != 0 && codepoint != -1 )
 				{
-					do_write(thetable.get_val(codepoint));
+					ir.params.append(new ir_tagged(thetable.get_val(codepoint)));
+					param_count++;
 					str += utf8_val(&codepoint, str);
 				}
 				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
 			}
 			else
 			{
-				do_write(0);
+				ir.params.append(new ir_tagged(pars[i]));
+				param_count++;
 			}
 		}
+		step(size * param_count);
 	}
 	else if(word[0][0]=='%')
 	{
@@ -2277,6 +2280,10 @@ void assemble_ir(ir_block &ir)
 		word++;
 		numwords--;
 	}
+	if(is(COMMAND_LABEL))
+	{
+		//addlabel(get_ir_string(ir.params[0]);)
+	}
 	if (!word[0] || !word[0][0]) return;
 	if (is(COMMAND_IF) || is(COMMAND_ELSEIF) || is(COMMAND_ASSERT) || is(COMMAND_WHILE))
 	{
@@ -2287,27 +2294,9 @@ void assemble_ir(ir_block &ir)
 		wstatus.cond = false;
 		whiletracker& addedwstatus = (whilestatus[numif] = wstatus);
 		numwords = 2;
-		autoptr<char *> arg = duplicate_string(word[1]);
 		if (is(COMMAND_ASSERT))
 		{
-			autoptr<char**> tokens = qpsplit(arg, ',');
-			verify_paren(tokens);
-			if (tokens[0] != NULL && tokens[1] != NULL)
-			{
-				string rawerrmsg;
-				size_t pos = 1;
-				while (tokens[pos])
-				{
-					rawerrmsg += tokens[pos];
-					if (tokens[pos + 1] != NULL)
-					{
-						rawerrmsg += ",";
-					}
-					pos++;
-				}
-
-				errmsg = handle_print(rawerrmsg.raw());
-			}
+			errmsg = get_ir_string(ir.params[0]);
 		}
 
 		//handle nested if statements
@@ -2316,22 +2305,16 @@ void assemble_ir(ir_block &ir)
 			if ((is(COMMAND_IF) || is(COMMAND_WHILE))) numif++;
 			return;
 		}
-		if ((is(COMMAND_IF) || is(COMMAND_WHILE))) numif++;
 
-		bool cond = getnum(arg);
-		if (foundlabel && !foundlabel_static && !is(COMMAND_ASSERT)) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+		bool cond = get_ir_num(ir.params[is(COMMAND_ASSERT)]);
 		if (is(COMMAND_IF) || is(COMMAND_WHILE))
 		{
-			if(0);
-			else if (cond)
+			numif++;
+			if (cond)
 			{
 				numtrue++;
-				elsestatus[numif]=true;
 			}
-			else if (!cond)
-			{
-				elsestatus[numif]=false;
-			}
+			elsestatus[numif]=cond;
 			addedwstatus.cond = cond;
 		}
 		else if (is(COMMAND_ELSEIF))
@@ -2382,9 +2365,16 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is1(COMMAND_DB) || is1(COMMAND_DW) || is1(COMMAND_DL) || is1(COMMAND_DD))
 	{
-		autoptr<char *> dup_par = duplicate_string(par);
-		autoptr<char**> pars=qpsplit(dup_par, ',');
-		verify_paren(pars);
+		if(pass == 1)
+		{
+			int size;
+			if (word[0][1] == 'b') size = 1;
+			else if (word[0][1] == 'w') size = 2;
+			else if (word[0][1] == 'l') size = 3;
+			else size = 4;
+			step((ir.params.count) * size);
+			return;
+		}
 
 		void (*do_write)(unsigned int);
 		if (word[0][1]  == 'b') do_write = &write1;
@@ -2392,23 +2382,16 @@ void assemble_ir(ir_block &ir)
 		else if (word[0][1]  == 'l') do_write = &write3;
 		else do_write = &write4;
 
-		for (int i=0;pars[i];i++)
+		for(int i = 0; i < ir.params.count; i++)
 		{
-			if (pars[i][0]=='"')
+			ir_tagged *param = (ir_tagged *)ir.params[i];
+			if (param->type == IR_TYPE_STRING)
 			{
-				char * str=const_cast<char*>(safedequote(pars[i]));
-				int codepoint = 0u;
-				str += utf8_val(&codepoint, str);
-				while ( codepoint != 0 && codepoint != -1 )
-				{
-					do_write(thetable.get_val(codepoint));
-					str += utf8_val(&codepoint, str);
-				}
-				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+				do_write(getnum(param->s));
 			}
 			else
 			{
-				do_write(pass==2?getnum(pars[i]):0);
+				do_write(param->n);
 			}
 		}
 	}

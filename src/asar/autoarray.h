@@ -78,8 +78,7 @@ private:
 		T *old = ptr;
 		ptr = (T*)malloc(sizeof(T)*(size_t)bufferlen);
 		for(int i = 0; i < oldlen; i++){
-			new(ptr + i) T();
-			ptr[i] = static_cast<T &&>(old[i]);
+			new(ptr + i) T(static_cast<T &&>(old[i]));
 		}
 		free(old);
 		memset(ptr + oldlen, 0, (size_t)(bufferlen - oldlen) * sizeof(T));
@@ -92,18 +91,6 @@ public:
 		if (keep >= count) return;
 		for (int i = keep;i < count;i++) ptr[i].~T();
 		memset(ptr + keep, 0, (size_t)(count - keep) * sizeof(T));
-		if (keep < bufferlen / 2)
-		{
-			while (keep < bufferlen / 2 && bufferlen>8) bufferlen /= 2;
-			T *old = ptr;
-			ptr = (T*)malloc(sizeof(T)*(size_t)bufferlen);
-			for(int i = 0; i < keep; i++){
-				new(ptr + i) T();
-				ptr[i] = static_cast<T &&>(old[i]);
-			}
-			free(old);
-
-		}
 		count = keep;
 	}
 
