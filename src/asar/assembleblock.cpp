@@ -928,7 +928,7 @@ void build_ir(const char * block)
 
 	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
 	{
-		new_internal_block("", COMMAND_LABEL).params.append(new ir_string(word[0]));
+		//new_internal_block("", COMMAND_LABEL).params.append(new ir_string(word[0]));
 		word++;
 		numwords--;
 	}
@@ -973,7 +973,7 @@ void build_ir(const char * block)
 
 				errmsg = handle_print(rawerrmsg.raw());
 			}
-			ir.params.append(new ir_string(errmsg));
+			ir.params.append(errmsg);
 		}
 
 		//handle nested if statements
@@ -984,7 +984,7 @@ void build_ir(const char * block)
 		}
 
 		bool cond = getnum(arg);
-		ir.params.append(new ir_num(cond));
+		ir.params.append(cond);
 		if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 		if (is("if") || is("while"))
 		{
@@ -1064,7 +1064,7 @@ void build_ir(const char * block)
 				str += utf8_val(&codepoint, str);
 				while ( codepoint != 0 && codepoint != -1 )
 				{
-					ir.params.append(new ir_tagged(thetable.get_val(codepoint)));
+					ir.params.append(thetable.get_val(codepoint));
 					param_count++;
 					str += utf8_val(&codepoint, str);
 				}
@@ -1072,7 +1072,7 @@ void build_ir(const char * block)
 			}
 			else
 			{
-				ir.params.append(new ir_tagged(pars[i]));
+				ir.params.append(pars[i]);
 				param_count++;
 			}
 		}
@@ -2296,7 +2296,7 @@ void assemble_ir(ir_block &ir)
 		numwords = 2;
 		if (is(COMMAND_ASSERT))
 		{
-			errmsg = get_ir_string(ir.params[0]);
+			errmsg = ir.params[0].as_string();
 		}
 
 		//handle nested if statements
@@ -2306,7 +2306,7 @@ void assemble_ir(ir_block &ir)
 			return;
 		}
 
-		bool cond = get_ir_num(ir.params[is(COMMAND_ASSERT)]);
+		bool cond = ir.params[is(COMMAND_ASSERT)].as_num();
 		if (is(COMMAND_IF) || is(COMMAND_WHILE))
 		{
 			numif++;
@@ -2384,14 +2384,14 @@ void assemble_ir(ir_block &ir)
 
 		for(int i = 0; i < ir.params.count; i++)
 		{
-			ir_tagged *param = (ir_tagged *)ir.params[i];
-			if (param->type == IR_TYPE_STRING)
+			ir_tagged &param = ir.params[i];
+			if (param.type == IR_TYPE_STRING)
 			{
-				do_write(getnum(param->s));
+				do_write(getnum(param.as_string()));
 			}
 			else
 			{
-				do_write(param->n);
+				do_write(param.as_num());
 			}
 		}
 	}
