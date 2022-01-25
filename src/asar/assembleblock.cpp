@@ -1961,6 +1961,9 @@ void assembleblock(const char * block, bool isspecialline)
 					{
 						asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
 					}
+
+					extern AddressToLineMapping addressToLineMapping;
+					addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos);
 				}
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
 				freespaceorgpos[targetid]=ratsloc;
