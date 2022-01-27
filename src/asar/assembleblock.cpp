@@ -1106,12 +1106,6 @@ void build_ir(const char * block)
 		parsing_macro=true;
 		startmacro(block+6);
 	}
-	else if (is("$$$numvarargs"))
-	{
-		ir.command = INTERNAL_COMMAND_NUMVARARGS;
-		numvarargs = getnum(par);
-		ir.params.append(numvarargs);
-	}
 	else if (is("$$$endmacro"))
 	{
 		ir.command = INTERNAL_COMMAND_ENDMACRO;
