@@ -463,6 +463,8 @@ int main(int argc, const char * argv[])
 		//if (pcpos>romlen) romlen=pcpos;
 		if (errored)
 		{
+			if (errnum==0)
+				asar_throw_error(pass, error_type_null, error_id_phantom_error);
 			puts("Errors were detected while assembling the patch. Assembling aborted. Your ROM has not been modified.");
 			closerom(false);
 			reseteverything();
