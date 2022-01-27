@@ -1419,7 +1419,7 @@ void build_ir(const char * block)
 		ir.params.append(ns + completename);
 		ir.params.append(num);
 	}
-	else if (assemblemapper(word, numwords)) {}
+	else if (assemblemapper(word, numwords)) { ir.command = COMMAND_MAPPER; }
 	else if (is1("org"))
 	{
 		ir.command = COMMAND_ORG;
@@ -2057,10 +2057,10 @@ void build_ir(const char * block)
 #endif
 		autoptr<char *> dup_par = duplicate_string(par);
 		name=safedequote(dup_par);
-		new_internal_block(string("$$$filename \"") + name + '"', INTERNAL_COMMAND_FILENAME);
+		new_internal_block(string("$$$filename \"") + name + '"', INTERNAL_COMMAND_FILENAME).params.append(name);
 		string prevthisfilename = thisfilename;
 		assemblefile(name, false);
-		new_internal_block(string("$$$filename \"") + prevthisfilename + '"', INTERNAL_COMMAND_FILENAME);
+		new_internal_block(string("$$$filename \"") + prevthisfilename + '"', INTERNAL_COMMAND_FILENAME).params.append(prevthisfilename);
 	}
 	else if (is1("incbin") || is3("incbin"))
 	{
@@ -2348,7 +2348,6 @@ void assemble_ir(ir_block &ir)
 	{
 		//addlabel(get_ir_string(ir.params[0]);)
 	}
-	if (!word[0] || !word[0][0]) return;
 	if (is(COMMAND_IF) || is(COMMAND_ELSEIF) || is(COMMAND_ASSERT) || is(COMMAND_WHILE))
 	{
 		string errmsg;
@@ -2427,18 +2426,18 @@ void assemble_ir(ir_block &ir)
 		if(pass == 1)
 		{
 			int size;
-			if (word[0][1] == 'b') size = 1;
-			else if (word[0][1] == 'w') size = 2;
-			else if (word[0][1] == 'l') size = 3;
+			if (is(COMMAND_DB)) size = 1;
+			else if (is(COMMAND_DW)) size = 2;
+			else if (is(COMMAND_DL)) size = 3;
 			else size = 4;
 			step((ir.params.count) * size);
 			return;
 		}
 
 		void (*do_write)(unsigned int);
-		if (word[0][1]  == 'b') do_write = &write1;
-		else if (word[0][1]  == 'w') do_write = &write2;
-		else if (word[0][1]  == 'l') do_write = &write3;
+		if (is(COMMAND_DB)) do_write = &write1;
+		else if (is(COMMAND_DW)) do_write = &write2;
+		else if (is(COMMAND_DL)) do_write = &write3;
 		else do_write = &write4;
 
 		for(int i = 0; i < ir.params.count; i++)
@@ -2571,7 +2570,10 @@ void assemble_ir(ir_block &ir)
 	{
 		setlabel(ir.params[0].as_string(), ir.params[1].as_num(), true);
 	}
-	else if (assemblemapper(word, numwords)) {}
+	else if (is(COMMAND_MAPPER))
+	{
+		assemblemapper(word, numwords);
+	}
 	else if (is1(COMMAND_ORG))
 	{
 		freespaceend();
@@ -3032,8 +3034,7 @@ void assemble_ir(ir_block &ir)
 #endif
 	else if(is(INTERNAL_COMMAND_FILENAME))
 	{
-		autoptr<char *> dup_par = duplicate_string(par);
-		thisfilename=safedequote(dup_par);
+		thisfilename=ir.params[0].as_string();
 	}
 	else if (is1(COMMAND_INCSRC))
 	{
