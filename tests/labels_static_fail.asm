@@ -8,7 +8,6 @@
 ;`errE5063
 ;`errE5124
 ;`errE5091
-;`errE5032
 org $008000
 ANonStaticLabel:
 

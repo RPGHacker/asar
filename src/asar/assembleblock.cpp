@@ -807,7 +807,7 @@ static void pop_pc()
 }
 
 
-string handle_print(char* input)
+string handle_print(const char* input)
 {
 	string out;
 	autoptr<char*> dup_input = duplicate_string(input);
@@ -1107,6 +1107,7 @@ void build_ir(const char * block)
 	{
 		ir.command = INTERNAL_COMMAND_NUMVARARGS;
 		numvarargs = getnum(par);
+		ir.params.append(numvarargs);
 	}
 	else if (is("$$$endmacro"))
 	{
@@ -1156,27 +1157,27 @@ void build_ir(const char * block)
 	else if (is1("error"))
 	{
 		ir.command = COMMAND_ERROR;
-		string out = handle_print(par);
+		ir.params.append(par);
 		// RPG Hacker: This used to be on pass 0, which had its merits (you don't want to miss a potentially critical
 		// user-generated error, just because a bazillion other errors are thrown in passes before it). However, I
 		// don't see how to support print functions with this without moving it to pass 2. Suggestions are welcome.
-		asar_throw_error(2, error_type_block, error_id_error_command, (string(": ") + out).data());
 	}
 	else if (is1("warn"))
 	{
 		ir.command = COMMAND_WARN;
-		string out = handle_print(par);
-		asar_throw_warning(2, warning_id_warn_command, (string(": ") + out).data());
+		ir.params.append(par);
 	}
 	else if (is1("warnings"))
 	{
 		ir.command = COMMAND_WARNINGS;
 		if (stricmp(word[1], "push") == 0)
 		{
+			ir.params.append(IR_OPTION_PUSH);
 			push_warnings();
 		}
 		else if (stricmp(word[1], "pull") == 0)
 		{
+			ir.params.append(IR_OPTION_PULL);
 			pull_warnings();
 		}
 		else
@@ -1189,27 +1190,33 @@ void build_ir(const char * block)
 		ir.command = COMMAND_WARNINGS;
 		if (stricmp(word[1], "enable") == 0)
 		{
+			ir.params.append(IR_OPTION_ENABLE);
 			asar_warning_id warnid = parse_warning_id_from_string(word[2]);
 
 			if (warnid != warning_id_end)
 			{
+				ir.params.append((int)warnid);
 				set_warning_enabled(warnid, true);
 			}
 			else
 			{
+				ir.params.append((int)0);
 				asar_throw_error(0, error_type_block, error_id_invalid_warning_id, "warnings enable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
 			}
 		}
 		else if (stricmp(word[1], "disable") == 0)
 		{
+			ir.params.append(IR_OPTION_DISABLE);
 			asar_warning_id warnid = parse_warning_id_from_string(word[2]);
 
 			if (warnid != warning_id_end)
 			{
+				ir.params.append((int)warnid);
 				set_warning_enabled(warnid, false);
 			}
 			else
 			{
+				ir.params.append((int)0);
 				asar_throw_error(0, error_type_block, error_id_invalid_warning_id, "warnings disable", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
 			}
 		}
@@ -1221,6 +1228,7 @@ void build_ir(const char * block)
 	else if(is1("global"))
 	{
 		ir.command = COMMAND_GLOBAL;
+		ir.params.append(word[1]);
 		if (!addlabel(word[1], -1, true))
 		{
 			asar_throw_error(0, error_type_block, error_id_invalid_global_label, word[1]);
@@ -1272,18 +1280,22 @@ void build_ir(const char * block)
 		}
 		else if (stricmp(word[1], "bankcross") == 0)
 		{
+			ir.params.append(IR_OPTION_BANKCROSS);
 			if (0);
 			else if (!stricmp(word[2], "off"))
 			{
+				ir.params.append(IR_OPTION_OFF);
 				 disable_bank_cross_errors = true;
 			}
 			else if (!stricmp(word[2], "half"))
 			{
+				ir.params.append(IR_OPTION_HALF);
 				disable_bank_cross_errors = false;
 				check_half_banks_crossed = true;
 			}
 			else if (!stricmp(word[2], "full"))
 			{
+				ir.params.append(IR_OPTION_FULL);
 				disable_bank_cross_errors = false;
 				check_half_banks_crossed = false;
 			}
@@ -1359,12 +1371,16 @@ void build_ir(const char * block)
 		ir.command = COMMAND_SETLABEL;
 		if(word[0][0] == '\'' && word[0][1])
 		{
+			ir.command = COMMAND_SETCODEPOINT;
 			int codepoint;
 			const char* char_start = word[0]+1;
 			const char* after = char_start + utf8_val(&codepoint, char_start);
 			if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
 			if(after[0] == '\'' && after[1] == '\0') {
-				thetable.set_val(codepoint, getnum(word[2]));
+				int num = getnum(word[2]);
+				thetable.set_val(codepoint, num);
+				ir.params.append(codepoint);
+				ir.params.append(num);
 				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 				return;
 			} // todo: error checking here
@@ -1400,6 +1416,8 @@ void build_ir(const char * block)
 		completename += newlabelname;
 
 		setlabel(ns + completename, num, true);
+		ir.params.append(ns + completename);
+		ir.params.append(num);
 	}
 	else if (assemblemapper(word, numwords)) {}
 	else if (is1("org"))
@@ -1408,6 +1426,7 @@ void build_ir(const char * block)
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		freespaceend();
 		unsigned int num=getnum(par);
+		ir.params.append(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
 		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex(num, 6).data());
 		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) asar_throw_warning(0, warning_id_set_middle_byte);
@@ -1430,6 +1449,7 @@ void build_ir(const char * block)
 		if (!confirmname(word[1])) ret_error(error_id_invalid_struct_name);
 
 		if (structs.exists(word[1])) ret_error_params(error_id_struct_redefined, word[1]);
+		ir.params.append(word[1]);
 
 		static_struct = false;
 		old_snespos = snespos;
@@ -1440,7 +1460,7 @@ void build_ir(const char * block)
 		{
 			static_struct = true;
 			base = getnum(word[2]);
-
+			ir.params.append(word[2]);
 			if (foundlabel && !foundlabel_static) static_struct = false;
 		}
 
@@ -1463,6 +1483,7 @@ void build_ir(const char * block)
 			if (strcasecmp(word[2], "extends")) ret_error_cleanup(error_id_missing_extends);
 			if (!confirmname(word[3])) ret_error_cleanup(error_id_struct_invalid_parent_name);
 			string tmp_struct_parent = word[3];
+			ir.params.append(word[3]);
 
 			if (!structs.exists(tmp_struct_parent)) ret_error_params_cleanup(error_id_struct_not_found, tmp_struct_parent.data());
 			snes_struct structure = structs.find(tmp_struct_parent);
@@ -1493,6 +1514,9 @@ void build_ir(const char * block)
 
 		int alignment = numwords == 3 ? (int)getnum(word[2]) : 1;
 		if (alignment < 1) ret_error(error_id_alignment_too_small);
+
+		if (foundlabel && !foundlabel_static) ret_error(error_id_no_labels_here);
+		ir.params.append(alignment);
 
 		snes_struct structure;
 		structure.base_end = snespos;
@@ -1539,19 +1563,21 @@ void build_ir(const char * block)
 		spcblock.type = spcblock_nspc;
 		spcblock.macro_name = "";
 
+		ir.params.append(par);
 		if (spcblock.destination&~0xFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex(spcblock.destination, 6).data());
 
 		if(numwords == 3)
 		{
-			if(!stricmp(word[2], "nspc")) spcblock.type = spcblock_nspc;
-			else if(!stricmp(word[2], "custom")) asar_throw_error(0, error_type_block, error_id_custom_spcblock_missing_macro);
+			if(!stricmp(word[2], "nspc")){ spcblock.type = spcblock_nspc; ir.params.append(IR_OPTION_NSPC);}
+			else if(!stricmp(word[2], "custom")){ asar_throw_error(0, error_type_block, error_id_custom_spcblock_missing_macro); ir.params.append(IR_OPTION_CUSTOM); }
 			else asar_throw_error(0, error_type_block, error_id_unknown_spcblock_type);
 		}
 		else if(numwords == 4)
 		{
-			if(!stricmp(word[2], "custom")) spcblock.type = spcblock_custom;
+			if(!stricmp(word[2], "custom")){ spcblock.type = spcblock_custom;  ir.params.append(IR_OPTION_CUSTOM); }
 			else asar_throw_error(0, error_type_block, error_id_extra_spcblock_arg_for_type);
 
+			ir.params.append(word[3]);
 			if(macros.exists(word[3]))
 			{
 				macrodata *macro = macros.find(word[3]);
@@ -1617,18 +1643,22 @@ void build_ir(const char * block)
 		ir.command = COMMAND_STARTPOS;
 		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_startpos_without_spcblock);
 		spcblock.execute_address=getnum(par);
+		ir.params.append(par);
 	}
 	else if (is1("base"))
 	{
 		ir.command = COMMAND_BASE;
 		if (!stricmp(par, "off"))
 		{
+			ir.params.append(IR_OPTION_OFF);
 			snespos=realsnespos;
 			startpos=realstartpos;
 			snespos_valid = realsnespos >= 0;
 			return;
 		}
+		ir.params.append(IR_OPTION_ON);
 		unsigned int num=getnum(par);
+		ir.params.append(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
 		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num).data());
 		snespos=(int)num;
@@ -1640,6 +1670,7 @@ void build_ir(const char * block)
 	{
 		ir.command = COMMAND_DPBASE;
 		unsigned int num=(int)getnum(par);
+		ir.params.append(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
 		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex((unsigned int)num, 6).data());
 		dp_base = (int)num;
@@ -1649,18 +1680,22 @@ void build_ir(const char * block)
 		ir.command = COMMAND_OPTIMIZE;
 		if (!stricmp(par, "dp"))
 		{
+			ir.params.append(IR_OPTION_DP);
 			if (!stricmp(word[2], "none"))
 			{
+				ir.params.append(IR_OPTION_NONE);
 				optimize_dp = optimize_dp_flag::NONE;
 				return;
 			}
 			if (!stricmp(word[2], "ram"))
 			{
+				ir.params.append(IR_OPTION_RAM);
 				optimize_dp = optimize_dp_flag::RAM;
 				return;
 			}
 			if (!stricmp(word[2], "always"))
 			{
+				ir.params.append(IR_OPTION_ALWAYS);
 				optimize_dp = optimize_dp_flag::ALWAYS;
 				return;
 			}
@@ -1668,18 +1703,22 @@ void build_ir(const char * block)
 		}
 		if (!stricmp(par, "address"))
 		{
+			ir.params.append(IR_OPTION_ADDRESS);
 			if (!stricmp(word[2], "default"))
 			{
+				ir.params.append(IR_OPTION_DEFAULT);
 				optimize_address = optimize_address_flag::DEFAULT;
 				return;
 			}
 			if (!stricmp(word[2], "ram"))
 			{
+				ir.params.append(IR_OPTION_RAM);
 				optimize_address = optimize_address_flag::RAM;
 				return;
 			}
 			if (!stricmp(word[2], "mirrors"))
 			{
+				ir.params.append(IR_OPTION_MIRRORS);
 				optimize_address = optimize_address_flag::MIRRORS;
 				return;
 			}
@@ -1692,53 +1731,43 @@ void build_ir(const char * block)
 		ir.command = COMMAND_BANK;
 		if (!stricmp(par, "auto"))
 		{
+			ir.params.append(IR_OPTION_AUTO);
 			optimizeforbank=-1;
 			return;
 		}
 		if (!stricmp(par, "noassume"))
 		{
+			ir.params.append(IR_OPTION_NOASSUME);
 			optimizeforbank=0x100;
 			return;
 		}
 		unsigned int num=getnum(par);
+		ir.params.append(num);
 		//if (forwardlabel) error(0, "bank Label is not valid");
 		//if (foundlabel) num>>=16;
-		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num, 6).data());
+		//todo  better errror
+		if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here, par);
+		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, string("Bank ") + hex((unsigned int)num, 6).data());
 		optimizeforbank=(int)num;
 	}
-	else if (is("freespace") || is("freecode") || is("freedata"))
+	else if (is("freecode") || is("freedata"))
 	{
-		if(0);
-		else if(is("freespace")) ir.command = COMMAND_FREESPACE;
-		else if(is("freecode")) ir.command = COMMAND_FREECODE;
-		else if(is("freedata")) ir.command = COMMAND_FREEDATA;
+		if(is("freecode")) ir.command = COMMAND_FREECODE;
+		else ir.command = COMMAND_FREEDATA;
+
+		if (numwords > 2) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-		string parstr;
-		if (numwords==1) parstr="\n";//crappy hack: impossible character to cut out extra commas
-		else if (numwords==2) parstr=word[1];
-		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-		if (is("freecode")) parstr=STR"ram,"+parstr;
-		if (is("freedata")) parstr=STR"noram,"+parstr;
+		string parstr= word[1];
 		autoptr<char**> pars=split(parstr.temp_raw(), ',');
 		unsigned char fsbyte = 0x00;
-		int useram=-1;
+		bool useram= ir.command == COMMAND_FREECODE;
 		bool fixedpos=false;
 		bool align=false;
 		bool leakwarn=true;
 		for (int i=0;pars[i];i++)
 		{
-			if (pars[i][0]=='\n') {}
-			else if (!stricmp(pars[i], "ram"))
-			{
-				if (useram!=-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				useram=1;
-			}
-			else if (!stricmp(pars[i], "noram"))
-			{
-				if (useram!=-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				useram=0;
-			}
+			if(!pars[i][0]){}
 			else if (!stricmp(pars[i], "static"))
 			{
 				if (fixedpos) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
@@ -1757,10 +1786,17 @@ void build_ir(const char * block)
 			else
 			{
 				fsbyte = (unsigned char)getnum(pars[i]);
+				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here, pars[i]);
 			}
 		}
-		if (useram==-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		ir.params.append(useram ? IR_OPTION_WITHRAM : IR_OPTION_NORAM);
+		ir.params.append(fixedpos ? IR_OPTION_STATIC : IR_OPTION_DYNAMIC);
+		ir.params.append(align ? IR_OPTION_ALIGNED : IR_OPTION_PACKED);
+		ir.params.append(leakwarn ? IR_OPTION_DIRTY : IR_OPTION_CLEANED);
+		ir.params.append(fsbyte);
+
 		if (mapper == norom) asar_throw_error(0, error_type_block, error_id_no_freespace_norom);
+
 		freespaceend();
 		freespaceid=getfreespaceid();
 		freespacebyte[freespaceid] = fsbyte;
@@ -1781,7 +1817,6 @@ void build_ir(const char * block)
 	{
 		ir.command = COMMAND_PROT;
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-		if (!ratsmetastate) asar_throw_error(2, error_type_block, error_id_prot_not_at_freespace_start);
 		if (ratsmetastate==ratsmeta_used) step(-5);
 		int num;
 		autoptr<char *> dup_par = duplicate_string(par);
@@ -1793,14 +1828,13 @@ void build_ir(const char * block)
 		write1('T');
 		if (num * 3 > 255) asar_throw_error(0, error_type_block, error_id_prot_too_many_entries);
 		write1((unsigned int)(num*3));
+		ir.params.append(num);
 		for (int i=0;i<num;i++)
 		{
 			//int num=getnum(pars[i]);
 			const char * labeltest=pars[i];
-			string testlabel = labeltest;
-			int labelnum=(int)labelval(&labeltest).pos;
-			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
-			write3((unsigned int)labelnum);
+			ir.params.append(pars[i]);
+			write3((unsigned int)labelval(labeltest).pos);
 		}
 		write1('S');
 		write1('T');
@@ -1818,9 +1852,8 @@ void build_ir(const char * block)
 		{
 			if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
 			const char * labeltest = word[2];
-			string testlabel = labeltest;
-			int num=(int)labelval(&labeltest).pos;
-			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
+			ir.params.append(word[2]);
+			int num = labelval(labeltest).pos;
 			unsigned char targetid=(unsigned char)(num>>24);
 			num&=0xFFFFFF;
 			if (strlen(par)>3 && !stricmp(par+3, ".l")) par[3]=0;
@@ -1829,6 +1862,7 @@ void build_ir(const char * block)
 				int orgpos=read3(snespos+1);
 				int ratsloc=freespaceorgpos[targetid];
 				int firstbyte = ((!stricmp(par, "JSL")) ? 0x22 : 0x5C);
+				ir.params.append((!stricmp(par, "JSL")) ? IR_OPTION_CLEAN_JSL : IR_OPTION_CLEAN_JML);
 				int pcpos=snestopc(snespos);
 				if (/*pass==1 && */pcpos>=0 && pcpos<romlen_r && romdata_r[pcpos]==firstbyte)
 				{
@@ -1842,6 +1876,7 @@ void build_ir(const char * block)
 			}
 			else if (!stricmp(par, "dl"))
 			{
+				ir.params.append(IR_OPTION_CLEAN_DL);
 				int ratsloc=freespaceorgpos[targetid];
 				if (!ratsloc) ratsloc=0;
 				write3((unsigned int)num);
@@ -1850,7 +1885,12 @@ void build_ir(const char * block)
 			}
 			else asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 		}
-		else removerats((int)getnum(word[1]), 0x00);
+		else
+		{
+			ir.params.append(word[1]);
+			ir.params.append(IR_OPTION_CLEAN_LABEL);
+			removerats((int)getnum(word[1]), 0x00);
+		}
 	}
 	else if (is0("pushpc"))
 	{
@@ -1941,35 +1981,33 @@ void build_ir(const char * block)
 		ir.command = COMMAND_NAMESPACE;
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		bool leave = false;
-		if (par)
+		if (!stricmp(par, "off"))
 		{
-			if (!stricmp(par, "off"))
-			{
-				if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
-				leave = true;
-			}
-			else if (!stricmp(par, "nested"))
-			{
-				if (!word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
-				else if (!stricmp(word[2], "on")) nested_namespaces = true;
-				else if (!stricmp(word[2], "off")) nested_namespaces = false;
-			}
-			else
-			{
-				if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
-				autoptr<char *> dup_par = duplicate_string(par);
-				const char * tmpstr= safedequote(dup_par);
-				if (!confirmname(tmpstr)) asar_throw_error(0, error_type_block, error_id_invalid_namespace_name);
-				if (!nested_namespaces)
-				{
-					namespace_list.reset();
-				}
-				namespace_list.append(tmpstr);
-			}
+			ir.params.append(IR_OPTION_OFF);
+			if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
+			leave = true;
+		}
+		else if (!stricmp(par, "nested"))
+		{
+			ir.params.append(IR_OPTION_NESTED);
+			if (!word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
+			else if (!stricmp(word[2], "on")) nested_namespaces = true;
+			else if (!stricmp(word[2], "off")) nested_namespaces = false;
+			else asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
+			ir.params.append(nested_namespaces ? IR_OPTION_ON : IR_OPTION_OFF);
 		}
 		else
 		{
-			leave = true;
+			if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
+			autoptr<char *> dup_par = duplicate_string(par);
+			const char * tmpstr= safedequote(dup_par);
+			ir.params.append(tmpstr);
+			if (!confirmname(tmpstr)) asar_throw_error(0, error_type_block, error_id_invalid_namespace_name);
+			if (!nested_namespaces)
+			{
+				namespace_list.reset();
+			}
+			namespace_list.append(tmpstr);
 		}
 
 		if (leave)
@@ -2038,27 +2076,28 @@ void build_ir(const char * block)
 			*lengths=0;
 			lengths++;
 			if (strchr(lengths, '"')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			if(*lengths=='(') {
-				char* tmp = strqpchr(lengths, '-');
-				if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				start = (int)getnum(string(lengths+1, tmp-1-lengths-1));
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-				lengths = tmp;
-			} else {
-				start=(int)strtoul(lengths, &lengths, 16);
+			if(*lengths!='(') {
+				 asar_throw_error(0, error_type_block, error_id_broken_incbin);
 			}
+			char* tmp = strqpchr(lengths, '-');
+			if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			string startarg(lengths+1, tmp-1-lengths-1);
+			if(!confirmqpar(startarg)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
+			start = (int)getnum(startarg);
+			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			lengths = tmp;
+
 			if (*lengths!='-') asar_throw_error(0, error_type_block, error_id_broken_incbin);
 			lengths++;
-			if(*lengths=='(') {
-				char* tmp = strchr(lengths, '\0');
-				if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				end = (int)getnum(string(lengths+1, tmp-1-lengths-1));
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-				// no need to check end-of-string here
-			} else {
-				end=(int)strtoul(lengths, &lengths, 16);
-				if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			if(*lengths!='(') {
+				 asar_throw_error(0, error_type_block, error_id_broken_incbin);
 			}
+			tmp = strchr(lengths, '\0');
+			if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			string endarg(lengths+1, tmp-1-lengths-1);
+			if(!confirmqpar(endarg)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
+			end = (int)getnum(string(lengths+1, tmp-1-lengths-1));
+			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		}
 		string name;
 #ifdef _WIN32
@@ -2080,7 +2119,9 @@ void build_ir(const char * block)
 		{
 			if (!confirmname(word[3]))
 			{
+				ir.params.append(IR_OPTION_ADDRESS);
 				int pos=(int)getnum(word[3]);
+				ir.params.append(pos);
 				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 				int offset=snestopc(pos);
 				if (offset + end - start > 0xFFFFFF) asar_throw_error(0, error_type_block, error_id_16mb_rom_limit);
@@ -2088,9 +2129,9 @@ void build_ir(const char * block)
 			}
 			else
 			{
-				int pos;
+				ir.params.append(IR_OPTION_LABEL);
 				if (end - start > 65536) asar_throw_error(0, error_type_block, error_id_incbin_64kb_limit);
-				pos=getpcfreespace(end-start, false, true, false);
+				int pos=getpcfreespace(end-start, false, true, false);
 				if (pos < 0) asar_throw_error(0, error_type_block, error_id_no_freespace, dec(end - start).data());
 				int foundfreespaceid=getfreespaceid();
 				freespacepos[foundfreespaceid]=pctosnes(pos)|(/*fastrom?0x800000:*/0x000000)|(foundfreespaceid <<24);
@@ -2100,8 +2141,10 @@ void build_ir(const char * block)
 		}
 		else
 		{
-			for (int i=start;i<end;i++) write1((unsigned int)data[i]);
+			ir.params.append(IR_OPTION_INLINE);
+			step(end-start);
 		}
+		for (int i=start;i<end;i++) ir.params.append((unsigned int)data[i]);
 	}
 	else if (is("skip") || is("fill"))
 	{
@@ -2116,12 +2159,14 @@ void build_ir(const char * block)
 		{
 			int alignment = getnum(word[2]);
 			if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			ir.params.append(alignment);
 			int offset = 0;
 			if(numwords==5)
 			{
 				offset = getnum(word[4]);
 				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 			}
+			ir.params.append(offset);
 			if(alignment > 0x800000) asar_throw_error(0, error_type_block, error_id_alignment_too_big);
 			if(alignment < 1) asar_throw_error(0, error_type_block, error_id_alignment_too_small);
 			if(alignment & (alignment-1)) asar_throw_error(0, error_type_block, error_id_invalid_alignment);
@@ -2133,8 +2178,8 @@ void build_ir(const char * block)
 			amount = (int)getnum(par);
 			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		}
-		if(is("skip")) step(amount);
-		else for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
+		ir.params.append(amount);
+		step(amount);
 
 	}
 	else if (is0("cleartable"))
@@ -2170,12 +2215,16 @@ void build_ir(const char * block)
 		//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nulls
 		if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 		*endpar=0;
+		ir.params.append(line);
+		ir.params.append(startpar);
+		ir.params.append(word[3]);
 		createuserfunc(line, startpar, word[3]);
 	}
 	else if (is1("print"))
 	{
 		ir.command = COMMAND_PRINT;
-		string out = handle_print(par);
+		ir.params.append(par);
+		handle_print(par);
 	}
 	else if (is1("reset"))
 	{
@@ -2184,6 +2233,8 @@ void build_ir(const char * block)
 		else if (!stricmp(par, "bytes")) bytes=0;
 		else if (!stricmp(par, "freespaceuse")) freespaceuse=0;
 		else asar_throw_error(2, error_type_block, error_id_unknown_variable);
+
+		ir.params.append((!stricmp(par, "bytes")) ? IR_OPTION_BYTES : IR_OPTION_FREESPACEUSE);
 	}
 	else if (is1("padbyte") || is1("padword") || is1("padlong") || is1("paddword"))
 	{
@@ -2199,7 +2250,8 @@ void build_ir(const char * block)
 		if (is("padlong")) len=3;
 		if (is("paddword")) len=4;
 		unsigned int val=getnum(par);
-		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in padbyte", "just... don't.");
+		ir.params.append(val);
+		if(foundlabel) asar_throw_warning(0, warning_id_feature_deprecated, "labels in padbyte", "just... don't.");
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -2215,6 +2267,7 @@ void build_ir(const char * block)
 		ir.command = COMMAND_PAD;
 		if ((unsigned int)realsnespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
 		int num=(int)getnum(par);
+		ir.params.append(num);
 		if ((unsigned int)num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)num, 6).data());
 		if (num>realsnespos)
 		{
@@ -2232,6 +2285,7 @@ void build_ir(const char * block)
 		if (is("filllong")){ len=3; ir.command = COMMAND_FILLLONG; }
 		if (is("filldword")){ len=4; ir.command = COMMAND_FILLDWORD; }
 		unsigned int val= getnum(par);
+		ir.params.append(val);
 		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in fillbyte", "just... don't");
 		for (int i=0;i<12;i+=len)
 		{
@@ -2247,9 +2301,9 @@ void build_ir(const char * block)
 	{
 		ir.command = COMMAND_ARCH;
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
-		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
-		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
+		if (!stricmp(par, "65816")) { ir.params.append(IR_OPTION_65816); arch=arch_65816; return; }
+		if (!stricmp(par, "spc700")) { ir.params.append(IR_OPTION_SPC700); arch=arch_spc700; return; }
+		if (!stricmp(par, "superfx")) { ir.params.append(IR_OPTION_SUPERFX); arch=arch_superfx; return; }
 	}
 	else if (is0("{") || is0("}")) { ir.command = COMMAND_OPEN_BRACE; }
 	else
@@ -2264,6 +2318,7 @@ void build_ir(const char * block)
 #undef par
 
 }
+
 
 void assemble_ir(ir_block &ir)
 {
@@ -2425,7 +2480,7 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is(INTERNAL_COMMAND_NUMVARARGS))
 	{
-		numvarargs = getnum(par);
+		numvarargs = ir.params[0].as_num();
 	}
 	else if (is(INTERNAL_COMMAND_ENDMACRO))
 	{
@@ -2456,7 +2511,7 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is1(COMMAND_ERROR))
 	{
-		string out = handle_print(par);
+		string out = handle_print(ir.params[0].as_string());
 		// RPG Hacker: This used to be on pass 0, which had its merits (you don't want to miss a potentially critical
 		// user-generated error, just because a bazillion other errors are thrown in passes before it). However, I
 		// don't see how to support print functions with this without moving it to pass 2. Suggestions are welcome.
@@ -2464,67 +2519,39 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is1(COMMAND_WARN))
 	{
-		string out = handle_print(par);
+		string out = handle_print(ir.params[0].as_string());
 		asar_throw_warning(2, warning_id_warn_command, (string(": ") + out).data());
 	}
 	else if (is1(COMMAND_WARNINGS))
 	{
-		if (stricmp(word[1], "push") == 0)
+		if (ir.params[0].as_option() == IR_OPTION_PUSH)
 		{
 			push_warnings();
 		}
-		else if (stricmp(word[1], "pull") == 0)
+		else if (ir.params[0].as_option() == IR_OPTION_PULL)
 		{
 			pull_warnings();
 		}
 	}
 	else if (is2(COMMAND_WARNINGS))
 	{
-		if (stricmp(word[1], "enable") == 0)
-		{
-			asar_warning_id warnid = parse_warning_id_from_string(word[2]);
+		asar_warning_id warnid = (asar_warning_id)ir.params[1].as_num();
 
-			if (warnid != warning_id_end)
-			{
-				set_warning_enabled(warnid, true);
-			}
-		}
-		else if (stricmp(word[1], "disable") == 0)
+		if (warnid != warning_id_end)
 		{
-			asar_warning_id warnid = parse_warning_id_from_string(word[2]);
-
-			if (warnid != warning_id_end)
-			{
-				set_warning_enabled(warnid, false);
-			}
+			set_warning_enabled(warnid, ir.params[0].as_option() == IR_OPTION_ENABLE);
 		}
 	}
 	else if(is1(COMMAND_GLOBAL))
 	{
-		addlabel(word[1], -1, true);
+		addlabel(ir.params[0].as_string(), -1, true);
 	}
 	else if (is2(COMMAND_CHECK))
 	{
-		if (stricmp(word[1], "title") == 0)
+		if (ir.params[0].as_option() == IR_OPTION_BANKCROSS)
 		{
-		}
-		else if (stricmp(word[1], "bankcross") == 0)
-		{
-			if (0);
-			else if (!stricmp(word[2], "off"))
-			{
-				 disable_bank_cross_errors = true;
-			}
-			else if (!stricmp(word[2], "half"))
-			{
-				disable_bank_cross_errors = false;
-				check_half_banks_crossed = true;
-			}
-			else if (!stricmp(word[2], "full"))
-			{
-				disable_bank_cross_errors = false;
-				check_half_banks_crossed = false;
-			}
+			disable_bank_cross_errors = ir.params[1].as_option() == IR_OPTION_OFF;
+			check_half_banks_crossed = ir.params[1].as_option() == IR_OPTION_HALF;
 		}
 	}
 	else if (is0(COMMAND_ASAR) || is1(COMMAND_ASAR))
@@ -2536,48 +2563,19 @@ void assemble_ir(ir_block &ir)
 	else if (is0(COMMAND_INCLUDEONCE))
 	{
 	}
-	else if (numwords==3 && !stricmp(word[1], "="))
+	else if (is(COMMAND_SETCODEPOINT))
 	{
-		if(word[0][0] == '\'' && word[0][1])
-		{
-			int codepoint;
-			const char* char_start = word[0]+1;
-			const char* after = char_start + utf8_val(&codepoint, char_start);
-			if(after[0] == '\'' && after[1] == '\0') {
-				thetable.set_val(codepoint, getnum(word[2]));
-				return;
-			} // todo: error checking here
-		}
-		// randomdude999: int cast b/c i'm too lazy to also mess with making setlabel()
-		// unsigned, besides it wouldn't matter anyways.
-		int num=(int)getnum(word[2]);
-
-		const char* newlabelname = word[0];
-		bool ismacro = false;
-
-		if (newlabelname[0] == '?')
-		{
-			ismacro = true;
-			newlabelname++;
-		}
-
-		string completename;
-
-		if (ismacro)
-		{
-			completename += STR":macro_" + dec(calledmacros) + "_";
-		}
-
-		completename += newlabelname;
-
-		setlabel(ns + completename, num, true);
+		thetable.set_val(ir.params[0].as_num(), ir.params[1].as_num());
+	}
+	else if (is3(COMMAND_SETLABEL))
+	{
+		setlabel(ir.params[0].as_string(), ir.params[1].as_num(), true);
 	}
 	else if (assemblemapper(word, numwords)) {}
 	else if (is1(COMMAND_ORG))
 	{
 		freespaceend();
-		unsigned int num=getnum(par);
-		//if (fastrom) num|=0x800000;
+		unsigned int num=getnum(ir.params[0].as_string());
 		snespos=(int)num;
 		realsnespos=(int)num;
 		startpos=(int)num;
@@ -2595,7 +2593,7 @@ void assemble_ir(ir_block &ir)
 		if (numwords == 3)
 		{
 			static_struct = true;
-			base = getnum(word[2]);
+			base = getnum(ir.params[1].as_string());
 
 			if (foundlabel && !foundlabel_static) static_struct = false;
 		}
@@ -2610,7 +2608,7 @@ void assemble_ir(ir_block &ir)
 		}
 		else if (numwords == 4)
 		{
-			string tmp_struct_parent = word[3];
+			string tmp_struct_parent = ir.params[1].as_string();
 			snes_struct structure = structs.find(tmp_struct_parent);
 
 			static_struct = structure.is_static;
@@ -2623,14 +2621,14 @@ void assemble_ir(ir_block &ir)
 
 		optimizeforbank = -1;
 
-		struct_name = word[1];
+		struct_name = ir.params[0].as_string();
 		struct_base = snespos;
 		realsnespos = 0;
 		realstartpos = 0;
 	}
 	else if (is(COMMAND_ENDSTRUCT))
 	{
-		int alignment = numwords == 3 ? (int)getnum(word[2]) : 1;
+		int alignment = ir.params[0].as_num();
 
 		snes_struct structure;
 		structure.base_end = snespos;
@@ -2666,22 +2664,23 @@ void assemble_ir(ir_block &ir)
 	else if(is(COMMAND_SPCBLOCK))
 	{
 		//banned features when active: org, freespace(and variants), arch, mapper,namespace,pushns
-		spcblock.destination = getnum(par);
+		spcblock.destination = getnum(ir.params[0].as_string());
 		spcblock.type = spcblock_nspc;
 		spcblock.macro_name = "";
 
 		if(numwords == 3)
 		{
-			if(!stricmp(word[2], "nspc")) spcblock.type = spcblock_nspc;
+			if(ir.params[1].as_option() == IR_OPTION_NSPC) spcblock.type = spcblock_nspc;
 		}
 		else if(numwords == 4)
 		{
-			if(!stricmp(word[2], "custom")) spcblock.type = spcblock_custom;
+			if(ir.params[1].as_option() == IR_OPTION_CUSTOM) spcblock.type = spcblock_nspc;
 
-			if(macros.exists(word[3]))
+			string macro_name = ir.params[2].as_string();
+			if(macros.exists(macro_name))
 			{
-				//macrodata *macro = macros.find(word[3]);
-				spcblock.macro_name = word[3];
+				//macrodata *macro = macros.find(macro_name);
+				spcblock.macro_name = macro_name;
 			}
 		}
 
@@ -2736,18 +2735,18 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is1(COMMAND_STARTPOS))
 	{
-		spcblock.execute_address=getnum(par);
+		spcblock.execute_address=getnum(ir.params[0].as_string());
 	}
 	else if (is1(COMMAND_BASE))
 	{
-		if (!stricmp(par, "off"))
+		if (ir.params[0].as_option() == IR_OPTION_OFF)
 		{
 			snespos=realsnespos;
 			startpos=realstartpos;
 			snespos_valid = realsnespos >= 0;
 			return;
 		}
-		unsigned int num=getnum(par);
+		unsigned int num=getnum(ir.params[1].as_string());
 		snespos=(int)num;
 		startpos=(int)num;
 		optimizeforbank=-1;
@@ -2755,102 +2754,42 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is1(COMMAND_DPBASE))
 	{
-		dp_base = getnum(par);
+		dp_base = getnum(ir.params[0].as_string());
 	}
 	else if (is2(COMMAND_OPTIMIZE))
 	{
-		if (!stricmp(par, "dp"))
+		if (ir.params[0].as_option() == IR_OPTION_DP)
 		{
-			if (!stricmp(word[2], "none"))
-			{
-				optimize_dp = optimize_dp_flag::NONE;
-				return;
-			}
-			if (!stricmp(word[2], "ram"))
-			{
-				optimize_dp = optimize_dp_flag::RAM;
-				return;
-			}
-			if (!stricmp(word[2], "always"))
-			{
-				optimize_dp = optimize_dp_flag::ALWAYS;
-				return;
-			}
+			if (ir.params[1].as_option() == IR_OPTION_NONE) optimize_dp = optimize_dp_flag::NONE;
+			else if (ir.params[1].as_option() == IR_OPTION_RAM) optimize_dp = optimize_dp_flag::RAM;
+			else optimize_dp = optimize_dp_flag::ALWAYS;
 		}
-		if (!stricmp(par, "address"))
+		else
 		{
-			if (!stricmp(word[2], "default"))
-			{
-				optimize_address = optimize_address_flag::DEFAULT;
-				return;
-			}
-			if (!stricmp(word[2], "ram"))
-			{
-				optimize_address = optimize_address_flag::RAM;
-				return;
-			}
-			if (!stricmp(word[2], "mirrors"))
-			{
-				optimize_address = optimize_address_flag::MIRRORS;
-				return;
-			}
+			if (ir.params[1].as_option() == IR_OPTION_DEFAULT) optimize_address = optimize_address_flag::DEFAULT;
+			else if (ir.params[1].as_option() == IR_OPTION_RAM) optimize_address = optimize_address_flag::RAM;
+			else optimize_address = optimize_address_flag::MIRRORS;
 		}
 	}
 	else if (is1(COMMAND_BANK))
 	{
-		if (!stricmp(par, "auto"))
+		if(ir.params[0].type == IR_TYPE_NUM)
 		{
-			optimizeforbank=-1;
-			return;
+			optimizeforbank=ir.params[0].as_num();
 		}
-		if (!stricmp(par, "noassume"))
+		else
 		{
-			optimizeforbank=0x100;
-			return;
+			optimizeforbank= ir.params[0].as_option() == IR_OPTION_AUTO ? -1 : 0x100;
 		}
-		optimizeforbank=getnum(par);
 	}
-	else if (is(COMMAND_FREESPACE) || is(COMMAND_FREECODE) || is(COMMAND_FREEDATA))
+	else if (is(COMMAND_FREECODE) || is(COMMAND_FREEDATA))
 	{
-		string parstr;
-		if (numwords==1) parstr="\n";//crappy hack: impossible character to cut out extra commas
-		else if (numwords==2) parstr=word[1];
-		if (is(COMMAND_FREECODE)) parstr=STR"ram,"+parstr;
-		if (is(COMMAND_FREEDATA)) parstr=STR"noram,"+parstr;
-		autoptr<char**> pars=split(parstr.temp_raw(), ',');
-		unsigned char fsbyte = 0x00;
-		int useram=-1;
-		bool fixedpos=false;
-		bool align=false;
-		bool leakwarn=true;
-		for (int i=0;pars[i];i++)
-		{
-			if (pars[i][0]=='\n') {}
-			else if (!stricmp(pars[i], "ram"))
-			{
-				useram=1;
-			}
-			else if (!stricmp(pars[i], "noram"))
-			{
-				useram=0;
-			}
-			else if (!stricmp(pars[i], "static"))
-			{
-				fixedpos=true;
-			}
-			else if (!stricmp(pars[i], "align"))
-			{
-				align=true;
-			}
-			else if (!stricmp(pars[i], "cleaned"))
-			{
-				leakwarn=false;
-			}
-			else
-			{
-				fsbyte = (unsigned char)getnum(pars[i]);
-			}
-		}
+		bool useram=ir.command == COMMAND_FREECODE;
+		bool fixedpos=ir.params[1].as_option() == IR_OPTION_STATIC;
+		bool align=ir.params[2].as_option() == IR_OPTION_ALIGNED;
+		bool leakwarn=ir.params[3].as_option() == IR_OPTION_DIRTY;
+		unsigned char fsbyte = ir.params[4].as_num();
+
 		freespaceend();
 		freespaceid=getfreespaceid();
 		freespacebyte[freespaceid] = fsbyte;
@@ -2891,10 +2830,7 @@ void assemble_ir(ir_block &ir)
 	{
 		if (!ratsmetastate) asar_throw_error(2, error_type_block, error_id_prot_not_at_freespace_start);
 		if (ratsmetastate==ratsmeta_used) step(-5);
-		int num;
-		autoptr<char *> dup_par = duplicate_string(par);
-		autoptr<char**> pars=qpsplit(dup_par, ',', &num);
-		verify_paren(pars);
+		int num = ir.params[0].as_num();
 		write1('P');
 		write1('R');
 		write1('O');
@@ -2902,10 +2838,7 @@ void assemble_ir(ir_block &ir)
 		write1((unsigned int)(num*3));
 		for (int i=0;i<num;i++)
 		{
-			//int num=getnum(pars[i]);
-			const char * labeltest=pars[i];
-			string testlabel = labeltest;
-			int labelnum=(int)labelval(&labeltest).pos;
+			int labelnum = labelval(ir.params[1+i].as_string()).pos;
 			write3((unsigned int)labelnum);
 			if (pass==1) freespaceleak[labelnum >>24]=false;
 		}
@@ -2918,20 +2851,18 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is1(COMMAND_AUTOCLEAN) || is2(COMMAND_AUTOCLEAN))
 	{
-		if (numwords==3)
+		ir_param_option option = ir.params[1].as_option();
+		if (option != IR_OPTION_CLEAN_LABEL)
 		{
-			const char * labeltest = word[2];
-			string testlabel = labeltest;
-			int num=(int)labelval(&labeltest).pos;
+			int num = labelval(ir.params[0].as_string()).pos;
 			unsigned char targetid=(unsigned char)(num>>24);
 			if (pass==1) freespaceleak[targetid]=false;
 			num&=0xFFFFFF;
-			if (strlen(par)>3 && !stricmp(par+3, ".l")) par[3]=0;
-			if (!stricmp(par, "JSL") || !stricmp(par, "JML"))
+			if (option != IR_OPTION_CLEAN_DL)
 			{
 				int orgpos=read3(snespos+1);
 				int ratsloc=freespaceorgpos[targetid];
-				int firstbyte = ((!stricmp(par, "JSL")) ? 0x22 : 0x5C);
+				int firstbyte = option == IR_OPTION_CLEAN_JSL ? 0x22 : 0x5C;
 				int pcpos=snestopc(snespos);
 				if (/*pass==1 && */pcpos>=0 && pcpos<romlen_r && romdata_r[pcpos]==firstbyte)
 				{
@@ -2953,7 +2884,7 @@ void assemble_ir(ir_block &ir)
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
 				freespaceorgpos[targetid]=ratsloc;
 			}
-			else if (!stricmp(par, "dl"))
+			else
 			{
 				int orgpos=read3(snespos);
 				int ratsloc=freespaceorgpos[targetid];
@@ -2970,6 +2901,10 @@ void assemble_ir(ir_block &ir)
 				freespaceorgpos[targetid]=ratsloc;
 				freespaceorglen[targetid]=read2(ratsloc-4)+1;
 			}
+		}
+		else
+		{
+			removerats((int)getnum(ir.params[0].as_string()), 0x00);
 		}
 	}
 	else if (is0(COMMAND_PUSHPC))
@@ -3044,32 +2979,24 @@ void assemble_ir(ir_block &ir)
 			namespace_list.append(pushns[pushnsnum].namespace_list[i]);
 		}
 	}
-	else if (is1(COMMAND_NAMESPACE) || is2(COMMAND_NAMESPACE))
+	else if (is(COMMAND_NAMESPACE))
 	{
 		bool leave = false;
-		if (par)
+
+		if(ir.params[0].type == IR_TYPE_STRING)
 		{
-			if (!stricmp(par, "off"))
+			const char * tmpstr= ir.params[0].as_string();
+			if (!nested_namespaces)
 			{
-				leave = true;
+				namespace_list.reset();
 			}
-			else if (!stricmp(par, "nested"))
-			{
-				if (!stricmp(word[2], "on")) nested_namespaces = true;
-				else if (!stricmp(word[2], "off")) nested_namespaces = false;
-			}
-			else
-			{
-				autoptr<char *> dup_par = duplicate_string(par);
-				const char * tmpstr= safedequote(dup_par);
-				if (!nested_namespaces)
-				{
-					namespace_list.reset();
-				}
-				namespace_list.append(tmpstr);
-			}
+			namespace_list.append(tmpstr);
 		}
-		else
+		else if (ir.params[0].as_option() == IR_OPTION_NESTED)
+		{
+			nested_namespaces = ir.params[1].as_option() == IR_OPTION_ON;
+		}
+		else	//must be namespace off
 		{
 			leave = true;
 		}
@@ -3113,81 +3040,40 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is1(COMMAND_INCBIN) || is3(COMMAND_INCBIN))
 	{
-		int len;
-		int start=0;
-		int end=0;
-		if (strqchr(par, ':'))
+		if(ir.params[0].as_option() == IR_OPTION_ADDRESS)
 		{
-			autoptr<char *> dup_par = duplicate_string(par);
-			char * lengths=strqchr(dup_par, ':');
-			*lengths=0;
-			lengths++;
-			if(*lengths=='(') {
-				char* tmp = strqpchr(lengths, '-');
-				start = (int)getnum(string(lengths+1, tmp-1-lengths-1));
-				lengths = tmp;
-			} else {
-				start=(int)strtoul(lengths, &lengths, 16);
-			}
-			lengths++;
-			if(*lengths=='(') {
-				char* tmp = strchr(lengths, '\0');
-				end = (int)getnum(string(lengths+1, tmp-1-lengths-1));
-				// no need to check end-of-string here
-			} else {
-				end=(int)strtoul(lengths, &lengths, 16);
-			}
+			int offset=snestopc(ir.params[1].as_num());
+			if (offset+ir.params.count-2>romlen) romlen=offset+ir.params.count-2;
+			if (pass==2) for(int i = 2; i < ir.params.count; i++) writeromdata_byte(offset + i - 2, ir.params[i].as_num());
 		}
-		string name;
-		autoptr<char *> dup_par = duplicate_string(par);
-		name = safedequote(dup_par);
-		char * data;//I couldn't find a way to get this into an autoptr
-		readfile(name, thisfilename, &data, &len);
-		autoptr<char*> datacopy=data;
-		if (!end) end=len;
-		if (numwords==4)
+		else if(ir.params[0].as_option() == IR_OPTION_LABEL)
 		{
-			if (!confirmname(word[3]))
+			if(pass == 1) getfreespaceid();
+			if (pass==2)
 			{
-				int pos=(int)getnum(word[3]);
-				int offset=snestopc(pos);
-				if (offset+end-start>romlen) romlen=offset+end-start;
-				if (pass==2) writeromdata(offset, data+start, end-start);
-			}
-			else
-			{
-				if (pass==2)
-				{
-					int foundfreespaceid =getfreespaceid();
-					if (freespaceleak[foundfreespaceid]) asar_throw_warning(2, warning_id_freespace_leaked);
-					writeromdata(snestopc(freespacepos[foundfreespaceid]&0xFFFFFF), data+start, end-start);
-					freespaceuse+=8+end-start;
-				}
+				int foundfreespaceid =getfreespaceid();
+				if (freespaceleak[foundfreespaceid]) asar_throw_warning(2, warning_id_freespace_leaked);
+				int offset = snestopc(freespacepos[foundfreespaceid]&0xFFFFFF);
+				for(int i = 1; i < ir.params.count; i++) writeromdata_byte(offset + i - 1, ir.params[i].as_num());
+				freespaceuse+=8+ir.params.count-1;
 			}
 		}
 		else
 		{
-			for (int i=start;i<end;i++) write1((unsigned int)data[i]);
+			for(int i = 1; i < ir.params.count; i++) write1(ir.params[i].as_num());
 		}
 	}
 	else if (is(COMMAND_SKIP) || is(COMMAND_FILL))
 	{
 		int amount;
-		if(numwords > 2)
+		if(ir.params.count > 1)
 		{
-			int alignment = getnum(word[2]);
-			int offset = 0;
-			if(numwords==5)
-			{
-				offset = getnum(word[4]);
-			}
-			// i just guessed this formula but it seems to work
+			int alignment = ir.params[0].as_num();
+			int offset = ir.params[1].as_num();
 			amount = (alignment - ((snespos - offset) & (alignment-1))) & (alignment-1);
 		}
-		else
-		{
-			amount = (int)getnum(par);
-		}
+		else amount = ir.params[0].as_num();
+
 		if(is(COMMAND_SKIP)) step(amount);
 		else for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
 
@@ -3207,25 +3093,17 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is3(COMMAND_FUNCTION))
 	{
-		string line=word[1];
-		line.qnormalize();
-		char * startpar=strqchr(line.data(), '(');
-		*startpar=0;
-		startpar++;
-		char * endpar=strqchr(startpar, ')');
-		*endpar=0;
-		createuserfunc(line, startpar, word[3]);
+		createuserfunc(ir.params[0].as_string(), ir.params[1].as_string(), ir.params[2].as_string());
 	}
 	else if (is1(COMMAND_PRINT))
 	{
-		string out = handle_print(par);
+		string out = handle_print(ir.params[0].as_string());
 		if (pass==2) print(out);
 	}
 	else if (is1(COMMAND_RESET))
 	{
-		if(0);
-		else if (!stricmp(par, "bytes")) bytes=0;
-		else if (!stricmp(par, "freespaceuse")) freespaceuse=0;
+		if (ir.params[0].as_option() == IR_OPTION_BYTES) bytes=0;
+		else freespaceuse=0;
 	}
 	else if (is1(COMMAND_PADBYTE) || is1(COMMAND_PADWORD) || is1(COMMAND_PADLONG) || is1(COMMAND_PADDWORD))
 	{
@@ -3234,8 +3112,7 @@ void assemble_ir(ir_block &ir)
 		if (is(COMMAND_PADWORD)) len=2;
 		if (is(COMMAND_PADLONG)) len=3;
 		if (is(COMMAND_PADDWORD)) len=4;
-		unsigned int val=getnum(par);
-		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in padbyte", "just... don't.");
+		unsigned int val=ir.params[0].as_num();
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -3248,7 +3125,7 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is1(COMMAND_PAD))
 	{
-		int num=(int)getnum(par);
+		int num=ir.params[0].as_num();
 		if (num>realsnespos)
 		{
 			int end=snestopc(num);
@@ -3264,7 +3141,7 @@ void assemble_ir(ir_block &ir)
 		if (is(COMMAND_FILLWORD)) len=2;
 		if (is(COMMAND_FILLLONG)) len=3;
 		if (is(COMMAND_FILLDWORD)) len=4;
-		unsigned int val= getnum(par);
+		unsigned int val=ir.params[0].as_num();
 		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in fillbyte", "just... don't");
 		for (int i=0;i<12;i+=len)
 		{
@@ -3278,9 +3155,10 @@ void assemble_ir(ir_block &ir)
 	}
 	else if (is1(COMMAND_ARCH))
 	{
-		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
-		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
-		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
+		ir_param_option option = ir.params[0].as_option();
+		if (option == IR_OPTION_65816) { arch=arch_65816; return; }
+		if (option == IR_OPTION_SPC700) { arch=arch_spc700; return; }
+		if (option == IR_OPTION_SUPERFX) { arch=arch_superfx; return; }
 	}
 	else if (is0(COMMAND_OPEN_BRACE) || is0(COMMAND_CLOSE_BRACE)) {}
 	else

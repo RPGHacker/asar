@@ -32,6 +32,7 @@ enum ir_command
 	COMMAND_INCLUDEFROM,
 	COMMAND_INCLUDEONCE,
 	COMMAND_SETLABEL,
+	COMMAND_SETCODEPOINT,
 	COMMAND_ORG,
 	COMMAND_STRUCT,
 	COMMAND_ENDSTRUCT,
@@ -93,8 +94,67 @@ enum ir_command
 enum ir_param_type
 {
 	IR_TYPE_NUM,
+	IR_TYPE_OPTION,
 	IR_TYPE_DOUBLE,
 	IR_TYPE_STRING
+};
+
+enum ir_param_option
+{
+	IR_OPTION_PUSH,
+	IR_OPTION_PULL,
+
+	IR_OPTION_OFF,
+	IR_OPTION_ON,
+
+	IR_OPTION_ENABLE,
+	IR_OPTION_DISABLE,
+
+	IR_OPTION_BANKCROSS,
+	IR_OPTION_HALF,
+	IR_OPTION_FULL,
+
+	IR_OPTION_NSPC,
+	IR_OPTION_CUSTOM,
+
+	IR_OPTION_DP,
+	IR_OPTION_ADDRESS,
+	IR_OPTION_NONE,
+	IR_OPTION_RAM,
+	IR_OPTION_ALWAYS,
+	IR_OPTION_DEFAULT,
+	IR_OPTION_MIRRORS,
+
+	IR_OPTION_AUTO,
+	IR_OPTION_NOASSUME,
+
+	IR_OPTION_WITHRAM,
+	IR_OPTION_NORAM,
+	IR_OPTION_DYNAMIC,
+	IR_OPTION_STATIC,
+	IR_OPTION_ALIGNED,
+	IR_OPTION_PACKED,
+	IR_OPTION_CLEANED,
+	IR_OPTION_DIRTY,
+
+	IR_OPTION_CLEAN_JSL,
+	IR_OPTION_CLEAN_JML,
+	IR_OPTION_CLEAN_DL,
+	IR_OPTION_CLEAN_LABEL,
+
+	IR_OPTION_LABEL,
+	IR_OPTION_INLINE,
+
+	IR_OPTION_NESTED,
+
+	IR_OPTION_OFFSET,
+
+	IR_OPTION_BYTES,
+	IR_OPTION_FREESPACEUSE,
+
+	IR_OPTION_65816,
+	IR_OPTION_SPC700,
+	IR_OPTION_SUPERFX,
 };
 
 struct ir_tagged
@@ -102,6 +162,7 @@ struct ir_tagged
 	ir_param_type type;
 	union{
 		int64_t n;
+		ir_param_option o;
 		double d;
 		string s;
 	};
@@ -122,13 +183,18 @@ struct ir_tagged
 		type = other.type;
 		if(type == IR_TYPE_STRING) new(&s) string((string &&)(other.s));
 		else if(type == IR_TYPE_NUM) n = other.n;
+		else if(type == IR_TYPE_OPTION) o = other.o;
 		else if(type == IR_TYPE_DOUBLE) d = other.d;
 		return *this;
 	}
 
 	template <typename T> ir_tagged(T v)
 	{
-		if constexpr(std::is_same_v<string, T> || std::is_same_v<char *, T>){ type = IR_TYPE_STRING;  new(&s) string(v); }
+		if constexpr(std::is_same_v<string, T> || std::is_same_v<char *, T> || std::is_same_v<const char *, T>)
+		{
+			type = IR_TYPE_STRING;  new(&s) string(v);
+		}
+		else if constexpr(std::is_same_v<ir_param_option, T>){ type = IR_TYPE_OPTION; o = v; }
 		else if constexpr(std::is_integral_v<T>){ type = IR_TYPE_NUM; n = v; }
 		else if constexpr(std::is_same_v<double, T>){ type = IR_TYPE_DOUBLE;  d = v; }
 		else static_assert(std::is_same_v<T,T> && 0, "unsupported IR type");
@@ -137,6 +203,11 @@ struct ir_tagged
 	int64_t as_num()
 	{
 		return n;
+	}
+
+	ir_param_option as_option()
+	{
+		return o;
 	}
 
 	double as_double()
