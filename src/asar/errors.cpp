@@ -286,6 +286,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_cmdl_utf16_to_utf8_failed, "UTF-16 to UTF-8 string conversion failed: %s." },
 
 	{ error_id_broken_command, "Broken %s command. %s" },
+	{ error_id_phantom_error, "A phantom error occurred. This is an Asar bug, please report it: https://github.com/RPGHacker/asar/issues" },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_errors
 // matches with the number of constants in asar_error_id. This is important, because
