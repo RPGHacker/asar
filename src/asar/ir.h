@@ -229,15 +229,7 @@ struct ir_tagged
 
 struct ir_block
 {
-	char *block;
-	char **word;
 	int numwords;
 	ir_command command;
 	autoarray<ir_tagged> params;
-
-	~ir_block()
-	{
-		free(block);
-		free(word);
-	}
 };

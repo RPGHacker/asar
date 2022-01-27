@@ -122,8 +122,8 @@ void callmacro(const char * data)
 	// RPG Hacker: -1 to take the ... into account, which is also being counted.
 	if(thismacro->variadic) numvarargs = numargs-(thismacro->numargs-1);
 	else numvarargs = -1;
-	new_internal_block(string("$$$numvarargs ") + dec(numvarargs), INTERNAL_COMMAND_NUMVARARGS).params.append(numvarargs);
-	new_internal_block(string("$$$filename \"") + thismacro->fname + '"', INTERNAL_COMMAND_FILENAME).params.append(thismacro->fname);
+	new_internal_block(INTERNAL_COMMAND_NUMVARARGS).params.append(numvarargs);
+	new_internal_block(INTERNAL_COMMAND_FILENAME).params.append(thismacro->fname);
 	string prevthisfilename = thisfilename;
 
 	autoarray<int>* oldmacroposlabels = macroposlabels;
@@ -236,6 +236,6 @@ void callmacro(const char * data)
 	}
 	inmacro = macrorecursion;
 	numvarargs = prev_numvarargs;
-	new_internal_block(string("$$$numvarargs ") + dec(numvarargs), INTERNAL_COMMAND_NUMVARARGS).params.append(numvarargs);
-	new_internal_block(string("$$$filename \"") + prevthisfilename + '"', INTERNAL_COMMAND_FILENAME).params.append(prevthisfilename);
+	new_internal_block(INTERNAL_COMMAND_NUMVARARGS).params.append(numvarargs);
+	new_internal_block(INTERNAL_COMMAND_FILENAME).params.append(prevthisfilename);
 }

@@ -459,7 +459,6 @@ int main(int argc, const char * argv[])
 			{
 				try
 				{
-					thisblock = block_ir[block].block;
 					assemble_ir(block_ir[block]);
 					checkbankcross();
 				}

@@ -64,7 +64,6 @@ bool asblock_superfx(char** word, int numwords)
 	if (word[1]) par= duplicate_string(word[1]);
 	autoptr<char*> parptr=par;
 	if(0);
-	else if (assemblemapper(word, numwords)) return true;
 	else if (numwords==1)
 	{
 #define op(from, to) if (is(from)) { write1(to); return true; }

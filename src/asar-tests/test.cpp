@@ -1069,7 +1069,7 @@ int main(int argc, char * argv[])
 							size_t command_found_1 = remainder.find(command_token_1);
 							size_t command_found_2 = remainder.find(command_token_2);
 
-							if (command_found_1 != std::string::npos && command_found_2 != std::string::npos)
+							if (command_found_1 != std::string::npos/* && command_found_2 != std::string::npos*/)
 							{
 								size_t string_start_pos = command_found_1 + command_token_1.length();
 								actual_error_prints.push_back(std::string(remainder, string_start_pos, command_found_2-string_start_pos));

@@ -3,8 +3,6 @@
 enum { arch_65816, arch_spc700, arch_superfx };
 extern int arch;
 
-bool assemblemapper(char** word, int numwords);
-
 struct snes_struct {
 	string parent;
 	int base_end;
@@ -70,8 +68,8 @@ void checkbankcross();
 void initstuff();
 void finishpass();
 
-ir_block &new_block(char *block, char **word, int numwords);
-ir_block &new_internal_block(string block, ir_command command);
+ir_block &new_block(int numwords);
+ir_block &new_internal_block(ir_command command);
 void build_ir(const char * block);
 void assemble_ir(ir_block &ir);
 

@@ -11,6 +11,8 @@
 #include "interface-shared.h"
 #include "arch-shared.h"
 
+bool assemblemapper(char** word, int numwords, ir_block &ir);
+
 int arch=arch_65816;
 
 bool snespos_valid = false;
@@ -373,7 +375,7 @@ static string labelname(const char ** rawname, bool define=false)
 	string name;
 	int i=-1;
 
-	if (is_digit(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+	if (is_digit(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
 	if (*deref_rawname ==':')
 	{
 		deref_rawname++;
@@ -382,10 +384,10 @@ static string labelname(const char ** rawname, bool define=false)
 	else if (!in_struct && !in_sub_struct)
 	{
 		for (i=0;(*deref_rawname =='.');i++) deref_rawname++;
-		if (!is_ualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+		if (!is_ualnum(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
 		if (i)
 		{
-			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(1, error_type_block, error_id_label_missing_parent);
+			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(0, error_type_block, error_id_label_missing_parent);
 			name+=STR(*sublabellist)[i-1]+"_";
 			issublabel = true;
 		}
@@ -395,7 +397,7 @@ static string labelname(const char ** rawname, bool define=false)
 	{
 		// RPG Hacker: Don't add the prefix for sublabels, because they already inherit it from
 		// their parents' names.
-		if (!macrorecursion || macrosublabels == nullptr) asar_throw_error(1, error_type_block, error_id_macro_label_outside_of_macro);
+		if (!macrorecursion || macrosublabels == nullptr) asar_throw_error(0, error_type_block, error_id_macro_label_outside_of_macro);
 		name = STR":macro_" + dec(calledmacros) + "_" + name;
 	}
 
@@ -408,11 +410,11 @@ static string labelname(const char ** rawname, bool define=false)
 		}
 		name += struct_name;
 		name += '.';
-		if(*deref_rawname != '.') asar_throw_error(1, error_type_block, error_id_invalid_label_name);  //probably should be a better error. TODO!!!
+		if(*deref_rawname != '.') asar_throw_error(0, error_type_block, error_id_invalid_label_name);  //probably should be a better error. TODO!!!
 		deref_rawname++;
 	}
 
-	if (!is_ualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+	if (!is_ualnum(*deref_rawname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
 
 	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
 	{
@@ -422,9 +424,9 @@ static string labelname(const char ** rawname, bool define=false)
 	if(!define && *deref_rawname == '[')
 	{
 		while (*deref_rawname && *deref_rawname != ']') deref_rawname++;
-		if(*deref_rawname != ']') asar_throw_error(1, error_type_block, error_id_invalid_label_missing_closer);
+		if(*deref_rawname != ']') asar_throw_error(0, error_type_block, error_id_invalid_label_missing_closer);
 		deref_rawname++;
-		if(*deref_rawname != '.') asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+		if(*deref_rawname != '.') asar_throw_error(0, error_type_block, error_id_invalid_label_name);
 	}
 
 	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
@@ -432,7 +434,7 @@ static string labelname(const char ** rawname, bool define=false)
 		name+=*(deref_rawname++);
 	}
 
-	if(*deref_rawname == '[') asar_throw_error(2, error_type_block, error_id_invalid_subscript);
+	if(*deref_rawname == '[') asar_throw_error(0, error_type_block, error_id_invalid_subscript);
 
 	if (define && i>=0)
 	{
@@ -890,21 +892,16 @@ string handle_print(const char* input)
 	return out;
 }
 
-ir_block &new_block(char *block, char **word, int numwords)
+ir_block &new_block(int numwords)
 {
 	ir_block &ir = block_ir[blockid++];
-	ir.block = block;
-	ir.word = word;
 	ir.numwords = numwords;
 	return ir;
 }
 
-ir_block &new_internal_block(string block, ir_command command)
+ir_block &new_internal_block(ir_command command)
 {
-	int numwords;
-	char * block_word = duplicate_string(block);
-	char ** word = qsplit(block_word, ' ', &numwords);
-	ir_block &ir = new_block(block_word, word, numwords);
+	ir_block &ir = new_block(1);
 	ir.command = command;
 	return ir;
 }
@@ -921,17 +918,19 @@ void build_ir(const char * block)
 	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
 	// This really seems like the only possible place for the fix
 	int numwords;
-	char *block_word = duplicate_string(block);
+	autoptr<char *>block_word = duplicate_string(block);
 	char **word = qsplit(block_word, ' ', &numwords);
-	ir_block &ir = new_block(block_word, word, numwords);
-	ir.command = COMMAND_EOL;
-
+	autoptr<char **>word_scope = word;
 	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
 	{
-		//new_internal_block("", COMMAND_LABEL).params.append(new ir_string(word[0]));
+		new_internal_block(COMMAND_LABEL).params.append(word[0]);
 		word++;
 		numwords--;
 	}
+
+	ir_block &ir = new_block(numwords);
+	ir.command = COMMAND_EOL;
+
 	if (!word[0] || !word[0][0]) return;
 	if (is("if") || is("elseif") || is("assert") || is("while"))
 	{
@@ -1035,6 +1034,10 @@ void build_ir(const char * block)
 	else if (asblock_pick(word, numwords))
 	{
 		ir.command = COMMAND_OPCODE;
+		while(word[0]){
+			ir.params.append(word[0]);
+			word++;
+		}
 		numopcodes++;
 	}
 	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
@@ -1419,7 +1422,7 @@ void build_ir(const char * block)
 		ir.params.append(ns + completename);
 		ir.params.append(num);
 	}
-	else if (assemblemapper(word, numwords)) { ir.command = COMMAND_MAPPER; }
+	else if (assemblemapper(word, numwords, ir)) {}
 	else if (is1("org"))
 	{
 		ir.command = COMMAND_ORG;
@@ -2057,10 +2060,10 @@ void build_ir(const char * block)
 #endif
 		autoptr<char *> dup_par = duplicate_string(par);
 		name=safedequote(dup_par);
-		new_internal_block(string("$$$filename \"") + name + '"', INTERNAL_COMMAND_FILENAME).params.append(name);
+		new_internal_block(INTERNAL_COMMAND_FILENAME).params.append(name);
 		string prevthisfilename = thisfilename;
 		assemblefile(name, false);
-		new_internal_block(string("$$$filename \"") + prevthisfilename + '"', INTERNAL_COMMAND_FILENAME).params.append(prevthisfilename);
+		new_internal_block(INTERNAL_COMMAND_FILENAME).params.append(prevthisfilename);
 	}
 	else if (is1("incbin") || is3("incbin"))
 	{
@@ -2310,43 +2313,124 @@ void build_ir(const char * block)
 	{
 		asar_throw_error(0, error_type_block, error_id_unknown_command);
 	}
-#undef is
-#undef is0
 #undef is1
 #undef is2
 #undef is3
-#undef par
 
+}
+
+bool assemblemapper(char** word, int numwords, ir_block &ir)
+{
+	ir.command = COMMAND_MAPPER;
+	auto previous_mapper = mapper;
+	if(0);
+	else if (is0("lorom"))
+	{
+		//this also makes xkas set snespos to $008000 for some reason
+		mapper=lorom;
+	}
+	else if (is0("hirom"))
+	{
+		//xkas makes this point to $C00000
+		mapper=hirom;
+	}
+	else if (is0("exlorom"))
+	{
+		mapper = exlorom;
+	}
+	else if (is0("exhirom"))
+	{
+		mapper=exhirom;
+	}
+	else if (is0("sfxrom"))
+	{
+		mapper=sfxrom;
+		//fastrom=false;
+	}
+	else if (is0("norom"))
+	{
+		//$000000 would be the best snespos for this, but I don't care
+		mapper=norom;
+		//fastrom=false;
+		if(!force_checksum_fix)
+			checksum_fix_enabled = false;//we don't know where the header is, so don't set the checksum
+	}
+	else if (is0("fullsa1rom"))
+	{
+		mapper=bigsa1rom;
+		//fastrom=false;
+	}
+	else if (is("sa1rom"))
+	{
+		//fastrom=false;
+		if (par)
+		{
+			if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
+			if (!is_digit(par[0]) || par[1]!=',' ||
+					!is_digit(par[2]) || par[3]!=',' ||
+					!is_digit(par[4]) || par[5]!=',' ||
+					!is_digit(par[6]) || par[7]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
+			int len;
+			autoptr<char *> dup_par = duplicate_string(par);
+			autoptr<char**> pars=qpsplit(dup_par, ',', &len);
+			verify_paren(pars);
+			if (len!=4) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
+			sa1banks[0]=(par[0]-'0')<<20;
+			sa1banks[1]=(par[2]-'0')<<20;
+			sa1banks[4]=(par[4]-'0')<<20;
+			sa1banks[5]=(par[6]-'0')<<20;
+		}
+		else
+		{
+			sa1banks[0]=0<<20;
+			sa1banks[1]=1<<20;
+			sa1banks[4]=2<<20;
+			sa1banks[5]=3<<20;
+		}
+		mapper=sa1rom;
+	}
+	else return false;
+
+	ir.params.append((int)mapper);
+	if(mapper == sa1rom)
+	{
+		ir.params.append(sa1banks[0]);
+		ir.params.append(sa1banks[1]);
+		ir.params.append(sa1banks[4]);
+		ir.params.append(sa1banks[5]);
+	}
+
+	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+	if(!mapper_set){
+		mapper_set = true;
+	}else if(previous_mapper != mapper){
+		asar_throw_warning(0, warning_id_mapper_already_set);
+	}
+	return true;
+	#undef is
+	#undef is0
+	#undef par
 }
 
 
 void assemble_ir(ir_block &ir)
 {
 #define is(test) (ir.command == test)
-#define is0(test) (numwords==1 && ir.command == test)
 #define is1(test) (numwords==2 && ir.command == test)
 #define is2(test) (numwords==3 && ir.command == test)
-#define is3(test) (numwords==4 && ir.command == test)
-#define par word[1]
 
 	//for(int i = 0; i < block.numwords; i++) printf("%s ", block.word[i]);
 	//puts("");
 	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
 	// This really seems like the only possible place for the fix
 	int numwords = ir.numwords;
-	char **word = ir.word;
 	// when writing out the data for the addrToLine mapping,
 	// we want to write out the snespos we had before writing opcodes
 	int addrToLinePos = realsnespos & 0xFFFFFF;
 
-	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
-	{
-		word++;
-		numwords--;
-	}
 	if(is(COMMAND_LABEL))
 	{
-		//addlabel(get_ir_string(ir.params[0]);)
+		addlabel(ir.params[0].as_string());
 	}
 	if (is(COMMAND_IF) || is(COMMAND_ELSEIF) || is(COMMAND_ASSERT) || is(COMMAND_WHILE))
 	{
@@ -2396,12 +2480,12 @@ void assemble_ir(ir_block &ir)
 			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
-	else if (is0(COMMAND_ENDIF) || is0(COMMAND_ENDWHILE))
+	else if (is(COMMAND_ENDIF) || is(COMMAND_ENDWHILE))
 	{
 		if (numif==numtrue) numtrue--;
 		numif--;
 	}
-	else if (is0(COMMAND_ELSE))
+	else if (is(COMMAND_ELSE))
 	{
 		if (numif==numtrue) numtrue--;
 		else if (numif==numtrue+1 && !elsestatus[numif])
@@ -2413,7 +2497,12 @@ void assemble_ir(ir_block &ir)
 	else if (numif!=numtrue) return;
 	else if (is(COMMAND_OPCODE))
 	{
-		asblock_pick(word, numwords);
+		char *word[5] = {nullptr};
+		for(int i = 0; i < ir.params.count; i++)
+		{
+			word[i] = ir.params[i].as_string().temp_raw();
+		}
+		asblock_pick(word, ir.params.count);
 		if (pass == 2)
 		{
 			extern AddressToLineMapping addressToLineMapping;
@@ -2421,7 +2510,7 @@ void assemble_ir(ir_block &ir)
 		}
 		numopcodes++;
 	}
-	else if (is1(COMMAND_DB) || is1(COMMAND_DW) || is1(COMMAND_DL) || is1(COMMAND_DD))
+	else if (is(COMMAND_DB) || is(COMMAND_DW) || is(COMMAND_DL) || is(COMMAND_DD))
 	{
 		if(pass == 1)
 		{
@@ -2474,9 +2563,6 @@ void assemble_ir(ir_block &ir)
 			callerline=-1;
 		}
 	}
-	else if (is(COMMAND_MACRO))
-	{
-	}
 	else if (is(INTERNAL_COMMAND_NUMVARARGS))
 	{
 		numvarargs = ir.params[0].as_num();
@@ -2495,18 +2581,6 @@ void assemble_ir(ir_block &ir)
 		macroposlist.remove(macroposlist.count - 1);
 		macroneglist.remove(macroneglist.count - 1);
 		macrosublist.remove(macrosublist.count - 1);
-	}
-	else if (is(COMMAND_ENDMACRO))
-	{
-	}
-	else if (is1(COMMAND_UNDEF))
-	{
-	}
-	else if (is0(COMMAND_ERROR))
-	{
-	}
-	else if (is0(COMMAND_WARN))
-	{
 	}
 	else if (is1(COMMAND_ERROR))
 	{
@@ -2541,11 +2615,11 @@ void assemble_ir(ir_block &ir)
 			set_warning_enabled(warnid, ir.params[0].as_option() == IR_OPTION_ENABLE);
 		}
 	}
-	else if(is1(COMMAND_GLOBAL))
+	else if(is(COMMAND_GLOBAL))
 	{
 		addlabel(ir.params[0].as_string(), -1, true);
 	}
-	else if (is2(COMMAND_CHECK))
+	else if (is(COMMAND_CHECK))
 	{
 		if (ir.params[0].as_option() == IR_OPTION_BANKCROSS)
 		{
@@ -2553,28 +2627,26 @@ void assemble_ir(ir_block &ir)
 			check_half_banks_crossed = ir.params[1].as_option() == IR_OPTION_HALF;
 		}
 	}
-	else if (is0(COMMAND_ASAR) || is1(COMMAND_ASAR))
-	{
-	}
-	else if (is0(COMMAND_INCLUDE) || is1(COMMAND_INCLUDEFROM))
-	{
-	}
-	else if (is0(COMMAND_INCLUDEONCE))
-	{
-	}
 	else if (is(COMMAND_SETCODEPOINT))
 	{
 		thetable.set_val(ir.params[0].as_num(), ir.params[1].as_num());
 	}
-	else if (is3(COMMAND_SETLABEL))
+	else if (is(COMMAND_SETLABEL))
 	{
 		setlabel(ir.params[0].as_string(), ir.params[1].as_num(), true);
 	}
 	else if (is(COMMAND_MAPPER))
 	{
-		assemblemapper(word, numwords);
+		mapper = (mapper_t)ir.params[0].as_num();
+		if(mapper == sa1rom)
+		{
+			sa1banks[0] = ir.params[1].as_num();
+			sa1banks[1] = ir.params[2].as_num();
+			sa1banks[4] = ir.params[3].as_num();
+			sa1banks[5] = ir.params[4].as_num();
+		}
 	}
-	else if (is1(COMMAND_ORG))
+	else if (is(COMMAND_ORG))
 	{
 		freespaceend();
 		unsigned int num=getnum(ir.params[0].as_string());
@@ -2706,7 +2778,7 @@ void assemble_ir(ir_block &ir)
 		ns = STR":SPCBLOCK:_" + ns_backup;
 		in_spcblock = true;
 	}
-	else if(is0(COMMAND_ENDSPCBLOCK))
+	else if(is(COMMAND_ENDSPCBLOCK))
 	{
 		switch(spcblock.type)
 		{
@@ -2735,11 +2807,11 @@ void assemble_ir(ir_block &ir)
 		ns = ns_backup;
 		in_spcblock = false;
 	}
-	else if (is1(COMMAND_STARTPOS))
+	else if (is(COMMAND_STARTPOS))
 	{
 		spcblock.execute_address=getnum(ir.params[0].as_string());
 	}
-	else if (is1(COMMAND_BASE))
+	else if (is(COMMAND_BASE))
 	{
 		if (ir.params[0].as_option() == IR_OPTION_OFF)
 		{
@@ -2754,11 +2826,11 @@ void assemble_ir(ir_block &ir)
 		optimizeforbank=-1;
 		snespos_valid = realsnespos >= 0;
 	}
-	else if (is1(COMMAND_DPBASE))
+	else if (is(COMMAND_DPBASE))
 	{
 		dp_base = getnum(ir.params[0].as_string());
 	}
-	else if (is2(COMMAND_OPTIMIZE))
+	else if (is(COMMAND_OPTIMIZE))
 	{
 		if (ir.params[0].as_option() == IR_OPTION_DP)
 		{
@@ -2773,7 +2845,7 @@ void assemble_ir(ir_block &ir)
 			else optimize_address = optimize_address_flag::MIRRORS;
 		}
 	}
-	else if (is1(COMMAND_BANK))
+	else if (is(COMMAND_BANK))
 	{
 		if(ir.params[0].type == IR_TYPE_NUM)
 		{
@@ -2828,7 +2900,7 @@ void assemble_ir(ir_block &ir)
 		ratsmetastate=ratsmeta_allow;
 		snespos_valid = true;
 	}
-	else if (is1(COMMAND_PROT))
+	else if (is(COMMAND_PROT))
 	{
 		if (!ratsmetastate) asar_throw_error(2, error_type_block, error_id_prot_not_at_freespace_start);
 		if (ratsmetastate==ratsmeta_used) step(-5);
@@ -2851,7 +2923,7 @@ void assemble_ir(ir_block &ir)
 		write1(0);
 		ratsmetastate=ratsmeta_used;
 	}
-	else if (is1(COMMAND_AUTOCLEAN) || is2(COMMAND_AUTOCLEAN))
+	else if (is(COMMAND_AUTOCLEAN))
 	{
 		ir_param_option option = ir.params[1].as_option();
 		if (option != IR_OPTION_CLEAN_LABEL)
@@ -2909,7 +2981,7 @@ void assemble_ir(ir_block &ir)
 			removerats((int)getnum(ir.params[0].as_string()), 0x00);
 		}
 	}
-	else if (is0(COMMAND_PUSHPC))
+	else if (is(COMMAND_PUSHPC))
 	{
 		verifysnespos();
 		pushpc[pushpcnum].arch=arch;
@@ -2927,7 +2999,7 @@ void assemble_ir(ir_block &ir)
 		realstartpos= (int)0xFFFFFFFF;
 		snespos_valid = false;
 	}
-	else if (is0(COMMAND_PULLPC))
+	else if (is(COMMAND_PULLPC))
 	{
 		pushpcnum--;
 		freespaceend();
@@ -2940,12 +3012,12 @@ void assemble_ir(ir_block &ir)
 		freespacestart=pushpc[pushpcnum].freest;
 		snespos_valid = true;
 	}
-	else if (is0(COMMAND_PUSHBASE))
+	else if (is(COMMAND_PUSHBASE))
 	{
 		basestack[basestacknum] = snespos;
 		basestacknum++;
 	}
-	else if (is0(COMMAND_PULLBASE))
+	else if (is(COMMAND_PULLBASE))
 	{
 		basestacknum--;
 		snespos = basestack[basestacknum];
@@ -2956,7 +3028,7 @@ void assemble_ir(ir_block &ir)
 			optimizeforbank = -1;
 		}
 	}
-	else if (is0(COMMAND_PUSHNS))
+	else if (is(COMMAND_PUSHNS))
 	{
 		pushns[pushnsnum].ns = ns;
 		for(int i = 0; i < namespace_list.count; i++)
@@ -2970,7 +3042,7 @@ void assemble_ir(ir_block &ir)
 		ns = "";
 		nested_namespaces = false;
 	}
-	else if (is0(COMMAND_PULLNS))
+	else if (is(COMMAND_PULLNS))
 	{
 		pushnsnum--;
 		ns = pushns[pushnsnum].ns;
@@ -3023,23 +3095,11 @@ void assemble_ir(ir_block &ir)
 			ns += "_";
 		}
 	}
-	else if (is1(COMMAND_WARNPC))
-	{
-	}
-#ifdef SANDBOX
-	else if (is(COMMAND_INCSRC) || is(COMMAND_INCBIN) || is(COMMAND_TABLE))
-	{
-		asar_throw_error(0, error_type_block, error_id_command_disabled);
-	}
-#endif
 	else if(is(INTERNAL_COMMAND_FILENAME))
 	{
 		thisfilename=ir.params[0].as_string();
 	}
-	else if (is1(COMMAND_INCSRC))
-	{
-	}
-	else if (is1(COMMAND_INCBIN) || is3(COMMAND_INCBIN))
+	else if (is(COMMAND_INCBIN))
 	{
 		if(ir.params[0].as_option() == IR_OPTION_ADDRESS)
 		{
@@ -3079,34 +3139,34 @@ void assemble_ir(ir_block &ir)
 		else for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
 
 	}
-	else if (is0(COMMAND_CLEARTABLE))
+	else if (is(COMMAND_CLEARTABLE))
 	{
 		cleartable();
 	}
-	else if (is0(COMMAND_PUSHTABLE))
+	else if (is(COMMAND_PUSHTABLE))
 	{
 		tablestack.append(thetable);
 	}
-	else if (is0(COMMAND_PULLTABLE))
+	else if (is(COMMAND_PULLTABLE))
 	{
 		thetable=tablestack[tablestack.count-1];
 		tablestack.remove(tablestack.count-1);
 	}
-	else if (is3(COMMAND_FUNCTION))
+	else if (is(COMMAND_FUNCTION))
 	{
 		createuserfunc(ir.params[0].as_string(), ir.params[1].as_string(), ir.params[2].as_string());
 	}
-	else if (is1(COMMAND_PRINT))
+	else if (is(COMMAND_PRINT))
 	{
 		string out = handle_print(ir.params[0].as_string());
 		if (pass==2) print(out);
 	}
-	else if (is1(COMMAND_RESET))
+	else if (is(COMMAND_RESET))
 	{
 		if (ir.params[0].as_option() == IR_OPTION_BYTES) bytes=0;
 		else freespaceuse=0;
 	}
-	else if (is1(COMMAND_PADBYTE) || is1(COMMAND_PADWORD) || is1(COMMAND_PADLONG) || is1(COMMAND_PADDWORD))
+	else if (is(COMMAND_PADBYTE) || is(COMMAND_PADWORD) || is(COMMAND_PADLONG) || is(COMMAND_PADDWORD))
 	{
 		int len = 0;
 		if (is(COMMAND_PADBYTE)) len=1;
@@ -3124,7 +3184,7 @@ void assemble_ir(ir_block &ir)
 			}
 		}
 	}
-	else if (is1(COMMAND_PAD))
+	else if (is(COMMAND_PAD))
 	{
 		int num=ir.params[0].as_num();
 		if (num>realsnespos)
@@ -3135,7 +3195,7 @@ void assemble_ir(ir_block &ir)
 			for (int i=0;i<len;i++) write1(padbyte[i%12]);
 		}
 	}
-	else if (is1(COMMAND_FILLBYTE) || is1(COMMAND_FILLWORD) || is1(COMMAND_FILLLONG) || is1(COMMAND_FILLDWORD))
+	else if (is(COMMAND_FILLBYTE) || is(COMMAND_FILLWORD) || is(COMMAND_FILLLONG) || is(COMMAND_FILLDWORD))
 	{
 		int len = 0;
 		if (is(COMMAND_FILLBYTE)) len=1;
@@ -3154,105 +3214,13 @@ void assemble_ir(ir_block &ir)
 			}
 		}
 	}
-	else if (is1(COMMAND_ARCH))
+	else if (is(COMMAND_ARCH))
 	{
 		ir_param_option option = ir.params[0].as_option();
 		if (option == IR_OPTION_65816) { arch=arch_65816; return; }
 		if (option == IR_OPTION_SPC700) { arch=arch_spc700; return; }
 		if (option == IR_OPTION_SUPERFX) { arch=arch_superfx; return; }
 	}
-	else if (is0(COMMAND_OPEN_BRACE) || is0(COMMAND_CLOSE_BRACE)) {}
-	else
-	{
-	}
+	else{}
 #undef is
-#undef is0
-#undef is1
-#undef is2
-#undef is3
-#undef par
-}
-
-
-bool assemblemapper(char** word, int numwords)
-{
-#define is(test) (!stricmpwithlower(word[0], test))
-#define is0(test) (numwords==1 && !stricmpwithlower(word[0], test))
-#define par word[1]
-	auto previous_mapper = mapper;
-	if(0);
-	else if (is0("lorom"))
-	{
-		//this also makes xkas set snespos to $008000 for some reason
-		mapper=lorom;
-	}
-	else if (is0("hirom"))
-	{
-		//xkas makes this point to $C00000
-		mapper=hirom;
-	}
-	else if (is0("exlorom"))
-	{
-		mapper = exlorom;
-	}
-	else if (is0("exhirom"))
-	{
-		mapper=exhirom;
-	}
-	else if (is0("sfxrom"))
-	{
-		mapper=sfxrom;
-		//fastrom=false;
-	}
-	else if (is0("norom"))
-	{
-		//$000000 would be the best snespos for this, but I don't care
-		mapper=norom;
-		//fastrom=false;
-		if(!force_checksum_fix)
-			checksum_fix_enabled = false;//we don't know where the header is, so don't set the checksum
-	}
-	else if (is0("fullsa1rom"))
-	{
-		mapper=bigsa1rom;
-		//fastrom=false;
-	}
-	else if (is("sa1rom"))
-	{
-		//fastrom=false;
-		if (par)
-		{
-			if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
-			if (!is_digit(par[0]) || par[1]!=',' ||
-					!is_digit(par[2]) || par[3]!=',' ||
-					!is_digit(par[4]) || par[5]!=',' ||
-					!is_digit(par[6]) || par[7]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
-			int len;
-			autoptr<char *> dup_par = duplicate_string(par);
-			autoptr<char**> pars=qpsplit(dup_par, ',', &len);
-			verify_paren(pars);
-			if (len!=4) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
-			sa1banks[0]=(par[0]-'0')<<20;
-			sa1banks[1]=(par[2]-'0')<<20;
-			sa1banks[4]=(par[4]-'0')<<20;
-			sa1banks[5]=(par[6]-'0')<<20;
-		}
-		else
-		{
-			sa1banks[0]=0<<20;
-			sa1banks[1]=1<<20;
-			sa1banks[4]=2<<20;
-			sa1banks[5]=3<<20;
-		}
-		mapper=sa1rom;
-	}
-	else return false;
-
-	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-	if(!mapper_set){
-		mapper_set = true;
-	}else if(previous_mapper != mapper){
-		asar_throw_warning(1, warning_id_mapper_already_set);
-	}
-	return true;
 }
