@@ -1041,11 +1041,7 @@ void build_ir(const char * block)
 	}
 	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
 	{
-		if(0);
-		else if(is("db")) ir.command = COMMAND_DB;
-		else if(is("dw")) ir.command = COMMAND_DW;
-		else if(is("dl")) ir.command = COMMAND_DL;
-		else if(is("dd")) ir.command = COMMAND_DD;
+		ir.command = COMMAND_DATA;
 
 		autoptr<char**> pars=qpsplit(par, ',');
 		verify_paren(pars);
@@ -1057,6 +1053,8 @@ void build_ir(const char * block)
 		else if (word[0][1] == 'w') size = 2;
 		else if (word[0][1] == 'l') size = 3;
 		else size = 4;
+
+		ir.params.append(size);
 
 		for (int i=0;pars[i];i++)
 		{
@@ -2503,26 +2501,19 @@ void assemble_ir(ir_block &ir)
 		}
 		numopcodes++;
 	}
-	else if (is(COMMAND_DB) || is(COMMAND_DW) || is(COMMAND_DL) || is(COMMAND_DD))
+	else if (is(COMMAND_DATA))
 	{
+		int size = ir.params[0].as_num();
 		if(pass == 1)
 		{
-			int size;
-			if (is(COMMAND_DB)) size = 1;
-			else if (is(COMMAND_DW)) size = 2;
-			else if (is(COMMAND_DL)) size = 3;
-			else size = 4;
-			step((ir.params.count) * size);
+			step((ir.params.count - 1) * size);
 			return;
 		}
 
-		void (*do_write)(unsigned int);
-		if (is(COMMAND_DB)) do_write = &write1;
-		else if (is(COMMAND_DW)) do_write = &write2;
-		else if (is(COMMAND_DL)) do_write = &write3;
-		else do_write = &write4;
+		void (* const writers[])(unsigned int) = {&write1, &write2, &write3, &write4};
+		void (*do_write)(unsigned int) = writers[size - 1];
 
-		for(int i = 0; i < ir.params.count; i++)
+		for(int i = 1; i < ir.params.count; i++)
 		{
 			ir_tagged &param = ir.params[i];
 			if (param.type == IR_TYPE_STRING)
