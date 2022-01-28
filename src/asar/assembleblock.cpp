@@ -918,8 +918,7 @@ void build_ir(const char * block)
 	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
 	// This really seems like the only possible place for the fix
 	int numwords;
-	autoptr<char *>block_word = duplicate_string(block);
-	char **word = qsplit(block_word, ' ', &numwords);
+	char **word = qsplit((char *)block, ' ', &numwords);
 	autoptr<char **>word_scope = word;
 	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
 	{
@@ -1048,8 +1047,7 @@ void build_ir(const char * block)
 		else if(is("dl")) ir.command = COMMAND_DL;
 		else if(is("dd")) ir.command = COMMAND_DD;
 
-		autoptr<char *> dup_par = duplicate_string(par);
-		autoptr<char**> pars=qpsplit(dup_par, ',');
+		autoptr<char**> pars=qpsplit(par, ',');
 		verify_paren(pars);
 		verifysnespos();
 
@@ -1091,7 +1089,11 @@ void build_ir(const char * block)
 			callerfilename=thisfilename;
 			callerline=thisline;
 		}
-		callmacro(strchr(block, '%')+1);
+		for(int i = 0; i < numwords - 1; i++)
+		{
+			word[i][strlen(word[i])] = ' ';
+		}
+		callmacro(strchr(word[0], '%')+1);
 		if (!macrorecursion)
 		{
 			callerfilename="";
@@ -1104,7 +1106,11 @@ void build_ir(const char * block)
 		if (moreonline)  asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
 		if (parsing_macro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
 		parsing_macro=true;
-		startmacro(block+6);
+		for(int i = 1; i < numwords - 1; i++)
+		{
+			word[i][strlen(word[i])] = ' ';
+		}
+		startmacro(word[1]);
 	}
 	else if (is("$$$endmacro"))
 	{
@@ -1238,8 +1244,7 @@ void build_ir(const char * block)
 		{
 			// RPG Hacker: Removed trimming for now - I think requiring an exact match is probably
 			// better here (not sure, though, it's worth discussing)
-			autoptr<char *> arg = duplicate_string(word[2]);
-			string expected_title = safedequote(arg);
+			string expected_title = safedequote(word[2]);
 			// randomdude999: this also removes leading spaces because itrim gets stuck in an endless
 			// loop when multi is true and one argument is empty
 			// in hirom the rom needs to be an entire bank for it to have a title, other modes only need 0x8000 bytes
@@ -1816,8 +1821,7 @@ void build_ir(const char * block)
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		if (ratsmetastate==ratsmeta_used) step(-5);
 		int num;
-		autoptr<char *> dup_par = duplicate_string(par);
-		autoptr<char**> pars=qpsplit(dup_par, ',', &num);
+		autoptr<char**> pars=qpsplit(par, ',', &num);
 		verify_paren(pars);
 		write1('P');
 		write1('R');
@@ -1996,8 +2000,7 @@ void build_ir(const char * block)
 		else
 		{
 			if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
-			autoptr<char *> dup_par = duplicate_string(par);
-			const char * tmpstr= safedequote(dup_par);
+			const char * tmpstr= safedequote(par);
 			ir.params.append(tmpstr);
 			if (!confirmname(tmpstr)) asar_throw_error(0, error_type_block, error_id_invalid_namespace_name);
 			if (!nested_namespaces)
@@ -2052,8 +2055,7 @@ void build_ir(const char * block)
 			asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
 		}
 #endif
-		autoptr<char *> dup_par = duplicate_string(par);
-		name=safedequote(dup_par);
+		name=safedequote(par);
 		new_internal_block(INTERNAL_COMMAND_FILENAME).params.append(name);
 		string prevthisfilename = thisfilename;
 		assemblefile(name, false);
@@ -2068,8 +2070,7 @@ void build_ir(const char * block)
 		int end=0;
 		if (strqchr(par, ':'))
 		{
-			autoptr<char *> dup_par = duplicate_string(par);
-			char * lengths=strqchr(dup_par, ':');
+			char * lengths=strqchr(par, ':');
 			*lengths=0;
 			lengths++;
 			if (strchr(lengths, '"')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
@@ -2104,8 +2105,7 @@ void build_ir(const char * block)
 			asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
 		}
 #endif
-		autoptr<char *> dup_par = duplicate_string(par);
-		name = safedequote(dup_par);
+		name = safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
 		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char*> datacopy=data;
@@ -2365,8 +2365,7 @@ bool assemblemapper(char** word, int numwords, ir_block &ir)
 					!is_digit(par[4]) || par[5]!=',' ||
 					!is_digit(par[6]) || par[7]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
 			int len;
-			autoptr<char *> dup_par = duplicate_string(par);
-			autoptr<char**> pars=qpsplit(dup_par, ',', &len);
+			autoptr<char**> pars=qpsplit(par, ',', &len);
 			verify_paren(pars);
 			if (len!=4) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
 			sa1banks[0]=(par[0]-'0')<<20;

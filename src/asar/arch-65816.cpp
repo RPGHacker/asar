@@ -18,7 +18,7 @@ bool asblock_65816(char** word, int numwords)
 {
 #define is(test) (!stricmpwithupper(opc, test))
 //#define par word[1]
-	autoptr<char *> opc = duplicate_string(word[0]);
+	string opc = word[0];
 	string par;
 	if (word[1]) par = word[1];
 	unsigned int num;
@@ -26,7 +26,7 @@ bool asblock_65816(char** word, int numwords)
 	bool explicitlen = false;
 	bool hexconstant = false;
 	if(0);
-#define getvars(optbank) num=(pass==2)?getnum(par):0; hexconstant=is_hex_constant(par); if (opc[3]=='.') { len=getlenfromchar(opc[4]); explicitlen=true; opc[3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
+#define getvars(optbank) num=(pass==2)?getnum(par):0; hexconstant=is_hex_constant(par); if (opc[3]=='.') { len=getlenfromchar(opc[4]); explicitlen=true; opc.truncate(3); } else {len=getlen(par, optbank); explicitlen=false;}
 #define match(left, right) (word[1] && stribegin(par, left) && striend(par, right))
 #define matchr(right) (word[1] && striend(par, right))
 #define matchl(left) (word[1] && stribegin(par, left))
@@ -59,7 +59,7 @@ bool asblock_65816(char** word, int numwords)
 #define thefinal7(offset, len) as##len("TSB", offset+0x00); as##len("TRB", offset+0x10); as##len("STY", offset+0x80); as##len("STX", offset+0x82); \
 															 as##len("LDX", offset+0xA2); as##len("CPY", offset+0xC0); as##len("CPX", offset+0xE0)
 #define onlythe8(left, right, offset) else if (match(left, right)) do { init_index(left, right); the8(offset, 1); end(); } while(0)
-	else if ((strlen(opc)!=3 && (strlen(opc)!=5 || opc[3]!='.')) || (word[1] && word[2])) return false;
+	else if ((opc.length()!=3 && (opc.length()!=5 || opc[3]!='.')) || (word[1] && word[2])) return false;
 	else if (!word[1])
 	{
 		blankinit();

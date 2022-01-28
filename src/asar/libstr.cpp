@@ -174,7 +174,7 @@ string& string::qreplace(const char * instr, const char * outstr)
 
 		}
 	}
-	thisstring =out;
+	thisstring = static_cast<string &&>(out);
 	return thisstring;
 }
 
@@ -184,7 +184,7 @@ string& string::qnormalize()
 	string out;
 	char *startstr = thisstring.raw();
 	char *str = startstr;
-	while(str = strpbrk(str, "'\" \t,\r"))
+	while((str = strpbrk(str, "'\" \t,\r")))
 	{
 		if(is_space(*str))
 		{
@@ -218,7 +218,7 @@ string& string::qnormalize()
 	{
 		out.append(startstr, 0, strlen(startstr)); //the remaining
 
-		thisstring = out;
+		thisstring = static_cast<string &&>(out);
 	}
 	return thisstring;
 }
@@ -257,7 +257,7 @@ bool confirmqpar(const char * str)
 {
 	//todo fully optimize
 	int par = 0;
-	while(!qparlut[*str]) str++;
+	while(!qparlut[(unsigned char)*str]) str++;
 	while(*str)
 	{
 		if(*str == '"')
@@ -277,7 +277,7 @@ bool confirmqpar(const char * str)
 			par += 1 - ((*str++ - '(') << 1);
 			if(par < 0) return false;
 		}
-		while(!qparlut[*str]) str++;
+		while(!qparlut[(unsigned char)*str]) str++;
 	}
 	return !par;
 }

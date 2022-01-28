@@ -46,19 +46,15 @@ private:
 	T* ptr;
 	int bufferlen;
 
-	T dummy;
 	static const int default_size = 128;
 
 	const T& getconst(int id) const
 	{
-		if (id < 0) return dummy;
-		if (id >= count) return dummy;
 		return ptr[id];
 	}
 
 	T& get(int id)
 	{
-		if (id < 0) return dummy;
 		if (id >= bufferlen - 4)
 		{
 			resize(id);
