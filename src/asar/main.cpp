@@ -7,7 +7,7 @@
 #include "assembleblock.h"
 #include "asar_math.h"
 #include "macro.h"
-
+#include <ctime>
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
 extern const int asarver_maj=2;
@@ -679,6 +679,7 @@ void parse_std_defines(const char* textfile)
 	// one convenient place for doing it).
 	builtindefines.create("assembler") = "asar";
 	builtindefines.create("assembler_ver") = dec(get_version_int());
+	builtindefines.create("assembler_time") = dec(time(nullptr));
 
 	if(textfile == nullptr) return;
 
