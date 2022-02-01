@@ -266,6 +266,8 @@ enum asar_error_id : int
 	error_id_broken_command,
 	error_id_phantom_error,
 
+	error_id_oob,
+
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
 };
