@@ -511,6 +511,11 @@ static double asar_char()
 	return string1[offset];
 }
 
+static double asar_strlen()
+{
+	return get_string_argument().length();
+}
+
 string copy_arg()
 {
 	if(*str == '"')
@@ -621,7 +626,8 @@ assocarr<double (*)()> builtin_functions =
 
 	{"stringsequal", asar_stringsequal},
 	{"stringsequalnocase", asar_stringsequalnocase},
-	{"char", asar_char}
+	{"char", asar_char},
+	{"stringlength", asar_strlen}
 };
 
 assocarr<double (*)()> functions;
