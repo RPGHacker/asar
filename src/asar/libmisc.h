@@ -15,3 +15,9 @@ inline unsigned bitround(unsigned v)
 	v++;
 	return v;
 }
+
+inline unsigned makepair(unsigned a, unsigned b)
+{
+	return (a + b) * ((a + b + 1) >> 1) + b;
+	//return a >= b ? a * a + a + b : a + b * b;	//this version is more dense, needs testing
+}

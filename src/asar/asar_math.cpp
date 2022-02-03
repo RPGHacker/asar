@@ -737,17 +737,15 @@ static double getnumcore()
 {
 	if (*str=='$')
 	{
-		if (!is_xdigit(*++str)) asar_throw_error(2, error_type_block, error_id_invalid_hex_value);
-		uint64_t ret = 0;
-		while (hextable[0 + *str] >= 0) {
-			ret = (ret << 4) | hextable[0 + *str++];
-		}
-		return ret;
+		uint64_t ret;
+		if ((ret = hextable[0 + *++str]) < 0) asar_throw_error(2, error_type_block, error_id_invalid_hex_value);
+		while ((ret = (ret << 4) ^ hextable[0 + *++str]) <= 0x00FFFFFFFFFFFFFF);
+		return (ret ^ -1) >> 4;
 	}
 	if (is_ualpha(*str) || *str=='.' || *str=='?')
 	{
 		const char * start=str;
-		while (is_ualnum(*str) || *str == '.') str++;
+		while (is_ualnum(*str)) str++;
 		int len=(int)(str-start);
 		while (*str==' ') str++;
 		if (*str=='(')
@@ -897,22 +895,16 @@ static double oper_wrapped_throw(asar_error_id errid)
 
 static double eval(int depth)
 {
-	const char* posneglabel = str;
-	string posnegname = posneglabelname(&posneglabel, false);
-
-	if (posnegname.length() > 0)
+	snes_label label_data;
+	int isposneg = posneglabelval(str, &label_data);
+	if (isposneg)
 	{
-		if (*posneglabel != '\0' && *posneglabel != ')') goto notposneglabel;
-
-		str = posneglabel;
-
+		str += isposneg;
 		foundlabel=true;
-		if (*(posneglabel-1) == '+') forwardlabel=true;
-		snes_label label_data = labelval(posnegname);
-		foundlabel_static &= label_data.is_static;
+		forwardlabel=*(str-1) == '+';
+		foundlabel_static = false;
 		return label_data.pos & 0xFFFFFF;
 	}
-notposneglabel:
 	recurseblock rec;
 	double left=getnum();
 	double right;

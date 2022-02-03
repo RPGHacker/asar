@@ -37,8 +37,6 @@ static bool in_spcblock = false;
 
 assocarr<snes_struct> structs;
 
-static bool movinglabelspossible = false;
-
 static bool disable_bank_cross_errors = false;
 static bool check_half_banks_crossed = false;
 
@@ -176,7 +174,6 @@ inline void write1_65816(unsigned int num)
 		int pcpos=snestopc(realsnespos&0xFFFFFF);
 		if (pcpos<0)
 		{
-			movinglabelspossible=true;
 			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
 		}
 		writeromdata_byte(pcpos, (unsigned char)num);
@@ -297,67 +294,6 @@ bool confirmname(const char * name)
 	return true;
 }
 
-string posneglabelname(const char ** input, bool define)
-{
-	const char* label = *input;
-
-	string output;
-
-	int depth = 0;
-	bool ismacro = false;
-
-	if (label[0] == '?')
-	{
-		ismacro = true;
-		label++;
-	}
-	if (label[0] == '-' || label[0] == '+')
-	{
-		char first = label[0];
-		for (depth = 0; label[0] && label[0] == first; depth++) label++;
-
-		if (!ismacro)
-		{
-			if (first == '+')
-			{
-				*input = label;
-				output = STR":pos_" + dec(depth) + "_" + dec(poslabels[depth]);
-				if (define) poslabels[depth]++;
-			}
-			else
-			{
-				*input = label;
-				if (define) neglabels[depth]++;
-				output = STR":neg_" + dec(depth) + "_" + dec(neglabels[depth]);
-			}
-		}
-		else
-		{
-			if (macrorecursion == 0 || macroposlabels == nullptr || macroneglabels == nullptr)
-			{
-				if (!macrorecursion) asar_throw_error(0, error_type_block, error_id_macro_label_outside_of_macro);
-			}
-			else
-			{
-				if (first == '+')
-				{
-					*input = label;
-					output = STR":macro_" + dec(calledmacros) + "_pos_" + dec(depth) + "_" + dec((*macroposlabels)[depth]);
-					if (define) (*macroposlabels)[depth]++;
-				}
-				else
-				{
-					*input = label;
-					if (define) (*macroneglabels)[depth]++;
-					output = STR":macro_" + dec(calledmacros) + "_neg_" + dec(depth) + "_" + dec((*macroneglabels)[depth]);
-				}
-			}
-		}
-	}
-
-	return output;
-}
-
 static string labelname(const char ** rawname, bool define=false)
 {
 #define deref_rawname (*rawname)
@@ -368,6 +304,7 @@ static string labelname(const char ** rawname, bool define=false)
 
 	if (ismacro)
 	{
+		if (!inmacro) asar_throw_error(0, error_type_block, error_id_macro_label_outside_of_macro);
 		deref_rawname++;
 		sublabellist = macrosublabels;
 	}
@@ -397,10 +334,8 @@ static string labelname(const char ** rawname, bool define=false)
 	{
 		// RPG Hacker: Don't add the prefix for sublabels, because they already inherit it from
 		// their parents' names.
-		if (!macrorecursion || macrosublabels == nullptr) asar_throw_error(0, error_type_block, error_id_macro_label_outside_of_macro);
 		name = STR":macro_" + dec(calledmacros) + "_" + name;
 	}
-
 
 	if (in_struct || in_sub_struct)
 	{
@@ -470,7 +405,7 @@ snes_label labelval(const char ** rawname, bool define)
 	return rval;
 }
 
-snes_label labelval(string name, bool define)
+snes_label labelval(const string &name, bool define)
 {
 	const char * rawname=name;
 	snes_label rval;
@@ -483,13 +418,13 @@ bool labelval(const char ** rawname, snes_label * rval, bool define)
 	return labelvalcore(rawname, rval, define, false);
 }
 
-bool labelval(string name, snes_label * rval, bool define)
+bool labelval(const string &name, snes_label * rval, bool define)
 {
 	const char * str=name;
 	return labelvalcore(&str, rval, define, false);
 }
 
-static void setlabel(string name, int loc=-1, bool is_static=false)
+static void setlabel(const string &name, int loc=-1, bool is_static=false)
 {
 	if (loc==-1)
 	{
@@ -506,7 +441,6 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 	{
 		if (labels.exists(name))
 		{
-			movinglabelspossible=true;
 			asar_throw_error(0, error_type_block, error_id_label_redefined, name.data());
 		}
 		labels.create(name) = label_data;
@@ -520,7 +454,7 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 		//all label locations are known at this point, add a sanity check
 		if (!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_on_third_pass);
 		labelpos = labels.find(name).pos;
-		if ((int)labelpos != loc && !movinglabelspossible)
+		if ((int)labelpos != loc)
 		{
 			if((unsigned int)loc>>16 != labelpos>>16)  asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
 			else if(labelpos == (dp_base + 0xFFu))   asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
@@ -530,24 +464,98 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 	}
 }
 
+template <char term, bool increment> inline string posneglabelname(const char *label, int *length)
+{
+	int depth = 1;
+	string name;
+
+	bool ismacro = false;
+	if (inmacro && label[0] == '?')
+	{
+		ismacro = true;
+		label++;
+	}
+
+	char first = *label;
+	*length = 0;
+	if (first == '-' || first == '+')
+	{
+		while(*++label == first) depth++;
+		if(depth > 5) asar_throw_error(0, error_type_block, error_id_broken_label_definition); //todo make better error
+		if(!label[0] || label[0] == term)
+		{
+			if (!ismacro)
+			{
+				if (first == '+')
+				{
+					name = STR":pos_" + hex(makepair(depth, poslabels[depth]), 8);
+					if constexpr(increment) poslabels[depth] += 1;
+				}
+				else
+				{
+					if constexpr(increment) neglabels[depth] += 1;
+					name = STR":neg_" + hex(makepair(depth, neglabels[depth]), 8);
+				}
+			}
+			else
+			{
+				if (first == '+')
+				{
+					name = STR":posm_" + hex(makepair(makepair(depth, (*macroposlabels)[depth]), calledmacros), 8);
+					if constexpr(increment) (*macroposlabels)[depth] += 1;
+				}
+				else
+				{
+					if constexpr(increment) (*macroneglabels)[depth] += 1;
+					name = STR":negm_" + hex(makepair(makepair(depth, (*macroneglabels)[depth]), calledmacros), 8);
+				}
+			}
+			*length = depth + ismacro;
+		}
+	}
+
+	return name;
+}
+
+int posneglabelval(const char *label, snes_label *label_data)
+{
+	int length;
+	string name = posneglabelname<')', false>(label, &length);
+	if(length)
+	{
+		*label_data = labelval(name);
+	}
+	return length;
+}
+
+bool makeposneglabel(const char *label, int pos)
+{
+	int length;
+	string name = posneglabelname<':', true>(label, &length);
+	if(length)
+	{
+		setlabel(name, pos);
+	}
+	return length;
+}
 
 table thetable;
 static autoarray<table> tablestack;
 
-static int freespacepos[256];
-static int freespacelen[256];
+static int freespacepos[128];
+static int freespacelen[128];
 static int freespaceidnext;
 static int freespaceid;
 static int freespacestart;
 int freespaceextra;
 
-static bool freespaceleak[256];
-static string freespacefile[256];
+static bool freespaceleak[128];
+static string freespacefile[128];
 
-static int freespaceorgpos[256];
-static int freespaceorglen[256];
-static bool freespacestatic[256];
-static unsigned char freespacebyte[256];
+static int freespaceorgpos[128];
+static int freespaceorglen[128];
+static bool freespacestatic[128];
+static unsigned char freespacebyte[128];
 
 static void cleartable()
 {
@@ -633,14 +641,13 @@ void initstuff()
 {
 	if (pass==0)
 	{
-		for (int i=0;i<256;i++)
+		for (int i=0;i<128;i++)
 		{
 			freespaceleak[i]=true;
 			freespaceorgpos[i]=-2;
 			freespaceorglen[i]=-1;
 			freespacebyte[i] = 0x00;
 		}
-		movinglabelspossible = false;
 	}
 	arch=arch_65816;
 	mapper=lorom;
@@ -736,17 +743,7 @@ void finishpass()
 static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 {
 	if (!label[0] || label[0]==':') return false;//colons are reserved for special labels
-
-	const char* posneglabel = label;
-	string posnegname = posneglabelname(&posneglabel, true);
-
-	if (posnegname.length() > 0)
-	{
-		if (global_label) return false;
-		if (*posneglabel != '\0' && *posneglabel != ':') asar_throw_error(0, error_type_block, error_id_broken_label_definition);
-		setlabel(posnegname, pos);
-		return true;
-	}
+	if (makeposneglabel(label, pos)) return !global_label;
 	if (label[strlen(label)-1]==':' || label[0]=='.' || label[0]=='?' || label[0] == '#')
 	{
 		if (!label[1]) return false;
@@ -1113,15 +1110,6 @@ void build_ir(const char * block)
 	else if (is("$$$endmacro"))
 	{
 		ir.command = INTERNAL_COMMAND_ENDMACRO;
-		macrorecursion--;
-		inmacro = macrorecursion;
-		calledmacros++;
-		macroposlabels = macroposlist[macroposlist.count - 1];
-		macroneglabels = macroneglist[macroneglist.count - 1];
-		macrosublabels = macrosublist[macrosublist.count - 1];
-		macroposlist.remove(macroposlist.count - 1);
-		macroneglist.remove(macroneglist.count - 1);
-		macrosublist.remove(macrosublist.count - 1);
 	}
 	else if (is("endmacro"))
 	{
@@ -1390,31 +1378,7 @@ void build_ir(const char * block)
 		int num=(int)getnum(word[2]);
 		if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_cross_assignment);
 
-		const char* newlabelname = word[0];
-		bool ismacro = false;
-
-		if (newlabelname[0] == '?')
-		{
-			ismacro = true;
-			newlabelname++;
-		}
-
-		if (ismacro && macrorecursion == 0)
-		{
-			asar_throw_error(0, error_type_block, error_id_macro_label_outside_of_macro);
-		}
-
-		if (!confirmname(newlabelname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
-
-		string completename;
-
-		if (ismacro)
-		{
-			completename += STR":macro_" + dec(calledmacros) + "_";
-		}
-
-		completename += newlabelname;
-
+		string completename = labelname((const char**)word);
 		setlabel(ns + completename, num, true);
 		ir.params.append(ns + completename);
 		ir.params.append(num);

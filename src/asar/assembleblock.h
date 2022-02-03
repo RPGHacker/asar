@@ -20,7 +20,7 @@ struct snes_label {
 
 	snes_label()
 	{
-		pos = 0;
+		pos = -1;
 		is_static = false;
 	}
 };
@@ -45,7 +45,7 @@ struct whiletracker {
 extern autoarray<whiletracker> whilestatus;
 
 bool confirmname(const char * name);
-string posneglabelname(const char ** input, bool define);
+int posneglabelval(const char *label, snes_label *label_data);
 
 void write1_pick(unsigned int num);
 void write2(unsigned int num);
@@ -57,9 +57,9 @@ int snestopc_pick(int addr);
 int getlenfromchar(char c);
 
 snes_label labelval(const char ** rawname, bool define = false);
-snes_label labelval(string name, bool define = false);
+snes_label labelval(const string &name, bool define = false);
 bool labelval(const char ** rawname, snes_label * rval, bool define = false);
-bool labelval(string name, snes_label * rval, bool define = false);
+bool labelval(const string &name, snes_label * rval, bool define = false);
 
 const char * safedequote(char * str);
 

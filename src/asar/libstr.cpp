@@ -227,8 +227,8 @@ bool confirmquotes(const char * str)
 {
 	while(*str)
 	{
-		char *dquote = strchr((char *)str, '"');
-		char *squote = strchr((char *)str, '\'');
+		const char *dquote = strchr(str, '"');
+		const char *squote = strchr(str, '\'');
 		if(dquote || squote)
 		{
 			if(dquote && (dquote < squote || !squote))

@@ -210,21 +210,13 @@ int getlen(const char * orgstr, bool optimizebankextraction)
 	const char * str=orgstr;
 	freespaced=false;
 
-	const char* posneglabel = str;
-	string posnegname = posneglabelname(&posneglabel, false);
-
-	if (posnegname.length() > 0)
+	snes_label label_data;
+	if (posneglabelval(str, &label_data))
 	{
-		if (*posneglabel != '\0') goto notposneglabel;
-
-		if (!pass) return 2;
-		snes_label label_data;
-		// RPG Hacker: Umm... what kind of magic constant is this?
-		label_data.pos = 31415926;
-		bool found = labelval(posnegname, &label_data);
-		return getlenforlabel(snespos, (int)label_data.pos, found);
+		if (!pass) return 2;	//I don't think this is actually needed.  todo
+		return getlenforlabel(snespos, (int)label_data.pos, label_data.pos != -1);
 	}
-notposneglabel:
+
 	int len=0;
 	while (*str)
 	{
