@@ -184,6 +184,8 @@ inline void write1_65816(unsigned int num)
 	ratsmetastate=ratsmeta_ban;
 }
 
+int recent_opcode_num = 0;
+
 void write1_pick(unsigned int num)
 {
 	write1_65816(num);
@@ -191,6 +193,8 @@ void write1_pick(unsigned int num)
 
 static bool asblock_pick(char** word, int numwords)
 {
+	recent_opcode_num = 1;
+
 	if (arch==arch_65816) return asblock_65816(word, numwords);
 	if (arch==arch_spc700) return asblock_spc700(word, numwords);
 	if (arch==arch_superfx) return asblock_superfx(word, numwords);
@@ -1006,10 +1010,16 @@ void assembleblock(const char * block)
 	{
 		if (pass == 2)
 		{
-			extern AddressToLineMapping addressToLineMapping;
-			addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos);
+			// RPG Hacker: This makes a pretty big assumption to calculate the size of opcodes.
+			// However, this should currently only really be used for pseudo opcodes, where it should always be good enough.
+			int opcode_size = ((0xFFFFFF & realsnespos) - addrToLinePos) / recent_opcode_num;
+			for (int i = 0; i < recent_opcode_num; ++i)
+			{
+				extern AddressToLineMapping addressToLineMapping;
+				addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos + (i * opcode_size));
+			}
 		}
-		numopcodes++;
+		numopcodes += recent_opcode_num;
 	}
 	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
 	{
@@ -1784,6 +1794,9 @@ void assembleblock(const char * block)
 					{
 						asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
 					}
+
+					extern AddressToLineMapping addressToLineMapping;
+					addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos);
 				}
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
 				freespaceorgpos[targetid]=ratsloc;
