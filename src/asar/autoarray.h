@@ -74,7 +74,7 @@ private:
 	void resize(int size)
 	{
 		int oldlen = count;
-		while (bufferlen < size + 4) bufferlen *= 2;
+		while (bufferlen <= size + 4) bufferlen *= 2;
 		T *old = ptr;
 		ptr = (T*)malloc(sizeof(T)*(size_t)bufferlen);
 		for(int i = 0; i < oldlen; i++){
