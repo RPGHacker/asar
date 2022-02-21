@@ -856,7 +856,7 @@ static double getnumcore()
 static double sanitize(double val)
 {
 	if (val != val) asar_throw_error(1, error_type_block, error_id_nan);
-	if (math_round) return trunc(val); // originally used int cast, but that broke numbers > $8000_0000
+	if (math_round && !default_math_round_off) return trunc(val); // originally used int cast, but that broke numbers > $8000_0000
 	return val;
 }
 
@@ -951,7 +951,7 @@ notposneglabel:
 	{
 		while (*str==' ') str++;
 		// why was this an int cast
-		if (math_round) left=trunc(left);
+		if (math_round && !default_math_round_off) left=trunc(left);
 #define oper(name, thisdepth, contents)      \
 			if (!strncmp(str, name, strlen(name))) \
 			{                                      \

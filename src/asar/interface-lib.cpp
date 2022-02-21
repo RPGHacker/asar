@@ -22,6 +22,12 @@
 #define EXPORT extern "C" __attribute__ ((visibility ("default")))
 #endif
 
+// RPG Hacker: This is currently disabled for debug builds, because it causes random crashes
+// when used in combination with -fsanitize=address.
+#if defined(_WIN32) && defined(NDEBUG)
+#	define RUN_VIA_FIBER
+#endif
+
 static autoarray<const char *> prints;
 static string symbolsfile;
 static int numprint;
@@ -299,7 +305,7 @@ EXPORT bool asar_patch(const char *patchloc, char *romdata_, int buflen, int *ro
 
 		return asar_patch_end(romdata_, buflen, romlen_);
 	};
-#if defined(_WIN32)
+#if defined(RUN_VIA_FIBER)
 	return run_as_fiber(execute_patch);
 #else
 	return execute_patch();
@@ -406,7 +412,7 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 
 		return asar_patch_end(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
 };
-#if defined(_WIN32)
+#if defined(RUN_VIA_FIBER)
 	return run_as_fiber(execute_patch);
 #else
 	return execute_patch();
