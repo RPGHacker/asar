@@ -530,6 +530,8 @@ void assembleline(const char * fname, int linenum, const char * line)
 					bool isspecialline = false;
 					if (thisblock[0] == '@')
 					{
+						asar_throw_warning(0, warning_id_feature_deprecated, "prefixing Asar commands with @ or ;@", "remove the @ or ;@ prefix");
+
 						isspecialline = true;
 						thisblock++;
 						while (is_space(*thisblock))

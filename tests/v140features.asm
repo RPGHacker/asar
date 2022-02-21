@@ -212,7 +212,7 @@
 ;P>Now the same number, but with a different precision: 10.3401734476
 ;P>Testing a few more numbers: 0, 0.1, -0.1, 1, -1
 ;P>
-@asar 1.40
+asar 1.40
 
 math round off
 lorom

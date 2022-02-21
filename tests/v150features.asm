@@ -13,7 +13,7 @@
 ;`warnW1029
 ;`warnW1029
 ;`warnW1029
-@asar 1.50
+asar 1.50
 
 lorom
 	org $008000
