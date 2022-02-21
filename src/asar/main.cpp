@@ -22,7 +22,7 @@ extern const int asarver_min=9;
 extern const int asarver_bug=0;
 extern const bool asarver_beta=true;
 bool default_math_pri=false;
-extern bool default_math_round_off=false;
+bool default_math_round_off=false;
 
 #ifdef _I_RELEASE
 extern char blockbetareleases[(!asarver_beta)?1:-1];
