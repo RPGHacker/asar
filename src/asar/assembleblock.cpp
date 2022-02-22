@@ -25,6 +25,7 @@ bool warn_endwhile = true;
 static int old_snespos;
 static int old_startpos;
 static int old_optimizeforbank;
+static bool old_snespos_valid;
 static int struct_base;
 static string struct_name;
 static string struct_parent;
@@ -1369,6 +1370,7 @@ void assembleblock(const char * block)
 		old_snespos = snespos;
 		old_startpos = startpos;
 		old_optimizeforbank = optimizeforbank;
+		old_snespos_valid = snespos_valid;
 		unsigned int base = 0;
 		if (numwords == 3)
 		{
@@ -1415,6 +1417,7 @@ void assembleblock(const char * block)
 		struct_base = snespos;
 		realsnespos = 0;
 		realstartpos = 0;
+		snespos_valid = true;
 #undef ret_error_cleanup
 #undef ret_error_params_cleanup
 	}
@@ -1456,6 +1459,7 @@ void assembleblock(const char * block)
 		snespos = old_snespos;
 		startpos = old_startpos;
 		optimizeforbank = old_optimizeforbank;
+		snespos_valid = old_snespos_valid;
 		static_struct = false;
 	}
 #undef ret_error
