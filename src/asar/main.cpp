@@ -10,10 +10,10 @@
 #include <ctime>
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
-extern const int asarver_maj=2;
-extern const int asarver_min=0;
-extern const int asarver_bug=0;
-extern const bool asarver_beta=true;
+const int asarver_maj=2;
+const int asarver_min=0;
+const int asarver_bug=0;
+const bool asarver_beta=true;
 
 #ifdef _I_RELEASE
 extern char blockbetareleases[(!asarver_beta)?1:-1];
