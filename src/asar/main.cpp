@@ -17,10 +17,10 @@
 
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
-extern const int asarver_maj=1;
-extern const int asarver_min=9;
-extern const int asarver_bug=0;
-extern const bool asarver_beta=true;
+const int asarver_maj=1;
+const int asarver_min=9;
+const int asarver_bug=0;
+const bool asarver_beta=true;
 bool default_math_pri=false;
 bool default_math_round_off=false;
 
@@ -972,6 +972,9 @@ void reseteverything()
 	errored = false;
 	checksum_fix_enabled = true;
 	force_checksum_fix = false;
+
+	default_math_pri = false;
+	default_math_round_off = false;
 	
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));

@@ -17,6 +17,7 @@
 
 bool math_pri=true;
 bool math_round=false;
+extern bool suppress_all_warnings;
 
 static const char * str;
 //save before calling eval if needed after
@@ -1007,7 +1008,9 @@ double math(const char * s)
 	else
 	{
 		str = s;
+		suppress_all_warnings = true;
 		double no_pri_rval = eval(0);
+		suppress_all_warnings = false;
 		
 		math_pri = true;
 		str = s;
