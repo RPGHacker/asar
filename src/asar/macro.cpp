@@ -119,6 +119,12 @@ void callmacro(const char * data)
 	macrorecursion++;
 	int startif=numif;
 
+	for (int i = 0; i < numargs; ++i)
+	{
+		// RPG Hacker: These casts make me feel very nasty.
+		(const char*)args[i] = safedequote(strip_whitespace((char*)args[i]));
+	}
+
 	// RPG Hacker: -1 to take the ... into account, which is also being counted.
 	if(thismacro->variadic) numvarargs = numargs-(thismacro->numargs-1);
 	else numvarargs = -1;
@@ -186,7 +192,7 @@ void callmacro(const char * data)
 						if (!strcmp(in, thismacro->arguments[j]))
 						{
 							found=true;
-							out+=(char *)safedequote(strip_whitespace((char *)args[j]));
+							out+=args[j];
 							break;
 						}
 					}
@@ -202,7 +208,7 @@ void callmacro(const char * data)
 						if(numif==numtrue || (numif==numtrue+1 && stribegin(out.data(), "elseif "))){
 							if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
 							if (arg_num > numargs-thismacro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
-							out+=(char *)safedequote(strip_whitespace((char *)args[arg_num+thismacro->numargs-1]));
+							out+=args[arg_num+thismacro->numargs-1];
 						}
 					}
 					in=end+1;
