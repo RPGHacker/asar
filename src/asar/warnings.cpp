@@ -7,7 +7,6 @@
 #include "interface-shared.h"
 
 static int asar_num_warnings = 0;
-bool suppress_all_warnings = false;
 
 struct asar_warning_mapping
 {
@@ -99,7 +98,7 @@ static_assert(sizeof(asar_warnings) / sizeof(asar_warnings[0]) == warning_id_cou
 
 void asar_throw_warning(int whichpass, asar_warning_id warnid, ...)
 {
-	if (pass == whichpass && !suppress_all_warnings)
+	if (pass == whichpass)
 	{
 		assert(warnid > warning_id_start && warnid < warning_id_end);
 
