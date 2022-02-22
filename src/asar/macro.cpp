@@ -122,7 +122,7 @@ void callmacro(const char * data)
 	for (int i = 0; i < numargs; ++i)
 	{
 		// RPG Hacker: These casts make me feel very nasty.
-		(const char*)args[i] = safedequote(strip_whitespace((char*)args[i]));
+		(*reinterpret_cast<autoptr<const char**>*>(&args))[i] = safedequote(strip_whitespace((char*)args[i]));
 	}
 
 	// RPG Hacker: -1 to take the ... into account, which is also being counted.
