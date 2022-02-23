@@ -2336,6 +2336,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("table"))
 	{
+		asar_throw_warning(0, warning_id_feature_deprecated, "table command", "Use direct character assignments. For example: 'a' = $61");
 		bool fliporder=false;
 		if(0);
 		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }

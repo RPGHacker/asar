@@ -1008,19 +1008,22 @@ double math(const char * s)
 	else
 	{
 		str = s;
+		rval = eval(0);
+
 		suppress_all_warnings = true;
-		double no_pri_rval = eval(0);
-		suppress_all_warnings = false;
-		
 		math_pri = true;
-		str = s;
-		rval = eval(0);	
-		math_pri = false;
-		if(no_pri_rval != rval)
+		try
 		{
-			asar_throw_warning(2, warning_id_feature_deprecated, "xkas style left to right math ", "apply order of operations");
-			rval = no_pri_rval;
+			str = s;
+			double pri_rval = eval(0);
+			if (pri_rval != rval)
+			{
+				asar_throw_warning(2, warning_id_feature_deprecated, "xkas style left to right math ", "apply order of operations");
+			}
 		}
+		catch (errfatal&) {}
+		suppress_all_warnings = false;
+		math_pri = false;
 	}
 	if (*str)
 	{
