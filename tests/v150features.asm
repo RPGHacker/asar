@@ -90,12 +90,12 @@ lorom
 	org $018000
 
 	dl $FFFFFF
-
+	
 	incsrc "data/pushtable1.tbl"
 	db "ABCD"
 
 	pushtable
-
+	
 	incsrc "data/pushtable2.tbl"
 	db "ABCD"
 
