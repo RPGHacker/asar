@@ -1010,20 +1010,23 @@ double math(const char * s)
 		str = s;
 		rval = eval(0);
 
+		double pri_rval = NAN;
+
 		suppress_all_warnings = true;
 		math_pri = true;
 		try
 		{
 			str = s;
-			double pri_rval = eval(0);
-			if (pri_rval != rval)
-			{
-				asar_throw_warning(2, warning_id_feature_deprecated, "xkas style left to right math ", "apply order of operations");
-			}
+			pri_rval = eval(0);
 		}
 		catch (errfatal&) {}
 		suppress_all_warnings = false;
 		math_pri = false;
+
+		if (pri_rval != rval)
+		{
+			asar_throw_warning(2, warning_id_feature_deprecated, "xkas style left to right math ", "apply order of operations");
+		}
 	}
 	if (*str)
 	{

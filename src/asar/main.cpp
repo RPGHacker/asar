@@ -23,6 +23,7 @@ const int asarver_bug=0;
 const bool asarver_beta=true;
 bool default_math_pri=false;
 bool default_math_round_off=false;
+extern bool suppress_all_warnings;
 
 #ifdef _I_RELEASE
 extern char blockbetareleases[(!asarver_beta)?1:-1];
@@ -975,6 +976,7 @@ void reseteverything()
 
 	default_math_pri = false;
 	default_math_round_off = false;
+	suppress_all_warnings = false;
 	
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));
