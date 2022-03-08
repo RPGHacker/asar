@@ -185,6 +185,9 @@
 	ERR(bad_addr_mode, "This addressing mode is not valid for this instruction.") \
 	ERR(bad_access_width, "This addressing mode can accept %s arguments, but the provided argument is %d-bit.") \
 	ERR(label_before_if, "Labels are not allowed before \"%s\" commands. Suggestion: move the label to a separate line.") \
+	ERR(expected_number, "Expected number, got string instead") \
+	ERR(expected_string, "Expected string, got number instead") \
+	ERR(argument_count, "Wrong number of arguments. Expected %d, got %d") \
 // this line intentionally left blank
 
 enum asar_error_id : int {
