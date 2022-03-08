@@ -263,6 +263,10 @@ enum asar_error_id : int
 	error_id_invalid_utf8,
 	error_id_cmdl_utf16_to_utf8_failed,
 
+	error_id_expected_number,
+	error_id_expected_string,
+	error_id_argument_count,
+
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
 };

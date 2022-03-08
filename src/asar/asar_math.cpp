@@ -1,4 +1,3 @@
-//Don't try using this in your own project, it's got a lot of Asar-specific tweaks. Use mathlib.cpp instead.
 #include "platform/file-helpers.h"
 #include "asar.h"
 #include "virtualfile.h"
@@ -10,6 +9,8 @@
 #include <cmath>
 #include <functional>
 #include <algorithm>
+
+#include "math_ast.h"
 
 static const char * str;
 //save before calling eval if needed after
@@ -987,4 +988,15 @@ void initmathcore()
 void deinitmathcore()
 {
 	//not needed
+}
+
+void testmath() {
+	math_ast_node* asdf = new math_ast_literal(math_val((int64_t)123));
+	math_ast_node* s2 = new math_ast_literal(math_val(2.0));
+	math_ast_node* s4 = new math_ast_unop(s2, math_unop_type::neg);
+	math_ast_node* s3 = new math_ast_binop(asdf, s4, math_binop_type::div);
+	math_eval_context ctx;
+	math_val res = s3->evaluate(ctx);
+	printf("%f, %ld\n", res.get_double(), res.get_integer());
+	delete s3;
 }

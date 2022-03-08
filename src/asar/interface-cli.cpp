@@ -77,6 +77,7 @@ void onsigxcpu(int ignored)
 #endif
 #endif
 
+void testmath();
 
 int main(int argc, const char * argv[])
 {
@@ -444,6 +445,13 @@ int main(int argc, const char * argv[])
 		string stddefinespath = STR dir(argv[0]) + "stddefines.txt";
 		parse_std_defines(stddefinespath);
 
+		if(!strcmp(argv[1], "DEBUGMATH")) {
+			initstuff();
+			pass=2;
+			testmath();
+			return 0;
+		}
+
 		for (pass=0;pass<3;pass++)
 		{
 			//pass 1: find which bank all labels are in, for label optimizations
@@ -451,6 +459,7 @@ int main(int argc, const char * argv[])
 			//pass 2: find where exactly all labels are
 			//pass 3: assemble it all
 			initstuff();
+
 			assemblefile(asmname, true);
 			finishpass();
 		}
