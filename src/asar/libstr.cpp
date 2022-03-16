@@ -156,7 +156,7 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 	return true;
 }
 
-#define dequote(var, next, error) if (var=='"') do { next; while (var!='"') { if (!var) error; next; } next; } while(0); else if (var=='\'') do { next; while (var!='\'') { if (!var) error; next; } next; } while(0)
+#define dequote(var, next, error) if (var=='"') do { next; while (var!='"') { if (!var) error; next; } next; } while(0); else if (var=='\'') do { next; if (!var) error; next; if(var != '\'') error; next; } while(0)
 #define skippar(var, next, error) dequote(var, next, error); else if (var=='(') { int par=1; next; while (par) { dequote(var, next, error); else { \
 				if (var=='(') par++; if (var==')') par--; if (!var) error; next; } } } else if (var==')') error
 
