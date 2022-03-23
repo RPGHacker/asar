@@ -21,6 +21,8 @@
 // when used in combination with -fsanitize=address.
 #if defined(_WIN32) && defined(NDEBUG)
 #	define RUN_VIA_FIBER
+#elif defined(_WIN32)
+#	define RUN_VIA_THREAD
 #endif
 
 static autoarray<const char *> prints;
@@ -385,6 +387,8 @@ EXPORT bool asar_patch(const patchparams_base *params)
 };
 #if defined(RUN_VIA_FIBER)
 	return run_as_fiber(execute_patch);
+#elif defined(RUN_VIA_THREAD)
+	return run_as_thread(execute_patch);
 #else
 	return execute_patch();
 #endif
