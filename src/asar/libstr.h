@@ -504,24 +504,33 @@ inline const char * dequote(char * str)
 
 inline char * strqchr(const char * str, char key)
 {
-	while (*str)
+	while (*str != '\0')
 	{
-		if (*str=='"')
+		if (*str == key) { return const_cast<char*>(str); }
+		else if (*str == '"' || *str == '\'')
 		{
-			str++;
-			while (*str!='"')
+			// Special case hack for ''', which is currently our official way of handling the ' character.
+			// Even though it really stinks.
+			if (str[0] == '\'' && str[1] == '\'' && str[2] == '\'') { str += 2; }
+			else
 			{
-				if (!*str) return nullptr;
-				str++;
+				char delimiter = *str;
+
+				do
+				{
+					str++;
+
+					// If we want to support backslash escapes, we'll have to add that right here.
+				} while (*str != delimiter && *str != '\0');
+
+				// This feels like a superfluous check, but I can't really find a clean way to avoid it.
+				if (*str == '\0') { return nullptr; }
 			}
-			str++;
 		}
-		else
-		{
-			if (*str==key) return const_cast<char*>(str);
-			str++;
-		}
+
+		str++;
 	}
+
 	return nullptr;
 }
 

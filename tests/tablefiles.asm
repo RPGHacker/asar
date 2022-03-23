@@ -7,6 +7,7 @@
 ;`10 20 30 10
 ;`11 21 31 11
 ;`42 42
+;`43 43
 
 org $008000
 
@@ -24,6 +25,12 @@ db "test"
 db 't','e','s','t'
 db 't'+1,'e'+1,'s'+1,'t'+1
 
-''' = $42
+''' = $42 ; Comment after actual line
+; ''' = $44 ; This line is a comment and should be ignored
 db "'"
 db '''
+
+';' = $43 ; Comment after actual line
+; ';' = $45 ; This line is a comment and should be ignored
+db ";"
+db ';'
