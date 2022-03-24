@@ -514,7 +514,6 @@ int main(int argc, const char * argv[])
 				write_file(symfile, (const char*)contents, (uint32_t)contents.length());
 				close_file(symfile);
 			}
-
 		}
 		reseteverything();
 	}
