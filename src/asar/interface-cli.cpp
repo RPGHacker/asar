@@ -465,9 +465,17 @@ int main(int argc, char * argv[])
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";
 			string contents = create_symbols_file(symbols, romCrc);
 			FILE * symfile = fopen(symfilename, "wt");
-			fputs(contents, symfile);
-			fclose(symfile);
-
+			if (!symfile)
+			{
+				puts(STR"Failed to create symbols file: \"" + symfilename + "\".");
+				pause(err);
+				return 1;
+			}
+			else
+			{
+				fputs(contents, symfile);
+				fclose(symfile);
+			}
 		}
 		reseteverything();
 	}
