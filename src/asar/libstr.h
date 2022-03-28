@@ -540,15 +540,23 @@ inline char * strqrchr(const char * str, char key)
 	const char * ret= nullptr;
 	while (*str)
 	{
-		if (*str=='"')
+		if (*str=='"' || *str=='\'')
 		{
+			char token = *str;
+
 			str++;
-			while (*str!='"')
+
+			// Special case hack for '''
+			if (str[0] == '\'' && str[1] == '\'') { str += 2; }
+			else
 			{
-				if (!*str) return nullptr;
+				while (*str != token)
+				{
+					if (!*str) return nullptr;
+					str++;
+				}
 				str++;
 			}
-			str++;
 		}
 		else
 		{
