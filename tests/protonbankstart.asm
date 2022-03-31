@@ -6,8 +6,16 @@
 ;`FFFFF 00
 freedata cleaned
 A:
-rep 30000 : db 0
+!i = 0
+while !i < 30000
+	db 0
+	!i #= !i+1
+endwhile
 
 freedata cleaned
 prot A
-rep 5000 : db 0
+!j = 0
+while !j < 5000
+	db 0
+	!j #= !j+1
+endwhile
