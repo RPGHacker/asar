@@ -2283,8 +2283,8 @@ lda !x		; Treated as &quot;lda $00&quot;
 lda #!x		; Treated as &quot;lda #$00&quot;
 lda [!x],y	; Treated as &quot;lda [$00],y&quot;
 
-!y = $12
-!x = !y$34
+!y = 34
+!x = $12!y
 		
 lda !x		; Treated as &quot;lda $1234&quot;
 		
