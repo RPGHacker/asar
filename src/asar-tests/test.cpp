@@ -261,7 +261,10 @@ static bool execute_command_line(char * commandline, const char * stdout_log_fil
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = nullptr;
 
-	if (!CreatePipe(&stdout_read_handle, &stdout_write_handle, &sa, 0))
+	SYSTEM_INFO sInfo{};
+	GetSystemInfo(&sInfo);
+
+	if (!CreatePipe(&stdout_read_handle, &stdout_write_handle, &sa, sInfo.dwPageSize * 4))
 	{
 		return false;
 	}
@@ -273,7 +276,7 @@ static bool execute_command_line(char * commandline, const char * stdout_log_fil
 		return false;
 	}
 
-	if (!CreatePipe(&stderr_read_handle, &stderr_write_handle, &sa, 0))
+	if (!CreatePipe(&stderr_read_handle, &stderr_write_handle, &sa, sInfo.dwPageSize * 4))
 	{
 		CloseHandle(stdout_read_handle);
 		CloseHandle(stdout_write_handle);
