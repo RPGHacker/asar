@@ -245,7 +245,7 @@ static void delete_file(const char * filename)
 // RPG Hacker: Original test application used system(), but
 // that really made my anti-virus sad, so here is a new,
 // complicated platform-specific solution.
-// NOTE: No cont char*, for commandline, because CreateProcess()
+// NOTE: No const char*, for commandline, because CreateProcess()
 // actually can mess with this string for some reason...
 static bool execute_command_line(char * commandline, const char * stdout_log_file, const char * stderr_log_file)
 {
