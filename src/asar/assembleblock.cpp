@@ -1953,16 +1953,13 @@ void assembleblock(const char * block, bool isspecialline)
 			if (pass==1) freespaceleak[targetid]=false;
 			auto is_freespace_reused = [](int ratsloc) -> bool
 			{
-				bool freespace_reused = false;
 				for (int i = 0; i < freespaceidnext; i++)
 				{
 					if (freespacepos[i] != -1 && (freespacepos[i] & 0xFFFFFF) == ratsloc) {
-						freespace_reused = true;
-						break;
+						return true;
 					}
 				}
-
-				return freespace_reused;
+				return false;
 			};
 			num&=0xFFFFFF;
 			if (strlen(par)>3 && !stricmp(par+3, ".l")) par[3]=0;
