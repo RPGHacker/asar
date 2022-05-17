@@ -1031,9 +1031,10 @@ void assembleblock(const char * block)
 		verify_paren(pars);
 
 		void (*do_write)(unsigned int);
-		if (word[0][1]  == 'b') do_write = &write1;
-		else if (word[0][1]  == 'w') do_write = &write2;
-		else if (word[0][1]  == 'l') do_write = &write3;
+		char first = to_lower(word[0][1]);
+		if (first == 'b') do_write = &write1;
+		else if (first == 'w') do_write = &write2;
+		else if (first == 'l') do_write = &write3;
 		else do_write = &write4;
 
 		for (int i=0;pars[i];i++)
