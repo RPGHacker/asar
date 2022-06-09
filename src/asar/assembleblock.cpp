@@ -687,7 +687,6 @@ void initstuff()
 	arch=arch_65816;
 	mapper=lorom;
 	mapper_set = false;
-	reallycalledmacros=0;
 	calledmacros=0;
 	macrorecursion=0;
 	repeatnext=1;
@@ -991,9 +990,11 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		int fakeendif_prev = fakeendif;
 		int moreonlinecond_prev = moreonlinecond;
+		int calledmacros_prev = calledmacros;
 		callmacro(strchr(block, '%')+1);
 		fakeendif = fakeendif_prev;
 		moreonlinecond = moreonlinecond_prev;
+		calledmacros = calledmacros_prev;
 		if (!macrorecursion)
 		{
 			callerfilename="";

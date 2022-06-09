@@ -12,7 +12,6 @@ static string thisname;
 static macrodata * thisone;
 static int numlines;
 
-int reallycalledmacros;
 int calledmacros;
 int macrorecursion;
 bool inmacro;
@@ -91,7 +90,7 @@ void callmacro(const char * data)
 {
 	int prev_numvarargs = numvarargs;
 	inmacro=true;
-	int numcm=reallycalledmacros++;
+	calledmacros++;
 	macrodata * thismacro;
 	if (!confirmqpar(data)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	string line=data;
@@ -216,7 +215,6 @@ void callmacro(const char * data)
 				}
 				else out+=*(in++);
 			}
-			calledmacros = numcm;
 			int prevnumif = numif;
 			assembleline(thismacro->fname, thismacro->startline+i, out);
 			i += skiplines;
