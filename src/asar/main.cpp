@@ -479,7 +479,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	thisblock= nullptr;
 	try
 	{
-		string tmp=line;
+		string tmp=replace_macro_args(line);
 		tmp.qnormalize();
 		string out;
 		if (numif==numtrue || (numtrue+1==numif && stribegin(tmp, "elseif "))) resolvedefines(out, tmp);

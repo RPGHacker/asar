@@ -644,9 +644,9 @@ void initstuff()
 	arch=arch_65816;
 	mapper=lorom;
 	mapper_set = false;
-	reallycalledmacros=0;
-	calledmacros=0;
-	macrorecursion=0;
+	calledmacros = 0;
+	reallycalledmacros = 0;
+	macrorecursion = 0;
 	defines.reset();
 	builtindefines.each(adddefine);
 	clidefines.each(adddefine);
@@ -1075,7 +1075,7 @@ void assembleblock(const char * block)
 	{
 		//todo better error
 		if (moreonline)  asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
-		if (parsing_macro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
+		if (parsing_macro || inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
 		parsing_macro=true;
 		if (!pass) startmacro(block+6);
 	}
