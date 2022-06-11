@@ -13,6 +13,7 @@ static macrodata * thisone;
 static int numlines;
 
 int calledmacros;
+int reallycalledmacros;
 int macrorecursion;
 bool inmacro;
 int numvarargs;
@@ -116,7 +117,8 @@ void callmacro(const char * data)
 
 	macrorecursion++;
 	inmacro=true;
-	calledmacros++;
+	int old_calledmacros = calledmacros;
+	calledmacros = reallycalledmacros++;
 	int startif=numif;
 
 	// RPG Hacker: -1 to take the ... into account, which is also being counted.
@@ -172,6 +174,7 @@ void callmacro(const char * data)
 	macrorecursion--;
 	inmacro = macrorecursion;
 	numvarargs = prev_numvarargs;
+	calledmacros = old_calledmacros;
 	if (repeatnext!=1)
 	{
 		thisblock= nullptr;

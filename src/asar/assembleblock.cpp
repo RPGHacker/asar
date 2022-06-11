@@ -687,6 +687,7 @@ void initstuff()
 	arch=arch_65816;
 	mapper=lorom;
 	mapper_set = false;
+	reallycalledmacros=0;
 	calledmacros=0;
 	macrorecursion=0;
 	repeatnext=1;

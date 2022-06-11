@@ -8,6 +8,7 @@ string replace_macro_args(const char* line);
 
 extern int macrorecursion;
 extern int calledmacros;
+extern int reallycalledmacros;
 extern bool inmacro;
 extern int numvarargs;
 
