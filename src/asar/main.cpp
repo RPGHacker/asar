@@ -502,7 +502,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	thisblock= nullptr;
 	try
 	{
-		string tmp=line;
+		string tmp=replace_macro_args(line);
 		clean(tmp);
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);

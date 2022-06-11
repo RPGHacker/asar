@@ -150,9 +150,9 @@ void callmacro(const char * data)
 			thisblock= nullptr;
 			string connectedline;
 			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, connectedline);
-			string out = replace_macro_args(connectedline);
+			//string out = replace_macro_args(connectedline); // done in assembleline
 			int prevnumif = numif;
-			assembleline(thismacro->fname, thismacro->startline+i, out);
+			assembleline(thismacro->fname, thismacro->startline+i, connectedline);
 			i += skiplines;
 			if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
 				i = whilestatus[numif].startline - thismacro->startline - 1;
@@ -186,9 +186,9 @@ void callmacro(const char * data)
 	numvarargs = prev_numvarargs;
 }
 
-string replace_macro_args(const string& line) {
+string replace_macro_args(const char* line) {
 	string out;
-	for (const char * in=line.data();*in;)
+	for (const char * in=line;*in;)
 	{
 		if (*in=='<' && in[1]=='<' && in[2] != ':')
 		{
