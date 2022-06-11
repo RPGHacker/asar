@@ -282,6 +282,8 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_pullns_without_pushns, "pullns without matching pushns." },
 
 	{ error_id_label_forward, "The use of forward labels is not allowed in this context" },
+
+	{ error_id_macro_param_outside_macro, "Reference to macro parameter outside of macro" },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
 // matches with the number of constants in asar_warning_id. This is important, because

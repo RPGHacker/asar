@@ -93,8 +93,6 @@ void endmacro(bool insert)
 void callmacro(const char * data)
 {
 	int prev_numvarargs = numvarargs;
-	inmacro=true;
-	calledmacros++;
 	macrodata * thismacro;
 	if (!confirmqpar(data)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	string line=data;
@@ -115,7 +113,10 @@ void callmacro(const char * data)
 	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_num_params);
 	// RPG Hacker: -1, because the ... is also counted as an argument, yet we want it to be entirely optional.
 	if (numargs < thismacro->numargs - 1 && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);
+
 	macrorecursion++;
+	inmacro=true;
+	calledmacros++;
 	int startif=numif;
 
 	// RPG Hacker: -1 to take the ... into account, which is also being counted.
@@ -169,6 +170,8 @@ void callmacro(const char * data)
 	macrosublabels = oldmacrosublabels;
 
 	macrorecursion--;
+	inmacro = macrorecursion;
+	numvarargs = prev_numvarargs;
 	if (repeatnext!=1)
 	{
 		thisblock= nullptr;
@@ -182,8 +185,6 @@ void callmacro(const char * data)
 		numtrue=startif;
 		asar_throw_error(0, error_type_block, error_id_unclosed_if);
 	}
-	inmacro = macrorecursion;
-	numvarargs = prev_numvarargs;
 }
 
 string replace_macro_args(const char* line) {
@@ -216,6 +217,7 @@ string replace_macro_args(const char* line) {
 				continue;
 			}
 
+			if(!inmacro) asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
 			//*end=0;
 			in++;
 			string param;

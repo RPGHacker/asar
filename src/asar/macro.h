@@ -7,7 +7,6 @@ void callmacro(const char * data);
 string replace_macro_args(const char* line);
 
 extern int macrorecursion;
-extern int reallycalledmacros;
 extern int calledmacros;
 extern bool inmacro;
 extern int numvarargs;
