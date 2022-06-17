@@ -207,6 +207,8 @@ if(ASAR_GEN_EXE)
 		target_compile_options(asar-standalone PRIVATE -fprofile-arcs -ftest-coverage)
 		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov --coverage -fprofile-arcs")
 	endif()
+	
+	set_target_properties(asar-standalone PROPERTIES OUTPUT_NAME "asar")
 endif(ASAR_GEN_EXE)
 
 
