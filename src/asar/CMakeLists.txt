@@ -209,7 +209,7 @@ if(ASAR_GEN_EXE)
 	endif()
 	
 	set_target_properties(asar-standalone PROPERTIES OUTPUT_NAME "asar")
-	set_target_properties(asar-standalone PROPERTIES PDB_NAME "asar-standalone")
+	set_target_properties(asar-standalone PROPERTIES PDB_NAME "asar.exe")
 endif(ASAR_GEN_EXE)
 
 
@@ -229,4 +229,6 @@ if(ASAR_GEN_DLL)
 	)
 	target_compile_definitions(asar PRIVATE "ASAR_SHARED")
 	set_asar_shared_properties(asar)
+
+	set_target_properties(asar PROPERTIES PDB_NAME "asar.dll")
 endif(ASAR_GEN_DLL)
