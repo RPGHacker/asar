@@ -209,6 +209,7 @@ if(ASAR_GEN_EXE)
 	endif()
 	
 	set_target_properties(asar-standalone PROPERTIES OUTPUT_NAME "asar")
+	set_target_properties(asar-standalone PROPERTIES PDB_NAME "asar-standalone")
 endif(ASAR_GEN_EXE)
 
 
