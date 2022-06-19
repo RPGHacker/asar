@@ -17,7 +17,11 @@
 #if defined(CPPCLI)
 #define EXPORT extern "C"
 #elif defined(_WIN32)
+#ifdef ASAR_SHARED
 #define EXPORT extern "C" __declspec(dllexport)
+#elif defined(ASAR_STATIC)
+#define EXPORT extern "C"
+#endif
 #else
 #define EXPORT extern "C" __attribute__ ((visibility ("default")))
 #endif
