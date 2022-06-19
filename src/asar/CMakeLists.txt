@@ -5,16 +5,34 @@ cmake_minimum_required(VERSION 3.9.0)
 
 option(ASAR_GEN_EXE "Build Asar standalone application" ON)
 option(ASAR_GEN_DLL "Build Asar shared library" ON)
+option(ASAR_GEN_LIB "Build Asar static library" ON)
 option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
+if (MSVC)
+	message(STATUS "In MSVC you can override MSVC_LIB_TYPE, valid values are D for dynamic and T for static")
+endif()
 
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 
 
-# This maro sets a number of properties required by both,
+# This macro sets a number of properties required by both,
 # stand-alone application and library interface
 
-macro(set_asar_shared_properties target)
+macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
+	if (MSVC)
+		if (MSVC_LIB_TYPE)
+			set(msvc_lib_type_param ${MSVC_LIB_TYPE})
+		endif()
+		if (NOT (${msvc_lib_type_param} STREQUAL "D" OR ${msvc_lib_type_param} STREQUAL "T"))
+			message(FATAL_ERROR "Invalid MSVC_LIB_TYPE, valid types are T and D")
+		endif()
+	endif()
+
+	if (enable_sanitizer)
+		target_compile_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
+		target_link_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
+	endif()
+
 	target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 	
 	if(MSVC)
@@ -56,7 +74,7 @@ macro(set_asar_shared_properties target)
 	# Enable maximum warning level
 	
 	if(MSVC)
-		target_compile_options(${target} PRIVATE /Wall /MT /EHa)
+		target_compile_options(${target} PRIVATE /Wall "/M${msvc_lib_type_param}$<$<CONFIG:Debug>:d>" /EHa)
 		
 		# These certainly aren't worth a warning, though
 		target_compile_options(${target} PRIVATE
@@ -140,6 +158,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/dll_helper.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.h"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
@@ -201,7 +220,7 @@ if(ASAR_GEN_EXE)
 		${ASAR_RESOURCE_FILES}
 		)
 
-	set_asar_shared_properties(asar-standalone)
+	set_asar_shared_properties(asar-standalone "T" TRUE)
 
 	if(ASAR_COVERAGE)
 		target_compile_options(asar-standalone PRIVATE -fprofile-arcs -ftest-coverage)
@@ -228,7 +247,27 @@ if(ASAR_GEN_DLL)
 		${ASAR_LIB_RESOURCE_FILES}
 	)
 	target_compile_definitions(asar PRIVATE "ASAR_SHARED")
-	set_asar_shared_properties(asar)
+	set_asar_shared_properties(asar "T" TRUE)
 
 	set_target_properties(asar PROPERTIES PDB_NAME "asar.dll")
 endif(ASAR_GEN_DLL)
+
+
+
+
+
+# Define static library
+
+if (ASAR_GEN_LIB)
+	add_library(
+		asar-static STATIC
+		"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.cpp"
+
+		${ASAR_SHARED_SOURCE_FILES}
+		${ASAR_LIB_RESOURCE_FILES}
+	)
+	target_compile_definitions(asar-static PRIVATE "ASAR_STATIC")
+	set_asar_shared_properties(asar-static "D" FALSE)
+
+	# there's no need to set the PDB name since static libraries don't produce PDBs
+endif()
