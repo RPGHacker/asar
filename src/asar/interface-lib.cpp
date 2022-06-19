@@ -19,7 +19,7 @@
 #elif defined(_WIN32)
 #ifdef ASAR_SHARED
 #define EXPORT extern "C" __declspec(dllexport)
-#elif ASAR_STATIC
+#elif defined(ASAR_STATIC)
 #define EXPORT extern "C"
 #endif
 #else
