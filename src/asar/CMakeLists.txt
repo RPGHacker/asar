@@ -31,7 +31,7 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 		elseif ("${msvc_lib_type_var}" STREQUAL "T")
 			set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 		else()
-			message(FATAL_ERROR "Invalid MSVC_LIB_TYPE, valid types are T and D instead of ${msvc_lib_type_param}")
+			message(FATAL_ERROR "Invalid MSVC_LIB_TYPE, valid types are T and D instead of ${msvc_lib_type_var}")
 		endif()
 	endif()
 
