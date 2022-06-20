@@ -19,12 +19,19 @@ set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 # stand-alone application and library interface
 
 macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
+	# this is here because in CMake you can't modify macro parameters
+	# so we create a new variable
+	set(msvc_lib_type_var ${msvc_lib_type_param})
 	if (MSVC)
 		if (MSVC_LIB_TYPE)
-			set(msvc_lib_type_param ${MSVC_LIB_TYPE})
+			set(msvc_lib_type_var ${MSVC_LIB_TYPE})
 		endif()
-		if (NOT (${msvc_lib_type_param} STREQUAL "D" OR ${msvc_lib_type_param} STREQUAL "T"))
-			message(FATAL_ERROR "Invalid MSVC_LIB_TYPE, valid types are T and D")
+		if ("${msvc_lib_type_var}" STREQUAL "D")
+			set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+		elseif ("${msvc_lib_type_var}" STREQUAL "T")
+			set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+		else()
+			message(FATAL_ERROR "Invalid MSVC_LIB_TYPE, valid types are T and D instead of ${msvc_lib_type_var}")
 		endif()
 	endif()
 
@@ -74,7 +81,7 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 	# Enable maximum warning level
 	
 	if(MSVC)
-		target_compile_options(${target} PRIVATE /Wall "/M${msvc_lib_type_param}$<$<CONFIG:Debug>:d>" /EHa)
+		target_compile_options(${target} PRIVATE /W3 /EHa)
 		
 		# These certainly aren't worth a warning, though
 		target_compile_options(${target} PRIVATE
@@ -83,6 +90,8 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 			/wd4711 # function selected for automatic inline expansion
 			/wd4820 # 'bytes' bytes padding added after construct 'member_name'
 			/wd4464 # relativ include path contains '..'
+			/wd4244 # 'conversion' conversion from 'type1' to 'type2', possible loss of data
+			/wd5045 # compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
 		)
 		target_link_options(${target} PRIVATE /STACK:4194304)
 		if(MSVC_VERSION VERSION_LESS "1900")
