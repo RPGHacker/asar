@@ -14,7 +14,7 @@ If you'd rather not build from source, check out the [Releases](https://github.c
 Asar can also be built as a DLL. This makes it easier and faster to use in other programs (such as a sprite insertion tool). You can find documentation on the DLL API in the respective bindings (asardll.h, asar.cs, asar.py).
 
 ## Asar as a static library
-Asar can also be build as a static library. All "out-facing" functions are in interface-lib.h. This is useful for embedding Asar in other programs which don't want to use DLLs. The easiest way to add asar as a static library to your project is to add it as a git submodule 
+Asar can also be built as a static library. All "out-facing" functions are in interface-lib.h. This is useful for embedding Asar in other programs which don't want to use DLLs. The easiest way to add asar as a static library to your project is to add it as a git submodule 
 
 `git submodule add https://github.com/RPGHacker/asar <path-to-subdir>`
 
@@ -25,7 +25,7 @@ get_target_property(ASAR_INCLUDE_DIR asar-static INCLUDE_DIRECTORIES)
 include_directories(${ASAR_INCLUDE_DIR})
 target_link_libraries(YourTarget PUBLIC asar-static)
 ```
-to be able to include the header files. It is also recommended to turn off every build in target in asar except the static one using the appropriate CMake options. You will need to also make sure that your project has an Asar compatible license.
+to be able to include the header files. It is also recommended to turn off every build in target in asar except the static one using the appropriate CMake options. You will need to make sure that your project has an Asar compatible license.
 
 ## Folder layout
 * `docs` contains the source of the manual and changelog.
