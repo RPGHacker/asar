@@ -54,6 +54,9 @@ bool ignoretitleerrors=false;
 
 volatile int recursioncount=0;
 
+extern string defining_macro_name;
+extern string current_macro_name;
+
 virtual_filesystem* filesystem = nullptr;
 
 AddressToLineMapping addressToLineMapping;
@@ -502,11 +505,14 @@ void assembleline(const char * fname, int linenum, const char * line)
 	thisblock= nullptr;
 	try
 	{
-		string tmp=replace_macro_args(line);
-		clean(tmp);
 		string out;
-		if (numif==numtrue) resolvedefines(out, tmp);
-		else out=tmp;
+		if (numif==numtrue)
+		{
+			string tmp=replace_macro_args(line);
+			clean(tmp);
+			resolvedefines(out, tmp);
+		}
+		else out=line;
 		// recheck quotes - defines can mess those up sometimes
 		if (!confirmquotes(out)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
 		out.qreplace(": :", ":  :", true);
@@ -666,7 +672,8 @@ void assemblefile(const char * filename, bool toplevel)
 			istoplevel=toplevel;
 			if (stribegin(file.contents[i], "macro ") && numif==numtrue)
 			{
-				if (in_macro_def || inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
+				if (in_macro_def) asar_throw_error(0, error_type_line, error_id_nested_macro_definition, defining_macro_name.data());
+				if (inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition, current_macro_name.data());
 				in_macro_def=true;
 				if (!pass) startmacro(file.contents[i]+6);
 			}
@@ -698,7 +705,7 @@ void assemblefile(const char * filename, bool toplevel)
 	thisblock= nullptr;
 	if (in_macro_def)
 	{
-		asar_throw_error(0, error_type_null, error_id_unclosed_macro);
+		asar_throw_error(0, error_type_null, error_id_unclosed_macro, defining_macro_name.data());
 		if (!pass) endmacro(false);
 	}
 	if (repeatnext!=1)

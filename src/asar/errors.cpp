@@ -151,9 +151,9 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_macro_wrong_num_params, "Wrong number of parameters to macro." },
 	{ error_id_broken_macro_contents, "Broken macro contents." },
 	{ error_id_rep_at_macro_end, "rep or if at the end of a macro." },
-	{ error_id_nested_macro_definition, "Nested macro definition." },
+	{ error_id_nested_macro_definition, "Nested macro definition: Trying to define a macro inside '%s', which is not supported." },
 	{ error_id_misplaced_endmacro, "Misplaced endmacro." },
-	{ error_id_unclosed_macro, "Unclosed macro." },
+	{ error_id_unclosed_macro, "Unclosed macro: '%s'." },
 
 	{ error_id_label_in_conditional, "Non-static label in %s command." },
 	{ error_id_broken_conditional, "Broken %s command." },

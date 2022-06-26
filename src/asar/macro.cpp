@@ -8,7 +8,7 @@
 #include "asar_math.h"
 
 assocarr<macrodata*> macros;
-static string thisname;
+string defining_macro_name;
 static macrodata * thisone;
 static int numlines;
 
@@ -19,6 +19,7 @@ bool inmacro;
 int numvarargs;
 
 macrodata* current_macro;
+string current_macro_name;
 const char* const* current_macro_args;
 int current_macro_numargs;
 
@@ -33,7 +34,7 @@ void startmacro(const char * line_)
 	*startpar=0;
 	startpar++;
 	if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_invalid_macro_name);
-	thisname=line;
+	defining_macro_name=line;
 	char * endpar=strqrchr(startpar, ')');
 	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nullptrs
 	if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
@@ -45,7 +46,7 @@ void startmacro(const char * line_)
 		if (c==',' && is_digit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	}
 	if (*startpar==',' || is_digit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
-	if (macros.exists(thisname)) asar_throw_error(0, error_type_block, error_id_macro_redefined, thisname.data());
+	if (macros.exists(defining_macro_name)) asar_throw_error(0, error_type_block, error_id_macro_redefined, defining_macro_name.data());
 	thisone=(macrodata*)malloc(sizeof(macrodata));
 	new(thisone) macrodata;
 	if (*startpar)
@@ -86,7 +87,7 @@ void endmacro(bool insert)
 {
 	if (!thisone) return;
 	thisone->numlines=numlines;
-	if (insert) macros.create(thisname) = thisone;
+	if (insert) macros.create(defining_macro_name) = thisone;
 	else delete thisone;
 }
 
@@ -138,9 +139,11 @@ void callmacro(const char * data)
 	macrosublabels = &newmacrosublabels;
 
 	macrodata* old_macro = current_macro;
+	string old_macro_name = current_macro_name;
 	const char* const* old_macro_args = current_macro_args;
 	int old_numargs = current_macro_numargs;
 	current_macro = thismacro;
+	current_macro_name = line;
 	current_macro_args = args;
 	current_macro_numargs = numargs;
 
@@ -164,6 +167,7 @@ void callmacro(const char * data)
 	}
 
 	current_macro = old_macro;
+	current_macro_name = old_macro_name;
 	current_macro_args = old_macro_args;
 	current_macro_numargs = old_numargs;
 
@@ -253,7 +257,11 @@ string replace_macro_args(const char* line) {
 
 				if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
 
-				if(numif<=numtrue){
+				// RPG Hacker: Condition now handled by caller.
+				// If we tried to handle it here, we'd need to
+				// hack in a special case for elseif. It's better
+				// to just leave this up to assembleblock.
+				/*if(numif<=numtrue)*/{
 					if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
 					if (arg_num > current_macro_numargs-current_macro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
 					if (current_macro_args[arg_num+current_macro->numargs-1][0]=='"')

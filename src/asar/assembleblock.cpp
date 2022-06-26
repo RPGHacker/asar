@@ -964,7 +964,9 @@ void assembleblock(const char * block, bool isspecialline)
 	// This really seems like the only possible place for the fix
 	if (is("elseif") && numtrue+1==numif)
 	{
-		resolvedefines(resolved, block);
+		string tmp=replace_macro_args(block);
+		clean(tmp);
+		resolvedefines(resolved, tmp);
 		free(word);
 		word = qsplit(resolved.temp_raw(), " ", &numwords);
 	}

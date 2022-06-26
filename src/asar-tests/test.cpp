@@ -402,9 +402,9 @@ int main(int argc, char * argv[])
 	{
 		// don't treat this as an error and just return 0
 #if defined(ASAR_TEST_DLL)
-		printf("Usage: test.exe [asar_dll_path] [path_to_tests_directory] [path_to_unheadered_SMW_ROM_file] [output_directory]\n");
+		printf("Usage: asar-dll-test.exe [asar_dll_path] [path_to_tests_directory] [path_to_unheadered_SMW_ROM_file] [output_directory]\n");
 #else
-		printf("Usage: test.exe [asar_exe_path] [path_to_tests_directory] [path_to_unheadered_SMW_ROM_file] [output_directory]\n");
+		printf("Usage: asar-app-test.exe [asar_exe_path] [path_to_tests_directory] [path_to_unheadered_SMW_ROM_file] [output_directory]\n");
 #endif
 		return 0;
 	}
@@ -1089,15 +1089,15 @@ int main(int argc, char * argv[])
 
 	printf("%u out of %u performed tests succeeded.\n", (unsigned int)(input_files.size() - (size_t)numfailed), (unsigned int)input_files.size());
 
+#if defined(ASAR_TEST_DLL)
+	asar_close();
+#endif
+
 	if (numfailed > 0)
 	{
 		printf("Some tests failed!\n");
 		return 1;
 	}
-
-#if defined(ASAR_TEST_DLL)
-	asar_close();
-#endif
 
 	return 0;
 }

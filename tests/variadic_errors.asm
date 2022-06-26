@@ -45,4 +45,3 @@ db $FF, $FF
 %sorry2()
 %sorry2(0)
 %sorry3()
-
