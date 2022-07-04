@@ -19,7 +19,6 @@ bool inmacro;
 int numvarargs;
 
 macrodata* current_macro;
-string current_macro_name;
 const char* const* current_macro_args;
 int current_macro_numargs;
 
@@ -88,7 +87,7 @@ void endmacro(bool insert)
 	if (!thisone) return;
 	thisone->numlines=numlines;
 	if (insert) macros.create(defining_macro_name) = thisone;
-	else delete thisone;
+	else free(thisone);
 }
 
 
@@ -139,35 +138,27 @@ void callmacro(const char * data)
 	macrosublabels = &newmacrosublabels;
 
 	macrodata* old_macro = current_macro;
-	string old_macro_name = current_macro_name;
 	const char* const* old_macro_args = current_macro_args;
 	int old_numargs = current_macro_numargs;
 	current_macro = thismacro;
-	current_macro_name = line;
 	current_macro_args = args;
 	current_macro_numargs = numargs;
 
+	bool toplevel = istoplevel;
+
 	for (int i=0;i<thismacro->numlines;i++)
 	{
-		try
-		{
-			thisfilename= thismacro->fname;
-			thisline= thismacro->startline+i+1;
-			thisblock= nullptr;
-			string connectedline;
-			int skiplines = getconnectedlines<autoarray<string> >(thismacro->lines, i, connectedline);
-			//string out = replace_macro_args(connectedline); // done in assembleline
-			int prevnumif = numif;
-			assembleline(thismacro->fname, thismacro->startline+i, connectedline);
-			i += skiplines;
-			if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
-				i = whilestatus[numif].startline - thismacro->startline - 1;
-		}
-		catch(errline&){}
+		int prevnumif = numif;
+		
+		do_line_logic(thismacro->lines[i], thismacro->fname, thismacro->startline+i+1, toplevel);
+		
+		if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
+			// RPG Hacker: -1 to compensate for the i++, and another -1
+			// because ->lines doesn't include the macro header.
+			i = whilestatus[numif].startline - thismacro->startline - 2;
 	}
 
 	current_macro = old_macro;
-	current_macro_name = old_macro_name;
 	current_macro_args = old_macro_args;
 	current_macro_numargs = old_numargs;
 
@@ -200,8 +191,16 @@ string replace_macro_args(const char* line) {
 	{
 		if (*in=='<' && in[1]=='<' && in[2] != ':')
 		{
-			out+="<<";
-			in+=2;
+			if (in[2] == '^')
+			{
+				out+="<";
+				in+=1;
+			}
+			else
+			{
+				out+="<<";
+				in+=2;
+			}
 		}
 		else if (*in=='<')
 		{
@@ -223,10 +222,22 @@ string replace_macro_args(const char* line) {
 				out+=*(in++);
 				continue;
 			}
+			
+			int depth = 0;
+			for (const char* depth_str = in+1; *depth_str=='^'; depth_str++)
+			{
+				depth++;
+			}
+			
+			if (depth != in_macro_def)
+			{
+				out+=*(in++);
+				continue;
+			}
 
 			if(!inmacro) asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
 			//*end=0;
-			in++;
+			in += depth+1;
 			string param;
 			string temp(in, end-in);
 			resolvedefines(param, temp);
@@ -251,8 +262,8 @@ string replace_macro_args(const char* line) {
 			if (!found)
 			{
 				snes_label ret;
-				if(valid_named_param  && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
-				if(current_macro->variadic && valid_named_param && !labelval(in, &ret, false))  asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
+				if(valid_named_param  && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in, "");
+				if(current_macro->variadic && valid_named_param && !labelval(in, &ret, false))  asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in, "");
 				int arg_num = getnum(in);
 
 				if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);

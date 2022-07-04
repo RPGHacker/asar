@@ -12,6 +12,8 @@ extern int reallycalledmacros;
 extern bool inmacro;
 extern int numvarargs;
 
+extern string defining_macro_name;
+
 struct macrodata
 {
 	autoarray<string> lines;

@@ -145,7 +145,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_macro_redefined, "Macro '%s' redefined." },
 	{ error_id_broken_macro_declaration, "Broken macro declaration." },
 	{ error_id_invalid_macro_param_name, "Invalid macro parameter name." },
-	{ error_id_macro_param_not_found, "Macro parameter '%s' wasn't found." },
+	{ error_id_macro_param_not_found, "Macro parameter '%s' wasn't found.%s" },
 	{ error_id_macro_param_redefined, "Macro parameter '%s' redefined" },
 	{ error_id_broken_macro_usage, "Broken macro usage." },
 	{ error_id_macro_wrong_num_params, "Wrong number of parameters to macro." },
@@ -285,8 +285,8 @@ static asar_error_mapping asar_errors[] =
 
 	{ error_id_macro_param_outside_macro, "Reference to macro parameter outside of macro" },
 };
-// RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
-// matches with the number of constants in asar_warning_id. This is important, because
+// RPG Hacker: Sanity check. This makes sure that the element count of asar_error
+// matches with the number of constants in asar_error_id. This is important, because
 // we are going to access asar_warnings as an array.
 static_assert(sizeof(asar_errors) / sizeof(asar_errors[0]) == error_id_count, "asar_errors and asar_error_id are not in sync");
 

@@ -54,9 +54,6 @@ bool ignoretitleerrors=false;
 
 volatile int recursioncount=0;
 
-extern string defining_macro_name;
-extern string current_macro_name;
-
 virtual_filesystem* filesystem = nullptr;
 
 AddressToLineMapping addressToLineMapping;
@@ -508,9 +505,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 		string out;
 		if (numif==numtrue)
 		{
-			string tmp=replace_macro_args(line);
-			clean(tmp);
-			resolvedefines(out, tmp);
+			resolvedefines(out, line);
 		}
 		else out=line;
 		// recheck quotes - defines can mess those up sometimes
@@ -583,6 +578,8 @@ bool file_included_once(const char* file)
 
 	return false;
 }
+
+int in_macro_def=0;
 
 void assemblefile(const char * filename, bool toplevel)
 {
@@ -660,53 +657,27 @@ void assemblefile(const char * filename, bool toplevel)
 	} else { // filecontents.exists(absolutepath)
 		file = filecontents.find(absolutepath);
 	}
-	bool in_macro_def=false;
 	asarverallowed=true;
 	for (int i=0;file.contents[i] && i<file.numlines;i++)
 	{
-		try
-		{
-			thisfilename= absolutepath;
-			thisline=i;
-			thisblock= nullptr;
-			istoplevel=toplevel;
-			if (stribegin(file.contents[i], "macro ") && numif==numtrue)
-			{
-				if (in_macro_def) asar_throw_error(0, error_type_line, error_id_nested_macro_definition, defining_macro_name.data());
-				if (inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition, current_macro_name.data());
-				in_macro_def=true;
-				if (!pass) startmacro(file.contents[i]+6);
-			}
-			else if (!stricmp(file.contents[i], "endmacro") && numif==numtrue)
-			{
-				if (!in_macro_def) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
-				in_macro_def=false;
-				if (!pass) endmacro(true);
-			}
-			else if (in_macro_def)
-			{
-				if (!pass) tomacro(file.contents[i]);
-			}
-			else
-			{
-				int prevnumif = numif;
-				string connectedline;
-				int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
-				assembleline(absolutepath, i, connectedline);
-				thisfilename = absolutepath;
-				i += skiplines;
-				if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
-					i = whilestatus[numif].startline - 1;
-			}
-		}
-		catch (errline&) {}
+		string connectedline;
+		int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
+		
+		int prevnumif = numif;
+		
+		do_line_logic(connectedline, absolutepath, i, toplevel);
+		i += skiplines;
+		
+		if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
+			i = whilestatus[numif].startline - 1;
 	}
 	thisline++;
 	thisblock= nullptr;
-	if (in_macro_def)
+	while (in_macro_def > 0)
 	{
 		asar_throw_error(0, error_type_null, error_id_unclosed_macro, defining_macro_name.data());
-		if (!pass) endmacro(false);
+		if (!pass && in_macro_def == 1) endmacro(false);
+		in_macro_def--;
 	}
 	if (repeatnext!=1)
 	{
@@ -721,6 +692,79 @@ void assemblefile(const char * filename, bool toplevel)
 	}
 	incsrcdepth--;
 }
+
+void do_line_logic(const char* line, const char* filename, int lineno, bool toplevel)
+{			
+	try
+	{
+		string current_line;
+		// RPG Hacker: Now replacing macro args here as well,
+		// to make nested macro definitions possible.
+		if (numif==numtrue)
+		{
+			string tmp=replace_macro_args(line);
+			clean(tmp);
+			// RPG Hacker: Doing this here would cause a lot of
+			// tests to fail, IIRC due to incorrect handling
+			// of conditionals. It shouldn't really be needed
+			// for recursive macros, but would make everything
+			// cleaner and less hacky.
+			// resolvedefines(current_line, tmp);
+			current_line = tmp;
+		}
+		else current_line=line;
+		
+		thisfilename=filename;
+		thisline=lineno;
+		istoplevel=toplevel;
+		thisblock= nullptr;
+		if (stribegin(current_line, "macro ") && numif==numtrue)
+		{
+			// RPG Hacker: I think it would make more logical sense
+			// to have this ++ after the if, but hat breaks compatibility
+			// with at least one test, and it generally leads to more
+			// errors being output after a broken macro declaration.
+			in_macro_def++;
+			if (!pass)
+			{
+				if (in_macro_def == 1)
+				{
+					// RPG Hacker: Hack shmeck to allow constructing
+					// macro headers via defines.
+					string tmp;
+					resolvedefines(tmp, current_line);
+					current_line = tmp;
+					startmacro(current_line.data()+6);
+				}
+				else tomacro(current_line);
+			}
+		}
+		else if (!stricmp(current_line, "endmacro") && numif==numtrue)
+		{
+			if (in_macro_def == 0) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
+			else
+			{
+				in_macro_def--;
+				if (!pass)
+				{
+					if (in_macro_def == 0) endmacro(true);
+					else tomacro(current_line);
+				}
+			}
+		}
+		else if (in_macro_def > 0)
+		{
+			if (!pass) tomacro(current_line);
+		}
+		else
+		{
+			assembleline(filename, lineno, current_line);
+			thisfilename = filename;
+		}
+	}
+	catch (errline&) {}
+}
+
 
 void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 {
@@ -984,6 +1028,8 @@ void reseteverything()
 	default_math_pri = false;
 	default_math_round_off = false;
 	suppress_all_warnings = false;
+	
+	in_macro_def = 0;
 	
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));

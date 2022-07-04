@@ -45,6 +45,8 @@ bool setmapper();
 void assemblefile(const char * filename, bool toplevel);
 void assembleline(const char * fname, int linenum, const char * line);
 
+void do_line_logic(const char* line, const char* filename, int lineno, bool toplevel);
+
 bool file_included_once(const char* file);
 
 string getdecor();
@@ -99,6 +101,8 @@ extern bool ignoretitleerrors;
 extern int repeatnext;
 
 extern int optimizeforbank;
+
+extern int in_macro_def;
 
 //this is a trick to namespace an enum to avoid name collision without too much verbosity
 //could technically name the enum too but this is fine for now.
