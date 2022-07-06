@@ -44,7 +44,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 		errnum++;
 		// don't show current block if the error came from an error command
 		bool show_block = (thisblock && (errid != error_id_error_command));
-		fputs(STR getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
+		fputs(STR getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : STR "") + "\n", errloc);
 		static const int max_num_errors = 20;
 		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
@@ -57,7 +57,7 @@ void warn(int errid, const char * e_)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (thisblock && (errid != warning_id_warn_command));
-	fputs(STR getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
+	fputs(STR getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : STR "") + "\n", errloc);
 	warned=true;
 }
 
