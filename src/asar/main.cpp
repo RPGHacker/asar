@@ -353,6 +353,22 @@ void resolvedefines(string& out, const char * start)
 			bool first=(here==start || (here>=start+4 && here[-1]==' ' && here[-2]==':' && here[-3]==' '));//check if it's the start of a block
 			string defname;
 			here++;
+			
+			int depth = 0;
+			for (const char* depth_str = here; *depth_str=='^'; depth_str++)
+			{
+				depth++;
+			}
+			here += depth;
+			
+			if (depth != in_macro_def)
+			{
+				out += '!';
+				for (int i=0; i < depth; ++i) out += '^';
+				if (depth > in_macro_def) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "define", "define", depth, in_macro_def);
+				continue;
+			}
+			
 			if (*here=='{')
 			{
 				here++;
@@ -502,12 +518,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	thisblock= nullptr;
 	try
 	{
-		string out;
-		if (numif==numtrue)
-		{
-			resolvedefines(out, line);
-		}
-		else out=line;
+		string out=line;
 		// recheck quotes - defines can mess those up sometimes
 		if (!confirmquotes(out)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
 		out.qreplace(": :", ":  :", true);
@@ -579,6 +590,7 @@ bool file_included_once(const char* file)
 	return false;
 }
 
+autoarray<string> macro_defs;
 int in_macro_def=0;
 
 void assemblefile(const char * filename, bool toplevel)
@@ -675,9 +687,10 @@ void assemblefile(const char * filename, bool toplevel)
 	thisblock= nullptr;
 	while (in_macro_def > 0)
 	{
-		asar_throw_error(0, error_type_null, error_id_unclosed_macro, defining_macro_name.data());
+		asar_throw_error(0, error_type_null, error_id_unclosed_macro, macro_defs[in_macro_def-1].data());
 		if (!pass && in_macro_def == 1) endmacro(false);
 		in_macro_def--;
+		macro_defs.remove(in_macro_def);
 	}
 	if (repeatnext!=1)
 	{
@@ -697,6 +710,11 @@ void do_line_logic(const char* line, const char* filename, int lineno, bool topl
 {			
 	try
 	{
+		thisfilename=filename;
+		thisline=lineno;
+		istoplevel=toplevel;
+		thisblock= line;
+		
 		string current_line;
 		// RPG Hacker: Now replacing macro args here as well,
 		// to make nested macro definitions possible.
@@ -704,22 +722,21 @@ void do_line_logic(const char* line, const char* filename, int lineno, bool topl
 		{
 			string tmp=replace_macro_args(line);
 			clean(tmp);
-			// RPG Hacker: Doing this here would cause a lot of
-			// tests to fail, IIRC due to incorrect handling
-			// of conditionals. It shouldn't really be needed
-			// for recursive macros, but would make everything
-			// cleaner and less hacky.
-			// resolvedefines(current_line, tmp);
-			current_line = tmp;
+			resolvedefines(current_line, tmp);
 		}
 		else current_line=line;
 		
-		thisfilename=filename;
-		thisline=lineno;
-		istoplevel=toplevel;
-		thisblock= nullptr;
+		thisblock= current_line.raw();
+		
 		if (stribegin(current_line, "macro ") && numif==numtrue)
 		{
+			// RPG Hacker: Slight redundancy here with code that is
+			// also in startmacro(). Could improve this for Asar 2.0.
+			string macro_name = current_line.data()+6;
+			char * startpar=strqchr(macro_name.data(), '(');
+			if (startpar) *startpar=0;
+			macro_defs.append(macro_name);
+			
 			// RPG Hacker: I think it would make more logical sense
 			// to have this ++ after the if, but hat breaks compatibility
 			// with at least one test, and it generally leads to more
@@ -727,15 +744,7 @@ void do_line_logic(const char* line, const char* filename, int lineno, bool topl
 			in_macro_def++;
 			if (!pass)
 			{
-				if (in_macro_def == 1)
-				{
-					// RPG Hacker: Hack shmeck to allow constructing
-					// macro headers via defines.
-					string tmp;
-					resolvedefines(tmp, current_line);
-					current_line = tmp;
-					startmacro(current_line.data()+6);
-				}
+				if (in_macro_def == 1) startmacro(current_line.data()+6);
 				else tomacro(current_line);
 			}
 		}
@@ -745,6 +754,7 @@ void do_line_logic(const char* line, const char* filename, int lineno, bool topl
 			else
 			{
 				in_macro_def--;
+				macro_defs.remove(in_macro_def);
 				if (!pass)
 				{
 					if (in_macro_def == 0) endmacro(true);
@@ -763,6 +773,7 @@ void do_line_logic(const char* line, const char* filename, int lineno, bool topl
 		}
 	}
 	catch (errline&) {}
+	thisblock=nullptr;
 }
 
 

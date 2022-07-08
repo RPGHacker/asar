@@ -62,6 +62,10 @@ void startmacro(const char * line_)
 	thisone->variadic = false;
 	thisone->fname= duplicate_string(thisfilename);
 	thisone->startline=thisline;
+	thisone->parent_macro=current_macro;
+	thisone->parent_macro_num_varargs=0;
+	// RPG Hacker: -1 to take the ... into account, which is also being counted.
+	if (thisone->parent_macro != nullptr) thisone->parent_macro_num_varargs = current_macro_numargs-(current_macro->numargs-1);
 	for (int i=0;thisone->arguments[i];i++)
 	{
 		if(!strcmp(thisone->arguments[i], "...") && !thisone->arguments[i+1]) thisone->variadic = true;
@@ -87,7 +91,11 @@ void endmacro(bool insert)
 	if (!thisone) return;
 	thisone->numlines=numlines;
 	if (insert) macros.create(defining_macro_name) = thisone;
-	else free(thisone);
+	else
+	{
+		free(thisone);
+		thisone=nullptr;
+	}
 }
 
 
@@ -185,6 +193,88 @@ void callmacro(const char * data)
 	}
 }
 
+string generate_macro_arg_string(const char* named_arg, int depth)
+{	
+	string ret="<";
+	for (int i = 0; i < depth;++i)
+	{
+		ret += '^';
+	}
+	ret += named_arg;
+	ret += ">";
+	return ret;
+}
+
+string generate_macro_arg_string(int var_arg, int depth)
+{	
+	string ret="<";
+	for (int i = 0; i < depth;++i)
+	{
+		ret += '^';
+	}
+	ret += dec(var_arg);
+	ret += ">";
+	return ret;
+}
+
+string generate_macro_hint_string(const char* named_arg, const macrodata* thismacro, int desired_depth, int current_depth=0)
+{
+	// RPG Hacker: This only work when the incorrectly used parameter
+	// is inside the macro that is currently being defined. Not great,
+	// but still better than nothing.
+	if (current_depth == 0 && thisone != nullptr)
+	{
+		for (int j=0;thisone->arguments[j];j++)
+		{
+			if (!strcmp(named_arg, thisone->arguments[j]))
+			{
+				string ret=" Did you mean: '";
+				ret += generate_macro_arg_string(thisone->arguments[j], 0);
+				ret += "'?";
+				return ret;
+			}	
+		}
+	}
+	
+	// RPG Hacker: Technically, we could skip a level here and go straight
+	// to the parent, but maybe at some point we'll want to expand this to
+	// also look for similar args in the current level, so I'll leave it
+	// like this, just in case.
+	if (thismacro != nullptr)
+	{
+		for (int j=0;thismacro->arguments[j];j++)
+		{
+			if (!strcmp(named_arg, thismacro->arguments[j]))
+			{
+				string ret=" Did you mean: '";
+				ret += generate_macro_arg_string(thismacro->arguments[j], desired_depth+current_depth);
+				ret += "'?";
+				return ret;
+			}
+		}
+		return generate_macro_hint_string(named_arg, thismacro->parent_macro, desired_depth, current_depth+1);
+	}
+	
+	return "";
+}
+
+string generate_macro_hint_string(int var_arg, const macrodata* thismacro, int desired_depth, int current_depth=0)
+{
+	if (thismacro != nullptr)
+	{
+		if (thismacro->parent_macro_num_varargs > var_arg)
+		{
+			string ret=" Did you mean: '";
+			ret += generate_macro_arg_string(var_arg, desired_depth+current_depth+1);
+			ret += "'?";
+			return ret;
+		}
+		return generate_macro_hint_string(var_arg, thismacro->parent_macro, desired_depth, current_depth+1);
+	}
+	
+	return "";
+}
+
 string replace_macro_args(const char* line) {
 	string out;
 	for (const char * in=line;*in;)
@@ -232,6 +322,7 @@ string replace_macro_args(const char* line) {
 			if (depth != in_macro_def)
 			{
 				out+=*(in++);
+				if (depth > in_macro_def) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def);
 				continue;
 			}
 
@@ -262,8 +353,8 @@ string replace_macro_args(const char* line) {
 			if (!found)
 			{
 				snes_label ret;
-				if(valid_named_param  && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in, "");
-				if(current_macro->variadic && valid_named_param && !labelval(in, &ret, false))  asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in, "");
+				if(valid_named_param  && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, generate_macro_arg_string(in, depth).raw(), generate_macro_hint_string(in, current_macro, depth).raw());
+				if(current_macro->variadic && valid_named_param && !labelval(in, &ret, false))  asar_throw_error(0, error_type_block, error_id_macro_param_not_found, generate_macro_arg_string(in, depth).raw(), generate_macro_hint_string(in, current_macro, depth).raw());
 				int arg_num = getnum(in);
 
 				if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
@@ -273,8 +364,8 @@ string replace_macro_args(const char* line) {
 				// hack in a special case for elseif. It's better
 				// to just leave this up to assembleblock.
 				/*if(numif<=numtrue)*/{
-					if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
-					if (arg_num > current_macro_numargs-current_macro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds);
+					if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), "");
+					if (arg_num > current_macro_numargs-current_macro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), generate_macro_hint_string(arg_num, current_macro, depth).raw());
 					if (current_macro_args[arg_num+current_macro->numargs-1][0]=='"')
 					{
 						string s=current_macro_args[arg_num+current_macro->numargs-1];

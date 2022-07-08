@@ -254,7 +254,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_macro_not_varadic, "Invalid use of sizeof(...), active macro is not variadic." },
 	{ error_id_vararg_sizeof_nomacro, "Invalid use of sizeof(...), no active macro." },
 	{ error_id_macro_wrong_min_params, "Variadic macro call with too few parameters" },
-	{ error_id_vararg_out_of_bounds, "Variadic macro parameter requested is out of bounds." },
+	{ error_id_vararg_out_of_bounds, "Variadic macro parameter '%s' is out of bounds.%s" },
 	{ error_id_vararg_must_be_last, "Variadic macro parameter must be the last parameter." },
 	{ error_id_invalid_global_label, "Global label definition contains an invalid label [%s]."},
 
@@ -284,6 +284,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_label_forward, "The use of forward labels is not allowed in this context" },
 
 	{ error_id_macro_param_outside_macro, "Reference to macro parameter outside of macro" },
+	{ error_id_invalid_depth_resolve, "Invalid %s resolution depth: Trying to backwards-resolve a %s using %i '^', but current scope only supports up to %i '^'." },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_error
 // matches with the number of constants in asar_error_id. This is important, because

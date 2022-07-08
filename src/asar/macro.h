@@ -23,6 +23,8 @@ struct macrodata
 	const char * const* arguments;
 	int numargs;
 	bool variadic;
+	const macrodata* parent_macro;
+	int parent_macro_num_varargs;
 };
 
 extern assocarr<macrodata*> macros;

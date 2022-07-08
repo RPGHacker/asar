@@ -261,6 +261,7 @@ enum asar_error_id : int
 	error_id_label_forward,
 
 	error_id_macro_param_outside_macro,
+	error_id_invalid_depth_resolve,
 
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
