@@ -93,10 +93,21 @@ void endmacro(bool insert)
 	if (insert) macros.create(defining_macro_name) = thisone;
 	else
 	{
-		free(thisone);
+		freemacro(thisone);
 		thisone=nullptr;
 	}
 }
+
+#define cfree(x) free((void*)x)
+void freemacro(macrodata* & macro)
+{
+	macro->lines.~autoarray();
+	cfree(macro->fname);
+	cfree(macro->arguments[0]);
+	cfree(macro->arguments);
+	cfree(macro);
+}
+#undef cfree
 
 
 void callmacro(const char * data)

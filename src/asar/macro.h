@@ -27,6 +27,8 @@ struct macrodata
 	int parent_macro_num_varargs;
 };
 
+void freemacro(macrodata* & macro);
+
 extern assocarr<macrodata*> macros;
 extern macrodata* current_macro;
 extern const char* const* current_macro_args;

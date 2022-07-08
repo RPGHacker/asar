@@ -916,11 +916,7 @@ bool force_checksum_fix = false;
 static void clearmacro(const string & key, macrodata* & macro)
 {
 	(void)key;
-	macro->lines.~autoarray();
-	cfree(macro->fname);
-	cfree(macro->arguments[0]);
-	cfree(macro->arguments);
-	cfree(macro);
+	freemacro(macro);
 }
 
 static void clearfile(const string & key, sourcefile& filecontent)
@@ -929,6 +925,7 @@ static void clearfile(const string & key, sourcefile& filecontent)
 	cfree(*filecontent.contents);
 	cfree(filecontent.contents);
 }
+#undef cfree
 
 static void adddefine(const string & key, string & value)
 {
