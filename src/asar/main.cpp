@@ -434,7 +434,10 @@ void resolvedefines(string& out, const char * start)
 				}
 				//if (strqchr(val.data(), ';')) *strqchr(val.data(), ';')=0;
 				if (*here && !stribegin(here, " : ")) asar_throw_error(0, error_type_line, error_id_broken_define_declaration);
-				clean(val);
+				// RPG Hacker: Not sure if this clean() once served
+				// a purpose, but it made define values ending in spaces
+				// not work, so I don't think it should be here.
+				//clean(val);
 
 				// RPG Hacker: throw an error if we're trying to overwrite built-in defines.
 				if (builtindefines.exists(defname))

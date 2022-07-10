@@ -6,6 +6,7 @@
 ;`69 4A
 ;`42
 ;`88 99 AA BB CC
+;`72 61
 ;`34 45 56
 ;`03 03 04 03 04 05
 ;`00 01 02 03 04 05 06 07 08 09
@@ -119,10 +120,10 @@ macro define_variadic_macros(...)
 
 	while !temp_i < sizeof(...)
 		macro <!temp_i>(<!temp_i+1>, ...)
-			print "<^!temp_i>"
-			print "<^!temp_i+1>"
+			print "<^!^temp_i>"
+			print "<^!^temp_i+1>"
 
-			db <<^!temp_i+1>>
+			db <<^!^temp_i+1>>
 
 			!temp_j #= 0
 
@@ -146,18 +147,35 @@ endmacro
 %do_more_useless_shit($AA, $BB, $CC)
 
 
+macro define_resolution(first, second)
+	!temp = "db <first>"
+	!temp += ",<second>"
+
+	!temp
+	undef "temp"
+endmacro
+
+%define_resolution($72, $61)
+
+
 macro insanely_define_macro(...)
 	!temp_i #= 1
 	!temp_arg_list = ""
 	!temp_arg_usage = "db "
 
 	while !temp_i < sizeof(...)
-		!temp_arg_list += "<!temp_i>"
-		!temp_arg_usage += "<<!temp_i>>"
+		!temp_arg := "<!temp_i>"
+		!temp_arg_list += !temp_arg
+		!temp_arg_usage += "<"
+		!temp_arg_usage += "!temp_arg"
+		!temp_arg_usage += ">"
 		if !temp_i < sizeof(...)-1
 			!temp_arg_list += ", "
-			!temp_arg_usage += ", "
+			!temp_arg_usage += ","
 		endif
+		!temp_arg_list := !temp_arg_list
+		!temp_arg_usage := !temp_arg_usage
+		undef "temp_arg"
 
 		!temp_i #= !temp_i+1
 	endwhile

@@ -333,9 +333,15 @@ string replace_macro_args(const char* line) {
 			if (depth != in_macro_def)
 			{
 				out+=*(in++);
-				if (depth > in_macro_def) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def);
+				if (depth > in_macro_def)
+				{
+					if (in_macro_def > 0) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
+					else asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
+				}
 				continue;
 			}
+			
+			if (depth > 0 && !inmacro) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
 
 			if(!inmacro) asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
 			//*end=0;

@@ -1,4 +1,8 @@
 ;`errE5205
+;`errE5205
+;`errE5205
+;`errE5206
+;`errE5206
 ;`errE5206
 ;`errE5206
 ;`errE5206
@@ -27,9 +31,14 @@ db !^test_def
 
 
 macro wrong_layer_parent(parent_arg, ...)
+	db <^what_arg>
 	db <^^what_arg>
 
+	db !^^test_def
+
 	macro wrong_layer_child(child_arg)
+		db !^^^test_def
+		db <^^what_arg>
 		db <child_arg>+<parent_arg>
 	endmacro
 
