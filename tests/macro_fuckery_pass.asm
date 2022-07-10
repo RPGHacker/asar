@@ -8,7 +8,7 @@
 ;`88 99 AA BB CC
 ;`72 61
 ;`34 45 56
-;`03 03 04 03 04 05
+;`03 FF 02 03 04 03 04 05
 ;`00 01 02 03 04 05 06 07 08 09
 ;`10 11 12 13 14 15 16 17 18 19
 ;`20 21 22 23 24 25 26 27 28 29
@@ -193,9 +193,16 @@ endmacro
 %insane_macro($34, $45, $56)
 
 
+!define_01 = $01
+!define_02 = $02
+
 macro threefold_one(shadowed)
 	db <shadowed>
 	macro threefold_two(not_shadowed)
+		!define_01 = $FF
+		!define_02 = $FF
+		db !define_01
+		db !^define_02
 		db <^shadowed>
 		db <not_shadowed>
 		macro threefold_three(shadowed)
