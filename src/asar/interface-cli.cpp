@@ -46,7 +46,11 @@ void error_interface(int errid, int whichpass, const char * e_)
 		bool show_block = (thisblock && (errid != error_id_error_command));
 		fputs(STR getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
 		static const int max_num_errors = 20;
-		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
+		if (errnum == max_num_errors + 1)
+		{
+			thisblock = nullptr;
+			asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
+		}
 	}
 }
 
