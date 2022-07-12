@@ -745,8 +745,6 @@ void initstuff()
 	check_half_banks_crossed = false;
 	nested_namespaces = false;
 
-	thisfilename = "";
-
 	includeonce.reset();
 
 	extern AddressToLineMapping addressToLineMapping;
@@ -755,6 +753,8 @@ void initstuff()
 	push_warnings(false);
 
 	initmathcore();
+	
+	callstack.reset();
 }
 
 
@@ -941,6 +941,8 @@ string handle_print(char* input)
 
 void assembleblock(const char * block, bool isspecialline)
 {
+	callstack_push cs_push(callstack_entry_type::BLOCK, block);
+	
 	string tmp=block;
 	int numwords;
 	char ** word = qsplit(tmp.temp_raw(), " ", &numwords);
@@ -986,11 +988,6 @@ void assembleblock(const char * block, bool isspecialline)
 	if (!word[0] || !word[0][0]) return;
 	if (numif==numtrue && word[0][0]=='%')
 	{
-		if (!macrorecursion)
-		{
-			callerfilename=thisfilename;
-			callerline=thisline;
-		}
 		int fakeendif_prev = fakeendif;
 		int moreonlinecond_prev = moreonlinecond;
 		int calledmacros_prev = calledmacros;
@@ -998,11 +995,6 @@ void assembleblock(const char * block, bool isspecialline)
 		fakeendif = fakeendif_prev;
 		moreonlinecond = moreonlinecond_prev;
 		calledmacros = calledmacros_prev;
-		if (!macrorecursion)
-		{
-			callerfilename="";
-			callerline=-1;
-		}
 		return;
 	}
 	if (is("if") || is("elseif") || is("assert") || is("while"))
@@ -1011,7 +1003,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		string errmsg;
 		whiletracker wstatus;
-		wstatus.startline = thisline;
+		wstatus.startline = get_current_line();
 		wstatus.iswhile = false;
 		wstatus.cond = false;
 		if (is("while")) wstatus.iswhile = true;
@@ -1211,7 +1203,7 @@ void assembleblock(const char * block, bool isspecialline)
 				for (int i = 0; i < recent_opcode_num; ++i)
 				{
 					extern AddressToLineMapping addressToLineMapping;
-					addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos + (i * opcode_size));
+					addressToLineMapping.includeMapping(get_current_file_name(), get_current_line() + 1, addrToLinePos + (i * opcode_size));
 				}
 			}
 		}
@@ -1434,7 +1426,7 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (is0("include") || is1("includefrom"))
 	{
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
-		if (istoplevel)
+		if (in_top_level_file())
 		{
 			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string(" The main file is '") + STR par + STR "'.").data());
 			else asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, "");
@@ -1442,9 +1434,10 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is0("includeonce"))
 	{
-		if (!file_included_once(thisfilename))
+		const char* current_file = get_current_file_name();
+		if (!file_included_once(current_file))
 		{
-			includeonce.append(thisfilename);
+			includeonce.append(current_file);
 		}
 	}
 	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
@@ -1980,7 +1973,7 @@ void assembleblock(const char * block, bool isspecialline)
 					}
 
 					extern AddressToLineMapping addressToLineMapping;
-					addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos);
+					addressToLineMapping.includeMapping(get_current_file_name(), get_current_line() + 1, addrToLinePos);
 				}
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
 				freespaceorgpos[targetid]=ratsloc;
@@ -2175,8 +2168,9 @@ void assembleblock(const char * block, bool isspecialline)
 #endif
 	else if (is1("incsrc"))
 	{
+		const char* current_file = get_current_file_name();
 		string name;
-		if (warnxkas && (strchr(thisfilename, '/') || strchr(thisfilename, '\\')))
+		if (warnxkas && (strchr(current_file, '/') || strchr(current_file, '\\')))
 			asar_throw_warning(0, warning_id_xkas_incsrc_relative);
 		if (strchr(par, '\\'))
 		{
@@ -2194,7 +2188,7 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		if (emulatexkas) name= safedequote(par);
 		else name=STR safedequote(par);
-		assemblefile(name, false);
+		assemblefile(name);
 	}
 	else if (is1("incbin") || is3("incbin"))
 	{
@@ -2230,8 +2224,9 @@ void assembleblock(const char * block, bool isspecialline)
 				if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
 			}
 		}
+		const char* current_file = get_current_file_name();
 		string name;
-		if (warnxkas && (strchr(thisfilename, '/') || strchr(thisfilename, '\\')))
+		if (warnxkas && (strchr(current_file, '/') || strchr(current_file, '\\')))
 			asar_throw_warning(0, warning_id_xkas_incsrc_relative);
 		if (strchr(par, '\\'))
 		{
@@ -2250,7 +2245,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (emulatexkas) name= safedequote(par);
 		else name=STR safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
-		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
+		if (!readfile(name, current_file, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char*> datacopy=data;
 		if (!end) end=len;
 		if(start < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(start).data(), name.data());
@@ -2350,7 +2345,7 @@ void assembleblock(const char * block, bool isspecialline)
 		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }
 		else if (striend(par, ",rtl")) { itrim(par, "", ",rtl"); fliporder=true; }
 		string name=STR safedequote(par);
-		autoptr<char*> tablecontents=readfile(name, thisfilename);
+		autoptr<char*> tablecontents=readfile(name, get_current_file_name());
 		if (!tablecontents) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char**> tablelines=split(tablecontents, "\n");
 		for (int i=0;i<256;i++) table.table[i]=(unsigned int)(((numopcodes+read2(0x00FFDE)+i)*0x26594131)|0x40028020);

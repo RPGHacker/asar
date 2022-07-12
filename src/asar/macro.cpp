@@ -60,8 +60,8 @@ void startmacro(const char * line_)
 		thisone->numargs=0;
 	}
 	thisone->variadic = false;
-	thisone->fname= duplicate_string(thisfilename);
-	thisone->startline=thisline;
+	thisone->fname= duplicate_string(get_current_file_name());
+	thisone->startline=get_current_line();
 	thisone->parent_macro=current_macro;
 	thisone->parent_macro_num_varargs=0;
 	// RPG Hacker: -1 to take the ... into account, which is also being counted.
@@ -162,19 +162,23 @@ void callmacro(const char * data)
 	current_macro = thismacro;
 	current_macro_args = args;
 	current_macro_numargs = numargs;
-
-	bool toplevel = istoplevel;
-
-	for (int i=0;i<thismacro->numlines;i++)
+		
+	callstack_push cs_push(callstack_entry_type::MACRO_CALL, data);
+	
 	{
-		int prevnumif = numif;
+		callstack_push cs_push(callstack_entry_type::FILE, thismacro->fname);
+
+		for (int i=0;i<thismacro->numlines;i++)
+		{
+			int prevnumif = numif;
 		
-		do_line_logic(thismacro->lines[i], thismacro->fname, thismacro->startline+i+1, toplevel);
+			do_line_logic(thismacro->lines[i], thismacro->fname, thismacro->startline+i+1);
 		
-		if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
-			// RPG Hacker: -1 to compensate for the i++, and another -1
-			// because ->lines doesn't include the macro header.
-			i = whilestatus[numif].startline - thismacro->startline - 2;
+			if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
+				// RPG Hacker: -1 to compensate for the i++, and another -1
+				// because ->lines doesn't include the macro header.
+				i = whilestatus[numif].startline - thismacro->startline - 2;
+		}
 	}
 
 	current_macro = old_macro;
@@ -191,13 +195,11 @@ void callmacro(const char * data)
 	calledmacros = old_calledmacros;
 	if (repeatnext!=1)
 	{
-		thisblock= nullptr;
 		repeatnext=1;
 		asar_throw_error(0, error_type_block, error_id_rep_at_macro_end);
 	}
 	if (numif!=startif)
 	{
-		thisblock= nullptr;
 		numif=startif;
 		numtrue=startif;
 		asar_throw_error(0, error_type_block, error_id_unclosed_if);

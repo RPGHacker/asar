@@ -42,12 +42,7 @@ int optimize_dp = optimize_dp_flag::NONE;
 int dp_base = 0;
 int optimize_address = optimize_address_flag::DEFAULT;
 
-string thisfilename;
-int thisline;
-const char * thisblock;
-
-string callerfilename;
-int callerline=-1;
+autoarray<callstack_entry> callstack;
 
 bool errored=false;
 bool ignoretitleerrors=false;
@@ -109,15 +104,146 @@ bool setmapper()
 	return (maxscore>=0);
 }
 
-string getdecor()
+
+// Shortens target_path to a relative path, but only if it resides
+// within base_path or a child directory of it.
+string shorten_to_relative_path(const char* base_path, const char* target_path)
+{
+	if (stribegin(target_path, base_path)) target_path += strlen(base_path);
+	return target_path;
+}
+
+string get_top_level_directory()
+{
+	string top_level_file_dir;
+	for (int i = 0; i < callstack.count; ++i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			top_level_file_dir = dir(callstack[i].content);
+			break;
+		}
+	}
+	return top_level_file_dir;
+}
+
+string generate_call_details_string(const char* current_block, const char* current_call, int indentation, bool add_lines)
 {
 	string e;
-	if (thisfilename)
+	if (current_block != nullptr || current_call != nullptr)
 	{
-		e+=STR thisfilename;
-		if (thisline!=-1) e+=STR ":"+dec(thisline+1);
-		if (callerfilename) e+=STR" (called from "+callerfilename+":"+dec(callerline+1)+")";
-		e+=": ";
+		string indent;
+		if (add_lines) indent += "|";
+		for (; indentation > 0; --indentation) indent += " ";
+		
+		if (current_block != nullptr) e += STR "\n"+indent+"in block: ["+current_block+"]";
+		if (current_call != nullptr) e += STR "\n"+indent+"in macro call: [%"+current_call+"]";
+	}
+	return e;
+}
+
+string generate_filename_and_line(const char* current_file, int current_line_no)
+{
+	// RPG Hacker: One could make an argument that we shouldn't shorten paths
+	// here, since some IDEs support jumping to files by double-clicking their
+	// paths. However, AFAIK, no IDE supports this for Asar yet, and if it's
+	// ever desired, we could just make it a command line option. Until then,
+	// I think it's more important to optimize for pretty command line display.
+	return STR shorten_to_relative_path(get_top_level_directory(), current_file)
+		+ (current_line_no>=0?STR ":"+dec(current_line_no+1):"");
+}
+
+void push_stack_line(autoarray<string>* lines, const char* current_file, const char* current_block, const char* current_call, int current_line_no, int stack_frame_index)
+{
+	string indent = "\n|   ";
+	indent += dec(stack_frame_index);
+	indent += ": ";
+	// RPG Hacker: We'll probably never have a call stack in the
+	// hundreds even, so this very specific, lazy solution suffices.
+	if (stack_frame_index < 100) indent += " ";
+	if (stack_frame_index < 10) indent += " ";
+	lines->append(indent 
+		+ generate_filename_and_line(current_file, current_line_no)
+		+ generate_call_details_string(current_block, current_call, 12, true)
+	);
+}
+
+void get_current_line_details(string* location, string* details, bool exclude_block)
+{	
+	const char* current_file = nullptr;
+	const char* current_block = nullptr;
+	const char* current_call = nullptr;
+	int current_line_no = -1;
+	for (int i = callstack.count-1; i >= 0 ; --i)
+	{
+		switch (callstack[i].type)
+		{
+			case callstack_entry_type::FILE:
+				current_file = callstack[i].content;
+				if (exclude_block) current_block = nullptr;
+				*location = generate_filename_and_line(current_file, current_line_no);
+				*details = generate_call_details_string(current_block, current_call, 4, false);
+				return;
+			case callstack_entry_type::MACRO_CALL:
+				if (current_call == nullptr) current_call = callstack[i].content;
+				break;
+			case callstack_entry_type::LINE:
+				if (current_block == nullptr && current_call == nullptr) current_block = callstack[i].content;
+				if (current_line_no == -1) current_line_no = callstack[i].lineno;
+				break;
+			case callstack_entry_type::BLOCK:
+				if (current_block == nullptr) current_block = callstack[i].content;
+				break;
+		}
+	}
+	*location = "";
+	*details = "";
+}
+
+string getcallstack()
+{	
+	autoarray<string> lines;
+	const char* current_file = nullptr;
+	const char* current_block = nullptr;
+	const char* current_call = nullptr;
+	int current_line_no = -1;
+	for (int i = 0; i < callstack.count; ++i)
+	{
+		switch (callstack[i].type)
+		{
+			case callstack_entry_type::FILE:
+				if (current_file != nullptr)
+				{
+					push_stack_line(&lines, current_file, current_block, current_call, current_line_no, lines.count);
+				}
+				current_file = callstack[i].content;
+				current_block = nullptr;
+				current_call = nullptr;
+				current_line_no = -1;
+				break;
+			case callstack_entry_type::MACRO_CALL:
+				current_block = nullptr;
+				current_call = callstack[i].content;
+				break;
+			case callstack_entry_type::LINE:
+				current_line_no = callstack[i].lineno;
+				current_block = callstack[i].content;
+				break;
+			case callstack_entry_type::BLOCK:
+				current_block = callstack[i].content;
+				break;
+		}
+	}
+	// RPG Hacker: This pop here is incorrect, because with the
+	// way we traverse the call stack, the highest level is
+	// already automatically excluded, anyways.
+	//if (lines.count > 0) lines.remove(lines.count-1);
+	
+	string e;
+	if (lines.count > 0)
+	{
+		e += "\nFull call stack:";
+		for (int i = lines.count-1; i >= 0; --i) e += lines[i];
 	}
 	return e;
 }
@@ -507,7 +633,6 @@ bool moreonline;
 bool moreonlinecond;
 int fakeendif;
 bool asarverallowed;
-bool istoplevel;
 
 void assembleline(const char * fname, int linenum, const char * line)
 {
@@ -516,9 +641,6 @@ void assembleline(const char * fname, int linenum, const char * line)
 	// randomdude999: redundant, assemblefile already converted the path to absolute
 	//string absolutepath = filesystem->create_absolute_path("", fname);
 	string absolutepath = fname;
-	thisfilename = absolutepath;
-	thisline=linenum;
-	thisblock= nullptr;
 	try
 	{
 		string out=line;
@@ -541,22 +663,22 @@ void assembleline(const char * fname, int linenum, const char * line)
 				{
 					string stripped_block = blocks[block];
 					strip_both(stripped_block, ' ', true);
+					const char* current_block = stripped_block.raw();
 					
-					thisline=linenum;//do not optimize, this one is recursive
-					thisblock = stripped_block.data();
+					callstack_push cs_push(callstack_entry_type::BLOCK, current_block);
 					bool isspecialline = false;
-					if (thisblock[0] == '@')
+					if (current_block[0] == '@')
 					{
 						asar_throw_warning(0, warning_id_feature_deprecated, "prefixing Asar commands with @ or ;@", "remove the @ or ;@ prefix");
 
 						isspecialline = true;
-						thisblock++;
-						while (is_space(*thisblock))
+						current_block++;
+						while (is_space(*current_block))
 						{
-							thisblock++;
+							current_block++;
 						}
 					}
-					assembleblock(thisblock, isspecialline);
+					assembleblock(current_block, isspecialline);
 					checkbankcross();
 				}
 				catch (errblock&) {}
@@ -565,8 +687,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 		}
 		if(fakeendif)
 		{
-			thisline = linenum;
-			thisblock = blocks[0];
+			callstack_push cs_push(callstack_entry_type::BLOCK, blocks[0]);
 			asar_throw_warning(0, warning_id_feature_deprecated, "inline if statements", "Add an \" : endif\" at the end of the line");
 			if (numif==numtrue) numtrue--;
 			numif--;
@@ -596,22 +717,18 @@ bool file_included_once(const char* file)
 autoarray<string> macro_defs;
 int in_macro_def=0;
 
-void assemblefile(const char * filename, bool toplevel)
-{
+void assemblefile(const char * filename)
+{		
 	incsrcdepth++;
-	string absolutepath = filesystem->create_absolute_path(thisfilename, filename);
+	string absolutepath = filesystem->create_absolute_path(get_current_file_name(), filename);
 
 	if (file_included_once(absolutepath))
 	{
 		return;
 	}
 
-	string prevthisfilename = thisfilename;
-	thisfilename = absolutepath;
-	int prevline = thisline;
-	thisline=-1;
-	const char* prevthisblock = thisblock;
-	thisblock= nullptr;
+	callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
+	
 	sourcefile file;
 	file.contents = nullptr;
 	file.numlines = 0;
@@ -621,16 +738,11 @@ void assemblefile(const char * filename, bool toplevel)
 		char * temp= readfile(absolutepath, "");
 		if (!temp)
 		{
-			// RPG Hacker: This is so that we hopefully always end up with a proper decor
-			// and get better error messages.
-			thisfilename = prevthisfilename;
-			thisline = prevline;
-			thisblock = prevthisblock;
-
 			asar_throw_error(0, error_type_null, vfile_error_to_error_id(asar_get_last_io_error()), filename);
 
 			return;
 		}
+	
 		file.contents =split(temp, "\n");
 		for (int i=0;file.contents[i];i++)
 		{
@@ -651,7 +763,7 @@ void assemblefile(const char * filename, bool toplevel)
 				comment = strqchr(comment, ';');
 			}
 			while (strqchr(line, '\t')) *strqchr(line, '\t')=' ';
-			if (!confirmquotes(line)) { thisline = i; thisblock = line; asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
+			if (!confirmquotes(line)) { callstack_push cs_push(callstack_entry_type::LINE, line, i); asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
 			itrim(line, " ", " ", true);	//todo make use strip
 		}
 		for(int i=0;file.contents[i];i++)
@@ -680,14 +792,12 @@ void assemblefile(const char * filename, bool toplevel)
 		
 		int prevnumif = numif;
 		
-		do_line_logic(connectedline, absolutepath, i, toplevel);
+		do_line_logic(connectedline, absolutepath, i);
 		i += skiplines;
 		
 		if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
 			i = whilestatus[numif].startline - 1;
 	}
-	thisline++;
-	thisblock= nullptr;
 	while (in_macro_def > 0)
 	{
 		asar_throw_error(0, error_type_null, error_id_unclosed_macro, macro_defs[in_macro_def-1].data());
@@ -709,27 +819,23 @@ void assemblefile(const char * filename, bool toplevel)
 	incsrcdepth--;
 }
 
-void do_line_logic(const char* line, const char* filename, int lineno, bool toplevel)
+void do_line_logic(const char* line, const char* filename, int lineno)
 {			
 	try
 	{
-		thisfilename=filename;
-		thisline=lineno;
-		istoplevel=toplevel;
-		thisblock= line;
-		
 		string current_line;
 		// RPG Hacker: Now replacing macro args here as well,
 		// to make nested macro definitions possible.
 		if (numif==numtrue)
 		{
+			callstack_push cs_push(callstack_entry_type::LINE, line, lineno);
 			string tmp=replace_macro_args(line);
 			clean(tmp);
 			resolvedefines(current_line, tmp);
 		}
 		else current_line=line;
 		
-		thisblock= current_line.raw();
+		callstack_push cs_push(callstack_entry_type::LINE, current_line, lineno);
 		
 		if (stribegin(current_line, "macro ") && numif==numtrue)
 		{
@@ -772,11 +878,9 @@ void do_line_logic(const char* line, const char* filename, int lineno, bool topl
 		else
 		{
 			assembleline(filename, lineno, current_line);
-			thisfilename = filename;
 		}
 	}
 	catch (errline&) {}
-	thisblock=nullptr;
 }
 
 
@@ -1007,6 +1111,82 @@ string create_symbols_file(string format, uint32_t romCrc){
 	return symbolfile;
 }
 
+
+bool in_top_level_file()
+{
+	int num_files = 0;
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			num_files++;
+			if (num_files > 1) break;
+		}			
+	}
+	return (num_files <= 1);
+}
+
+const char* get_current_file_name()
+{
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+			return callstack[i].content.raw();
+	}
+	return nullptr;
+}
+
+int get_current_line()
+{
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::LINE) return callstack[i].lineno;
+	}
+	return -1;
+}
+
+const char* get_current_block()
+{
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::LINE || callstack[i].type == callstack_entry_type::BLOCK) return callstack[i].content.raw();
+	}
+	return nullptr;
+}
+
+const char* get_previous_file_name()
+{
+	int num_files = 0;
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			num_files++;
+			if (num_files > 1) return callstack[i].content.raw();
+		}			
+	}
+	return nullptr;
+}
+
+int get_previous_file_line_no()
+{
+	int num_files = 0;
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			num_files++;
+			if (num_files > 1) return -1;
+		}
+		else if (callstack[i].type == callstack_entry_type::LINE)
+		{
+			if (num_files == 1) return callstack[i].lineno;
+		}
+	}
+	return -1;
+}
+
+
 void reseteverything()
 {
 	string str;
@@ -1045,5 +1225,7 @@ void reseteverything()
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));
 	#endif
+	
+	callstack.reset();
 #undef free
 }

@@ -51,13 +51,15 @@ static int cachedfileindex = 0;
 static cachedfile * opencachedfile(string fname, bool should_error)
 {
 	cachedfile * cachedfilehandle = nullptr;
+	
+	const char* current_file = get_current_file_name();
 
 	// RPG Hacker: Only using a combined path here because that should
 	// hopefully result in a unique string for every file, whereas
 	// fname could be a relative path, which isn't guaranteed to be unique.
 	// Note that this does not affect how we open the file - this is
 	// handled by the filesystem and uses our include paths etc.
-	string combinedname = filesystem->create_absolute_path(dir(thisfilename), fname);
+	string combinedname = filesystem->create_absolute_path(dir(current_file), fname);
 
 	for (int i = 0; i < numcachedfiles; i++)
 	{
@@ -70,7 +72,6 @@ static cachedfile * opencachedfile(string fname, bool should_error)
 
 	if (cachedfilehandle == nullptr)
 	{
-
 		if (cachedfiles[cachedfileindex].used)
 		{
 			filesystem->close_file(cachedfiles[cachedfileindex].filehandle);
@@ -85,7 +86,7 @@ static cachedfile * opencachedfile(string fname, bool should_error)
 	{
 		if (!cachedfilehandle->used)
 		{
-			cachedfilehandle->filehandle = filesystem->open_file(fname, thisfilename);
+			cachedfilehandle->filehandle = filesystem->open_file(fname, current_file);
 			if (cachedfilehandle->filehandle != INVALID_VIRTUAL_FILE_HANDLE)
 			{
 				cachedfilehandle->used = true;

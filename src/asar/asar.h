@@ -42,14 +42,15 @@ int get_version_int();
 
 bool setmapper();
 
-void assemblefile(const char * filename, bool toplevel);
+void assemblefile(const char * filename);
 void assembleline(const char * fname, int linenum, const char * line);
 
-void do_line_logic(const char* line, const char* filename, int lineno, bool toplevel);
+void do_line_logic(const char* line, const char* filename, int lineno);
 
 bool file_included_once(const char* file);
 
-string getdecor();
+void get_current_line_details(string* location, string* details, bool exclude_block=false);
+string getcallstack();
 
 asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error);
 
@@ -79,7 +80,6 @@ extern bool default_math_pri;
 extern bool default_math_round_off;
 
 extern bool asarverallowed;
-extern bool istoplevel;
 
 extern bool moreonline;
 extern bool moreonlinecond;
@@ -87,12 +87,6 @@ extern int fakeendif;
 
 extern bool checksum_fix_enabled;
 extern bool force_checksum_fix;
-
-extern string callerfilename;
-extern int callerline;
-extern string thisfilename;
-extern int thisline;
-extern const char * thisblock;
 
 extern int incsrcdepth;
 
@@ -136,3 +130,57 @@ extern virtual_filesystem* filesystem;
 extern assocarr<string> defines;
 
 extern assocarr<string> builtindefines;
+
+
+namespace callstack_entry_type {
+	enum e : int {
+		FILE,
+		MACRO_CALL,
+		LINE,
+		BLOCK,
+	};
+}
+
+struct callstack_entry {
+	callstack_entry_type::e type;
+	string content;
+	int lineno;
+	
+	callstack_entry(callstack_entry_type::e type, const char* content, int lineno)
+	{
+		this->type = type;
+		this->content = content;
+		this->lineno = lineno;
+	}
+	
+	callstack_entry()
+	{
+	}
+};
+
+
+extern autoarray<callstack_entry> callstack;
+
+class callstack_push {
+public:
+	callstack_push(callstack_entry_type::e type, const char* content, int lineno=-1)
+	{
+		callstack.append(callstack_entry(type, content, lineno));
+	}
+	
+	~callstack_push()
+	{
+		callstack.remove(callstack.count-1);
+	}
+};
+
+bool in_top_level_file();
+const char* get_current_file_name();
+int get_current_line();
+const char* get_current_block();
+
+// RPG Hacker: We only need to keep these two functions around
+// until we bump the DLL API version number and update the
+// interface to make use of the full callstack.
+const char* get_previous_file_name();
+int get_previous_file_line_no();

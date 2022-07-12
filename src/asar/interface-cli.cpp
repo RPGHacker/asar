@@ -42,15 +42,16 @@ void error_interface(int errid, int whichpass, const char * e_)
 	if (pass == whichpass)
 	{
 		errnum++;
-		// don't show current block if the error came from an error command
-		bool show_block = (thisblock && (errid != error_id_error_command));
-		fputs(STR getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
+		const char* current_block = get_current_block();
+		// don't show current block if the error came from an error command or limit reached
+		bool show_block = (current_block && (errid != error_id_error_command && errid != error_id_limit_reached));
+		bool show_stack = (errid != error_id_limit_reached);
+		string location;
+		string details;
+		get_current_line_details(&location, &details, !show_block);
+		fputs((show_stack ? location+": " : STR "") + "error: (E" + dec(errid) + "): " + e_ + (show_stack ? details + getcallstack() : "") + "\n", errloc);
 		static const int max_num_errors = 20;
-		if (errnum == max_num_errors + 1)
-		{
-			thisblock = nullptr;
-			asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
-		}
+		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
 }
 
@@ -59,9 +60,13 @@ static bool warned=false;
 
 void warn(int errid, const char * e_)
 {
+	const char* current_block = get_current_block();
+	bool show_block = (current_block && (errid != warning_id_warn_command));
+	string location;
+	string details;
+	get_current_line_details(&location, &details, !show_block);
 	// don't show current block if the warning came from a warn command
-	bool show_block = (thisblock && (errid != warning_id_warn_command));
-	fputs(STR getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
+	fputs(location+": warning: (W" + dec(errid) + "): " + e_ + details + getcallstack() + "\n", errloc);
 	warned=true;
 }
 
@@ -353,7 +358,6 @@ int main(int argc, char * argv[])
 		}
 		if (!openrom(romname, false))
 		{
-			thisfilename= nullptr;
 			asar_throw_error(pass, error_type_null, openromerror);
 			pause(err);
 			return 1;
@@ -421,7 +425,7 @@ int main(int argc, char * argv[])
 			//pass 2: find where exactly all labels are
 			//pass 3: assemble it all
 			initstuff();
-			assemblefile(asmname, true);
+			assemblefile(asmname);
 			finishpass();
 		}
 
