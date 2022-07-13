@@ -26,8 +26,11 @@
 # endif
 #endif
 
-# if defined(linux)
+#if defined(linux)
 #  include <unistd.h>
+#elif defined(_WIN32)
+#  include <windows.h>
+#  include <io.h>
 #endif
 
 extern const char asarver[];
@@ -47,6 +50,11 @@ namespace ansi_text_color {
 	};
 }
 
+#if defined(_WIN32)
+static bool has_windows_screen_info = false;
+static DWORD windows_screen_attributes = 0u;
+#endif
+
 void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e color)
 {
 #if defined(linux)
@@ -63,6 +71,28 @@ void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e col
 		}
 	}
 #elif defined(_WIN32)
+	// Currently using SetConsoleTextAttribute() approach over an ASCI escape character
+	// approach because it makes the output text easier to parse. Unfortunately, this
+	// also currently makes this a Windows-only solution.
+	CONSOLE_SCREEN_BUFFER_INFO screenInfo;
+	HANDLE win_handle = (HANDLE)_get_osfhandle(fileno(output_loc));
+	if (GetConsoleScreenBufferInfo(win_handle, &screenInfo) == TRUE)
+	{
+		DWORD color = 0u;
+		switch (color)
+		{
+		case ansi_text_color::BRIGHT_RED:
+			color = FOREGROUND_RED;
+			break;
+		case ansi_text_color::BRIGHT_YELLOW:
+			color = FOREGROUND_RED | FOREGROUND_GREEN;
+			break;
+		}
+
+		windows_screen_attributes = screenInfo.wAttributes;
+		has_windows_screen_info = true;
+		SetConsoleTextAttribute(win_handle, (windows_screen_attributes & 0x00F0) | FOREGROUND_INTENSITY | color);
+	}
 #endif
 }
 
@@ -74,6 +104,11 @@ void reset_text_color(FILE* output_loc, string* in_out_str)
 		*in_out_str = STR "\u001b[0m" + *in_out_str;
 	}
 #elif defined(_WIN32)
+	if (has_windows_screen_info)
+	{
+		HANDLE win_handle = (HANDLE)_get_osfhandle(fileno(output_loc));
+		SetConsoleTextAttribute(win_handle, windows_screen_attributes);
+	}
 #endif
 }
 
