@@ -26,6 +26,10 @@
 # endif
 #endif
 
+# if defined(linux)
+#  include <unistd.h>
+#endif
+
 extern const char asarver[];
 
 void print(const char * str)
@@ -35,6 +39,43 @@ void print(const char * str)
 
 static FILE * errloc=stderr;
 static int errnum=0;
+
+namespace ansi_text_color {
+	enum e : int {
+		BRIGHT_RED,
+		BRIGHT_YELLOW,
+	};
+}
+
+void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e color)
+{
+#if defined(linux)
+	if (isatty(fileno(output_loc)))
+	{
+		switch (color)
+		{
+			case ansi_text_color::BRIGHT_RED:
+				*in_out_str = STR "\u001b[31;1m" + *in_out_str;
+				break;
+			case ansi_text_color::BRIGHT_YELLOW:
+				*in_out_str = STR "\u001b[33;1m" + *in_out_str;
+				break;
+		}
+	}
+#elif defined(_WIN32)
+#endif
+}
+
+void reset_text_color(FILE* output_loc, string* in_out_str)
+{
+#if defined(linux)
+	if (isatty(fileno(output_loc)))
+	{
+		*in_out_str = STR "\u001b[0m" + *in_out_str;
+	}
+#elif defined(_WIN32)
+#endif
+}
 
 void error_interface(int errid, int whichpass, const char * e_)
 {
@@ -49,7 +90,12 @@ void error_interface(int errid, int whichpass, const char * e_)
 		string location;
 		string details;
 		get_current_line_details(&location, &details, !show_block);
-		fputs((show_stack ? location+": " : STR "") + "error: (E" + dec(errid) + "): " + e_ + (show_stack ? details + getcallstack() : "") + "\n", errloc);
+		string error_string = (show_stack ? location+": " : STR "") + "error: (E" + dec(errid) + "): " + e_;
+		string details_string = (show_stack ? details + getcallstack() : "") + "\n";
+		set_text_color(errloc, &error_string, ansi_text_color::BRIGHT_RED);
+		fputs(error_string, errloc);
+		reset_text_color(errloc, &details_string);
+		fputs(details_string, errloc);
 		static const int max_num_errors = 20;
 		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
@@ -61,12 +107,17 @@ static bool warned=false;
 void warn(int errid, const char * e_)
 {
 	const char* current_block = get_current_block();
+	// don't show current block if the warning came from a warn command
 	bool show_block = (current_block && (errid != warning_id_warn_command));
 	string location;
 	string details;
 	get_current_line_details(&location, &details, !show_block);
-	// don't show current block if the warning came from a warn command
-	fputs(location+": warning: (W" + dec(errid) + "): " + e_ + details + getcallstack() + "\n", errloc);
+	string warning_string = location+": warning: (W" + dec(errid) + "): " + e_;
+	string details_string = details + getcallstack() + "\n";
+	set_text_color(errloc, &warning_string, ansi_text_color::BRIGHT_YELLOW);
+	fputs(warning_string, errloc);
+	reset_text_color(errloc, &details_string);
+	fputs(details_string, errloc);
 	warned=true;
 }
 
