@@ -105,6 +105,10 @@ bool setmapper()
 }
 
 
+// TODO: Make this accessible to the DLL interface.
+// Will require lib API addition.
+bool simple_callstacks = true;
+
 // Shortens target_path to a relative path, but only if it resides
 // within base_path or a child directory of it.
 string shorten_to_relative_path(const char* base_path, const char* target_path)
@@ -200,8 +204,8 @@ void get_current_line_details(string* location, string* details, bool exclude_bl
 	*details = "";
 }
 
-string getcallstack()
-{	
+string get_full_callstack()
+{
 	autoarray<string> lines;
 	const char* current_file = nullptr;
 	const char* current_block = nullptr;
@@ -246,6 +250,71 @@ string getcallstack()
 		for (int i = lines.count-1; i >= 0; --i) e += lines[i];
 	}
 	return e;
+}
+
+// RPG Hacker: This function essetially replicates classic Asar behavior
+// of only printing a single macro call below the current level.
+string get_simple_callstack()
+{
+	int i;
+	const char* current_call = nullptr;
+	for (i = callstack.count-1; i >= 0 ; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::MACRO_CALL)
+		{
+			current_call = callstack[i].content;
+			break;
+		}
+	}
+	
+	const char* current_file = nullptr;
+	int current_line_no = -1;
+	if (current_call != nullptr)
+	{
+		bool stop = false;
+		for (int j = i-1; j >= 0 ; --j)
+		{
+			switch (callstack[j].type)
+			{
+				case callstack_entry_type::FILE:
+					if (current_file != nullptr)
+					{
+						stop = true;
+						break;
+					}
+					current_file = callstack[j].content;
+					break;
+				case callstack_entry_type::MACRO_CALL:
+					stop = true;
+					break;
+				case callstack_entry_type::LINE:
+					if (current_line_no == -1) current_line_no = callstack[j].lineno;
+					break;
+				case callstack_entry_type::BLOCK:
+					break;
+			}
+			
+			if (current_file != nullptr && current_line_no != -1) stop = true;
+			
+			if (stop) break;
+		}
+	}
+	
+	string e;
+	if (current_call != nullptr && current_file != nullptr)
+	{
+		e += STR "\n   called from: " + generate_filename_and_line(current_file, current_line_no)
+			+ ": [%" + current_call + "]";
+	}
+	return e;
+}
+
+string get_callstack()
+{
+	if (simple_callstacks)
+		return get_simple_callstack();
+	else
+		return get_full_callstack();
 }
 
 asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error)
@@ -1227,5 +1296,6 @@ void reseteverything()
 	#endif
 	
 	callstack.reset();
+	simple_callstacks = true;
 #undef free
 }

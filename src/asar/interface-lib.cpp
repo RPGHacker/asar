@@ -94,7 +94,7 @@ static void fillerror(errordata& myerr, int errid, const char * type, const char
 	string location;
 	string details;
 	get_current_line_details(&location, &details);
-	myerr.fullerrdata= duplicate_string(location+": "+type+str+details+getcallstack());
+	myerr.fullerrdata= duplicate_string(location+": "+type+str+details+get_callstack());
 	myerr.callerline=get_previous_file_line_no();
 	const char* prev_file = get_previous_file_name();
 	myerr.callerfilename=prev_file ? duplicate_string(prev_file) : nullptr;

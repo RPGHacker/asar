@@ -126,7 +126,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 		string details;
 		get_current_line_details(&location, &details, !show_block);
 		string error_string = (show_stack ? location+": " : STR "") + "error: (E" + dec(errid) + "): " + e_;
-		string details_string = (show_stack ? details + getcallstack() : "") + "\n";
+		string details_string = (show_stack ? details + get_callstack() : "") + "\n";
 		set_text_color(errloc, &error_string, ansi_text_color::BRIGHT_RED);
 		fputs(error_string, errloc);
 		reset_text_color(errloc, &details_string);
@@ -148,7 +148,7 @@ void warn(int errid, const char * e_)
 	string details;
 	get_current_line_details(&location, &details, !show_block);
 	string warning_string = location+": warning: (W" + dec(errid) + "): " + e_;
-	string details_string = details + getcallstack() + "\n";
+	string details_string = details + get_callstack() + "\n";
 	set_text_color(errloc, &warning_string, ansi_text_color::BRIGHT_YELLOW);
 	fputs(warning_string, errloc);
 	reset_text_color(errloc, &details_string);
@@ -256,6 +256,8 @@ int main(int argc, char * argv[])
 			"                   Enable a specific warning.\n\n"
 			" -wno<ID>          \n"
 			"                   Disable a specific warning.\n\n"
+			" --full-call-stack\n"
+			"                   Enables detailed call stack information for warnings and errors.\n\n"
 			);
 		ignoretitleerrors=false;
 		string par;
@@ -369,6 +371,7 @@ int main(int argc, char * argv[])
 				}
 
 			}
+			else if (par=="--full-call-stack") simple_callstacks=false;
 			else libcon_badusage();
 
 			if (postprocess_param == cmdlparam_addincludepath)

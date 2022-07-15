@@ -50,7 +50,7 @@ void do_line_logic(const char* line, const char* filename, int lineno);
 bool file_included_once(const char* file);
 
 void get_current_line_details(string* location, string* details, bool exclude_block=false);
-string getcallstack();
+string get_callstack();
 
 asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error);
 
@@ -160,6 +160,7 @@ struct callstack_entry {
 
 
 extern autoarray<callstack_entry> callstack;
+extern bool simple_callstacks;
 
 class callstack_push {
 public:
