@@ -303,7 +303,7 @@ string get_simple_callstack()
 	string e;
 	if (current_call != nullptr && current_file != nullptr)
 	{
-		e += STR "\n   called from: " + generate_filename_and_line(current_file, current_line_no)
+		e += STR "\n    called from: " + generate_filename_and_line(current_file, current_line_no)
 			+ ": [%" + current_call + "]";
 	}
 	return e;
