@@ -46,8 +46,7 @@ void startmacro(const char * line_)
 	}
 	if (*startpar==',' || is_digit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	if (macros.exists(thisname)) asar_throw_error(0, error_type_block, error_id_macro_redefined, thisname.data());
-	thisone=(macrodata*)malloc(sizeof(macrodata));
-	new(thisone) macrodata;
+	thisone=new macrodata;
 	if (*startpar)
 	{
 		thisone->arguments=(const char* const*)qpsplit(duplicate_string(startpar), ",", &thisone->numargs);
