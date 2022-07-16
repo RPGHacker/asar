@@ -875,16 +875,14 @@ int main(int argc, char * argv[])
 
 						// RPG Hacker: Same goes for the assert command.
 						{
-							std::string command_token_1 = ": Assertion failed: ";
-							std::string command_token_2 = " [assert ";
+							std::string command_token = ": Assertion failed: ";
 							std::string remainder = endpos;
-							size_t command_found_1 = remainder.find(command_token_1);
-							size_t command_found_2 = remainder.find(command_token_2);
+							size_t command_found = remainder.find(command_token);
 
-							if (command_found_1 != std::string::npos && command_found_2 != std::string::npos)
+							if (command_found != std::string::npos)
 							{
-								size_t string_start_pos = command_found_1 + command_token_1.length();
-								actual_error_prints.push_back(std::string(remainder, string_start_pos, command_found_2-string_start_pos));
+								size_t string_start_pos = command_found + command_token.length();
+								actual_error_prints.push_back(std::string(remainder, string_start_pos, std::string::npos));
 							}
 						}
 

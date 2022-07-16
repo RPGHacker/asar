@@ -515,6 +515,8 @@ int main(int argc, char * argv[])
 			//pass 3: assemble it all
 			initstuff();
 			assemblefile(asmname);
+			// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
+			callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, asmname));
 			finishpass();
 		}
 
