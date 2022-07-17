@@ -130,7 +130,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 		string location;
 		string details;
 		get_current_line_details(&location, &details, !show_block);
-		string error_string = (show_stack ? location+": " : STR "") + "error: (E" + dec(errid) + "): " + e_;
+		string error_string = (show_stack ? location+": " : STR "") + "error: (" + get_error_name((asar_error_id)errid) + "): " + e_;
 		string details_string = (show_stack ? details + get_callstack() : "") + "\n";
 		set_text_color(errloc, &error_string, ansi_text_color::BRIGHT_RED);
 		fputs(error_string, errloc);
@@ -152,7 +152,7 @@ void warn(int errid, const char * e_)
 	string location;
 	string details;
 	get_current_line_details(&location, &details, !show_block);
-	string warning_string = location+": warning: (W" + dec(errid) + "): " + e_;
+	string warning_string = location+": warning: (" + get_warning_name((asar_warning_id)errid) + "): " + e_;
 	string details_string = details + get_callstack() + "\n";
 	set_text_color(errloc, &warning_string, ansi_text_color::BRIGHT_YELLOW);
 	fputs(warning_string, errloc);

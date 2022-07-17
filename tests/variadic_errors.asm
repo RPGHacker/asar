@@ -1,12 +1,12 @@
-;`errE5182
-;`errE5097
-;`errE5181
-;`errE5181
-;`errE5180
-;`errE5181
-;`errE5180
-;`errE5179
-;`errE5178
+;`errEvararg_must_be_last
+;`errEinvalid_macro_param_name
+;`errEvararg_out_of_bounds
+;`errEvararg_out_of_bounds
+;`errEmacro_wrong_min_params
+;`errEvararg_out_of_bounds
+;`errEmacro_wrong_min_params
+;`errEvararg_sizeof_nomacro
+;`errEmacro_not_varadic
 
 
 

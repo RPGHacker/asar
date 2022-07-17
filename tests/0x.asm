@@ -1,6 +1,6 @@
-;`errE5050
-;`errE5050
-;`errE5050
+;`errEunknown_operator
+;`errEunknown_operator
+;`errEunknown_operator
 
 ; RPG Hacker: Is this text actually supposed to fail, or was 0x supported by Asar at some point?
 org $008000

@@ -255,9 +255,9 @@ virtual_filesystem::virtual_file_type virtual_filesystem::get_file_type_from_pat
 
 void virtual_filesystem::add_memory_file(const char* name, const void* buffer, size_t length) {
 	memory_buffer mem_buf = { buffer, length };
-	m_memory_files.remove(name);
-	m_memory_files.create(name) = mem_buf;
-
+	string normalized_path = normalize_path(name);
+	m_memory_files.remove(normalized_path);
+	m_memory_files.create(normalized_path) = mem_buf;
 }
 
 bool virtual_filesystem::is_path_absolute(const char* path)

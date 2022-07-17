@@ -9,10 +9,10 @@
 ;`008000
 ;`FF FF FF
 ;`00 01 02 03 04 05 06 07 00 01 02 03
-;`warnW1029
-;`warnW1029
-;`warnW1029
-;`warnW1029
+;`warnWmapper_already_set
+;`warnWmapper_already_set
+;`warnWmapper_already_set
+;`warnWmapper_already_set
 asar 1.50
 
 lorom

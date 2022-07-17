@@ -130,6 +130,15 @@ void asar_throw_warning(int whichpass, asar_warning_id warnid, ...)
 	}
 }
 
+const char* get_warning_name(asar_warning_id warnid)
+{
+	assert(warnid > warning_id_start && warnid < warning_id_end);
+
+	const asar_warning_mapping& warning = asar_warnings[warnid - warning_id_start - 1];
+
+	return warning.name;
+}
+
 
 
 void set_warning_enabled(asar_warning_id warnid, bool enabled)

@@ -82,9 +82,11 @@ static void fillerror(errordata& myerr, int errid, const char * type, const char
 	string details;
 	get_current_line_details(&location, &details);
 	myerr.fullerrdata= duplicate_string(location+": "+type+str+details+get_callstack());
+	// RPG Hacker: TODO: Rework this into a full call stack return value once we bump the DLL API version again.
 	myerr.callerline=get_previous_file_line_no();
 	const char* prev_file = get_previous_file_name();
 	myerr.callerfilename=prev_file ? duplicate_string(prev_file) : nullptr;
+	// RPG Hacker: TODO: Rework this into error/warning name string once we bump the DLL API version again.
 	myerr.errid = errid;
 }
 
@@ -98,7 +100,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 	else if (pass == whichpass) {
 		// don't show current block if the error came from an error command
 		bool show_block = (errid != error_id_error_command);
-		fillerror(errors[numerror++], errid, STR "error: (E" + dec(errid) + "): ", e_, show_block);
+		fillerror(errors[numerror++], errid, STR "error: (" + get_error_name((asar_error_id)errid) + "): ", e_, show_block);
 	}
 	else {}//ignore anything else
 }
@@ -107,7 +109,7 @@ void warn(int errid, const char * str)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (errid != warning_id_warn_command);
-	fillerror(warnings[numwarn++], errid, STR "warning: (W" + dec(errid) + "): ", str, show_block);
+	fillerror(warnings[numwarn++], errid, STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
 }
 
 static void resetdllstuff()

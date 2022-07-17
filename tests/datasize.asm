@@ -1,6 +1,6 @@
 ;`A9 03 00 A9 F3 7F A9 09 00 00 00 02
-;`warnW1027
-;`warnW1028
+;`warnWdatasize_last_label
+;`warnWdatasize_exceeds_size
 org $008000
 main:
 
