@@ -287,7 +287,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(label_forward), "The use of forward labels is not allowed in this context" },
 
 	{ ERR(macro_param_outside_macro), "Reference to macro parameter outside of macro" },
-	{ ERR(label_forward), "The use of forward labels is not allowed in this context" },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
 // matches with the number of constants in asar_warning_id. This is important, because
