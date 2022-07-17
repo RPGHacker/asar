@@ -238,6 +238,8 @@ if(ASAR_GEN_EXE)
 	
 	set_target_properties(asar-standalone PROPERTIES OUTPUT_NAME "asar")
 	set_target_properties(asar-standalone PROPERTIES PDB_NAME "asar.exe")
+
+	install(TARGETS asar-standalone)
 endif(ASAR_GEN_EXE)
 
 
@@ -255,10 +257,13 @@ if(ASAR_GEN_DLL)
 		${ASAR_SHARED_SOURCE_FILES}
 		${ASAR_LIB_RESOURCE_FILES}
 	)
+
 	target_compile_definitions(asar PRIVATE "ASAR_SHARED")
 	set_asar_shared_properties(asar "T" TRUE)
 
 	set_target_properties(asar PROPERTIES PDB_NAME "asar.dll")
+
+	install(TARGETS asar)
 endif(ASAR_GEN_DLL)
 
 
@@ -277,6 +282,8 @@ if (ASAR_GEN_LIB)
 	)
 	target_compile_definitions(asar-static PRIVATE "ASAR_STATIC")
 	set_asar_shared_properties(asar-static "D" FALSE)
+
+	install(TARGETS asar-static)
 
 	# there's no need to set the PDB name since static libraries don't produce PDBs
 endif()
