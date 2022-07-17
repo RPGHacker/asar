@@ -90,7 +90,7 @@ static void fillerror(errordata& myerr, int errid, const char * type, const char
 	if (thisblock) myerr.block= duplicate_string(thisblock);
 	else myerr.block= duplicate_string("");
 	myerr.rawerrdata= duplicate_string(str);
-	myerr.fullerrdata= duplicate_string(STR getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):""));
+	myerr.fullerrdata= duplicate_string(STR getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):STR ""));
 	myerr.callerline=callerline;
 	myerr.callerfilename=callerfilename ? duplicate_string(callerfilename) : nullptr;
 	// RPG Hacker: TODO: Rework this once we bump the DLL API version again.
