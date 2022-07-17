@@ -1,3 +1,3 @@
-;`errE5123
+;`errEcant_be_main_file
 include
 include

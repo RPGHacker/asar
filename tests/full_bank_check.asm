@@ -1,4 +1,4 @@
-;`errE5032
+;`errEbank_border_crossed
 hirom
 check bankcross full
 org $C07FFF

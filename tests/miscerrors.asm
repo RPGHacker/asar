@@ -1,6 +1,6 @@
-;`errE5045
-;`errE5064
-;`errE5048
+;`errEinvalid_opcode_length
+;`errEmacro_label_outside_of_macro
+;`errEdivision_by_zero
 org $008000
 lda.d #$10
 ?asdf:

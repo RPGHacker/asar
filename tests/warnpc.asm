@@ -1,6 +1,6 @@
-;`errE5156
-;`errE5155
-;`errE5154
+;`errEwarnpc_failed
+;`errEwarnpc_broken_param
+;`errEwarnpc_in_freespace
 org $008000
 db $11
 warnpc $008000

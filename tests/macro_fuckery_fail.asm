@@ -1,22 +1,22 @@
-;`errE5211
-;`errE5211
-;`errE5211
-;`errE5212
-;`errE5212
-;`errE5212
-;`errE5212
-;`errE5212
-;`errE5212
-;`errE5098
-;`errE5098
-;`errE5098
-;`errE5098
-;`errE5098
-;`errE5098
-;`errE5106
-;`errE5106
-;`errE5181
-;`errE5181
+;`errEmacro_param_outside_macro
+;`errEmacro_param_outside_macro
+;`errEmacro_param_outside_macro
+;`errEinvalid_depth_resolve
+;`errEinvalid_depth_resolve
+;`errEinvalid_depth_resolve
+;`errEinvalid_depth_resolve
+;`errEinvalid_depth_resolve
+;`errEinvalid_depth_resolve
+;`errEmacro_param_not_found
+;`errEmacro_param_not_found
+;`errEmacro_param_not_found
+;`errEmacro_param_not_found
+;`errEmacro_param_not_found
+;`errEmacro_param_not_found
+;`errEunclosed_macro
+;`errEunclosed_macro
+;`errEvararg_out_of_bounds
+;`errEvararg_out_of_bounds
 
 org $008000
 

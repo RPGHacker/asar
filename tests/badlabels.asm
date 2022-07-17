@@ -1,8 +1,8 @@
-;`errE5059
-;`errE5075
-;`errE5075
-;`errE5075
-;`errE5075
+;`errEinvalid_label_name
+;`errEinvalid_subscript
+;`errEinvalid_subscript
+;`errEinvalid_subscript
+;`errEinvalid_subscript
 org $008000
 test[2]:
 struct asdf

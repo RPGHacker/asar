@@ -1,9 +1,9 @@
-;`errE5016
-;`errE5166
-;`errE5088
-;`errE5162
-;`errE5162
-;`errE5033
+;`errEfile_not_found
+;`errEfailed_to_open_not_regular_file
+;`errEdefine_not_found
+;`errEinvalid_warning_id
+;`errEinvalid_warning_id
+;`errEstart_of_file
 incsrc "jkhkjh"
 incbin ".."
 undef asdf
