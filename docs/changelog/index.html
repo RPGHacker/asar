@@ -45,6 +45,8 @@
 		<ul>
 			<li>RPG Hacker</li>
 			<li>randomdude999</li>
+			<li>p4plus2</li>
+			<li>Atari2</li>
 		</ul>
 
 		<h3>Notes:</h3>
@@ -57,6 +59,8 @@
 			<li>The Asar test suite can now verify user-printable strings. (RPG Hacker)</li>
 			<li>The <code>error</code>, <code>warn</code> and <code>assert</code> commands now support the same functions as the print command. (RPG Hacker)</li>
 			<li>Static labels (i.e. labels that don't move between passes) can now be used in more places, including if statements. (RPG Hacker)</li>
+			<li>Asar can be built as a static library. (Atari2)</li>
+			<li>Asar now uses named warnings and errors instead of magic numbers as identifiers. (p4plus2, RPG Hacker)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
@@ -67,11 +71,31 @@
 			<li>For invalid table files, Asar now prints the line number of the first invalid entry. (RPG Hacker)</li>
 			<li>When Asar generates addr-to-line mappings, it now includes multiple addresses for pseudo opcodes like &quot;asl #4&quot;. (RPG Hacker)</li>
 			<li><code>'''</code> and <code>';'</code> are now valid can now be used without causing errors. (randomdude999, RPG Hacker)</li>
+			<li>Fixed some edge case bugs in Asar's virtual filesystem (usable via the DLL) on Windows. (Atari2)</li>
 		</ul></div>
 
 		<h3>Deprecated features:</h3>
 		<ul>
-			<li>Warning and error IDs: Asar now uses named warnings and errors. (p4plus2, RPG Hacker)</li>
+			<li>Warning and error IDs: Use new name strings instead.</li>
+			<li><code>JMP.l</code>: Use <code>JML</code> instead.</li>
+			<li>Quoted symbolic arguments to functions (e.g. <code>sizeof("my_struct")</code>): Remove the quotes (<code>sizeof(my_struct)</code>).</li>
+			<li>Redefining previously defined functions.</li>
+			<li><code>math round</code> and <code>math pri</code>: Use parentheses and explicit rounding where xkas-style math emulation is needed instead.</li>
+			<li><code>.d</code> length specifier on opcodes.</li>
+			<li><code>if !condition</code> to negate conditions: Use <code>if not(condition)</code> instead.</li>
+			<li>While blocks ending with <code>endif</code>: Use <code>endwhile</code> instead.</li>
+			<li><code>bankcheck on</code>: Use <code>bankcheck full</code> or <code>bankcheck half</code> instead.</li>
+			<li><code>rep</code> to repeat commands: Use while loops or unrolled loops instead.</li>
+			<li>Windows-specific paths (e.g. <code>incsrc dir\file.asm</code>): Use cross-platform paths instead (<code>incsrc dir/file.asm</code>).</li>
+			<li><code>table</code> command: Assign characters directly instead, like <code>'a' = $00</code>.</li>
+			<li>Labels in <code>padbyte</code> or <code>fillbyte</code> commands.</li>
+			<li><code>spc700-raw</code> architecture: Use <code>spc700</code> with <code>norom</code> instead.</li>
+			<li><code>fastrom</code>: Has never actually worked and can be removed.</li>
+			<li><code>header</code>: Doesn't do anything and can be removed.</li>
+			<li>Non-UTF-8 source files: Re-save your source files as UTF-8 in a text editor of choice.</li>
+			<li><code>;@command</code> and <code>@command</code> notation: Use <code>command</code> instead.</li>
+			<li>Wrapping defines to resolve in quotes (e.g. <code>db "!define"</code>): The quotes aren't needed (<code>db !define</code>).</li>
+			<li>Single-line/inline if statements: Use full if blocks with an <code>if</code>/<code>endif</code> pair instead.</li>
 		</ul></div>
 
 		<hr />
