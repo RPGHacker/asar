@@ -50,6 +50,14 @@
 		<h3>New features:</h3>
 		<ul>
 			<li>UTF-8 support: Asar now expects all source files to be UTF-8-encoded. Unicode code points (encoded as UTF-8) are now supported in table files, math commands, tables etc. Unicode file names are now also supported on Windows. (randomdude999, RPG Hacker)</li>
+			<li>Added support for nested macro definitions. (RPG Hacker)</li>
+			<li>Improved readability of some error messages. (RPG Hacker)</li>
+			<li>Generally improved error formatting of Asar and added the <code>--full-call-stack</code> option to display complete call stacks. (RPG Hacker)</li>
+		</ul>
+
+		<h3>Bug fixes:</h3>
+		<ul>
+			<li>Asar no longer strips just any white space from defines, allowing them to more closely reflect user intent. (p4plus2)</li>
 		</ul>
 
 		<h3>Removed features:</h3>
@@ -88,10 +96,6 @@
 			<li>For invalid table files, Asar now prints the line number of the first invalid entry. (RPG Hacker)</li>
 			<li>When Asar generates addr-to-line mappings, it now includes multiple addresses for pseudo opcodes like &quot;asl #4&quot;. (RPG Hacker)</li>
 			<li><code>'''</code> and <code>';'</code> can now be used without causing errors. (randomdude999, RPG Hacker)</li>
-			<li>Added support for nested macro definitions. (RPG Hacker)</li>
-			<li>Improved readability of some error messages. (RPG Hacker)</li>
-			<li>Asar no longer strips white space from defines, allowing them to more closely reflect user intent. (RPG Hacker)</li>
-			<li>Generally improved error formatting of Asar and added the <code>--full-call-stack</code> option to display complete call stacks. (RPG Hacker)</li>
 		</ul></div>
 
 		<h3>Deprecated features:</h3>
