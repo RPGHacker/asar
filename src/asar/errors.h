@@ -280,3 +280,4 @@ struct errblock : public errline {};
 struct errnull : public errblock {};
 
 void asar_throw_error(int whichpass, asar_error_type type, asar_error_id errid, ...);
+const char* get_error_name(asar_error_id errid);

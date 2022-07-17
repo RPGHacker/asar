@@ -1,6 +1,6 @@
 ;`+
 ;`29 78
-;`warnW1013
+;`warnWimplicitly_sized_immediate
 
 warnings enable Wimplicitly_sized_immediate
 

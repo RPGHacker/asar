@@ -1,4 +1,4 @@
-;`errE5183
+;`errEinvalid_global_label
 
 macro Test()
     global ?label

@@ -1,4 +1,4 @@
-;`errE5117
+;`errEunknown_command
 
 org $008000
 

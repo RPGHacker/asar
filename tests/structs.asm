@@ -1,7 +1,7 @@
 ;`AD 07 00 AD 02 00 AD 02 00 DC 00 00 DC 07 00 A9 40 00 8D 25 43
 ;`02 03 05 07 03 05 02 05
-;`warnW1030
-;`warnW1030
+;`warnWfeature_deprecated
+;`warnWfeature_deprecated
 
 org $008000
 
