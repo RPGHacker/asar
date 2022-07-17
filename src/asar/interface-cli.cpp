@@ -6,6 +6,7 @@
 #include "assembleblock.h"
 #include "asar_math.h"
 #include "unicode.h"
+#include "platform/thread-helpers.h"
 
 #if defined(windows)
 #	define NOMINMAX
@@ -541,18 +542,29 @@ int main(int argc, const char * argv[])
 		string stddefinespath = STR dir(argv[0]) + "stddefines.txt";
 		parse_std_defines(stddefinespath);
 
-		for (pass=0;pass<3;pass++)
+		auto execute_patch = [&]()
 		{
-			//pass 1: find which bank all labels are in, for label optimizations
-			//  freespaces are listed as above 0xFFFFFF, to find if it's in the ROM or if it's dynamic
-			//pass 2: find where exactly all labels are
-			//pass 3: assemble it all
-			initstuff();
-			assemblefile(asmname);
-			// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
-			callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, asmname));
-			finishpass();
-		}
+			for (pass=0;pass<3;pass++)
+			{
+				//pass 1: find which bank all labels are in, for label optimizations
+				//  freespaces are listed as above 0xFFFFFF, to find if it's in the ROM or if it's dynamic
+				//pass 2: find where exactly all labels are
+				//pass 3: assemble it all
+				initstuff();
+				assemblefile(asmname);
+				// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
+				callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, asmname));
+				finishpass();
+			}
+			return true;
+		};
+#if defined(RUN_VIA_FIBER)
+		run_as_fiber(execute_patch);
+#elif defined(RUN_VIA_THREAD)
+		run_as_thread(execute_patch);
+#else
+		execute_patch();
+#endif
 
 		new_filesystem.destroy();
 		filesystem = nullptr;

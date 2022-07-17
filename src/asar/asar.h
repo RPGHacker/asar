@@ -180,3 +180,11 @@ const char* get_current_block();
 // interface to make use of the full callstack.
 const char* get_previous_file_name();
 int get_previous_file_line_no();
+
+// RPG Hacker: This is currently disabled for debug builds, because it causes random crashes
+// when used in combination with -fsanitize=address.
+#if defined(_WIN32) && defined(NDEBUG)
+#	define RUN_VIA_FIBER
+#else
+#	define RUN_VIA_THREAD
+#endif
