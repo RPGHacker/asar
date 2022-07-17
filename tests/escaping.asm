@@ -4,6 +4,7 @@
 ;`10 01 02 03 04 11 12 01 02 03 04
 ;`01 02 03 04 10 01 02 03 04 11 12
 ;`20 01 02 20 20 20 03 04 20 10 01 02 03 04 11 12
+;;`01 02 03 04 05 06 20 30 40
 macro do_stuff_1(stuff_1, stuff_2)
 	<stuff_1>
 	<stuff_2>
@@ -21,6 +22,8 @@ endmacro
 'e' = $05
 'f' = $06
 ' ' = $20
+'\' = $30
+'"' = $40
 
 org $008000
 	%do_stuff_1("db ""abcd"",$00,""abcdef""", "db 'a'")
@@ -31,3 +34,8 @@ org $008000
 		"$10,""abcd"",$11,$12")	
 	%do_stuff_2(    """ ab   cd """    ,     ; A lot of intentional spaces here.
 		"$10,""abcd"",$11,$12"   )
+
+; RPG Hacker: IMO, we should make this work for Asar 2.0,
+; but for now, I'll leave this commented out.
+;!define = "db \a\b\c\d\e\f\ \\\""
+;!define

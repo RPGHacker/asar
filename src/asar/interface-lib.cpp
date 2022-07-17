@@ -12,7 +12,11 @@
 #if defined(CPPCLI)
 #define EXPORT extern "C"
 #elif defined(_WIN32)
+#ifdef ASAR_SHARED
 #define EXPORT extern "C" __declspec(dllexport)
+#elif defined(ASAR_STATIC)
+#define EXPORT extern "C"
+#endif
 #else
 #define EXPORT extern "C" __attribute__ ((visibility ("default")))
 #endif
@@ -78,14 +82,19 @@ void print(const char * str)
 
 static void fillerror(errordata& myerr, int errid, const char * type, const char * str, bool show_block)
 {
-	myerr.filename= duplicate_string(thisfilename);
-	myerr.line=thisline;
-	if (thisblock) myerr.block= duplicate_string(thisblock);
+	myerr.filename= duplicate_string(get_current_file_name());
+	myerr.line=get_current_line();
+	const char* current_block = get_current_block();
+	if (current_block) myerr.block= duplicate_string(current_block);
 	else myerr.block= duplicate_string("");
 	myerr.rawerrdata= duplicate_string(str);
-	myerr.fullerrdata= duplicate_string(getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):""));
-	myerr.callerline=callerline;
-	myerr.callerfilename=callerfilename ? duplicate_string(callerfilename) : nullptr;
+	string location;
+	string details;
+	get_current_line_details(&location, &details);
+	myerr.fullerrdata= duplicate_string(location+": "+type+str+details+get_callstack());
+	myerr.callerline=get_previous_file_line_no();
+	const char* prev_file = get_previous_file_name();
+	myerr.callerfilename=prev_file ? duplicate_string(prev_file) : nullptr;
 	myerr.errid = errid;
 }
 
@@ -222,7 +231,9 @@ static void asar_patch_main(const char * patchloc)
 		for (pass = 0;pass < 3;pass++)
 		{
 			initstuff();
-			assemblefile(patchloc, true);
+			assemblefile(patchloc);
+			// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
+			callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, patchloc));
 			finishpass();
 		}
 	}

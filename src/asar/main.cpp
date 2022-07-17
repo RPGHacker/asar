@@ -32,12 +32,7 @@ int optimize_dp = optimize_dp_flag::NONE;
 int dp_base = 0;
 int optimize_address = optimize_address_flag::DEFAULT;
 
-string thisfilename;
-int thisline;
-const char * thisblock;
-
-string callerfilename;
-int callerline=-1;
+autoarray<callstack_entry> callstack;
 
 bool errored=false;
 bool ignoretitleerrors=false;
@@ -99,17 +94,217 @@ bool setmapper()
 	return (maxscore>=0);
 }
 
-string getdecor()
+
+// TODO: Make this accessible to the DLL interface.
+// Will require lib API addition.
+bool simple_callstacks = true;
+
+// Shortens target_path to a relative path, but only if it resides
+// within base_path or a child directory of it.
+string shorten_to_relative_path(const char* base_path, const char* target_path)
+{
+	if (stribegin(target_path, base_path)) target_path += strlen(base_path);
+	return target_path;
+}
+
+string get_top_level_directory()
+{
+	string top_level_file_dir;
+	for (int i = 0; i < callstack.count; ++i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			top_level_file_dir = dir(callstack[i].content);
+			break;
+		}
+	}
+	return top_level_file_dir;
+}
+
+string generate_call_details_string(const char* current_block, const char* current_call, int indentation, bool add_lines)
 {
 	string e;
-	if (thisfilename)
+	if (current_block != nullptr || current_call != nullptr)
 	{
-		e+=thisfilename;
-		if (thisline!=-1) e+=STR ":"+dec(thisline+1);
-		if (callerfilename) e+=STR" (called from "+callerfilename+":"+dec(callerline+1)+")";
-		e+=": ";
+		string indent;
+		if (add_lines) indent += "|";
+		for (; indentation > 0; --indentation) indent += " ";
+		
+		if (current_block != nullptr) e += STR "\n"+indent+"in block: ["+current_block+"]";
+		if (current_call != nullptr) e += STR "\n"+indent+"in macro call: [%"+current_call+"]";
 	}
 	return e;
+}
+
+string generate_filename_and_line(const char* current_file, int current_line_no)
+{
+	// RPG Hacker: One could make an argument that we shouldn't shorten paths
+	// here, since some IDEs support jumping to files by double-clicking their
+	// paths. However, AFAIK, no IDE supports this for Asar yet, and if it's
+	// ever desired, we could just make it a command line option. Until then,
+	// I think it's more important to optimize for pretty command line display.
+	return STR shorten_to_relative_path(get_top_level_directory(), current_file)
+		+ (current_line_no>=0?STR ":"+dec(current_line_no+1):"");
+}
+
+void push_stack_line(autoarray<string>* lines, const char* current_file, const char* current_block, const char* current_call, int current_line_no, int stack_frame_index)
+{
+	string indent = "\n|   ";
+	indent += dec(stack_frame_index);
+	indent += ": ";
+	// RPG Hacker: We'll probably never have a call stack in the
+	// hundreds even, so this very specific, lazy solution suffices.
+	if (stack_frame_index < 100) indent += " ";
+	if (stack_frame_index < 10) indent += " ";
+	lines->append(indent 
+		+ generate_filename_and_line(current_file, current_line_no)
+		+ generate_call_details_string(current_block, current_call, 12, true)
+	);
+}
+
+void get_current_line_details(string* location, string* details, bool exclude_block)
+{	
+	const char* current_file = nullptr;
+	const char* current_block = nullptr;
+	const char* current_call = nullptr;
+	int current_line_no = -1;
+	for (int i = callstack.count-1; i >= 0 ; --i)
+	{
+		switch (callstack[i].type)
+		{
+			case callstack_entry_type::FILE:
+				current_file = callstack[i].content;
+				if (exclude_block) current_block = nullptr;
+				*location = generate_filename_and_line(current_file, current_line_no);
+				*details = generate_call_details_string(current_block, current_call, 4, false);
+				return;
+			case callstack_entry_type::MACRO_CALL:
+				if (current_call == nullptr) current_call = callstack[i].content;
+				break;
+			case callstack_entry_type::LINE:
+				if (current_block == nullptr && current_call == nullptr) current_block = callstack[i].content;
+				if (current_line_no == -1) current_line_no = callstack[i].lineno;
+				break;
+			case callstack_entry_type::BLOCK:
+				if (current_block == nullptr) current_block = callstack[i].content;
+				break;
+		}
+	}
+	*location = "";
+	*details = "";
+}
+
+string get_full_callstack()
+{
+	autoarray<string> lines;
+	const char* current_file = nullptr;
+	const char* current_block = nullptr;
+	const char* current_call = nullptr;
+	int current_line_no = -1;
+	for (int i = 0; i < callstack.count; ++i)
+	{
+		switch (callstack[i].type)
+		{
+			case callstack_entry_type::FILE:
+				if (current_file != nullptr)
+				{
+					push_stack_line(&lines, current_file, current_block, current_call, current_line_no, lines.count);
+				}
+				current_file = callstack[i].content;
+				current_block = nullptr;
+				current_call = nullptr;
+				current_line_no = -1;
+				break;
+			case callstack_entry_type::MACRO_CALL:
+				current_block = nullptr;
+				current_call = callstack[i].content;
+				break;
+			case callstack_entry_type::LINE:
+				current_line_no = callstack[i].lineno;
+				current_block = callstack[i].content;
+				break;
+			case callstack_entry_type::BLOCK:
+				current_block = callstack[i].content;
+				break;
+		}
+	}
+	// RPG Hacker: This pop here is incorrect, because with the
+	// way we traverse the call stack, the highest level is
+	// already automatically excluded, anyways.
+	//if (lines.count > 0) lines.remove(lines.count-1);
+	
+	string e;
+	if (lines.count > 0)
+	{
+		e += "\nFull call stack:";
+		for (int i = lines.count-1; i >= 0; --i) e += lines[i];
+	}
+	return e;
+}
+
+// RPG Hacker: This function essetially replicates classic Asar behavior
+// of only printing a single macro call below the current level.
+string get_simple_callstack()
+{
+	int i;
+	const char* current_call = nullptr;
+	for (i = callstack.count-1; i >= 0 ; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::MACRO_CALL)
+		{
+			current_call = callstack[i].content;
+			break;
+		}
+	}
+	
+	const char* current_file = nullptr;
+	int current_line_no = -1;
+	if (current_call != nullptr)
+	{
+		bool stop = false;
+		for (int j = i-1; j >= 0 ; --j)
+		{
+			switch (callstack[j].type)
+			{
+				case callstack_entry_type::FILE:
+					if (current_file != nullptr)
+					{
+						stop = true;
+						break;
+					}
+					current_file = callstack[j].content;
+					break;
+				case callstack_entry_type::MACRO_CALL:
+					stop = true;
+					break;
+				case callstack_entry_type::LINE:
+					if (current_line_no == -1) current_line_no = callstack[j].lineno;
+					break;
+				case callstack_entry_type::BLOCK:
+					break;
+			}
+			
+			if (current_file != nullptr && current_line_no != -1) stop = true;
+			
+			if (stop) break;
+		}
+	}
+	
+	string e;
+	if (current_call != nullptr && current_file != nullptr)
+	{
+		e += STR "\n    called from: " + generate_filename_and_line(current_file, current_line_no)
+			+ ": [%" + current_call + "]";
+	}
+	return e;
+}
+
+string get_callstack()
+{
+	if (simple_callstacks)
+		return get_simple_callstack();
+	else
+		return get_full_callstack();
 }
 
 asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error)
@@ -338,6 +533,22 @@ void resolvedefines(string& out, const char * start)
 			bool first=(here==start || (here>=start+4 && here[-1]==' ' && here[-2]==':' && here[-3]==' '));//check if it's the start of a block
 			string defname;
 			here++;
+			
+			int depth = 0;
+			for (const char* depth_str = here; *depth_str=='^'; depth_str++)
+			{
+				depth++;
+			}
+			here += depth;
+			
+			if (depth != in_macro_def)
+			{
+				out += '!';
+				for (int i=0; i < depth; ++i) out += '^';
+				if (depth > in_macro_def) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "define", "define", depth, in_macro_def);
+				continue;
+			}
+			
 			if (*here=='{')
 			{
 				here++;
@@ -398,6 +609,9 @@ void resolvedefines(string& out, const char * start)
 				}
 				//if (strqchr(val.data(), ';')) *strqchr(val.data(), ';')=0;
 				if (*here && !stribegin(here, " : ")) asar_throw_error(0, error_type_line, error_id_broken_define_declaration);
+				// RPG Hacker: Is it really a good idea to normalize
+				// the content of defines? That kinda violates their
+				// functionality as a string replacement mechanism.
 				val.qnormalize();
 
 				// RPG Hacker: throw an error if we're trying to overwrite built-in defines.
@@ -465,8 +679,6 @@ void resolvedefines(string& out, const char * start)
 
 bool moreonline;
 bool asarverallowed = false;
-bool parsing_macro;
-bool istoplevel;
 
 void assembleline(const char * fname, int linenum, const char * line)
 {
@@ -474,18 +686,11 @@ void assembleline(const char * fname, int linenum, const char * line)
 	bool moreonlinetmp=moreonline;
 	// randomdude999: redundant, assemblefile already converted the path to absolute
 	//string absolutepath = filesystem->create_absolute_path("", fname);
-	thisfilename = fname;
-	thisline=linenum;
-	thisblock= nullptr;
+	string absolutepath = fname;
 	try
 	{
-		string tmp=replace_macro_args(line);
-		tmp.qnormalize();
-		string out;
-		if (numif==numtrue || (numtrue+1==numif && stribegin(tmp, "elseif "))) resolvedefines(out, tmp);
-		else out=tmp;
+		string out=line;
 		out.qreplace(": :", ":  :");
-//puts(out);
 		autoptr<char**> blocks=qsplitstr(out.temp_raw(), " : ");
 		moreonline=true;
 		for (int block=0;moreonline;block++)
@@ -495,9 +700,9 @@ void assembleline(const char * fname, int linenum, const char * line)
 			{
 				string stripped_block = strip_whitespace(blocks[block]);
 
-				thisline=linenum;//do not optimize, this one is recursive
-				thisblock = stripped_block.data();
-				assembleblock(thisblock);
+				callstack_push cs_push(callstack_entry_type::BLOCK, stripped_block);
+					
+				assembleblock(stripped_block);
 				checkbankcross();
 			}
 			catch (errblock&) {}
@@ -525,22 +730,21 @@ bool file_included_once(const char* file)
 	return false;
 }
 
-void assemblefile(const char * filename, bool toplevel)
-{
+autoarray<string> macro_defs;
+int in_macro_def=0;
+
+void assemblefile(const char * filename)
+{		
 	incsrcdepth++;
-	string absolutepath = filesystem->create_absolute_path(thisfilename, filename);
+	string absolutepath = filesystem->create_absolute_path(get_current_file_name(), filename);
 
 	if (file_included_once(absolutepath))
 	{
 		return;
 	}
 
-	string prevthisfilename = thisfilename;
-	thisfilename = absolutepath;
-	int prevline = thisline;
-	thisline=-1;
-	const char* prevthisblock = thisblock;
-	thisblock= nullptr;
+	callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
+	
 	sourcefile file;
 	file.contents = nullptr;
 	file.numlines = 0;
@@ -550,12 +754,6 @@ void assemblefile(const char * filename, bool toplevel)
 		char * temp= readfile(absolutepath, "");
 		if (!temp)
 		{
-			// RPG Hacker: This is so that we hopefully always end up with a proper decor
-			// and get better error messages.
-			thisfilename = prevthisfilename;
-			thisline = prevline;
-			thisblock = prevthisblock;
-
 			asar_throw_error(0, error_type_null, vfile_error_to_error_id(asar_get_last_io_error()), filename);
 
 			return;
@@ -568,9 +766,8 @@ void assemblefile(const char * filename, bool toplevel)
 			char * line= file.contents[i];
 			char * comment = strqchr(line, ';');
 			if(comment) *comment = 0;
-			if (!confirmquotes(line)) { thisline = i; thisblock = line; asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
+			if (!confirmquotes(line)) { callstack_push cs_push(callstack_entry_type::LINE, line, i); asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
 			file.contents[i] = strip_whitespace(line);
-
 		}
 		for(int i=0;file.contents[i];i++)
 		{
@@ -594,36 +791,23 @@ void assemblefile(const char * filename, bool toplevel)
 	asarverallowed=true;
 	for (int i=0;file.contents[i] && i<file.numlines;i++)
 	{
-		try
-		{
-			thisfilename= absolutepath;
-			thisline=i;
-			thisblock= nullptr;
-			istoplevel=toplevel;
-			if (parsing_macro && stricmp(file.contents[i], "endmacro"))
-			{
-				if (!pass) tomacro(file.contents[i]);
-			}
-			else
-			{
-				int prevnumif = numif;
-				string connectedline;
-				int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
-				assembleline(absolutepath, i, connectedline);
-				thisfilename = absolutepath;
-				i += skiplines;
-				if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
-					i = whilestatus[numif].startline - 1;
-			}
-		}
-		catch (errline&) {}
+		string connectedline;
+		int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
+		
+		int prevnumif = numif;
+		
+		do_line_logic(connectedline, absolutepath, i);
+		i += skiplines;
+		
+		if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
+			i = whilestatus[numif].startline - 1;
 	}
-	thisline++;
-	thisblock= nullptr;
-	if (parsing_macro)
+	while (in_macro_def > 0)
 	{
-		asar_throw_error(0, error_type_null, error_id_unclosed_macro);
-		if (!pass) endmacro(false);
+		asar_throw_error(0, error_type_null, error_id_unclosed_macro, macro_defs[in_macro_def-1].data());
+		if (!pass && in_macro_def == 1) endmacro(false);
+		in_macro_def--;
+		macro_defs.remove(in_macro_def);
 	}
 	if (numif!=startif)
 	{
@@ -633,6 +817,72 @@ void assemblefile(const char * filename, bool toplevel)
 	}
 	incsrcdepth--;
 }
+
+// RPG Hacker: At some point, this should probably be merged
+// into assembleline(), since the two names just cause
+// confusion otherwise.
+void do_line_logic(const char* line, const char* filename, int lineno)
+{			
+	try
+	{
+		string current_line;
+		if (numif==numtrue || (numtrue+1==numif && stribegin(line, "elseif ")))
+		{
+			callstack_push cs_push(callstack_entry_type::LINE, line, lineno);
+			string tmp=replace_macro_args(line);
+			tmp.qnormalize();
+			resolvedefines(current_line, tmp);
+		}
+		else current_line=line;
+		
+		callstack_push cs_push(callstack_entry_type::LINE, current_line, lineno);
+		
+		if (stribegin(current_line, "macro ") && numif==numtrue)
+		{
+			// RPG Hacker: Slight redundancy here with code that is
+			// also in startmacro(). Could improve this for Asar 2.0.
+			string macro_name = current_line.data()+6;
+			char * startpar=strqchr(macro_name.data(), '(');
+			if (startpar) *startpar=0;
+			macro_defs.append(macro_name);
+			
+			// RPG Hacker: I think it would make more logical sense
+			// to have this ++ after the if, but hat breaks compatibility
+			// with at least one test, and it generally leads to more
+			// errors being output after a broken macro declaration.
+			in_macro_def++;
+			if (!pass)
+			{
+				if (in_macro_def == 1) startmacro(current_line.data()+6);
+				else tomacro(current_line);
+			}
+		}
+		else if (!stricmp(current_line, "endmacro") && numif==numtrue)
+		{
+			if (in_macro_def == 0) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
+			else
+			{
+				in_macro_def--;
+				macro_defs.remove(in_macro_def);
+				if (!pass)
+				{
+					if (in_macro_def == 0) endmacro(true);
+					else tomacro(current_line);
+				}
+			}
+		}
+		else if (in_macro_def > 0)
+		{
+			if (!pass) tomacro(current_line);
+		}
+		else
+		{
+			assembleline(filename, lineno, current_line);
+		}
+	}
+	catch (errline&) {}
+}
+
 
 void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 {
@@ -774,11 +1024,7 @@ bool force_checksum_fix = false;
 static void clearmacro(const string & key, macrodata* & macro)
 {
 	(void)key;
-	macro->lines.~autoarray();
-	cfree(macro->fname);
-	cfree(macro->arguments_buffer);
-	cfree(macro->arguments);
-	cfree(macro);
+	freemacro(macro);
 }
 
 static void clearfile(const string & key, sourcefile& filecontent)
@@ -787,6 +1033,7 @@ static void clearfile(const string & key, sourcefile& filecontent)
 	cfree(filecontent.data);
 	cfree(filecontent.contents);
 }
+#undef cfree
 
 static void adddefine(const string & key, string & value)
 {
@@ -865,6 +1112,82 @@ string create_symbols_file(string format, uint32_t romCrc){
 	return symbolfile;
 }
 
+
+bool in_top_level_file()
+{
+	int num_files = 0;
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			num_files++;
+			if (num_files > 1) break;
+		}			
+	}
+	return (num_files <= 1);
+}
+
+const char* get_current_file_name()
+{
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+			return callstack[i].content.raw();
+	}
+	return nullptr;
+}
+
+int get_current_line()
+{
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::LINE) return callstack[i].lineno;
+	}
+	return -1;
+}
+
+const char* get_current_block()
+{
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::LINE || callstack[i].type == callstack_entry_type::BLOCK) return callstack[i].content.raw();
+	}
+	return nullptr;
+}
+
+const char* get_previous_file_name()
+{
+	int num_files = 0;
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			num_files++;
+			if (num_files > 1) return callstack[i].content.raw();
+		}			
+	}
+	return nullptr;
+}
+
+int get_previous_file_line_no()
+{
+	int num_files = 0;
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			num_files++;
+			if (num_files > 1) return -1;
+		}
+		else if (callstack[i].type == callstack_entry_type::LINE)
+		{
+			if (num_files == 1) return callstack[i].lineno;
+		}
+	}
+	return -1;
+}
+
+
 void reseteverything()
 {
 	string str;
@@ -893,9 +1216,14 @@ void reseteverything()
 	errored = false;
 	checksum_fix_enabled = true;
 	force_checksum_fix = false;
-
+	
+	in_macro_def = 0;
+	
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));
 	#endif
+	
+	callstack.reset();
+	simple_callstacks = true;
 #undef free
 }

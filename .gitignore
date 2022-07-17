@@ -53,3 +53,10 @@ CMakeCache.txt
 tests_tmp_dll/
 tests_tmp_app/
 *.aps
+
+# Just because I like building into the Asar dir directly...
+/bin
+/build
+.cmake
+.vscode
+.cache

@@ -576,9 +576,9 @@ int main(int argc, char * argv[])
 	{
 		// don't treat this as an error and just return 0
 #if defined(ASAR_TEST_DLL)
-		printf("Usage: test.exe [asar_dll_path] [path_to_tests_directory] [path_to_unheadered_SMW_ROM_file] [output_directory]\n");
+		printf("Usage: asar-dll-test.exe [asar_dll_path] [path_to_tests_directory] [path_to_unheadered_SMW_ROM_file] [output_directory]\n");
 #else
-		printf("Usage: test.exe [asar_exe_path] [path_to_tests_directory] [path_to_unheadered_SMW_ROM_file] [output_directory]\n");
+		printf("Usage: asar-app-test.exe [asar_exe_path] [path_to_tests_directory] [path_to_unheadered_SMW_ROM_file] [output_directory]\n");
 #endif
 		return 0;
 	}
@@ -1066,16 +1066,14 @@ int main(int argc, char * argv[])
 
 						// RPG Hacker: Same goes for the assert command.
 						{
-							std::string command_token_1 = ": Assertion failed: ";
-							std::string command_token_2 = " [assert ";
+							std::string command_token = ": Assertion failed: ";
 							std::string remainder = endpos;
-							size_t command_found_1 = remainder.find(command_token_1);
-							size_t command_found_2 = remainder.find(command_token_2);
+							size_t command_found = remainder.find(command_token);
 
-							if (command_found_1 != std::string::npos && command_found_2 != std::string::npos)
+							if (command_found != std::string::npos)
 							{
-								size_t string_start_pos = command_found_1 + command_token_1.length();
-								actual_error_prints.push_back(std::string(remainder, string_start_pos, command_found_2-string_start_pos));
+								size_t string_start_pos = command_found + command_token.length();
+								actual_error_prints.push_back(std::string(remainder, string_start_pos, std::string::npos));
 							}
 						}
 
@@ -1264,16 +1262,16 @@ int main(int argc, char * argv[])
 
 	printf("%u out of %u performed tests succeeded.\n", (unsigned int)(input_files.size() - (size_t)numfailed), (unsigned int)input_files.size());
 
+#if defined(ASAR_TEST_DLL)
+	asar_close();
+#endif
+
 	if (numfailed > 0 || !all_lib_test_passed)
 	{
 		if(!all_lib_test_passed) printf("Library API failed to verify.\n");
 		printf("Some tests failed!\n");
 		return 1;
 	}
-
-#if defined(ASAR_TEST_DLL)
-	asar_close();
-#endif
 
 	return 0;
 }

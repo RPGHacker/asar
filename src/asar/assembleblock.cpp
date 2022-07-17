@@ -696,8 +696,6 @@ void initstuff()
 	check_half_banks_crossed = false;
 	nested_namespaces = false;
 
-	thisfilename = "";
-
 	includeonce.reset();
 
 	extern AddressToLineMapping addressToLineMapping;
@@ -706,6 +704,8 @@ void initstuff()
 	push_warnings(false);
 
 	initmathcore();
+	
+	callstack.reset();
 }
 
 
@@ -896,8 +896,8 @@ void assembleblock(const char * block)
 #define is3(test) (numwords==4 && !stricmpwithlower(word[0], test))
 #define par word[1]
 
-	// RPG Hacker: Hack to fix the bug where defines in elseifs would never get resolved
-	// This really seems like the only possible place for the fix
+	callstack_push cs_push(callstack_entry_type::BLOCK, block);
+	
 	int numwords;
 	string splitblock = block;
 	char ** word = qsplit(splitblock.temp_raw(), ' ', &numwords);
@@ -916,7 +916,7 @@ void assembleblock(const char * block)
 	{
 		string errmsg;
 		whiletracker wstatus;
-		wstatus.startline = thisline;
+		wstatus.startline = get_current_line();
 		wstatus.iswhile = is("while");
 		wstatus.cond = false;
 		whiletracker& addedwstatus = (whilestatus[numif] = wstatus);
@@ -1019,7 +1019,7 @@ void assembleblock(const char * block)
 				for (int i = 0; i < recent_opcode_num; ++i)
 				{
 					extern AddressToLineMapping addressToLineMapping;
-					addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos + (i * opcode_size));
+					addressToLineMapping.includeMapping(get_current_file_name(), get_current_line() + 1, addrToLinePos + (i * opcode_size));
 				}
 			}
 		}
@@ -1059,31 +1059,7 @@ void assembleblock(const char * block)
 	}
 	else if(word[0][0]=='%')
 	{
-		if (!macrorecursion)
-		{
-			callerfilename=thisfilename;
-			callerline=thisline;
-		}
 		callmacro(strchr(block, '%')+1);
-		if (!macrorecursion)
-		{
-			callerfilename="";
-			callerline=-1;
-		}
-	}
-	else if (is("macro"))
-	{
-		//todo better error
-		if (moreonline)  asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
-		if (parsing_macro || inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
-		parsing_macro=true;
-		if (!pass) startmacro(block+6);
-	}
-	else if (is("endmacro"))
-	{
-		if (!parsing_macro) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
-		parsing_macro=false;
-		if (!pass) endmacro(true);
 	}
 	else if (is1("undef"))
 	{
@@ -1283,7 +1259,7 @@ void assembleblock(const char * block)
 	else if (is0("include") || is1("includefrom"))
 	{
 		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
-		if (istoplevel)
+		if (in_top_level_file())
 		{
 			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string(" The main file is '") + par + "'.").data());
 			else asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, "");
@@ -1291,9 +1267,10 @@ void assembleblock(const char * block)
 	}
 	else if (is0("includeonce"))
 	{
-		if (!file_included_once(thisfilename))
+		const char* current_file = get_current_file_name();
+		if (!file_included_once(current_file))
 		{
-			includeonce.append(thisfilename);
+			includeonce.append(current_file);
 		}
 	}
 	else if (numwords==3 && !stricmp(word[1], "="))
@@ -1804,7 +1781,7 @@ void assembleblock(const char * block)
 					}
 
 					extern AddressToLineMapping addressToLineMapping;
-					addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos);
+					addressToLineMapping.includeMapping(get_current_file_name(), get_current_line() + 1, addrToLinePos);
 				}
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
 				freespaceorgpos[targetid]=ratsloc;
@@ -1977,6 +1954,7 @@ void assembleblock(const char * block)
 #endif
 	else if (is1("incsrc"))
 	{
+		const char* current_file = get_current_file_name();
 		string name;
 #ifdef _WIN32
 		if (strchr(par, '\\'))
@@ -1986,7 +1964,7 @@ void assembleblock(const char * block)
 		}
 #endif
 		name=safedequote(par);
-		assemblefile(name, false);
+		assemblefile(name);
 	}
 	else if (is1("incbin") || is3("incbin"))
 	{
@@ -2022,6 +2000,7 @@ void assembleblock(const char * block)
 				if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
 			}
 		}
+		const char* current_file = get_current_file_name();
 		string name;
 #ifdef _WIN32
 		if (strchr(par, '\\'))
@@ -2032,7 +2011,7 @@ void assembleblock(const char * block)
 #endif
 		name = safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
-		if (!readfile(name, thisfilename, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
+		if (!readfile(name, current_file, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 		autoptr<char*> datacopy=data;
 		if (!end) end=len;
 		if(start < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(start).data(), name.data());

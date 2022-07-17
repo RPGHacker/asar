@@ -42,7 +42,7 @@ build:
   verbosity: minimal
 
 artifacts:
-- path: build\asar\**\asar-standalone.exe
+- path: build\asar\**\asar.exe
 - path: build\asar\**\*asar.dll
 
 configuration: MinSizeRel
@@ -52,7 +52,7 @@ test_script:
   - cmd: >-
       asar-tests\%CONFIGURATION%\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\%CONFIGURATION%\asar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
 
-      asar-tests\%CONFIGURATION%\asar-app-test.exe asar\%CONFIGURATION%\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
+      asar-tests\%CONFIGURATION%\asar-app-test.exe asar\%CONFIGURATION%\asar.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
 
 deploy:
   provider: FTP
@@ -81,4 +81,4 @@ for:
   - cmd: >-
       asar-tests\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\libasar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
 
-      asar-tests\asar-app-test.exe asar\asar-standalone.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
+      asar-tests\asar-app-test.exe asar\asar.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app

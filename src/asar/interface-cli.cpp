@@ -30,6 +30,13 @@
 # endif
 #endif
 
+#if defined(linux)
+#  include <unistd.h>
+#elif defined(_WIN32)
+#  include <windows.h>
+#  include <io.h>
+#endif
+
 extern const char asarver[];
 
 void print(const char * str)
@@ -40,15 +47,94 @@ void print(const char * str)
 static FILE * errloc=stderr;
 static int errnum=0;
 
+namespace ansi_text_color {
+	enum e : int {
+		BRIGHT_RED,
+		BRIGHT_YELLOW,
+	};
+}
+
+#if defined(_WIN32)
+static bool has_windows_screen_info = false;
+static DWORD windows_screen_attributes = 0u;
+#endif
+
+void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e color)
+{
+#if defined(linux)
+	if (isatty(fileno(output_loc)))
+	{
+		switch (color)
+		{
+			case ansi_text_color::BRIGHT_RED:
+				*in_out_str = STR "\u001b[31;1m" + *in_out_str;
+				break;
+			case ansi_text_color::BRIGHT_YELLOW:
+				*in_out_str = STR "\u001b[33;1m" + *in_out_str;
+				break;
+		}
+	}
+#elif defined(_WIN32)
+	// Currently using SetConsoleTextAttribute() approach over an ASCI escape character
+	// approach because it makes the output text easier to parse. Unfortunately, this
+	// also currently makes this a Windows-only solution.
+	CONSOLE_SCREEN_BUFFER_INFO screenInfo;
+	HANDLE win_handle = (HANDLE)_get_osfhandle(fileno(output_loc));
+	if (GetConsoleScreenBufferInfo(win_handle, &screenInfo) == TRUE)
+	{
+		DWORD color = 0u;
+		switch (color)
+		{
+		case ansi_text_color::BRIGHT_RED:
+			color = FOREGROUND_RED;
+			break;
+		case ansi_text_color::BRIGHT_YELLOW:
+			color = FOREGROUND_RED | FOREGROUND_GREEN;
+			break;
+		}
+
+		windows_screen_attributes = screenInfo.wAttributes;
+		has_windows_screen_info = true;
+		SetConsoleTextAttribute(win_handle, (windows_screen_attributes & 0x00F0) | FOREGROUND_INTENSITY | color);
+	}
+#endif
+}
+
+void reset_text_color(FILE* output_loc, string* in_out_str)
+{
+#if defined(linux)
+	if (isatty(fileno(output_loc)))
+	{
+		*in_out_str = STR "\u001b[0m" + *in_out_str;
+	}
+#elif defined(_WIN32)
+	if (has_windows_screen_info)
+	{
+		HANDLE win_handle = (HANDLE)_get_osfhandle(fileno(output_loc));
+		SetConsoleTextAttribute(win_handle, windows_screen_attributes);
+	}
+#endif
+}
+
 void error_interface(int errid, int whichpass, const char * e_)
 {
 	errored = true;
 	if (pass == whichpass)
 	{
 		errnum++;
-		// don't show current block if the error came from an error command
-		bool show_block = (thisblock && (errid != error_id_error_command));
-		fputs(STR getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
+		const char* current_block = get_current_block();
+		// don't show current block if the error came from an error command or limit reached
+		bool show_block = (current_block && (errid != error_id_error_command && errid != error_id_limit_reached));
+		bool show_stack = (errid != error_id_limit_reached);
+		string location;
+		string details;
+		get_current_line_details(&location, &details, !show_block);
+		string error_string = (show_stack ? location+": " : STR "") + "error: (E" + dec(errid) + "): " + e_;
+		string details_string = (show_stack ? details + get_callstack() : "") + "\n";
+		set_text_color(errloc, &error_string, ansi_text_color::BRIGHT_RED);
+		fputs(error_string, errloc);
+		reset_text_color(errloc, &details_string);
+		fputs(details_string, errloc);
 		static const int max_num_errors = 20;
 		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
@@ -59,9 +145,18 @@ static bool warned=false;
 
 void warn(int errid, const char * e_)
 {
+	const char* current_block = get_current_block();
 	// don't show current block if the warning came from a warn command
-	bool show_block = (thisblock && (errid != warning_id_warn_command));
-	fputs(STR getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
+	bool show_block = (current_block && (errid != warning_id_warn_command));
+	string location;
+	string details;
+	get_current_line_details(&location, &details, !show_block);
+	string warning_string = location+": warning: (W" + dec(errid) + "): " + e_;
+	string details_string = details + get_callstack() + "\n";
+	set_text_color(errloc, &warning_string, ansi_text_color::BRIGHT_YELLOW);
+	fputs(warning_string, errloc);
+	reset_text_color(errloc, &details_string);
+	fputs(details_string, errloc);
 	warned=true;
 }
 
@@ -195,6 +290,8 @@ int main(int argc, const char * argv[])
 			"                   Enable a specific warning.\n\n"
 			" -wno<ID>          \n"
 			"                   Disable a specific warning.\n\n"
+			" --full-call-stack\n"
+			"                   Enables detailed call stack information for warnings and errors.\n\n"
 			);
 		ignoretitleerrors=false;
 		string par;
@@ -308,6 +405,7 @@ int main(int argc, const char * argv[])
 				}
 
 			}
+			else if (par=="--full-call-stack") simple_callstacks=false;
 			else libcon_badusage();
 
 			if (postprocess_param == cmdlparam_addincludepath)
@@ -383,7 +481,6 @@ int main(int argc, const char * argv[])
 		}
 		if (!openrom(romname, false))
 		{
-			thisfilename= nullptr;
 			asar_throw_error(pass, error_type_null, openromerror);
 			pause(err);
 			return 1;
@@ -451,7 +548,9 @@ int main(int argc, const char * argv[])
 			//pass 2: find where exactly all labels are
 			//pass 3: assemble it all
 			initstuff();
-			assemblefile(asmname, true);
+			assemblefile(asmname);
+			// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
+			callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, asmname));
 			finishpass();
 		}
 

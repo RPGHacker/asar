@@ -143,15 +143,15 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_macro_redefined, "Macro '%s' redefined." },
 	{ error_id_broken_macro_declaration, "Broken macro declaration." },
 	{ error_id_invalid_macro_param_name, "Invalid macro parameter name." },
-	{ error_id_macro_param_not_found, "Macro parameter '%s' wasn't found." },
+	{ error_id_macro_param_not_found, "Macro parameter '%s' wasn't found.%s" },
 	{ error_id_macro_param_redefined, "Macro parameter '%s' redefined" },
 	{ error_id_broken_macro_usage, "Broken macro usage." },
 	{ error_id_macro_wrong_num_params, "Wrong number of parameters to macro." },
 	{ error_id_broken_macro_contents, "Broken macro contents." },
 	{ error_id_rep_at_macro_end, "rep or if at the end of a macro." },
-	{ error_id_nested_macro_definition, "Nested macro definition." },
+	{ error_id_nested_macro_definition, "Nested macro definition: Trying to define a macro inside '%s', which is not supported." },
 	{ error_id_misplaced_endmacro, "Misplaced endmacro." },
-	{ error_id_unclosed_macro, "Unclosed macro." },
+	{ error_id_unclosed_macro, "Unclosed macro: '%s'." },
 
 	{ error_id_label_in_conditional, "Non-static label in %s command." },
 	{ error_id_broken_conditional, "Broken %s command." },
@@ -252,7 +252,7 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_macro_not_varadic, "Invalid use of sizeof(...), active macro is not variadic." },
 	{ error_id_vararg_sizeof_nomacro, "Invalid use of sizeof(...), no active macro." },
 	{ error_id_macro_wrong_min_params, "Variadic macro call with too few parameters" },
-	{ error_id_vararg_out_of_bounds, "Variadic macro parameter requested is out of bounds." },
+	{ error_id_vararg_out_of_bounds, "Variadic macro parameter '%s' is out of bounds.%s" },
 	{ error_id_vararg_must_be_last, "Variadic macro parameter must be the last parameter." },
 	{ error_id_invalid_global_label, "Global label definition contains an invalid label [%s]."},
 
@@ -291,10 +291,11 @@ static asar_error_mapping asar_errors[] =
 	{ error_id_oob, "Operation out of bounds: Requested index %d for object of size %d"},
 
 	{ error_id_macro_param_outside_macro, "Reference to macro parameter outside of macro" },
+	{ error_id_invalid_depth_resolve, "Invalid %s resolution depth: Trying to backwards-resolve a %s using %i '^', but current scope only supports up to %i '^'." },
 };
-// RPG Hacker: Sanity check. This makes sure that the element count of asar_errors
+// RPG Hacker: Sanity check. This makes sure that the element count of asar_error
 // matches with the number of constants in asar_error_id. This is important, because
-// we are going to access asar_errors as an array.
+// we are going to access asar_warnings as an array.
 static_assert(sizeof(asar_errors) / sizeof(asar_errors[0]) == error_id_count, "asar_errors and asar_error_id are not in sync");
 
 template<typename t>

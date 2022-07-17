@@ -68,6 +68,11 @@
 			<li>randomdude999</li>
 		</ul>
 
+		<h3>Notes:</h3>
+		<ul>
+			<li>The primary purpose of this release is to be a stepping stone towards Asar 2.0. For this purpose, a lot of features have been deprecated and will now throw warnings. Please fix any of those warnings you come across in your patches to assure they will still assemble in Asar 2.0.</li>
+		</ul></div>
+
 		<h3>New features:</h3>
 		<ul>
 			<li>The Asar test suite can now verify user-printable strings. (RPG Hacker)</li>
@@ -82,7 +87,15 @@
 			<li>Macro calls & definitions no longer break as easily from including whitespace. (RPG Hacker)</li>
 			<li>For invalid table files, Asar now prints the line number of the first invalid entry. (RPG Hacker)</li>
 			<li>When Asar generates addr-to-line mappings, it now includes multiple addresses for pseudo opcodes like &quot;asl #4&quot;. (RPG Hacker)</li>
-			<li><code>'''</code> and <code>';'</code> are now valid can now be used without causing errors. (randomdude999, RPG Hacker)</li>
+			<li><code>'''</code> and <code>';'</code> can now be used without causing errors. (randomdude999, RPG Hacker)</li>
+			<li>Added support for nested macro definitions. (RPG Hacker)</li>
+			<li>Improved readability of some error messages. (RPG Hacker)</li>
+			<li>Asar no longer strips white space from defines, allowing them to more closely reflect user intent. (RPG Hacker)</li>
+			<li>Generally improved error formatting of Asar and added the <code>--full-call-stack</code> option to display complete call stacks. (RPG Hacker)</li>
+		</ul></div>
+
+		<h3>Deprecated features:</h3>
+		<ul>
 		</ul></div>
 
 		<hr />
