@@ -380,7 +380,8 @@ int main(int argc, const char * argv[])
 				}
 				else if (checkstartmatch(w_param, "no"))
 				{
-					asar_warning_id warnid = parse_warning_id_from_string(w_param + strlen("no"));
+					const char* name_start = w_param + strlen("no");
+					asar_warning_id warnid = parse_warning_id_from_string(name_start);
 
 					if (warnid != warning_id_end)
 					{
@@ -388,7 +389,7 @@ int main(int argc, const char * argv[])
 					}
 					else
 					{
-						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "-wno", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, name_start, "-wno");
 					}
 				}
 				else
@@ -401,7 +402,7 @@ int main(int argc, const char * argv[])
 					}
 					else
 					{
-						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "-w", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, w_param, "-w");
 					}
 				}
 

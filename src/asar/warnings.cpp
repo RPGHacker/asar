@@ -171,23 +171,8 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 			return asar_warnings[i].warnid;
 		}
 	}
-	char* endpos = nullptr;
-	int numid = (int)strtol(pos, &endpos, 10);
 
-	if (endpos == nullptr || endpos[0] != '\0')
-	{
-		return warning_id_end;
-	}
-
-	asar_warning_id warnid = (asar_warning_id)numid;
-
-	if (warnid <= warning_id_start || warnid >= warning_id_end)
-	{
-		return warning_id_end;
-	}
-
-	asar_throw_warning(1, warning_id_feature_deprecated, "Numerical warnings", "Please transition to Wwarning_name");
-	return warnid;
+	return warning_id_end;
 }
 
 void reset_warnings_to_default()

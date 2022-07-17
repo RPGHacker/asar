@@ -372,7 +372,7 @@ EXPORT bool asar_patch(const patchparams_base *params)
 			}
 			else
 			{
-				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "asar_patch_ex() warning_settings", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, paramscurrent.warning_settings[i].warnid, "asar_patch_ex() warning_settings");
 			}
 		}
 

@@ -1,10 +1,9 @@
 ;`+
 ;`01
-;`warnWfeature_deprecated
 
+org $008000
 warnings push
 warnings disable Wmissing_org
-warnings disable W1008
 
 db $01
 
