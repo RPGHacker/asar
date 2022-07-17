@@ -75,7 +75,7 @@ void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e col
 		}
 	}
 #elif defined(_WIN32)
-	// Currently using SetConsoleTextAttribute() approach over an ASCI escape character
+	// Currently using SetConsoleTextAttribute() approach over an ASCII escape character
 	// approach because it makes the output text easier to parse. Unfortunately, this
 	// also currently makes this a Windows-only solution.
 	CONSOLE_SCREEN_BUFFER_INFO screenInfo;

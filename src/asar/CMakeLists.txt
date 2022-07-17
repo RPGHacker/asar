@@ -91,6 +91,10 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 	if (UNIX)
 		target_compile_definitions(${target} PRIVATE "linux")
 		target_compile_definitions(${target} PRIVATE "stricmp=strcasecmp")
+
+		set(THREADS_PREFER_PTHREAD_FLAG ON)
+		find_package(Threads REQUIRED)
+		target_link_libraries(${target} PRIVATE Threads::Threads)
 	endif()
 
 
@@ -183,11 +187,11 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/interface-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/dll_helper.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/table.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/platform/thread-helpers.h"
 )
 
 
@@ -201,6 +205,7 @@ if(WIN32)
 		APPEND ASAR_SHARED_SOURCE_FILES
 
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/file-helpers-win32.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/thread-helpers-win32.h"
 	)
 
 	list(
@@ -220,6 +225,7 @@ elseif(UNIX)
 		APPEND ASAR_SHARED_SOURCE_FILES
 
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/linux/file-helpers-linux.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/thread-helpers-pthread.h"
 	)
 else()
 	# Files for any other platform
@@ -227,6 +233,7 @@ else()
 		APPEND ASAR_SHARED_SOURCE_FILES
 
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/file-helpers-generic.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/thread-helpers-pthread.h"
 	)
 endif()
 

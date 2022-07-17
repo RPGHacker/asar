@@ -1,8 +1,10 @@
+#pragma once
+
 #if defined(_WIN32)
 
 #include <windows.h>
 
-struct function_pointer_wrapper/*have this struct at global level*/
+struct function_pointer_wrapper /*have this struct at global level*/
 {
 	static void (*fiber_callback)(void *);
 	static void __stdcall execute_fiber(void* parameter) { return fiber_callback(parameter); }
@@ -31,7 +33,7 @@ bool run_as_fiber(functor &&callback) {
 	function_pointer_wrapper::fiber_callback = [](void *parameter){
 		reinterpret_cast<fiber_wrapper*>(parameter)->execute();
 	};
-	auto fiber = CreateFiberEx(4*1024*1024, 8*1024*1024, 0, &function_pointer_wrapper::execute_fiber, &wrapper);
+	auto fiber = CreateFiberEx(16*1024*1024, 16*1024*1024, 0, &function_pointer_wrapper::execute_fiber, &wrapper);
 
 	if (!fiber) {
 		return callback();

@@ -5,9 +5,7 @@
 #include "interface-shared.h"
 #include "assembleblock.h"
 #include "asar_math.h"
-#if defined(_WIN32)
-#include "dll_helper.h"
-#endif
+#include "platform/thread-helpers.h"
 
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -25,7 +23,7 @@
 // when used in combination with -fsanitize=address.
 #if defined(_WIN32) && defined(NDEBUG)
 #	define RUN_VIA_FIBER
-#elif defined(_WIN32)
+#else
 #	define RUN_VIA_THREAD
 #endif
 
