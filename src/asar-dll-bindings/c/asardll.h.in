@@ -1,0 +1,36 @@
+#ifndef ASAR_DLL_H_INCLUDED
+#	define ASAR_DLL_H_INCLUDED
+
+#define expectedapiversion $APIVERSION$
+
+#include <stdbool.h>
+#include <stddef.h> // for size_t
+
+// These structures are returned from various functions
+$STRUCTS$
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+//Initializes Asar. Call this before doing anything.
+//If it returns false, something went wrong, and you may not use any other Asar functions. This is
+//either due to not finding the library, or not finding all expected functions in the library.
+bool asar_init(void);
+
+// Same as above, but instead of automatically looking for and trying to load asar.dll, takes
+// a path to the Asar DLL and tries to load it.
+// The path is expected to be UTF-8-encoded, even on Windows.
+bool asar_init_with_dll_path(const char * dllpath);
+
+//Frees all of Asar's structures and unloads the module. Only asar_init may be called after calling
+// this; anything else will lead to segfaults.
+void asar_close(void);
+
+$FUNCTIONS$
+
+#ifdef __cplusplus
+	}
+#endif
+
+#endif		// ASAR_DLL_H_INCLUDED

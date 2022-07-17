@@ -24,10 +24,18 @@ static string symbolsfile;
 static int numprint;
 static uint32_t romCrc;
 
+#define APIVERSION 400
+
+// note: somewhat fragile, assumes that every patchparams struct inherits from exactly the previous one
+/* $EXPORTSTRUCT_PP$
+ */
 struct patchparams_base {
+	// The size of this struct. Set to (int)sizeof(patchparams).
 	int structsize;
 };
 
+/* $EXPORTSTRUCT$
+ */
 struct errordata {
 	const char * fullerrdata;
 	const char * rawerrdata;
@@ -44,21 +52,29 @@ static int numerror;
 static autoarray<errordata> warnings;
 static int numwarn;
 
+/* $EXPORTSTRUCT$
+ */
 struct labeldata {
 	const char * name;
 	int location;
 };
 
+/* $EXPORTSTRUCT$
+ */
 struct definedata {
 	const char * name;
 	const char * contents;
 };
 
+/* $EXPORTSTRUCT$
+ */
 struct warnsetting {
 	const char * warnid;
 	bool enabled;
 };
 
+/* $EXPORTSTRUCT$
+ */
 struct memoryfile {
 	const char* path;
 	const void* buffer;
@@ -166,32 +182,49 @@ static void addlabel(const string & name, const snes_label & label_data)
 	ldata[labelsinldata++] = label;
 }
 
+/* $EXPORTSTRUCT_PP$
+ */
 struct patchparams_v200 : public patchparams_base
 {
+	// Same parameters as asar_patch()
 	const char * patchloc;
 	char * romdata;
 	int buflen;
 	int * romlen;
 
+	// Include paths to use when searching files.
 	const char** includepaths;
 	int numincludepaths;
 
-	const definedata* additional_defines;
-	int definecount;
+	// A list of additional defines to make available to the patch.
+	const struct definedata* additional_defines;
+	int additional_define_count;
 
+	// Path to a text file to parse standard include search paths from.
+	// Set to NULL to not use any standard includes search paths.
 	const char* stdincludesfile;
+
+	// Path to a text file to parse standard defines from.
+	// Set to NULL to not use any standard defines.
 	const char* stddefinesfile;
 
-	const warnsetting * warning_settings;
+	// A list of warnings to enable or disable.
+	// Specify warnings in the format "WXXXX" where XXXX = warning ID.
+	const struct warnsetting * warning_settings;
 	int warning_setting_count;
 
+	// List of memory files to create on the virtual filesystem.
 	const struct memoryfile * memory_files;
 	int memory_file_count;
 
+	// Set override_checksum_gen to true and generate_checksum to true/false
+	// to force generating/not generating a checksum.
 	bool override_checksum_gen;
 	bool generate_checksum;
 };
 
+/* $EXPORTSTRUCT_PP$
+ */
 struct patchparams : public patchparams_v200
 {
 
@@ -259,23 +292,41 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 #	pragma clang diagnostic ignored "-Wmissing-prototypes"
 #endif
 
+// this and asar_close are hardcoded in each api
 EXPORT bool asar_init()
 {
 	if (!expectsNewAPI) return false;
 	return true;
 }
 
+/* $EXPORT$
+ * Returns the version, in the format major*10000+minor*100+bugfix*1. This
+ * means that 1.2.34 would be returned as 10234.
+ */
 EXPORT int asar_version()
 {
 	return get_version_int();
 }
 
+/* $EXPORT$
+ * Returns the API version, format major*100+minor. Minor is incremented on
+ * backwards compatible changes; major is incremented on incompatible changes.
+ * Does not have any correlation with the Asar version.
+ *
+ * It's not very useful directly, since asar_init() verifies this automatically.
+ * Calling this one also sets a flag that makes asar_init not instantly return
+ * false; this is so programs expecting an older API won't do anything unexpected.
+ */
 EXPORT int asar_apiversion()
 {
 	expectsNewAPI=true;
-	return 400;
+	return APIVERSION;
 }
 
+/* $EXPORT$
+ * Clears out all errors, warnings and printed statements, and clears the file
+ * cache. Not really useful, since asar_patch() already does this.
+ */
 EXPORT bool asar_reset()
 {
 	resetdllstuff();
@@ -288,7 +339,18 @@ EXPORT void asar_close()
 	resetdllstuff();
 }
 
-EXPORT bool asar_patch(const patchparams_base *params)
+/* $EXPORT$
+ * Applies a patch. The first argument is a filename (so Asar knows where to
+ * look for incsrc'd stuff); however, the ROM is in memory.
+ * This function assumes there are no headers anywhere, neither in romdata nor
+ * the sizes. romlen may be altered by this function; if this is undesirable,
+ * set romlen equal to buflen.
+ * The return value is whether any errors appeared (false=errors, call
+ * asar_geterrors for details). If there is an error, romdata and romlen will
+ * be left unchanged.
+ * See the documentation of struct patchparams for more information.
+ */
+EXPORT bool asar_patch(const struct patchparams_base *params)
 {
 	auto execute_patch = [&]() {
 		if (params == nullptr)
@@ -340,7 +402,7 @@ EXPORT bool asar_patch(const patchparams_base *params)
 		}
 
 		clidefines.reset();
-		for (int i = 0; i < paramscurrent.definecount; ++i)
+		for (int i = 0; i < paramscurrent.additional_define_count; ++i)
 		{
 			string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
 			strip_whitespace(name);
@@ -397,30 +459,51 @@ EXPORT bool asar_patch(const patchparams_base *params)
 #endif
 }
 
+/* $EXPORT$
+ * Returns the maximum possible size of the output ROM from asar_patch().
+ * Giving this size to buflen guarantees you will not get any buffer too small
+ * errors; however, it is safe to give smaller buffers if you don't expect any
+ * ROMs larger than 4MB or something.
+ */
 EXPORT int asar_maxromsize()
 {
 	return maxromsize;
 }
 
-EXPORT const errordata * asar_geterrors(int * count)
+/* $EXPORT$
+ * Get a list of all errors.
+ * All pointers from these functions are valid only until the same function is
+ * called again, or until asar_patch, asar_reset or asar_close is called,
+ * whichever comes first. Copy the contents if you need it for a longer time.
+ */
+EXPORT const struct errordata * asar_geterrors(int * count)
 {
 	*count=numerror;
 	return errors;
 }
 
-EXPORT const errordata * asar_getwarnings(int * count)
+/* $EXPORT$
+ * Get a list of all warnings.
+ */
+EXPORT const struct errordata * asar_getwarnings(int * count)
 {
 	*count=numwarn;
 	return warnings;
 }
 
+/* $EXPORT$
+ * Get a list of all printed data.
+ */
 EXPORT const char * const * asar_getprints(int * count)
 {
 	*count=numprint;
 	return prints;
 }
 
-EXPORT const labeldata * asar_getalllabels(int * count)
+/* $EXPORT$
+ * Get a list of all labels.
+ */
+EXPORT const struct labeldata * asar_getalllabels(int * count)
 {
 	for (int i=0;i<labelsinldata;i++) free((void*)ldata[i].name);
 	labelsinldata=0;
@@ -429,6 +512,9 @@ EXPORT const labeldata * asar_getalllabels(int * count)
 	return ldata;
 }
 
+/* $EXPORT$
+ * Get the ROM location of one label. -1 means "not found".
+ */
 EXPORT int asar_getlabelval(const char * name)
 {
 	if (!stricmp(name, ":$:opcodes:$:")) return numopcodes;//aaah, you found me
@@ -437,12 +523,18 @@ EXPORT int asar_getlabelval(const char * name)
 	else return i&0xFFFFFF;
 }
 
+/* $EXPORT$
+ * Get the value of a define.
+ */
 EXPORT const char * asar_getdefine(const char * name)
 {
 	if (!defines.exists(name)) return "";
 	return defines.find(name);
 }
 
+/* $EXPORT$
+ * Parses all defines in the parameter. Note that it may emit errors.
+ */
 EXPORT const char * asar_resolvedefines(const char * data)
 {
 	static string out;
@@ -465,7 +557,10 @@ static void adddef(const string& name, string& value)
 	ddata[definesinddata++]=define;
 }
 
-EXPORT const definedata * asar_getalldefines(int * count)
+/* $EXPORT$
+ * Gets the values and names of all defines.
+ */
+EXPORT const struct definedata * asar_getalldefines(int * count)
 {
 	for (int i=0;i<definesinddata;i++)
 	{
@@ -478,7 +573,14 @@ EXPORT const definedata * asar_getalldefines(int * count)
 	return ddata;
 }
 
-EXPORT double asar_math(const char * str, const char ** e)
+/* $EXPORT$
+ * Parses a string containing math. It automatically assumes global scope (no
+ * namespaces), and has access to all functions and labels from the last call
+ * to asar_patch. Remember to check error to see if it's successful (NULL) or
+ * if it failed (non-NULL, contains a descriptive string). It does not affect
+ * asar_geterrors.
+ */
+EXPORT double asar_math(const char * math_, const char ** error)
 {
 	ns="";
 	namespace_list.reset();
@@ -489,28 +591,38 @@ EXPORT double asar_math(const char * str, const char ** e)
 	double rval=0;
 	try
 	{
-		rval=(double)math(str);
+		rval=(double)math(math_);
 	}
 	catch(errfatal&)
 	{
-		*e=matherror;
+		*error=matherror;
 	}
 	ismath=false;
 	deinitmathcore();
 	return rval;
 }
 
-EXPORT const writtenblockdata * asar_getwrittenblocks(int * count)
+/* $EXPORT$
+ * Get a list of all the blocks written to the ROM by calls such as
+ * asar_patch().
+ */
+EXPORT const struct writtenblockdata * asar_getwrittenblocks(int * count)
 {
 	*count = writtenblocks.count;
 	return writtenblocks;
 }
 
-EXPORT mapper_t asar_getmapper()
+/* $EXPORT$
+ * Get the mapper currently used by Asar.
+ */
+EXPORT enum mapper_t asar_getmapper()
 {
 	return mapper;
 }
 
+/* $EXPORT$
+ * Generates the contents of a symbols file for in a specific format.
+ */
 EXPORT const char * asar_getsymbolsfile(const char* type){
 	symbolsfile = create_symbols_file(type, romCrc);
 	return symbolsfile;
