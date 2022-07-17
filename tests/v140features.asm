@@ -203,7 +203,7 @@
 ;`
 ;`0A
 ;`0B
-;`warnW1030
+;`warnWfeature_deprecated
 ;`
 ;P>
 ;P>;This is not a comment, so getconnectedlines() should ignore it and not remove it.
