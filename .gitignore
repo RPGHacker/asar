@@ -52,3 +52,5 @@ CMakeCache.txt
 tests_tmp_dll/
 tests_tmp_app/
 *.aps
+
+/bin
