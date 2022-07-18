@@ -61,6 +61,7 @@
 			<li>Static labels (i.e. labels that don't move between passes) can now be used in more places, including if statements. (RPG Hacker)</li>
 			<li>Asar can be built as a static library. (Atari2)</li>
 			<li>Asar now uses named warnings and errors instead of magic numbers as identifiers. (p4plus2, RPG Hacker)</li>
+			<li>Variadic macro parameters now use the syntax <code class="65c816_asar">&lt;...[math]&gt;</code>, which makes them less ambiguous and helps prevent syntax parsing bugs. (RPG Hacker)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
@@ -96,6 +97,7 @@
 			<li><code>;@command</code> and <code>@command</code> notation: Use <code>command</code> instead.</li>
 			<li>Wrapping defines to resolve in quotes (e.g. <code>db "!define"</code>): The quotes aren't needed (<code>db !define</code>).</li>
 			<li>Single-line/inline if statements: Use full if blocks with an <code>if</code>/<code>endif</code> pair instead.</li>
+			<li><code class="65c816_asar">&lt;math&gt;</code> syntax for variadic macro parameters: Use <code class="65c816_asar">&lt;...[math]&gt;</code> insread.</li>
 		</ul></div>
 
 		<hr />

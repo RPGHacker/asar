@@ -259,6 +259,9 @@ enum asar_error_id : int
 	error_id_pullns_without_pushns,
 
 	error_id_label_forward,
+	
+	error_id_unclosed_vararg,
+	error_id_invalid_vararg,
 
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,

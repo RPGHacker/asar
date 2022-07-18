@@ -1073,6 +1073,10 @@ int main(int argc, char * argv[])
 
 	free(smwrom);
 
+#if defined(ASAR_TEST_DLL)
+	asar_close();
+#endif
+
 	printf("%u out of %u performed tests succeeded.\n", (unsigned int)(input_files.size() - (size_t)numfailed), (unsigned int)input_files.size());
 
 	if (numfailed > 0)
@@ -1080,10 +1084,6 @@ int main(int argc, char * argv[])
 		printf("Some tests failed!\n");
 		return 1;
 	}
-
-#if defined(ASAR_TEST_DLL)
-	asar_close();
-#endif
 
 	return 0;
 }

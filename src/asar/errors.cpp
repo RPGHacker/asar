@@ -284,7 +284,10 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(pushns_without_pullns), "pushns without matching pullns." },
 	{ ERR(pullns_without_pushns), "pullns without matching pushns." },
 
-	{ ERR(label_forward), "The use of forward labels is not allowed in this context" },
+	{ ERR(label_forward), "The use of forward labels is not allowed in this context." },
+
+	{ ERR(unclosed_vararg), "Variadic macro parameter wasn't closed properly." },
+	{ ERR(invalid_vararg), "Trying to use variadic macro parameter syntax to resolve a non variadic argument." },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
 // matches with the number of constants in asar_warning_id. This is important, because

@@ -1,5 +1,9 @@
 ;`errEvararg_must_be_last
 ;`errEinvalid_macro_param_name
+;`warnWfeature_deprecated
+;`errEunclosed_vararg
+;`errEinvalid_vararg
+;`errEinvalid_vararg
 ;`errEvararg_sizeof_nomacro
 ;`errEmacro_not_varadic
 ;`errEvararg_out_of_bounds
@@ -19,11 +23,11 @@ macro asd(..., dfg)
 endmacro
 
 macro sorry(...)
-	db <-1>
+	db <...[-1]>
 endmacro
 
 macro sorry2(asd, ...)
-	db <10>
+	db <...[10]>
 endmacro
 
 macro normal()
@@ -46,3 +50,24 @@ db $FF, $FF
 %sorry2(0)
 %sorry3()
 
+
+macro deprecated(...)
+	db <0>
+endmacro
+
+macro unclosed(...)
+	db <...[0>
+endmacro
+
+macro invalid(named, ...)
+	db <...[named]>
+endmacro
+
+macro invalid_2(named)
+	db <...[named]>
+endmacro
+
+%deprecated($01)
+%unclosed($01)
+%invalid($01, $01)
+%invalid_2($01)

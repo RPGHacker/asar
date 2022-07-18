@@ -2439,18 +2439,18 @@ endmacro
 </code></pre>
 
 In addition to named substitutions if the variadic token <code class="65c816_asar">...</code> is specified as the last parameter asar will allow an arbitrary number of parameters after all prior parameters have been satisfied.
-To access unnamed arguments of a variadic function they are declared numerically starting from 0 up to the number of provided parameters. To access the number of provided variadic arguments one may use <code class="65c816_asar">sizeof(...)</code>.
+To access unnamed parameters of a variadic macro, use the syntax <code class="65c816_asar">&lt;...[{math}]&gt;</code>, where <code class="65c816_asar">math</code> is any math expression evaluating to the index of a variadic parameter. These are declared numerically starting from 0 up to the number of provided parameters. To access the number of provided variadic arguments one may use <code class="65c816_asar">sizeof(...)</code>.
 Lastly, it is important to note that while traditionally macros do not parse defines at their creation variadic macros will.  This is to allow iteration of arguments by using defines.
 
 <pre><code class="65c816_asar">
 macro example0(...)
-	db sizeof(...), &lt;0&gt;	;04 01
+	db sizeof(...), &lt;...[0]&gt;	;04 01
 endmacro
 	
 macro example1(...)
 	!a #= 0
 	while !a &lt; sizeof(...)
-		db &lt;!a&gt;		;01 02 03
+		db &lt;...[!a]&gt;		;01 02 03
 		!a #= !a+1
 	endif
 endmacro
@@ -2458,7 +2458,7 @@ endmacro
 macro example2(named_parameter, ...)
 	!a #= 0
 	while !a &lt; sizeof(...)
-		db &lt;!a&gt;		;02 03 04 05 06 07
+		db &lt;...[!a]&gt;		;02 03 04 05 06 07
 		!a #= !a+1
 	endif
 	db &lt;named_parameter&gt;	;01
@@ -2467,7 +2467,7 @@ endmacro
 macro macro_with_optional_arguments(required, ...)
 	db &lt;required&gt;
 	if sizeof(...) &gt; 0
-		db &lt;0&gt;
+		db &lt;...[0]&gt;
 	end
 end
 
