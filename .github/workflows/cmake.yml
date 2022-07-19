@@ -40,22 +40,22 @@ jobs:
     # Windows MSVC tests
     - name: App Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests/${{env.BUILD_TYPE}}/asar-app-test.exe ${{github.workspace}}/build/asar/${{env.BUILD_TYPE}}/asar.exe "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/${{env.BUILD_TYPE}}/asar-app-test.exe ${{github.workspace}}/build/asar/bin/${{env.BUILD_TYPE}}/asar.exe "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
       if: ${{ contains(matrix.config, 'msvc') }}
 
     - name: DLL Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests/${{env.BUILD_TYPE}}/asar-dll-test.exe ${{github.workspace}}/build/asar/${{env.BUILD_TYPE}}/asar.dll "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/${{env.BUILD_TYPE}}/asar-dll-test.exe ${{github.workspace}}/build/asar/lib/${{env.BUILD_TYPE}}/asar.dll "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
       if: ${{ contains(matrix.config, 'msvc') }}
 
     # Tests for other platforms
     - name: App Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests/asar-app-test ${{github.workspace}}/build/asar/asar "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/asar-app-test ${{github.workspace}}/build/asar/bin/asar "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
       if: ${{ !contains(matrix.config, 'msvc') }}
 
     - name: DLL Test
       # Run app test
-      run: ${{github.workspace}}/build/asar-tests/asar-dll-test ${{github.workspace}}/build/asar/libasar.so "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
+      run: ${{github.workspace}}/build/asar-tests/asar-dll-test ${{github.workspace}}/build/asar/lib/libasar.so "${{github.workspace}}/tests" "${{github.workspace}}/dummy_rom.sfc" ${{github.workspace}}/build/temp
       if: ${{ !contains(matrix.config, 'msvc') }}
       
