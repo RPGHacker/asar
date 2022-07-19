@@ -67,7 +67,11 @@ public:
 	recurseblock()
 	{
 		recursioncount++;
-		if(check_stack_left() < 32768 || recursioncount > 10000)
+#if !defined(_WIN32) && defined(NO_USE_THREADS)
+		if(recursioncount > 500)
+#else
+		if(check_stack_left() < 32768 || recursioncount > 5000)
+#endif
 			asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
 	}
 	~recurseblock()

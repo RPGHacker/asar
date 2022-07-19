@@ -3,6 +3,7 @@
 #if defined(_WIN32)
 
 #include <windows.h>
+#include <processthreadsapi.h>
 
 struct function_pointer_wrapper /*have this struct at global level*/
 {
@@ -84,7 +85,7 @@ bool run_as_thread(functor&& callback) {
 }
 
 size_t check_stack_left() {
-	void *stack_low, *stack_high;
+	size_t stack_low, stack_high;
 	GetCurrentThreadStackLimits(&stack_low, &stack_high);
 	size_t stack_left = (char*)&stack_low - (char*)stack_low;
 	return stack_left;
