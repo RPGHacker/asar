@@ -288,7 +288,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ ERR(unclosed_vararg), "Variadic macro parameter wasn't closed properly." },
 	{ ERR(invalid_vararg), "Trying to use variadic macro parameter syntax to resolve a non variadic argument." },
-	
+
 	{ ERR(macro_param_outside_macro), "Reference to macro parameter outside of macro" },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
