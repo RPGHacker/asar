@@ -88,7 +88,9 @@ void print(const char * str)
 
 static void fillerror(errordata& myerr, int errid, const char * type, const char * str, bool show_block)
 {
-	myerr.filename= duplicate_string(get_current_file_name());
+	const char* current_filename = get_current_file_name();
+	if(current_filename) myerr.filename= duplicate_string(current_filename);
+	else myerr.filename = duplicate_string("");
 	myerr.line=get_current_line();
 	const char* current_block = get_current_block();
 	if (current_block) myerr.block= duplicate_string(current_block);
