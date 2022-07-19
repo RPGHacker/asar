@@ -751,40 +751,41 @@ void assemblefile(const char * filename)
 	int startif=numif;
 	if (!filecontents.exists(absolutepath))
 	{
-		char * temp= readfile(absolutepath, "");
+		char * temp = readfile(absolutepath, "");
 		if (!temp)
 		{
 			asar_throw_error(0, error_type_null, vfile_error_to_error_id(asar_get_last_io_error()), filename);
 
 			return;
 		}
-		file.contents =split(temp, '\n');
-		file.data = temp;
-		for (int i=0;file.contents[i];i++)
+		sourcefile& newfile = filecontents.create(absolutepath);
+		newfile.contents =split(temp, '\n');
+		newfile.data = temp;
+		for (int i=0;newfile.contents[i];i++)
 		{
-			file.numlines++;
-			char * line= file.contents[i];
+			newfile.numlines++;
+			char * line= newfile.contents[i];
 			char * comment = strqchr(line, ';');
 			if(comment) *comment = 0;
 			if (!confirmquotes(line)) { callstack_push cs_push(callstack_entry_type::LINE, line, i); asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
-			file.contents[i] = strip_whitespace(line);
+			newfile.contents[i] = strip_whitespace(line);
 		}
-		for(int i=0;file.contents[i];i++)
+		for(int i=0;newfile.contents[i];i++)
 		{
-			char* line = file.contents[i];
+			char* line = newfile.contents[i];
 			if(!*line) continue;
-			for (int j=1;line[strlen(line) - 1] == ',' && file.contents[i+j];j++)
+			for (int j=1;line[strlen(line) - 1] == ',' && newfile.contents[i+j];j++)
 			{
 				// not using strcat because the source and dest overlap here
-				char* otherline = file.contents[i+j];
+				char* otherline = newfile.contents[i+j];
 				char* line_end = line + strlen(line);
 				while(*otherline) *line_end++ = *otherline++;
 				*line_end = '\0';
 				static char nullstr[]="";
-				file.contents[i+j]=nullstr;
+				newfile.contents[i+j]=nullstr;
 			}
 		}
-		filecontents.create(absolutepath) = file;
+		file = newfile;
 	} else { // filecontents.exists(absolutepath)
 		file = filecontents.find(absolutepath);
 	}

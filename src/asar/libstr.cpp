@@ -38,7 +38,11 @@ char * readfile(const char * fname, const char * basepath)
 	data[filesystem->read_file(myfile, data, 0u, datalen)] = 0;
 	filesystem->close_file(myfile);
 
-	if (!is_valid_utf8(data)) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+	if (!is_valid_utf8(data))
+	{
+		free(data);
+		asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+	}
 	if(check_bom(data)){
 		data[0] = ' ';
 		data[1] = ' ';
