@@ -128,6 +128,11 @@ void warn(int errid, const char * str)
 	fillerror(warnings[numwarn++], errid, STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
 }
 
+
+static autoarray<definedata> ddata;
+static int definesinddata=0;
+
+
 static void resetdllstuff()
 {
 #define free_and_null(x) free((void*)x); x = nullptr
@@ -159,6 +164,14 @@ static void resetdllstuff()
 	}
 	warnings.reset();
 	numwarn=0;
+	
+	for (int i=0;i<definesinddata;i++)
+	{
+		free_and_null(ddata[i].name);
+		free_and_null(ddata[i].contents);
+	}
+	ddata.reset();
+	definesinddata=0;
 #undef free_and_null
 
 	romCrc = 0;
@@ -545,9 +558,6 @@ EXPORT const char * asar_resolvedefines(const char * data)
 	catch(errfatal&){}
 	return out;
 }
-
-static autoarray<definedata> ddata;
-static int definesinddata=0;
 
 static void adddef(const string& name, string& value)
 {
