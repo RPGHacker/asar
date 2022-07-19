@@ -458,6 +458,10 @@ EXPORT bool asar_patch(const struct patchparams_base *params)
 
 		asar_patch_main(paramscurrent.patchloc);
 
+		// RPG Hacker: Required before the destroy() below,
+		// otherwise it will leak memory.
+		closecachedfiles();
+
 		new_filesystem.destroy();
 		filesystem = nullptr;
 
