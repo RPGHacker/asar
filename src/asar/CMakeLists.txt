@@ -235,11 +235,17 @@ if(ASAR_GEN_EXE)
 		target_compile_options(asar-standalone PRIVATE -fprofile-arcs -ftest-coverage)
 		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov --coverage -fprofile-arcs")
 	endif()
-	
-	set_target_properties(asar-standalone PROPERTIES OUTPUT_NAME "asar")
-	set_target_properties(asar-standalone PROPERTIES PDB_NAME "asar.exe")
+  
+	set_target_properties(asar-standalone
+		PROPERTIES
+		OUTPUT_NAME "asar"
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+	)
 
 	install(TARGETS asar-standalone)
+
 endif(ASAR_GEN_EXE)
 
 
@@ -261,9 +267,15 @@ if(ASAR_GEN_DLL)
 	target_compile_definitions(asar PRIVATE "ASAR_SHARED")
 	set_asar_shared_properties(asar "T" TRUE)
 
-	set_target_properties(asar PROPERTIES PDB_NAME "asar.dll")
+	set_target_properties(asar
+		PROPERTIES
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+	)
 
 	install(TARGETS asar)
+
 endif(ASAR_GEN_DLL)
 
 
@@ -283,7 +295,13 @@ if (ASAR_GEN_LIB)
 	target_compile_definitions(asar-static PRIVATE "ASAR_STATIC")
 	set_asar_shared_properties(asar-static "D" FALSE)
 
+	set_target_properties(asar-static
+		PROPERTIES
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+	)
+
 	install(TARGETS asar-static)
 
-	# there's no need to set the PDB name since static libraries don't produce PDBs
 endif()

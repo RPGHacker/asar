@@ -47,17 +47,17 @@ build:
   verbosity: minimal
 
 artifacts:
-- path: build\asar\**\asar.exe
-- path: build\asar\**\*asar.dll
+- path: build\asar\bin\**\asar.exe
+- path: build\asar\lib\**\*asar.dll
 
 configuration: MinSizeRel
 
 test_script:
   # We need to pass the DLL path as an absolute path because it is used to calculate the std defines location, which will throw a warning when it's a relative path
   - cmd: >-
-      asar-tests\%CONFIGURATION%\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\%CONFIGURATION%\asar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
+      asar-tests\%CONFIGURATION%\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\lib\%CONFIGURATION%\asar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
 
-      asar-tests\%CONFIGURATION%\asar-app-test.exe asar\%CONFIGURATION%\asar.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
+      asar-tests\%CONFIGURATION%\asar-app-test.exe asar\bin\%CONFIGURATION%\asar.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
 
 deploy:
   provider: FTP
@@ -84,6 +84,6 @@ for:
 
   test_script:
   - cmd: >-
-      asar-tests\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\libasar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
+      asar-tests\asar-dll-test.exe %APPVEYOR_BUILD_FOLDER%\build\asar\lib\libasar.dll %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_dll
 
-      asar-tests\asar-app-test.exe asar\asar.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
+      asar-tests\asar-app-test.exe asar\bin\asar.exe %APPVEYOR_BUILD_FOLDER%\tests ..\dummy_rom.sfc %APPVEYOR_BUILD_FOLDER%\tests_tmp_app
