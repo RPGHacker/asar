@@ -85,7 +85,7 @@ bool run_as_thread(functor&& callback) {
 }
 
 size_t check_stack_left() {
-	size_t stack_low, stack_high;
+	ULONG_PTR stack_low, stack_high;
 	GetCurrentThreadStackLimits(&stack_low, &stack_high);
 	size_t stack_left = (char*)&stack_low - (char*)stack_low;
 	return stack_left;
