@@ -3,13 +3,13 @@ db <the_fun_part>
 macro recursive_macro(...)
 	!temp_i #= 0
 	while !temp_i < sizeof(...)
-		db $<!temp_i>
+		db $<...[!temp_i]>
 			
-		!test_<!temp_i>_test = !temp_i
+		!test_<...[!temp_i]>_test = !temp_i
 		
-		if !test_<!temp_i>_test == 0
+		if !test_<...[!temp_i]>_test == 0
 			db $EF
-		elseif !test_<!temp_i>_test == 1
+		elseif !test_<...[!temp_i]>_test == 1
 			db $EE
 		endif
 		
@@ -26,15 +26,15 @@ if 0
 	macro recursive_macro_2(...)
 		!temp_i #= 0
 		while !temp_i < sizeof(...)
-			db $<!temp_i>
-			%recursive_macro(<!temp_i>)
-			!recursive_macro(<!temp_i>)
+			db $<...[!temp_i]>
+			%recursive_macro(<...[!temp_i]>)
+			!recursive_macro(<...[!temp_i]>)
 			
-			!test_<!temp_i>_test = 1
+			!test_<...[!temp_i]>_test = 1
 		
-			if !test_<!temp_i>_test == 0
+			if !test_<...[!temp_i]>_test == 0
 				db $10
-			elseif !test_<!temp_i>_test == 1
+			elseif !test_<...[!temp_i]>_test == 1
 				db $11
 			endif
 		

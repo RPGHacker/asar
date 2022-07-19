@@ -282,7 +282,7 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(pushns_without_pullns), "pushns without matching pullns." },
 	{ ERR(pullns_without_pushns), "pullns without matching pushns." },
 
-	{ ERR(label_forward), "The use of forward labels is not allowed in this context" },
+	{ ERR(label_forward), "The use of forward labels is not allowed in this context." },
 	{ ERR(undefined_char), "'%s' is not defined in the character table" },
 
 	{ ERR(invalid_utf8), "Invalid text encoding detected. Asar expects UTF-8-encoded text. Please re-save this file in a text editor of choice using UTF-8 encoding." },
@@ -292,6 +292,9 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(phantom_error), "A phantom error occurred. This is an Asar bug, please report it: https://github.com/RPGHacker/asar/issues" },
 
 	{ ERR(oob), "Operation out of bounds: Requested index %d for object of size %d" },
+
+	{ ERR(unclosed_vararg), "Variadic macro parameter wasn't closed properly." },
+	{ ERR(invalid_vararg), "Trying to use variadic macro parameter syntax to resolve a non variadic argument." },
 
 	{ ERR(macro_param_outside_macro), "Reference to macro parameter outside of macro" },
 	{ ERR(invalid_depth_resolve), "Invalid %s resolution depth: Trying to backwards-resolve a %s using %i '^', but current scope only supports up to %i '^'." },

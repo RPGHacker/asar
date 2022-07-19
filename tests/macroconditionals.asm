@@ -12,13 +12,13 @@ db "     , 	 "
 macro add_text(...)
     !i #= 0
     while !i < sizeof(...)
-        if <!i> == 'A'
+        if <...[!i]> == 'A'
             db $00
-        elseif <!i> == 'B'
+        elseif <...[!i]> == 'B'
             db $01
-        elseif <!i> == 'C'
+        elseif <...[!i]> == 'C'
             db $02
-        elseif <!i> == 'D'
+        elseif <...[!i]> == 'D'
             db $03
         else
             db $04
@@ -35,7 +35,7 @@ macro variadic(...)
     if sizeof(...) > 0
         !i #= 0
         while !i < sizeof(...)
-            .<!i>:
+            .<...[!i]>:
             !i #= !i+1
         endwhile
     endif
@@ -50,7 +50,7 @@ MainLabel:
 macro asdf(...)
 !a = "elseif"
 if 0
-!a <1>
+!a <...[1]>
 endif
 endmacro
 %asdf(1, 1)
@@ -60,7 +60,7 @@ endmacro
 macro a(...)
 !i = 0
 if 0
-elseif 42 == <!i>
+elseif 42 == <...[!i]>
 nop
 else
 error

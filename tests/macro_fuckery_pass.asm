@@ -33,13 +33,13 @@ org $008000
 macro new_macro(...)
 	!temp_i #= 0
 	while !temp_i < sizeof(...)
-		db <!temp_i>
+		db <...[!temp_i]>
 			
-		!test_<!temp_i>_test = !temp_i
+		!test_<...[!temp_i]>_test = !temp_i
 		
-		if !test_<!temp_i>_test == 0
+		if !test_<...[!temp_i]>_test == 0
 			db $FF
-		elseif !test_<!temp_i>_test == 1
+		elseif !test_<...[!temp_i]>_test == 1
 			db $FE
 		endif
 		
@@ -56,15 +56,15 @@ if 0
 	macro new_macro_2(...)
 		!temp_i #= 0
 		while !temp_i < sizeof(...)
-			<!temp_i>
-			%new_macro(<!temp_i>)
-			!new_macro(<!temp_i>)
+			<...[!temp_i]>
+			%new_macro(<...[!temp_i]>)
+			!new_macro(<...[!temp_i]>)
 			
-			!test_<!temp_i>_test = 1
+			!test_<...[!temp_i]>_test = 1
 		
-			if !test_<!temp_i>_test == 0
+			if !test_<...[!temp_i]>_test == 0
 				db $00
-			elseif !test_<!temp_i>_test == 1
+			elseif !test_<...[!temp_i]>_test == 1
 				db $01
 			endif
 		
@@ -119,16 +119,16 @@ macro define_variadic_macros(...)
 	!temp_i #= 0
 
 	while !temp_i < sizeof(...)
-		macro <!temp_i>(<!temp_i+1>, ...)
-			print "<^!^temp_i>"
-			print "<^!^temp_i+1>"
+		macro <...[!temp_i]>(<...[!temp_i+1]>, ...)
+			print "<^...[!^temp_i]>"
+			print "<^...[!^temp_i+1]>"
 
-			db <<^!^temp_i+1>>
+			db <<^...[!^temp_i+1]>>
 
 			!temp_j #= 0
 
 			while !temp_j < sizeof(...)
-				db <!temp_j>
+				db <...[!temp_j]>
 				!temp_j #= !temp_j+1
 			endwhile
 
@@ -164,7 +164,7 @@ macro insanely_define_macro(...)
 	!temp_arg_usage = "db "
 
 	while !temp_i < sizeof(...)
-		!temp_arg := "<!temp_i>"
+		!temp_arg := "<...[!temp_i]>"
 		!temp_arg_list += !temp_arg
 		!temp_arg_usage += "<"
 		!temp_arg_usage += "!temp_arg"
@@ -180,7 +180,7 @@ macro insanely_define_macro(...)
 		!temp_i #= !temp_i+1
 	endwhile
 
-	macro <0>(!temp_arg_list)
+	macro <...[0]>(!temp_arg_list)
 		!^temp_arg_usage
 	endmacro
 

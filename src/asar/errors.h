@@ -267,6 +267,9 @@ enum asar_error_id : int
 	error_id_phantom_error,
 
 	error_id_oob,
+	
+	error_id_unclosed_vararg,
+	error_id_invalid_vararg,
 
 	error_id_macro_param_outside_macro,
 	error_id_invalid_depth_resolve,

@@ -51,7 +51,7 @@ macro wrong_layer_parent(parent_arg, ...)
 	endmacro
 
 	macro wrong_layer_child_4(...)
-		db <0>+<1>
+		db <...[0]>+<...[1]>
 	endmacro
 
 	macro wrong_layer_inbeteen(unused, ...)
@@ -59,7 +59,7 @@ macro wrong_layer_parent(parent_arg, ...)
 			db <parent_arg>
 			db <^parent_arg>
 			db <^^child_arg>
-			db <2>
+			db <...[2]>
 		endmacro
 	endmacro
 endmacro
