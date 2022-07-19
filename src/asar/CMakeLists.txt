@@ -7,6 +7,7 @@ option(ASAR_GEN_EXE "Build Asar standalone application" ON)
 option(ASAR_GEN_DLL "Build Asar shared library" ON)
 option(ASAR_COVERAGE "Build Asar with coverage tracking support" ON)
 option(ASAR_GEN_LIB "Build Asar static library" ON)
+option(ASAR_USE_THREADS "Run Asar in a new thread to alleviate stack usage problems" ON)
 if (MSVC)
 	message(STATUS "In MSVC you can override MSVC_LIB_TYPE, valid values are D for dynamic and T for static")
 endif()
@@ -92,9 +93,11 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 		target_compile_definitions(${target} PRIVATE "linux")
 		target_compile_definitions(${target} PRIVATE "stricmp=strcasecmp")
 
-		set(THREADS_PREFER_PTHREAD_FLAG ON)
-		find_package(Threads REQUIRED)
-		target_link_libraries(${target} PRIVATE Threads::Threads)
+		if(ASAR_USE_THREADS)
+			set(THREADS_PREFER_PTHREAD_FLAG ON)
+			find_package(Threads REQUIRED)
+			target_link_libraries(${target} PRIVATE Threads::Threads)
+		endif()
 	endif()
 
 
@@ -135,6 +138,10 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 
 		# for some reason this isn't available on MSVC?
 		target_compile_features(${target} PRIVATE c_std_99)
+	endif()
+
+	if(NOT(ASAR_USE_THREADS))
+		target_compile_definitions(${target} PRIVATE NO_USE_THREADS)
 	endif()
 endmacro()
 

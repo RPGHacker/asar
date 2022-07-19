@@ -545,19 +545,23 @@ int main(int argc, const char * argv[])
 
 		auto execute_patch = [&]()
 		{
-			for (pass=0;pass<3;pass++)
-			{
-				//pass 1: find which bank all labels are in, for label optimizations
-				//  freespaces are listed as above 0xFFFFFF, to find if it's in the ROM or if it's dynamic
-				//pass 2: find where exactly all labels are
-				//pass 3: assemble it all
-				initstuff();
-				assemblefile(asmname);
-				// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
-				callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, asmname));
-				finishpass();
+			try {
+				for (pass=0;pass<3;pass++)
+				{
+					//pass 1: find which bank all labels are in, for label optimizations
+					//  freespaces are listed as above 0xFFFFFF, to find if it's in the ROM or if it's dynamic
+					//pass 2: find where exactly all labels are
+					//pass 3: assemble it all
+					initstuff();
+					assemblefile(asmname);
+					// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
+					callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, asmname));
+					finishpass();
+				}
+				return true;
+			} catch(errfatal&) {
+				return false;
 			}
-			return true;
 		};
 #if defined(RUN_VIA_FIBER)
 		run_as_fiber(execute_patch);

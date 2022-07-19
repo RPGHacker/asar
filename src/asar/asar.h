@@ -181,10 +181,12 @@ const char* get_current_block();
 const char* get_previous_file_name();
 int get_previous_file_line_no();
 
+#if !defined(NO_USE_THREADS) && !defined(RUN_VIA_THREAD)
 // RPG Hacker: This is currently disabled for debug builds, because it causes random crashes
 // when used in combination with -fsanitize=address.
-#if defined(_WIN32) && defined(NDEBUG)
-#	define RUN_VIA_FIBER
-#else
-#	define RUN_VIA_THREAD
+#  if defined(_WIN32) && defined(NDEBUG)
+#    define RUN_VIA_FIBER
+#  else
+#    define RUN_VIA_THREAD
+#  endif
 #endif
