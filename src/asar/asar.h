@@ -60,12 +60,15 @@ virtual_file_error asar_get_last_io_error();
 extern volatile int recursioncount;
 extern int pass;
 
+size_t check_stack_left();
+
 class recurseblock {
 public:
 	recurseblock()
 	{
 		recursioncount++;
-		if (recursioncount > 1000) asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
+		if(check_stack_left() < 32768 || recursioncount > 10000)
+			asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
 	}
 	~recurseblock()
 	{

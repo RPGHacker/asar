@@ -55,3 +55,18 @@ bool run_as_thread(functor&& callback) {
 
 	return wrapper.result;
 }
+
+size_t check_stack_left() {
+	pthread_attr_t attrs;
+	void *stack_start;
+	size_t stack_size;
+
+	pthread_getattr_np(pthread_self(), &attrs);
+	pthread_attr_getstack(&attrs, &stack_start, &stack_size);
+	pthread_attr_destroy(&attrs);
+
+	// using a random local as a rough estimate for current top-of-stack
+	size_t stack_left = (char*)&stack_size - (char*)stack_start;
+	return stack_left;
+	if(stack_left < 32768) asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
+}
