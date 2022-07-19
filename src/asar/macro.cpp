@@ -6,6 +6,7 @@
 #include "assembleblock.h"
 #include "macro.h"
 #include "asar_math.h"
+#include "warnings.h"
 
 assocarr<macrodata*> macros;
 static string thisname;
@@ -219,6 +220,17 @@ string replace_macro_args(const char* line) {
 				out+=*(in++);
 				continue;
 			}
+					
+			bool proper_variadic = false;
+			if (in[1] == '.' && in[2] == '.' && in[3] == '.' && in[4] == '[')
+			{
+				if (end[-1] != ']')
+					asar_throw_error(0, error_type_block, error_id_unclosed_vararg);
+							
+				proper_variadic = true;
+				in += 4;
+				end--;
+			}
 
 			if(!inmacro) asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
 			//*end=0;
@@ -230,7 +242,7 @@ string replace_macro_args(const char* line) {
 			bool valid_named_param = confirmname(in);
 			if (!valid_named_param && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
 			bool found=false;
-			for (int j=0;current_macro->arguments[j];j++)
+			for (int j=0;current_macro->arguments[j]&&!proper_variadic;j++)
 			{
 				if (!strcmp(in, current_macro->arguments[j]))
 				{
@@ -247,8 +259,17 @@ string replace_macro_args(const char* line) {
 			if (!found)
 			{
 				snes_label ret;
-				if(valid_named_param  && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
-				if(current_macro->variadic && valid_named_param && !labelval(in, &ret, false))  asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
+				if(valid_named_param && !current_macro->variadic)
+				{
+					if (proper_variadic) asar_throw_error(0, error_type_block, error_id_invalid_vararg, in);
+					else asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
+				}
+				if(current_macro->variadic && valid_named_param && !labelval(in, &ret, false))
+				{
+					if (proper_variadic) asar_throw_error(0, error_type_block, error_id_invalid_vararg, in);
+					else asar_throw_error(0, error_type_block, error_id_macro_param_not_found, in);
+				}
+				if(!proper_variadic) asar_throw_warning(0, warning_id_feature_deprecated, "'<math>' syntax for variadic macro parameters", "Use '<...[math]>' instead.");
 				int arg_num = getnum(in);
 
 				if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
@@ -265,6 +286,7 @@ string replace_macro_args(const char* line) {
 				}
 			}
 			in=end+1;
+			if (proper_variadic) in++;
 		}
 		else out+=*(in++);
 	}

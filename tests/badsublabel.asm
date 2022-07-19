@@ -1,2 +1,2 @@
-;`errE5117
+;`errEunknown_command
 .

@@ -64,6 +64,7 @@ enum asar_warning_id : int
 };
 
 void asar_throw_warning(int whichpass, asar_warning_id warnid, ...);
+const char* get_warning_name(asar_warning_id warnid);
 
 void set_warning_enabled(asar_warning_id warnid, bool enabled);
 
