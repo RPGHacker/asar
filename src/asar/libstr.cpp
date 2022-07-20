@@ -85,7 +85,9 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 #define isq(n) (((0x2227 ^ (0x0101 * (n))) - 0x0101UL) & ~(0x2227 ^ (0x0101 * (n))) & 0x8080UL)
 #define isqp(n) (((0x22272829 ^ (0x01010101 * (n))) - 0x01010101UL) & ~(0x22272829 ^ (0x01010101 * (n))) & 0x80808080UL)
 
-const bool qparlut[256] = {
+// RPG Hacker: Only index this with ASCII characters.
+// Anything else doesn't make sense, anyways.
+const bool qparlut[128] = {
 	1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0,
@@ -94,14 +96,6 @@ const bool qparlut[256] = {
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 };
 
 //this will leave the last char found as the one pointed at
@@ -261,7 +255,7 @@ bool confirmqpar(const char * str)
 {
 	//todo fully optimize
 	int par = 0;
-	while(!qparlut[*str]) str++;
+	while((unsigned char)*str >= 128 || !qparlut[*str]) str++;
 	while(*str)
 	{
 		if(*str == '"')
@@ -281,7 +275,7 @@ bool confirmqpar(const char * str)
 			par += 1 - ((*str++ - '(') << 1);
 			if(par < 0) return false;
 		}
-		while(!qparlut[*str]) str++;
+		while((unsigned char)*str >= 128 || !qparlut[*str]) str++;
 	}
 	return !par;
 }
