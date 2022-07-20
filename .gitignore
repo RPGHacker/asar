@@ -55,8 +55,8 @@ tests_tmp_app/
 *.aps
 
 # Just because I like building into the Asar dir directly...
-/bin
-/build
+bin/
+build/
 .cmake
 .vscode
 .cache
