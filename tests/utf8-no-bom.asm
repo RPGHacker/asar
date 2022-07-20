@@ -4,6 +4,7 @@
 ;`00 00 0F 00
 ;`00 00 10 00
 ;`6F
+;`06 06 06
 ;P>12 0 -1
 ;P>14
 
@@ -35,3 +36,12 @@ dd "􀀀"
 cleartable
 db 'o'
 print bytes
+
+
+'ä' = $06
+
+macro text_macro(text_arg)
+	db "<text_arg>"
+endmacro
+
+%text_macro("äää")
