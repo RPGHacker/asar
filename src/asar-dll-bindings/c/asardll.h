@@ -17,7 +17,7 @@ struct errordata {
 	int line;
 	const char * callerfilename;
 	int callerline;
-	int errid;
+	const char * errname;
 };
 
 struct labeldata {

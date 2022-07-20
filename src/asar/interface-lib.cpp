@@ -44,7 +44,7 @@ struct errordata {
 	int line;
 	const char * callerfilename;
 	int callerline;
-	int errid;
+	const char * errname;
 };
 static  autoarray<errordata> errors;
 static int numerror;
@@ -86,7 +86,7 @@ void print(const char * str)
 	prints[numprint++]= duplicate_string(str);
 }
 
-static void fillerror(errordata& myerr, int errid, const char * type, const char * str, bool show_block)
+static void fillerror(errordata& myerr, const char* errname, const char * type, const char * str, bool show_block)
 {
 	const char* current_filename = get_current_file_name();
 	if(current_filename) myerr.filename= duplicate_string(current_filename);
@@ -104,8 +104,7 @@ static void fillerror(errordata& myerr, int errid, const char * type, const char
 	myerr.callerline=get_previous_file_line_no();
 	const char* prev_file = get_previous_file_name();
 	myerr.callerfilename=prev_file ? duplicate_string(prev_file) : nullptr;
-	// RPG Hacker: TODO: Rework this into error/warning name string once we bump the DLL API version again.
-	myerr.errid = errid;
+	myerr.errname = duplicate_string(errname);
 }
 
 static bool ismath=false;
@@ -118,7 +117,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 	else if (pass == whichpass) {
 		// don't show current block if the error came from an error command
 		bool show_block = (errid != error_id_error_command);
-		fillerror(errors[numerror++], errid, STR "error: (" + get_error_name((asar_error_id)errid) + "): ", e_, show_block);
+		fillerror(errors[numerror++], get_error_name((asar_error_id)errid), STR "error: (" + get_error_name((asar_error_id)errid) + "): ", e_, show_block);
 	}
 	else {}//ignore anything else
 }
@@ -127,7 +126,7 @@ void warn(int errid, const char * str)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (errid != warning_id_warn_command);
-	fillerror(warnings[numwarn++], errid, STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
+	fillerror(warnings[numwarn++], get_warning_name((asar_warning_id)errid), STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
 }
 
 
@@ -152,6 +151,7 @@ static void resetdllstuff()
 		free_and_null(errors[i].fullerrdata);
 		free_and_null(errors[i].callerfilename);
 		free_and_null(errors[i].block);
+		free_and_null(errors[i].errname);
 	}
 	errors.reset();
 	numerror=0;
