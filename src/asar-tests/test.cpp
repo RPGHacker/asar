@@ -840,12 +840,14 @@ int main(int argc, char * argv[])
 			asar_patch_params.stdincludesfile = stdincludespath.c_str();
 			asar_patch_params.stddefinesfile = stddefinespath.c_str();
 
+			asar_patch_params.full_call_stack = true;
+
 			const definedata libdefines[] =
 			{
 				{ "cmddefined", nullptr },
 				{ "!cmddefined2", "" },
 				{ " !cmddefined3 ", " $10,$F0,$E0 "},
-				// RPG Hacker: æ—¥æœ¬èªží»ží¿¿Çµ in UTF-8
+				// RPG Hacker: æ—¥æœ¬èªžï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµ in UTF-8
 				{ "cmdl_define_utf8", "\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xf0\x9f\x87\xaf\xf0\x9f\x87\xb5" },
 			};
 
@@ -992,7 +994,7 @@ int main(int argc, char * argv[])
 			// randomdude999: temp workaround: using $ in command line is unsafe on linux, so use dec representation instead (for !cmddefined3)
 			snprintf(cmd, sizeof(cmd),
 				"\"%s\" -I\"%s\" -Dcli_only=\\$1 -Dcmddefined -D!cmddefined2= --define \" !cmddefined3 = 16,240,224 \""
-				// RPG Hacker: æ—¥æœ¬èªží»ží¿¿Çµ in UTF-8
+				// RPG Hacker: æ—¥æœ¬èªžï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Çµ in UTF-8
 				" -Dcmdl_define_utf8=\xe6\x97\xa5\xe6\x9c\xac\xe8\xaa\x9e\xf0\x9f\x87\xaf\xf0\x9f\x87\xb5"
 				" \"%s\" \"%s\"",
 				asar_exe_path, base_path, fname, out_rom_name);

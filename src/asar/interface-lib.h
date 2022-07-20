@@ -97,6 +97,10 @@ struct patchparams {
 	// to force generating/not generating a checksum.
 	bool override_checksum_gen;
 	bool generate_checksum;
+
+	// Set this to true for generated error and warning texts to always
+	// contain their full call stack.
+	bool full_call_stack;
 };
 
 #ifdef __cplusplus

@@ -236,6 +236,10 @@ struct patchparams_v200 : public patchparams_base
 	// to force generating/not generating a checksum.
 	bool override_checksum_gen;
 	bool generate_checksum;
+
+	// Set this to true for generated error and warning texts to always
+	// contain their full call stack.
+	bool full_call_stack;
 };
 
 /* $EXPORTSTRUCT_PP$
@@ -384,6 +388,8 @@ EXPORT bool asar_patch(const struct patchparams_base *params)
 
 
 		asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
+
+		simple_callstacks = !paramscurrent.full_call_stack;
 
 		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;
