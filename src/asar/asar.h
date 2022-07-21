@@ -161,6 +161,14 @@ struct callstack_entry {
 };
 
 
+struct printable_callstack_entry {
+	string fullpath;
+	string prettypath;
+	int lineno;
+	string details;
+};
+
+
 extern autoarray<callstack_entry> callstack;
 extern bool simple_callstacks;
 
@@ -182,11 +190,7 @@ const char* get_current_file_name();
 int get_current_line();
 const char* get_current_block();
 
-// RPG Hacker: We only need to keep these two functions around
-// until we bump the DLL API version number and update the
-// interface to make use of the full callstack.
-const char* get_previous_file_name();
-int get_previous_file_line_no();
+void get_full_printable_callstack(autoarray<printable_callstack_entry>* out, int indentation, bool add_lines);
 
 #if !defined(NO_USE_THREADS) && !defined(RUN_VIA_THREAD)
 // RPG Hacker: This is currently disabled for debug builds, because it causes random crashes

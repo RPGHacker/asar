@@ -136,18 +136,23 @@ string generate_call_details_string(const char* current_block, const char* curre
 	return e;
 }
 
-string generate_filename_and_line(const char* current_file, int current_line_no)
+string get_pretty_filename(const char* current_file)
 {
 	// RPG Hacker: One could make an argument that we shouldn't shorten paths
 	// here, since some IDEs support jumping to files by double-clicking their
 	// paths. However, AFAIK, no IDE supports this for Asar yet, and if it's
 	// ever desired, we could just make it a command line option. Until then,
 	// I think it's more important to optimize for pretty command line display.
-	return STR shorten_to_relative_path(get_top_level_directory(), current_file)
+	return shorten_to_relative_path(get_top_level_directory(), current_file);
+}
+
+string generate_filename_and_line(const char* current_file, int current_line_no)
+{
+	return STR current_file
 		+ (current_line_no>=0?STR ":"+dec(current_line_no+1):"");
 }
 
-void push_stack_line(autoarray<string>* lines, const char* current_file, const char* current_block, const char* current_call, int current_line_no, int stack_frame_index)
+string format_stack_line(const printable_callstack_entry& entry, int stack_frame_index)
 {
 	string indent = "\n|   ";
 	indent += dec(stack_frame_index);
@@ -156,10 +161,19 @@ void push_stack_line(autoarray<string>* lines, const char* current_file, const c
 	// hundreds even, so this very specific, lazy solution suffices.
 	if (stack_frame_index < 100) indent += " ";
 	if (stack_frame_index < 10) indent += " ";
-	lines->append(indent 
-		+ generate_filename_and_line(current_file, current_line_no)
-		+ generate_call_details_string(current_block, current_call, 12, true)
-	);
+	return indent 
+		+ generate_filename_and_line(entry.prettypath, entry.lineno)
+		+ entry.details;
+}
+
+void push_stack_line(autoarray<printable_callstack_entry>* out, const char* current_file, const char* current_block, const char* current_call, int current_line_no, int indentation, bool add_lines)
+{
+	printable_callstack_entry new_entry;
+	new_entry.fullpath = current_file;
+	new_entry.prettypath = get_pretty_filename(current_file);
+	new_entry.lineno = current_line_no;
+	new_entry.details = strip_whitespace(generate_call_details_string(current_block, current_call, indentation, add_lines).raw());
+	out->append(new_entry);
 }
 
 void get_current_line_details(string* location, string* details, bool exclude_block)
@@ -175,7 +189,7 @@ void get_current_line_details(string* location, string* details, bool exclude_bl
 			case callstack_entry_type::FILE:
 				current_file = callstack[i].content;
 				if (exclude_block) current_block = nullptr;
-				*location = generate_filename_and_line(current_file, current_line_no);
+				*location = generate_filename_and_line(get_pretty_filename(current_file), current_line_no);
 				*details = generate_call_details_string(current_block, current_call, 4, false);
 				return;
 			case callstack_entry_type::MACRO_CALL:
@@ -194,9 +208,9 @@ void get_current_line_details(string* location, string* details, bool exclude_bl
 	*details = "";
 }
 
-string get_full_callstack()
+void get_full_printable_callstack(autoarray<printable_callstack_entry>* out, int indentation, bool add_lines)
 {
-	autoarray<string> lines;
+	out->reset();
 	const char* current_file = nullptr;
 	const char* current_block = nullptr;
 	const char* current_call = nullptr;
@@ -208,7 +222,7 @@ string get_full_callstack()
 			case callstack_entry_type::FILE:
 				if (current_file != nullptr)
 				{
-					push_stack_line(&lines, current_file, current_block, current_call, current_line_no, lines.count);
+					push_stack_line(out, current_file, current_block, current_call, current_line_no, indentation, add_lines);
 				}
 				current_file = callstack[i].content;
 				current_block = nullptr;
@@ -228,16 +242,21 @@ string get_full_callstack()
 				break;
 		}
 	}
-	// RPG Hacker: This pop here is incorrect, because with the
-	// way we traverse the call stack, the highest level is
-	// already automatically excluded, anyways.
-	//if (lines.count > 0) lines.remove(lines.count-1);
-	
+}
+
+string get_full_callstack()
+{
+	autoarray<printable_callstack_entry> printable_stack;
+	get_full_printable_callstack(&printable_stack, 12, true);
+
 	string e;
-	if (lines.count > 0)
+	if (printable_stack.count > 0)
 	{
 		e += "\nFull call stack:";
-		for (int i = lines.count-1; i >= 0; --i) e += lines[i];
+		for (int i = printable_stack.count-1; i >= 0; --i)
+		{
+			e += format_stack_line(printable_stack[i], i);
+		}
 	}
 	return e;
 }
@@ -293,7 +312,7 @@ string get_simple_callstack()
 	string e;
 	if (current_call != nullptr && current_file != nullptr)
 	{
-		e += STR "\n    called from: " + generate_filename_and_line(current_file, current_line_no)
+		e += STR "\n    called from: " + generate_filename_and_line(get_pretty_filename(current_file), current_line_no)
 			+ ": [%" + current_call + "]";
 	}
 	return e;
@@ -1154,38 +1173,6 @@ const char* get_current_block()
 		if (callstack[i].type == callstack_entry_type::LINE || callstack[i].type == callstack_entry_type::BLOCK) return callstack[i].content.raw();
 	}
 	return nullptr;
-}
-
-const char* get_previous_file_name()
-{
-	int num_files = 0;
-	for (int i = callstack.count-1; i >= 0; --i)
-	{
-		if (callstack[i].type == callstack_entry_type::FILE)
-		{
-			num_files++;
-			if (num_files > 1) return callstack[i].content.raw();
-		}			
-	}
-	return nullptr;
-}
-
-int get_previous_file_line_no()
-{
-	int num_files = 0;
-	for (int i = callstack.count-1; i >= 0; --i)
-	{
-		if (callstack[i].type == callstack_entry_type::FILE)
-		{
-			num_files++;
-			if (num_files > 1) return -1;
-		}
-		else if (callstack[i].type == callstack_entry_type::LINE)
-		{
-			if (num_files == 1) return callstack[i].lineno;
-		}
-	}
-	return -1;
 }
 
 

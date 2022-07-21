@@ -9,14 +9,21 @@
 #include <stddef.h> // for size_t
 
 // These structures are returned from various functions
+struct stackentry {
+	const char * fullpath;
+	const char * prettypath;
+	int lineno;
+	const char * details;
+};
+
 struct errordata {
 	const char * fullerrdata;
 	const char * rawerrdata;
 	const char * block;
 	const char * filename;
 	int line;
-	const char * callerfilename;
-	int callerline;
+	const struct stackentry * callstack;
+	int callstacksize;
 	const char * errname;
 };
 

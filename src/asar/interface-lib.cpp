@@ -34,6 +34,16 @@ struct patchparams_base {
 	int structsize;
 };
 
+
+/* $EXPORTSTRUCT$
+ */
+struct stackentry {
+	const char * fullpath;
+	const char * prettypath;
+	int lineno;
+	const char * details;
+};
+
 /* $EXPORTSTRUCT$
  */
 struct errordata {
@@ -42,8 +52,8 @@ struct errordata {
 	const char * block;
 	const char * filename;
 	int line;
-	const char * callerfilename;
-	int callerline;
+	const struct stackentry * callstack;
+	int callstacksize;
 	const char * errname;
 };
 static  autoarray<errordata> errors;
@@ -100,11 +110,23 @@ static void fillerror(errordata& myerr, const char* errname, const char * type, 
 	string details;
 	get_current_line_details(&location, &details);
 	myerr.fullerrdata= duplicate_string(location+": "+type+str+details+get_callstack());
-	// RPG Hacker: TODO: Rework this into a full call stack return value once we bump the DLL API version again.
-	myerr.callerline=get_previous_file_line_no();
-	const char* prev_file = get_previous_file_name();
-	myerr.callerfilename=prev_file ? duplicate_string(prev_file) : nullptr;
 	myerr.errname = duplicate_string(errname);
+
+	autoarray<printable_callstack_entry> printable_stack;
+	get_full_printable_callstack(&printable_stack, 0, false);
+
+	myerr.callstacksize = printable_stack.count;
+	myerr.callstack = static_cast<stackentry*>(malloc(sizeof(stackentry) * myerr.callstacksize));
+
+	for (int i = 0; i < myerr.callstacksize; ++i)
+	{
+		stackentry& entry = const_cast<stackentry&>(myerr.callstack[i]);
+
+		entry.fullpath = duplicate_string(printable_stack[i].fullpath);
+		entry.prettypath = duplicate_string(printable_stack[i].prettypath);
+		entry.lineno = printable_stack[i].lineno;
+		entry.details = duplicate_string(printable_stack[i].details);
+	}
 }
 
 static bool ismath=false;
@@ -149,9 +171,17 @@ static void resetdllstuff()
 		free_and_null(errors[i].filename);
 		free_and_null(errors[i].rawerrdata);
 		free_and_null(errors[i].fullerrdata);
-		free_and_null(errors[i].callerfilename);
 		free_and_null(errors[i].block);
 		free_and_null(errors[i].errname);
+
+		for (int j=0;j<errors[i].callstacksize;++j)
+		{
+			stackentry& entry = const_cast<stackentry&>(errors[i].callstack[j]);
+			free_and_null(entry.fullpath);
+			free_and_null(entry.prettypath);
+			free_and_null(entry.details);
+		}
+		free_and_null(errors[i].callstack);
 	}
 	errors.reset();
 	numerror=0;
@@ -161,8 +191,17 @@ static void resetdllstuff()
 		free_and_null(warnings[i].filename);
 		free_and_null(warnings[i].rawerrdata);
 		free_and_null(warnings[i].fullerrdata);
-		free_and_null(warnings[i].callerfilename);
 		free_and_null(warnings[i].block);
+		free_and_null(warnings[i].errname);
+
+		for (int j=0;j<warnings[i].callstacksize;++j)
+		{
+			stackentry& entry = const_cast<stackentry&>(warnings[i].callstack[j]);
+			free_and_null(entry.fullpath);
+			free_and_null(entry.prettypath);
+			free_and_null(entry.details);
+		}
+		free_and_null(warnings[i].callstack);
 	}
 	warnings.reset();
 	numwarn=0;
