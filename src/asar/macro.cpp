@@ -354,49 +354,47 @@ string replace_macro_args(const char* line) {
 			if (depth > 0 && !inmacro) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
 			in += depth+1;
 			
-			bool proper_variadic = false;
+			bool is_variadic_arg = false;
 			if (in[0] == '.' && in[1] == '.' && in[2] == '.' && in[3] == '[')
 			{
 				if (end[-1] != ']')
 					asar_throw_error(0, error_type_block, error_id_unclosed_vararg);
 							
-				proper_variadic = true;
+				is_variadic_arg = true;
 				in += 4;
 				end--;
 			}
 
 			if(!inmacro) asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
+			if(is_variadic_arg && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_macro_not_varadic, "<...[math]>");
 			//*end=0;
 			string param;
 			string temp(in, end-in);
 			resolvedefines(param, temp);
 			in = param.data();
 			bool valid_named_param = confirmname(in);
-			if (!valid_named_param && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
-			bool found=false;
-			for (int j=0;current_macro->arguments[j]&&!proper_variadic;j++)
+			if (!is_variadic_arg)
 			{
-				if (!strcmp(in, current_macro->arguments[j]))
+				if (!valid_named_param) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
+				bool found=false;
+				for (int j=0;current_macro->arguments[j];j++)
 				{
-					found=true;
-					out+=current_macro_args[j];
-					break;
+					if (!strcmp(in, current_macro->arguments[j]))
+					{
+						found=true;
+						out+=current_macro_args[j];
+						break;
+					}
+				}
+				if (!found)
+				{
+					asar_throw_error(0, error_type_block, error_id_macro_param_not_found, generate_macro_arg_string(in, depth).raw(), generate_macro_hint_string(in, current_macro, depth).raw());
 				}
 			}
-			if (!found)
+			else
 			{
 				snes_label ret;
-				if(valid_named_param && !current_macro->variadic)
-				{
-					if (proper_variadic) asar_throw_error(0, error_type_block, error_id_invalid_vararg, in);
-					else asar_throw_error(0, error_type_block, error_id_macro_param_not_found, generate_macro_arg_string(in, depth).raw(), generate_macro_hint_string(in, current_macro, depth).raw());
-				}
-				if(current_macro->variadic && valid_named_param && !labelval(in, &ret, false))
-				{
-					if (proper_variadic) asar_throw_error(0, error_type_block, error_id_invalid_vararg, in);
-					else asar_throw_error(0, error_type_block, error_id_macro_param_not_found, generate_macro_arg_string(in, depth).raw(), generate_macro_hint_string(in, current_macro, depth).raw());
-				}
-				if(!proper_variadic) asar_throw_warning(0, warning_id_feature_deprecated, "'<math>' syntax for variadic macro parameters", "Use '<...[math]>' instead.");
+				if(valid_named_param && !labelval(in, &ret, false)) asar_throw_error(0, error_type_block, error_id_invalid_vararg, in);
 				int arg_num = getnum(in);
 
 				if(forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
@@ -406,7 +404,7 @@ string replace_macro_args(const char* line) {
 				out+=current_macro_args[arg_num+current_macro->numargs-1];
 			}
 			in=end+1;
-			if (proper_variadic) in++;
+			if (is_variadic_arg) in++;
 		}
 		else out+=*(in++);
 	}

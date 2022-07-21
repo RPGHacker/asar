@@ -252,7 +252,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ ERR(negative_shift), "Bitshift amount is negative." },
 
-	{ ERR(macro_not_varadic), "Invalid use of sizeof(...), active macro is not variadic." },
+	{ ERR(macro_not_varadic), "Invalid use of %s, active macro is not variadic." },
 	{ ERR(vararg_sizeof_nomacro), "Invalid use of sizeof(...), no active macro." },
 	{ ERR(macro_wrong_min_params), "Variadic macro call with too few parameters" },
 	{ ERR(vararg_out_of_bounds), "Variadic macro parameter requested is out of bounds." },
