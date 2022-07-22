@@ -3,6 +3,7 @@
 ;`BA
 ;`EE EE EE
 ;`03
+;`42
 ;P>Test passed. (1)
 ;P>Test passed. (2)
 ;P>Test passed. (3)
@@ -65,5 +66,11 @@ fill FillCount
 
 db !adefine
 
-; TODO: Test incbin and more.
+ArgID = 2
+
+macro in_macro(...)
+	db <...[ArgID]>
+endmacro
+
+%in_macro($40, $41, $42)
 
