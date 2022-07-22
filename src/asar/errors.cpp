@@ -298,6 +298,8 @@ static asar_error_mapping asar_errors[] =
 
 	{ ERR(macro_param_outside_macro), "Reference to macro parameter outside of macro" },
 	{ ERR(invalid_depth_resolve), "Invalid %s resolution depth: Trying to backwards-resolve a %s using %i '^', but current scope only supports up to %i '^'." },
+	
+	{ ERR(platform_paths), "Platform-specific paths aren'supported. Please use platform-independent paths (use / instead of \\)." },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_error
 // matches with the number of constants in asar_error_id. This is important, because

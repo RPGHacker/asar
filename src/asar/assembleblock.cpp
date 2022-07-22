@@ -1956,13 +1956,12 @@ void assembleblock(const char * block)
 	{
 		const char* current_file = get_current_file_name();
 		string name;
-#ifdef _WIN32
+		// RPG Hacker: Should this also throw on absolute paths?
+		// E.g., on something starting with C:/ or whatever.
 		if (strchr(par, '\\'))
 		{
-			//todo throw error
-			asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
+			asar_throw_error(0, error_type_block, error_id_platform_paths);
 		}
-#endif
 		name=safedequote(par);
 		assemblefile(name);
 	}
@@ -2002,13 +2001,12 @@ void assembleblock(const char * block)
 		}
 		const char* current_file = get_current_file_name();
 		string name;
-#ifdef _WIN32
+		// RPG Hacker: Should this also throw on absolute paths?
+		// E.g., on something starting with C:/ or whatever.
 		if (strchr(par, '\\'))
 		{
-			//todo throw error
-			asar_throw_warning(0, warning_id_feature_deprecated, "windows specific paths", "convert paths to crossplatform style");
+			asar_throw_error(0, error_type_block, error_id_platform_paths);
 		}
-#endif
 		name = safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
 		if (!readfile(name, current_file, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
