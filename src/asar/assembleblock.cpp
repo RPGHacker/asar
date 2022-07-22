@@ -2414,7 +2414,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("padlong")) len=3;
 		if (is("paddword")) len=4;
 		unsigned int val=getnum(par);
-		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in padbyte", "just... don't.");
+		if(foundlabel && !foundlabel_static) asar_throw_warning(1, warning_id_feature_deprecated, "labels in padbyte", "just... don't.");
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -2446,7 +2446,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("filllong")) len=3;
 		if (is("filldword")) len=4;
 		unsigned int val= getnum(par);
-		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in fillbyte", "just... don't");
+		if(foundlabel && !foundlabel_static) asar_throw_warning(1, warning_id_feature_deprecated, "labels in fillbyte", "just... don't");
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;

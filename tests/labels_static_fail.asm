@@ -7,6 +7,8 @@
 ;`errEno_labels_here
 ;`errElabel_cross_assignment
 ;`errEno_labels_here
+;`warnWfeature_deprecated
+;`warnWfeature_deprecated
 ;`errEdefine_label_math
 org $008000
 ANonStaticLabel:
@@ -47,9 +49,11 @@ incbin "data/64kb.bin":(8000)-(ANonStaticLabel+2)
 
 ANewLabel = ANonStaticLabel
 
-fillbyte $EE
+Here:
+fillbyte Here
 fill ANonStaticLabel
 
-!adefine #= ANonStaticLabel
+padbyte Here
+pad ANonStaticLabel
 
-; TODO: Test incbin and more.
+!adefine #= ANonStaticLabel
