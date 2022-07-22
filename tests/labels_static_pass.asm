@@ -1,9 +1,11 @@
+;`+
 ;`56 78
 ;`BA
 ;`BA
 ;`EE EE EE
 ;`03
 ;`42
+;`007FFE EE EE
 ;P>Test passed. (1)
 ;P>Test passed. (2)
 ;P>Test passed. (3)
@@ -57,9 +59,10 @@ OtherFunStuff = FunStuff
 db 'a'
 db OtherFunStuff
 
+FillByte = $EE
 FillCount = 3
 
-fillbyte $EE
+fillbyte FillByte
 fill FillCount
 
 !adefine #= FillCount
@@ -73,4 +76,10 @@ macro in_macro(...)
 endmacro
 
 %in_macro($40, $41, $42)
+
+
+org $00FFFE
+
+padbyte FillByte
+pad $018000
 
