@@ -85,12 +85,11 @@
 			<li><code>.d</code> length specifier on opcodes.</li>
 			<li><code>if !condition</code> to negate conditions: Use <code>if not(condition)</code> instead.</li>
 			<li>While blocks ending with <code>endif</code>: Use <code>endwhile</code> instead.</li>
-			<li><code>bankcheck on</code>: Use <code>bankcheck full</code> or <code>bankcheck half</code> instead.</li>
+			<li><code>check bankcross on</code>: Use <code>check bankcross full</code> or <code>check bankcross half</code> instead.</li>
 			<li><code>rep</code> to repeat commands: Use while loops or unrolled loops instead.</li>
 			<li>Windows-specific paths (e.g. <code>incsrc dir\file.asm</code>): Use cross-platform paths instead (<code>incsrc dir/file.asm</code>).</li>
 			<li><code>table</code> command: Assign characters directly instead, like <code>'a' = $00</code>.</li>
 			<li>Non-static labels in <code>padbyte</code> or <code>fillbyte</code> commands.</li>
-			<li><code>spc700-raw</code> architecture: Use <code>spc700</code> with <code>norom</code> instead.</li>
 			<li><code>fastrom</code>: Has never actually worked and can be removed.</li>
 			<li><code>header</code>: Doesn't do anything and can be removed.</li>
 			<li>Non-UTF-8 source files: Re-save your source files as UTF-8 in a text editor of choice.</li>
