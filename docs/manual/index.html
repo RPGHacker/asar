@@ -2429,7 +2429,7 @@ macro example1(...)
 	while !a &lt; sizeof(...)
 		db &lt;...[!a]&gt;		;01 02 03
 		!a #= !a+1
-	endif
+	endwhile
 endmacro
 
 macro example2(named_parameter, ...)
@@ -2437,7 +2437,7 @@ macro example2(named_parameter, ...)
 	while !a &lt; sizeof(...)
 		db &lt;...[!a]&gt;		;02 03 04 05 06 07
 		!a #= !a+1
-	endif
+	endwhile
 	db &lt;named_parameter&gt;	;01
 endmacro
 
@@ -2580,7 +2580,7 @@ while !fpos &lt; !fsize
 	;...
 	
 	!fpos #= !fpos+1
-endif</code></pre></td>
+endwhile</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">getfilestatus(filename)</code></td>
@@ -2791,10 +2791,6 @@ endif</code></pre>
 				<td><code>a &lt;= b</code></td>
 				<td>Returns 1 if <code>a</code> is less than or equal to <code>b</code></td>
 			</tr>
-			<tr>
-				<td><code>!a</code></td>
-				<td>Returns 1 if <code>a</code> is 0, and 0 otherwise. Note: this is deprecated and will be removed in a future version. Please use <code>if not(a)</code> instead.</td>
-			</tr>
 		</table><br/>
 		You can use logical operators to chain multiple conditions.<br/><br/>
 		<table>
@@ -2863,8 +2859,8 @@ while !counter &lt; $10
 	db (!counter&lt;&lt;8)|$0C,(!counter&lt;&lt;8)|$0D,(!counter&lt;&lt;8)|$0E,(!counter&lt;&lt;8)|$0F
 			
 	!counter #= !counter+1
-endif</code></pre>
-		Note that for technical reasons, while loops end on an endif, just like if conditionals, but unlike the latter they do not support elseif or else branches. Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the compiler, as Asar won't attempt to detect those.<br/><br/>
+endwhile</code></pre>
+		Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the compiler, as Asar won't attempt to detect those.<br/><br/>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="binary-data"><h3>Binary Data</h3>
@@ -3071,7 +3067,7 @@ incsrc "routine.asm"
 
 incsrc &quot;shared.asm&quot;
 
-if !is_sa1_rom
+if !is_sa1_rom != 0
 	; ...
 endif</code></pre>
 		<h4 id="includeonce">includeonce</h4>
