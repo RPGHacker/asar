@@ -55,7 +55,6 @@
 					<li><a href="#number-literals">Number Literals</a></li>
 					<li><a href="#opcode-length">Opcode Length Specification</a></li>
 					<li><a href="#pseudo-opcodes">Pseudo Opcodes</a></li>
-					<li><a href="#rep">rep</a></li>
 				</ul>
 			</li>
 			<li><a href="#mappers">Mapping Modes</a></li>
@@ -1563,18 +1562,6 @@ nop
 
 inx
 inx</code></pre>
-		<h4 id="rep">rep</h4>
-		<pre><code class="65c816_asar">rep {num} : {code}</code></pre>
-		The rep command lets you compile any bit of code <code>num</code> times. It functions similarly to <a href="#pseudo-opcodes">pseudo opcodes</a>, but without being limited to certain opcodes only. Instead, you can repeat almost any bit of code supported by Asar, even macro calls. Note that in xkas compatibility mode, <code>rep 0</code> will compile the following code once, whereas <code>rep -1</code> (or any number <code>&lt; 0</code>) won't compile the following code at all. This is to keep compatibility with old patches, which occasionally used the rep command as a replacement for conditionals. Also note that stacking multiple rep commands is not supported (only the most recent rep will take effect).
-		<pre><code class="65c816_asar">macro writeval(val)
-	db &lt;val&gt;
-endmacro
-		
-macro memset(val, num)
-	rep &lt;num&gt; : %writeval(&lt;val&gt;)
-endmacro
-
-rep 16 : %memset($00, 16)</code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="mappers"><h3>Mapping Modes</h3>
@@ -2884,45 +2871,36 @@ dw $01,$0203,$04050607,Label,"ABC"
 dl $01,$0203,$04050607,Label,"ABC"
 ; $01 $00 $00 $00  $03 $02 $00 $00  $07 $06 $05 $04  $AB $89 $01 $00  $41 $00 $00 $00 $42 $00 $00 $00 $43 $00 $00 $00
 dd $01,$0203,$04050607,Label,"ABC"</code></pre>
-		By default, each character in a Unicode string used in in a table maps onto the respective Unicode code point. This mapping can be customized via the table command:
-		<pre><code class="65c816_asar">table {filename}[,rtl/ltr]</code></pre>
-		Where <code>filename</code> specifies the path to a table file (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and ltr/rtl specifies whether that file is in left-to-right or right-to left format (default: left-to-right).<br />
-		Format of left-to-right table files:
-		<pre><code>{character}={value}
-[character=value...]</code></pre>
-		Format of right-to-left table files:
-		<pre><code>{value}={character}
-[value=character...]</code></pre>
-		where <code>character</code> represents a Unicode character (only single code points at this time - e.g., a precomposed &quot;Ä&quot; will work, while a split &quot;¨&quot; and an &quot;A&quot; will throw an error) and <code>value</code> represents a hexadecimal number literal (without a prefix) to map to that character. Characters not mapped in a table will still map to their respective Unicode code point. It's also possible to directly map characters inline without using a table file by using the syntax
-		<pre><code>'{character}' = {value}</code></pre>
-		where <code>value</code> can be any number literal or math statement.<br />
-		To reset the current table mapping to a direct Unicode code point mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push the current table mapping to the stack, whereas the <code>pulltable</code> command lets you restore the mapping from the stack.
-		<pre><code class="65c816_asar">; Contents of table1.txt:
-;A=1A
-;B=1B
-;C=1C
-;日=2A
-;本=2B
-;語=2C
+		By default, each character in a Unicode string used in a table maps onto the respective Unicode code points it's composed of. This mapping can be customized via character literal assignments:
+		<pre><code class="65c816_asar">'{character}' = {value}</code></pre>
+		Where <code>character</code> is a Unicode code point and <code>value</code> is any math expression, specifying what value that code point will be remapped to. Only single code points can be remappe at this time - e.g., a precomposed &quot;Ä&quot; will work, while a split &quot;¨&quot; and an &quot;A&quot; will throw an error.<br />
+		To reset all mappings to a direct Unicode code point mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push all current mappings onto a stack, whereas the <code>pulltable</code> command lets you restore the mappings from that stack.
+		<pre><code class="65c816_asar">; Contents of table1.asm:
+;'A' = $1A
+;'B' = $1B
+;'C' = $1C
+;'日' = $2A
+;'本' = $2B
+;'語' = $2C
 
-; Contents of table2.txt:
-;1D=A
-;1E=B
-;1F=C
-;2D=日
-;2E=本
-;2F=語
+; Contents of table2.asm:
+;'A' = $1D
+;'B' = $1E
+;'C' = $1F
+;'日' = $2D
+;'本' = $2E
+;'語' = $2F
 
 ; This writes $41 $42 $43 $E5 (from U+65E5) $2C (from U+672C) $9E (from U+8A9E)
 db "ABC日本語"
 
-table "table1.txt",ltr
+incsrc "table1.asm"
 
 ; This writes $1A $1B $1C $2A $2B $2C
 db "ABC日本語"
 
 pushtable
-table "table2.txt",rtl
+incsrc "table2.asm"
 
 ; This writes $1D $1E $1F $2D $2E $2F
 db "ABC日本語"
@@ -3311,15 +3289,15 @@ org $009053
 org $009068
 	nop #3</code></pre>
 		<h4 id="check-bankcross">check bankcross</h4>
-		<pre><code class="65c816_asar">check bankcross {on/off}</code></pre>
-		The <code class="65c816_asar">check bankcross</code> command enables (<code class="65c816_asar">on</code>) or disables (<code class="65c816_asar">off</code>) throwing errors when a bank border is crossed while assembling a file. The default is <code class="65c816_asar">on</code>. Use this with caution as some features may not behave correctly with bank border checking disabled and some places may still check for bank borders, anyways.
+		<pre><code class="65c816_asar">check bankcross {full/half/off}</code></pre>
+		The <code class="65c816_asar">check bankcross</code> command enables or disables throwing errors when a bank border is crossed while assembling a file. The default is <code class="65c816_asar">full</code>, which will throw an error after crossing full bank borders only. A value of <code class="65c816_asar">half</code> will throw an error at crossing half banks (aka multiples of 0x8000). <code class="65c816_asar">off</code>code> will disable checks entirely. Use this setting with caution as some features may not behave correctly with bank border checking disabled, and some places may check for bank borders, anyways.
 		<pre><code class="65c816_asar">check bankcross off
 
 org $80FFFF
 
 	db $00,$00
 	
-check bankcross on
+check bankcross full
 
 print pc	; Will print 818001 when using LoROM mapper</code></pre>
 		<a href="#contents">Return to top</a></div>
