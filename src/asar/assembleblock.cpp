@@ -2463,7 +2463,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
-		if (!stricmp(par, "spc700-inline")) { asar_throw_warning(1, warning_id_feature_deprecated, "spc700-inline", " Use spcblock and spcblockend"); arch=arch_spc700_inline; return; }
+		if (!stricmp(par, "spc700-inline")) { asar_throw_warning(1, warning_id_feature_deprecated, "spc700-inline", " Use spcblock and endspcblock"); arch=arch_spc700_inline; return; }
 		if (!stricmp(par, "spc700-raw")) {
 			asar_throw_warning(1, warning_id_feature_deprecated, "spc700-raw", " Use arch spc700 with norom");
 			arch=arch_spc700;
