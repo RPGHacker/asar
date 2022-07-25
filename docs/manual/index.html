@@ -280,16 +280,16 @@
 	C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="powershell">-w{id}</code></td>
+				<td><code class="powershell">-w{name}</code></td>
 				<td>Modifier</td>
-				<td>Enables the warning with the specified ID. See section <a href="#warnings">Warnings</a> for details.</td>
-				<td><pre><code class="powershell">asar.exe -wW1023 C:/homebrew/my_game/main.asm</code></pre></td>
+				<td>Enables the warning with the specified name. See section <a href="#warnings">Warnings</a> for details.</td>
+				<td><pre><code class="powershell">asar.exe -wWmplicitly_sized_immediate C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="powershell">-wno{id}</code></td>
+				<td><code class="powershell">-wno{name}</code></td>
 				<td>Modifier</td>
-				<td>Disables the warning with the specified ID. See section <a href="#warnings">Warnings</a> for details.</td>
-				<td><pre><code class="powershell">asar.exe -wnoW1013 C:/homebrew/my_game/main.asm</code></pre></td>
+				<td>Disables the warning with the specified name. See section <a href="#warnings">Warnings</a> for details.</td>
+				<td><pre><code class="powershell">asar.exe -wnoWfreespace_leaked C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="powershell">--fix-checksum={on/off}</code></td>
@@ -1581,7 +1581,7 @@ rep 16 : %memset($00, 16)</code></pre>
 		<hr />
 		<div id="mappers"><h3>Mapping Modes</h3>
 		Asar supports a number of different mapping modes. They control the address translation used by Asar during compilation (aka where in the output file Asar writes to). Historically, SNES cartridges used a number of different mappers to address data in ROM. Those mappers can be supported by using the respective mapping mode in Asar. It's possible, but not recommended, to use different mapping modes on the same ROM. Detailed explanations on each mapping mode are beyond the scope of this manual, so please check the SNES Dev Manual or other specialized resources for that.<br/>
-		NOTE: Changing the mapper after having previously set it will generate warning <code>W1029</code>.<br/><br/>
+		NOTE: Changing the mapper after having previously set it will generate warning <code>Wmapper_already_set</code>.<br/><br/>
 		<table>
 			<tr>
 				<th style="width:150px">Command</th>
@@ -2891,7 +2891,7 @@ SecondLabel:
 if FirstLabel == 0
 endif
 
-; Error E5107. The label could move between passes.
+; Error Elabel_in_conditional. The label could move between passes.
 if SecondLabel == 0
 endif</code></pre>
 		<h4 id="while">while</h4>
@@ -3371,7 +3371,7 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="warnings"><h3>Warnings</h3>
-		Warnings are messages that Asar outputs to inform the user about potentially unintended or risky code that isn't critical and thus doesn't cause assembly to fail on its own. These messages can be useful for detecting potential problems in the code, but in some situations may be undesirable. For this reason, Asar supports a few methods of explicitly enabling or disabling certain warnings (see section <a href="#usage">Usage</a> for details on how to configure warnings via the command line). Additionally, there are warnings which may be useful in some situations, but would be intrusive in most other situations. They are disabled by default and have to be enabled explicitly to be used. Commands that enable or disable warnings refer to them via their ID. This ID is in the format <code>WXXXX</code>, where <code>XXXX</code> is a number uniquely identifying a warning. The easiest way of finding the ID for a specific warning is to look at the console output of a patch producing it. Asar will always output the warning ID along with the respective warning.
+		Warnings are messages that Asar outputs to inform the user about potentially unintended or risky code that isn't critical and thus doesn't cause assembly to fail on its own. These messages can be useful for detecting potential problems in the code, but in some situations may be undesirable. For this reason, Asar supports a few methods of explicitly enabling or disabling certain warnings (see section <a href="#usage">Usage</a> for details on how to configure warnings via the command line). Additionally, there are warnings which may be useful in some situations, but would be intrusive in most other situations. They are disabled by default and have to be enabled explicitly to be used. Commands that enable or disable warnings refer to them via their names. The easiest way of finding the name of a specific warning is to look at the console output of a patch producing it. Asar will always output the warning name along with the respective warning.
 		<h4 id="disabled-warnings">Disabled Warnings</h4>
 		This is a list of all warnings that are disabled by default and have to be enabled explicitly.<br/><br/>
 		<table>
@@ -3380,11 +3380,11 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 				<th>Details</th>
 			</tr>
 			<tr>
-				<td><code>W1013</code></td>
+				<td><code>Wimplicitly_sized_immediate</code></td>
 				<td>Thrown when opcodes are sized implicitly and Asar has to assume a size. An opcode is considered to be sized explicitly when either a length specifier is used or a simple hex constant that can be assumed to be of a specific size (that is, a hex constant with either two or four digits). Opcodes that don't support multiple sizes are always considered to be sized explicitly. Everything else is considered to be sized implicitly and will throw this warning when enabled.</td>
 			</tr>
 			<tr>
-				<td><code>W1024</code></td>
+				<td><code>Wcheck_memory_file</code></td>
 				<td>Only relevant for the DLL API. Thrown when a file is accessed that was either not provided as a memory file or that isn't found in memory. Mainly intended for debugging purposes and can be used to assure that files are actually read from the correct location.</td>
 			</tr>
 		</table>
@@ -3393,7 +3393,7 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 		The <code class="65c816_asar">warnings push</code> command pushes the current state of enabled and disabled warnings to the stack. The <code class="65c816_asar">warnings pull</code> command pulls it back from the stack.
 		<pre><code class="65c816_asar">warnings push
 ; Disable "freespace leaked" warning
-warnings disable W1011
+warnings disable Wfreespace_leaked
 		
 freecode
 
@@ -3401,13 +3401,15 @@ freecode
 		
 warnings pull</code></pre>
 		<h4 id="warnings-enable-disable">warnings {enable/disable}</h4>
-		<pre><code class="65c816_asar">warnings {enable/disable} {id}</code></pre>
-		The <code class="65c816_asar">warnings enable</code> command enables the warning with the specified ID, the <code class="65c816_asar">warnings disable</code> command disables it. Warnings enabled or disabled via this command override warnings enabled or disabled via the command line (see section <a href="#usage">Usage</a> for details). When using these commands inside shared code, it's recommended to do so in conjunction with <a href="#warnings-push-pull">warnings {push/pull}</a> to prevent the modified settings from leaking into other files.
-		<pre><code class="65c816_asar">warnings disable W1012
+		<pre><code class="65c816_asar">warnings {enable/disable} {name}</code></pre>
+		The <code class="65c816_asar">warnings enable</code> command enables the warning with the specified name, the <code class="65c816_asar">warnings disable</code> command disables it. Warnings enabled or disabled via this command override warnings enabled or disabled via the command line (see section <a href="#usage">Usage</a> for details). When using these commands inside shared code, it's recommended to do so in conjunction with <a href="#warnings-push-pull">warnings {push/pull}</a> to prevent the modified settings from leaking into other files.
+		<pre><code class="65c816_asar">warnings disable Wwarn_command
 		
 warn "This text in invisible!"
 
-warn enable W1012</code></pre>
+warn enable Wwarn_command
+		
+warn "This text in visible!"</code></pre>
 		<a href="#contents">Return to top</a></div>
 	</body>
 </html>
