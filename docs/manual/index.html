@@ -61,9 +61,7 @@
 			<li>
 				<a href="#compatibility">Compatibility Settings</a>
 				<ul>
-					<li><a href="#xkas">xkas</a></li>
 					<li><a href="#asar">asar</a></li>
-					<li><a href="#warn-xkas">warn xkas</a></li>
 					<li><a href="#namespace-nested">namespace nested</a></li>
 				</ul>
 			</li>
@@ -1619,24 +1617,6 @@ db $FF		; Will write to PC address 0x008000</code></pre>
 		<hr />
 		<div id="compatibility"><h3>Compatibility Settings</h3>
 		Compatibility settings determine how Asar operates in certain situations. They can be changed via a number of commands.
-		<h4 id="xkas">xkas</h4>
-		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patches that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used.
-		<pre><code class="65c816_asar">;@xkas
-
-!is_asar=0	
-;@!is_asar=1
-
-;@if !is_asar == 0
-	macro do_something()
-		; Do something xkas-specific here
-	endmacro
-;@else
-;@	macro do_something()
-;@		; Do something asar-specific here
-;@	endmacro
-;@endif
-
-do_something()</code></pre>
 		<h4 id="asar">asar</h4>
 		<pre><code class="65c816_asar">asar {ver}</code></pre>
 		The <code class="65c816_asar">asar</code> command can be used to specify the minimum Asar version your patch is compatible with. The <code>ver</code> parameter specifies the minimum required Asar version. When a user tries to assemble the patch in an older version of Asar, an error will be thrown, stating that the used Asar version is too old. This should be the first command in your patch, otherwise an error will be thrown.
@@ -1648,9 +1628,6 @@ if readfile1(&quot;data.bin&quot;, 0) == 1
 else
 	; Do something else
 endif</code></pre>
-		<h4 id="warn-xkas">warn xkas</h4>
-		<pre><code class="65c816_asar">warn xkas {on/off}</code></pre>
-		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>warn xkas on</code> to enable these warnings and <code>warn xkas off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
 		<h4 id="namespace-nested">namespace nested</h4>
 		<pre><code class="65c816_asar">namespace nested {on/off}</code></pre>
 		The <code class="65c816_asar">namespace nested</code> command enables (<code class="65c816_asar">on</code>) or disables (<code class="65c816_asar">off</code>) nested namespaces. The default is <code class="65c816_asar">off</code>. See section <a href="#namespaces">Namespaces</a> for details.<br /><br />
@@ -1662,7 +1639,6 @@ endif</code></pre>
 		<h4 id="comments">Comments</h4>
 		You can use ; to add comments to your code, making it easier to read and understand for other people. Everything from the ; to the end of the line is silently ignored by Asar.
 		<pre><code class="65c816_asar">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
-		An exception from this rule are lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. The purpose of this is to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they will be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#compatibility">Compatibility Settings</a> for details on xkas compatibility.
 		<h4 id="brackets">Brackets</h4>
 		Brackets, { and }, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's entirely up to the coder whether, how and in what quantity brackets are used.<br />
 		<pre><code class="65c816_asar">	lda $00
@@ -2812,14 +2788,7 @@ elseif !mode == 3
 else
 	error "Unsupported mode! Please choose 0, 1, 2 or 3!"
 endif</code></pre>
-		Alternatively, if conditionals can also be constructed on a single line via the following syntax:
-		<pre><code class="65c816_asar">if {condition} : {codeblock}[ : codeblock...]</code></pre>
-		Note that no endif needs to be used here and that else or elseif are unsupported when using this syntax.
-		<pre><code class="65c816_asar">PressedY:
-	if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball
-	rtl
-		</code></pre>
-		If you plan to use labels in if commands, note that there's certain restrictions that apply. More specifically, only static labels can be used. That is, only labels whose address can't change between Asar's passes, as demonstrated by the following example:
+		If you plan to use labels in if conditions, note that there's certain restrictions that apply. More specifically, only static labels can be used. That is, only labels whose address can't change between Asar's passes, as demonstrated by the following example:
 		<pre><code class="65c816_asar">FirstLabel = $018000
 		
 freecode
@@ -3030,7 +2999,7 @@ incsrc "routine.asm"
 		<h4 id="includefrom">include/includefrom</h4>
 		<pre><code class="65c816_asar">include</code></pre>
 		<pre><code class="65c816_asar">includefrom {filename}</code></pre>
-		The include and includefrom commands specify that a file is only to be included in another file and not to be assembled directly. When a user tries to assemble a file containing include or includefrom directly, an error is thrown. The includefrom command behaves identically to the include command with the exception that it is passed the name of the file it is meant to be included from (note that Asar doesn't verify whether it's actually included from that file, it only checks whether it's included from another file at all). When making use of include or includefrom, they must be the first command within their respective file and can't be used in combination with the <a href="#asar">asar</a> or <a href="#xkas">xkas</a> command in the same file.		
+		The include and includefrom commands specify that a file is only to be included in another file and not to be assembled directly. When a user tries to assemble a file containing include or includefrom directly, an error is thrown. The includefrom command behaves identically to the include command with the exception that it is passed the name of the file it is meant to be included from (note that Asar doesn't verify whether it's actually included from that file, it only checks whether it's included from another file at all). When making use of include or includefrom, they must be the first command within their respective file and can't be used in combination with the <a href="#asar">asar</a> command in the same file.		
 		<pre><code class="65c816_asar">; Contents of shared.asm:
 ;@includefrom main.asm
 ;
@@ -3251,14 +3220,14 @@ SomeLargeData:
 		<h4 id="warn">warn</h4>
 		The warn command lets you output a warning message to the user. Usage:
 		<pre><code class="65c816_asar">warn [text_or_function...]</code></pre>
-		where <code>custom_warning_text</code> can be a custom warning text and uses the same format as the <code>print</code> command. A warning does not cause compilation to fail, so it can be used to inform the user about potential dangers. Warning messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
+		where <code>custom_warning_text</code> can be a custom warning text and uses the same format as the <code>print</code> command. A warning does not cause compilation to fail, so it can be used to inform the user about potential dangers. Warning messages are printed to stderr.
 		<pre><code class="65c816_asar">if read1($00FFD5) == $23
 	warn "SA-1 compatibility of this patch is untested, use with caution!"
 endif</code></pre>
 		<h4 id="error">error</h4>
 		The error command lets you output an error message to the user. Usage:
 		<pre><code class="65c816_asar">error [text_or_function...]</code></pre>
-		where <code>custom_error_text</code> can be a custom error text and uses the same format as the <code>print</code> command. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states. Error messages are printed to stderr by default, but are printed to stdout if the Asar executable is renamed to xkas.exe. This is intended for compatibility purposes.
+		where <code>custom_error_text</code> can be a custom error text and uses the same format as the <code>print</code> command. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states. Error messages are printed to stderr.
 		<pre><code class="65c816_asar">if read1($00FFD5) == $23
 	error "This patch is not SA-1 compatible!"
 endif</code></pre>
