@@ -65,8 +65,6 @@
 					<li><a href="#xkas">xkas</a></li>
 					<li><a href="#asar">asar</a></li>
 					<li><a href="#warn-xkas">warn xkas</a></li>
-					<li><a href="#math-pri">math pri</a></li>
-					<li><a href="#math-round">math round</a></li>
 					<li><a href="#namespace-nested">namespace nested</a></li>
 				</ul>
 			</li>
@@ -1666,34 +1664,6 @@ endif</code></pre>
 		<h4 id="warn-xkas">warn xkas</h4>
 		<pre><code class="65c816_asar">warn xkas {on/off}</code></pre>
 		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>warn xkas on</code> to enable these warnings and <code>warn xkas off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
-		<h4 id="math-pri">math pri</h4>
-		<pre><code class="65c816_asar">math pri {on/off}</code></pre>
-		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">@asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. When writing patches specifially for Asar, it is recommended to always enable this flag.
-		<pre><code class="65c816_asar">math pri off
-db 1+(6/3)*5	; db 15
-
-math pri on
-db 1+(6/3)*5	; db 11</code></pre>
-		<h4 id="math-round">math round</h4>
-		<pre><code class="65c816_asar">math round {on/off}</code></pre>
-		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag.
-		<pre><code class="65c816_asar">math round on
-; 1.75 is immediately truncated to 1, resulting in (3/4)+1
-; 3/4 would result in 0.75, which is immediately truncated to 0, resulting in 0+1
-; Thus leading to the final result of &quot;db 1&quot;
-db (3/4)+1.75
-
-; !some_number contains 0 after this line
-!some_number #= 0.75
-
-math round off
-; As expected will result in 0.75+1.75, which will result in 2.5
-; 2.5 is truncated to 2
-; Thus leading to the final result of &quot;db 2&quot;
-db (3/4)+1.75
-
-; !some_number contains 0.75 after this line
-!some_number #= 0.75</code></pre>
 		<h4 id="namespace-nested">namespace nested</h4>
 		<pre><code class="65c816_asar">namespace nested {on/off}</code></pre>
 		The <code class="65c816_asar">namespace nested</code> command enables (<code class="65c816_asar">on</code>) or disables (<code class="65c816_asar">off</code>) nested namespaces. The default is <code class="65c816_asar">off</code>. See section <a href="#namespaces">Namespaces</a> for details.<br /><br />
@@ -1894,18 +1864,8 @@ spcdata_end:
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="math"><h3>Math</h3>
-		Math is supported in all opcodes, functions and labels. By default, Asar uses left-to-right math for backwards-compatibility with xkas which means that it ignores operator precedence.
-		<pre><code class="65c816_asar">lda #6*2+5	; the same as &quot;lda #17&quot;
-lda #5+6*2	; the same as &quot;lda #22&quot;</code></pre>
-		This behavior can be changed by using the command <code class="65c816_asar">math pri on</code>, which makes Asar apply conventional prioritization rules in all math statements. (See <a href="#math-pri">math pri</a>)
-		<pre><code class="65c816_asar">math pri on
-		
-lda #6*2+5	; the same as &quot;lda #17&quot;
-lda #5+6*2	; the same as &quot;lda #17&quot;</code></pre>
-		In both modes, Asar supports parentheses for explicit control over the order of operations.
-		<pre><code class="65c816_asar">math pri on
-		
-lda #5+6*2	; the same as &quot;lda #17&quot;
+		Math is supported in all opcodes, functions and labels. Asar applies the conventional operator prioritization rules (PEMDAS) in math expressions and supports parentheses for explicit control over the order of operations.
+		<pre><code class="65c816_asar">lda #5+6*2	; the same as &quot;lda #17&quot;
 lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 		Math statements in Asar support the following operators:<br/><br/>
 		
@@ -2732,7 +2692,7 @@ endif</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">sizeof(identifier)</code></td>
-				<td>Takes the identifier of a struct as a parameter and returns the base size of that struct (without any extension structs). Throws an error if a struct with that name doesn't exist. For backwards compatibility, the identifier can be surrounded with quotes.</td>
+				<td>Takes the identifier of a struct as a parameter and returns the base size of that struct (without any extension structs).</td>
 				<td><pre><code class="65c816_asar">struct parent $0000
 	.data1: skip 2
 endstruct
@@ -2746,7 +2706,7 @@ db sizeof(parent.child)       ; db 3</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">objectsize(identifier)</code></td>
-				<td>Takes the identifier of a struct as a parameter and returns the object size of that struct. In the case of an extended struct, this will be the base size of the struct plus the size of its largest extension struct. Throws an error if a struct with that name doesn't exist. For backwards compatibility, the identifier can be surrounded with quotes.</td>
+				<td>Takes the identifier of a struct as a parameter and returns the object size of that struct. In the case of an extended struct, this will be the base size of the struct plus the size of its largest extension struct. Throws an error if a struct with that name doesn't exist.</td>
 				<td><pre><code class="65c816_asar">struct parent $0000
 	.data1: skip 2
 endstruct
@@ -2760,7 +2720,7 @@ db objectsize(parent.child)   ; db 3</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">datasize(label)</code></td>
-				<td>Takes a given label and calculates the distance between it and the next label.  It will throw a warning if the distance exceeds 0xFFFF or is the last label in the targeted assembly.</td>
+				<td>Takes a given label and calculates the distance between it and the next label. It will throw a warning if the distance exceeds 0xFFFF or is the last label in the targeted assembly.</td>
 				<td><pre><code class="65c816_asar">org $008000
 main:
 
@@ -2789,8 +2749,6 @@ endif</code></pre></td>
 endif</code></pre></td>
 			</tr>
 		</table><br/>
-		All built-in functions can be overridden by user-defined functions. Prepending an underscore (for example: <code class="65c816_asar">_read1()</code>) leads to the original function, which can be used to make an overridden function call its original function.
-		<pre><code class="65c816_asar">function read1(x) = _read1(x+$010000)</code></pre>
 		While user-defined functions can't use string parameters themselves, passthrough of string parameters to built-in functions is supported.
 		<pre><code class="65c816_asar">function readfilenormalized(filename, pos) = readfile4(filename, pos)/2147483648.0
 db readfilenormalizd("datafile.bin", 0)</code></pre>
@@ -3295,7 +3253,7 @@ SomeLargeData:
 			</tr>
 			<tr>
 				<td><code>double(x[, precision])</code></td>
-				<td>Prints x as a decimal number with precision decimal places (default: 5), where x can be any math statement. Affected by the <a href="#math-round">math round</a> setting.</td>
+				<td>Prints x as a decimal number with precision decimal places (default: 5), where x can be any math statement.</td>
 			</tr>
 			<tr>
 				<td><code>pc</code></td>
