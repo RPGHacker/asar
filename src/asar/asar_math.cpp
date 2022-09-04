@@ -763,8 +763,12 @@ static double getnumcore()
 	}
 	if (*str=='\'')
 	{
-		if (!str[1] || str[2] != '\'') asar_throw_error(1, error_type_block, error_id_invalid_character);
+		if (!str[1] || (str[2] != '\'' && str[3] != '\'')) asar_throw_error(1, error_type_block, error_id_invalid_character);
 		unsigned int rval=table.table[(unsigned char)str[1]];
+		if(str[3] == '\''){
+			rval = rval ^ (table.table[(unsigned char)str[2]] << 8);
+			str+=1;
+		}
 		str+=3;
 		return rval;
 	}

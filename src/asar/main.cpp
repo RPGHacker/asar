@@ -263,6 +263,11 @@ notposneglabel:
 			thislen=1;
 			str+=3;
 		}
+		else if (str[0]=='\'' && str[3]=='\'')
+		{
+			thislen=2;
+			str+=4;
+		}
 		else if (is_digit(*str))
 		{
 			int val=strtol(str, const_cast<char**>(&str), 10);
