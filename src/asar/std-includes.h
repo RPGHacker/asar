@@ -6,28 +6,28 @@
 // that we can easily disable certain warnings via pragmas.
 
 #if defined(_MSC_VER)
-#	pragma warning(push)
-#	pragma warning(disable : 4514)
-#	pragma warning(disable : 4577)
-#	pragma warning(disable : 4668)
-#	pragma warning(disable : 4987)
+#pragma warning(push)
+#pragma warning(disable : 4514)
+#pragma warning(disable : 4577)
+#pragma warning(disable : 4668)
+#pragma warning(disable : 4987)
 #endif
 
-#include <new>//placement new
-#include <stdlib.h>//malloc, realloc, free
-#include <string.h>//strcmp, memmove
-#include <stdio.h>
 #include <ctype.h>
 #include <math.h>
-#include <cstdio>
+#include <stdio.h>
+#include <stdlib.h>  //malloc, realloc, free
+#include <string.h>  //strcmp, memmove
 
-inline char * duplicate_string(const char * str)
-{
-	char * a = (char*)malloc(sizeof(char)*(strlen(str) + 1));
-	strcpy(a, str);
-	return a;
+#include <cstdio>
+#include <new>  //placement new
+
+inline char* duplicate_string(const char* str) {
+    char* a = (char*)malloc(sizeof(char) * (strlen(str) + 1));
+    strcpy(a, str);
+    return a;
 }
 
 #if defined(_MSC_VER)
-#	pragma warning(pop)
+#pragma warning(pop)
 #endif

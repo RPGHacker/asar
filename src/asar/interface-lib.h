@@ -5,109 +5,109 @@
 #define expectedapiversion 400
 
 #include <stdbool.h>
-#include <stddef.h> // for size_t
+#include <stddef.h>  // for size_t
 
-//These structures are returned from various functions.
+// These structures are returned from various functions.
 struct stackentry {
-	const char * fullpath;
-	const char * prettypath;
-	int lineno;
-	const char * details;
+    const char* fullpath;
+    const char* prettypath;
+    int lineno;
+    const char* details;
 };
 
 struct errordata {
-	const char * fullerrdata;
-	const char * rawerrdata;
-	const char * block;
-	const char * filename;
-	int line;
-	const struct stackentry * callstack;
-	int callstacksize;
-	const char * errname;
+    const char* fullerrdata;
+    const char* rawerrdata;
+    const char* block;
+    const char* filename;
+    int line;
+    const struct stackentry* callstack;
+    int callstacksize;
+    const char* errname;
 };
 
 struct labeldata {
-	const char * name;
-	int location;
+    const char* name;
+    int location;
 };
 
 struct definedata {
-	const char * name;
-	const char * contents;
+    const char* name;
+    const char* contents;
 };
 
 struct warnsetting {
-	const char * warnid;
-	bool enabled;
+    const char* warnid;
+    bool enabled;
 };
 
 struct memoryfile {
-	const char* path;
-	const void* buffer;
-	size_t length;
+    const char* path;
+    const void* buffer;
+    size_t length;
 };
 
 enum mappertype {
-	invalid_mapper,
-	lorom,
-	hirom,
-	sa1rom,
-	bigsa1rom,
-	sfxrom,
-	exlorom,
-	exhirom,
-	norom
+    invalid_mapper,
+    lorom,
+    hirom,
+    sa1rom,
+    bigsa1rom,
+    sfxrom,
+    exlorom,
+    exhirom,
+    norom
 };
 
 struct writtenblockdata {
-	int pcoffset;
-	int snesoffset;
-	int numbytes;
+    int pcoffset;
+    int snesoffset;
+    int numbytes;
 };
 
 struct patchparams {
-	// The size of this struct. Set to (int)sizeof(patchparams).
-	int structsize;
+    // The size of this struct. Set to (int)sizeof(patchparams).
+    int structsize;
 
-	// Same parameters as asar_patch()
-	const char * patchloc;
-	char * romdata;
-	int buflen;
-	int * romlen;
+    // Same parameters as asar_patch()
+    const char* patchloc;
+    char* romdata;
+    int buflen;
+    int* romlen;
 
-	// Include paths to use when searching files.
-	const char** includepaths;
-	int numincludepaths;
+    // Include paths to use when searching files.
+    const char** includepaths;
+    int numincludepaths;
 
-	// A list of additional defines to make available to the patch.
-	const struct definedata* additional_defines;
-	int additional_define_count;
+    // A list of additional defines to make available to the patch.
+    const struct definedata* additional_defines;
+    int additional_define_count;
 
-	// Path to a text file to parse standard include search paths from.
-	// Set to NULL to not use any standard includes search paths.
-	const char* stdincludesfile;
+    // Path to a text file to parse standard include search paths from.
+    // Set to NULL to not use any standard includes search paths.
+    const char* stdincludesfile;
 
-	// Path to a text file to parse standard defines from.
-	// Set to NULL to not use any standard defines.
-	const char* stddefinesfile;
+    // Path to a text file to parse standard defines from.
+    // Set to NULL to not use any standard defines.
+    const char* stddefinesfile;
 
-	// A list of warnings to enable or disable.
-	// Specify warnings in the format "WXXXX" where XXXX = warning ID.
-	const struct warnsetting * warning_settings;
-	int warning_setting_count;
+    // A list of warnings to enable or disable.
+    // Specify warnings in the format "WXXXX" where XXXX = warning ID.
+    const struct warnsetting* warning_settings;
+    int warning_setting_count;
 
-	// List of memory files to create on the virtual filesystem.
-	const struct memoryfile * memory_files;
-	int memory_file_count;
+    // List of memory files to create on the virtual filesystem.
+    const struct memoryfile* memory_files;
+    int memory_file_count;
 
-	// Set override_checksum_gen to true and generate_checksum to true/false
-	// to force generating/not generating a checksum.
-	bool override_checksum_gen;
-	bool generate_checksum;
+    // Set override_checksum_gen to true and generate_checksum to true/false
+    // to force generating/not generating a checksum.
+    bool override_checksum_gen;
+    bool generate_checksum;
 
-	// Set this to true for generated error and warning texts to always
-	// contain their full call stack.
-	bool full_call_stack;
+    // Set this to true for generated error and warning texts to always
+    // contain their full call stack.
+    bool full_call_stack;
 };
 
 #ifdef __cplusplus
@@ -144,7 +144,7 @@ bool asar_reset(void);
  * be left unchanged.
  * See the documentation of struct patchparams for more information.
  */
-bool asar_patch(const struct patchparams *params);
+bool asar_patch(const struct patchparams* params);
 
 /* Returns the maximum possible size of the output ROM from asar_patch().
  * Giving this size to buflen guarantees you will not get any buffer too small
@@ -158,35 +158,35 @@ int asar_maxromsize(void);
  * called again, or until asar_patch, asar_reset or asar_close is called,
  * whichever comes first. Copy the contents if you need it for a longer time.
  */
-const struct errordata * asar_geterrors(int * count);
+const struct errordata* asar_geterrors(int* count);
 
 /* Get a list of all warnings.
  */
-const struct errordata * asar_getwarnings(int * count);
+const struct errordata* asar_getwarnings(int* count);
 
 /* Get a list of all printed data.
  */
-const char * const * asar_getprints(int * count);
+const char* const* asar_getprints(int* count);
 
 /* Get a list of all labels.
  */
-const struct labeldata * asar_getalllabels(int * count);
+const struct labeldata* asar_getalllabels(int* count);
 
 /* Get the ROM location of one label. -1 means "not found".
  */
-int asar_getlabelval(const char * name);
+int asar_getlabelval(const char* name);
 
 /* Get the value of a define.
  */
-const char * asar_getdefine(const char * name);
+const char* asar_getdefine(const char* name);
 
 /* Parses all defines in the parameter. Note that it may emit errors.
  */
-const char * asar_resolvedefines(const char * data);
+const char* asar_resolvedefines(const char* data);
 
 /* Gets the values and names of all defines.
  */
-const struct definedata * asar_getalldefines(int * count);
+const struct definedata* asar_getalldefines(int* count);
 
 /* Parses a string containing math. It automatically assumes global scope (no
  * namespaces), and has access to all functions and labels from the last call
@@ -194,12 +194,12 @@ const struct definedata * asar_getalldefines(int * count);
  * if it failed (non-NULL, contains a descriptive string). It does not affect
  * asar_geterrors.
  */
-double asar_math(const char * math_, const char ** error);
+double asar_math(const char* math_, const char** error);
 
 /* Get a list of all the blocks written to the ROM by calls such as
  * asar_patch().
  */
-const struct writtenblockdata * asar_getwrittenblocks(int * count);
+const struct writtenblockdata* asar_getwrittenblocks(int* count);
 
 /* Get the mapper currently used by Asar.
  */
@@ -207,7 +207,7 @@ enum mappertype asar_getmapper(void);
 
 /* Generates the contents of a symbols file for in a specific format.
  */
-const char * asar_getsymbolsfile(const char* type);
+const char* asar_getsymbolsfile(const char* type);
 
 #ifdef __cplusplus
 }

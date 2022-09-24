@@ -10,40 +10,37 @@
 #include "autoarray.h"
 #include "libstr.h"
 
-class AddressToLineMapping
-{
+class AddressToLineMapping {
 public:
+    struct AddrToLineInfo {
+        int fileIdx;
+        int line;
+        int addr;
+    };
 
-	struct AddrToLineInfo
-	{
-		int fileIdx;
-		int line;
-		int addr;
-	};
+    // resets the mapping to initial state
+    void reset();
 
-	// resets the mapping to initial state
-	void reset();
+    // Adds information of what source file and line number an output rom address is at
+    void includeMapping(const char* filename, int line, int addr);
 
-	// Adds information of what source file and line number an output rom address is at
-	void includeMapping(const char* filename, int line, int addr);
-
-	struct FileInfo
-	{
-		string filename;
-		uint32_t fileCrc;
-	};
-	const autoarray<FileInfo>& getFileList() const { return m_fileList; }
-	const autoarray<AddrToLineInfo>& getAddrToLineInfo() const { return m_addrToLineInfo; }
+    struct FileInfo {
+        string filename;
+        uint32_t fileCrc;
+    };
+    const autoarray<FileInfo>& getFileList() const { return m_fileList; }
+    const autoarray<AddrToLineInfo>& getAddrToLineInfo() const {
+        return m_addrToLineInfo;
+    }
 
 private:
+    // Helper to add file to list, and get the index of that file
+    int getFileIndex(const char* filename);
 
-	// Helper to add file to list, and get the index of that file
-	int getFileIndex(const char* filename);
-
-	autoarray<FileInfo> m_fileList;
-	// parallel list of crcs of the filenames in fileList, to speed up lookups
-	autoarray<uint32_t> m_filenameCrcs;
+    autoarray<FileInfo> m_fileList;
+    // parallel list of crcs of the filenames in fileList, to speed up lookups
+    autoarray<uint32_t> m_filenameCrcs;
 
 
-	autoarray<AddrToLineInfo> m_addrToLineInfo;
+    autoarray<AddrToLineInfo> m_addrToLineInfo;
 };

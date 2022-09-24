@@ -1,58 +1,57 @@
 #include "asar.h"
+#include "asar_math.h"
+#include "assembleblock.h"
+#include "interface-shared.h"
 #include "libcon.h"
 #include "platform/file-helpers.h"
-#include "virtualfile.h"
-#include "interface-shared.h"
-#include "assembleblock.h"
-#include "asar_math.h"
-#include "unicode.h"
 #include "platform/thread-helpers.h"
+#include "unicode.h"
+#include "virtualfile.h"
 
 #if defined(windows)
-#	define NOMINMAX
-#	include <windows.h>
-#   include <io.h>
-#   include <fcntl.h>
+#define NOMINMAX
+#include <fcntl.h>
+#include <io.h>
+#include <windows.h>
 #endif
 
 #ifdef TIMELIMIT
-# if defined(linux)
-#  include <sys/resource.h>
-#  include <signal.h>
-# elif defined(_WIN32)
-//WARNING: The Windows equivalent of SIGXCPU, job limits, is very poorly suited for short-running
-// tasks like this; it's only checked approximately every seven seconds on the machine I tested on,
-// and it kills the process instantly once this happens. (Additionally, due to an implementation
-// quirk, it'll bug up if you ask for anything above about seven minutes, so don't do that.)
-#  define NOMINMAX
-#  include <windows.h>
-# else
-#  error Time limits not configured for this OS.
-# endif
+#if defined(linux)
+#include <signal.h>
+#include <sys/resource.h>
+#elif defined(_WIN32)
+// WARNING: The Windows equivalent of SIGXCPU, job limits, is very poorly suited for
+// short-running
+// tasks like this; it's only checked approximately every seven seconds on the machine I
+// tested on, and it kills the process instantly once this happens. (Additionally, due
+// to an implementation quirk, it'll bug up if you ask for anything above about seven
+// minutes, so don't do that.)
+#define NOMINMAX
+#include <windows.h>
+#else
+#error Time limits not configured for this OS.
+#endif
 #endif
 
 #if defined(linux)
-#  include <unistd.h>
+#include <unistd.h>
 #elif defined(_WIN32)
-#  include <windows.h>
-#  include <io.h>
+#include <io.h>
+#include <windows.h>
 #endif
 
 extern const char asarver[];
 
-void print(const char * str)
-{
-	puts(str);
-}
+void print(const char* str) { puts(str); }
 
-static FILE * errloc=stderr;
-static int errnum=0;
+static FILE* errloc = stderr;
+static int errnum = 0;
 
 namespace ansi_text_color {
-	enum e : int {
-		BRIGHT_RED,
-		BRIGHT_YELLOW,
-	};
+enum e : int {
+    BRIGHT_RED,
+    BRIGHT_YELLOW,
+};
 }
 
 #if defined(_WIN32)
@@ -60,586 +59,581 @@ static bool has_windows_screen_info = false;
 static DWORD windows_screen_attributes = 0u;
 #endif
 
-void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e color)
-{
+void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e color) {
 #if defined(linux)
-	if (isatty(fileno(output_loc)))
-	{
-		switch (color)
-		{
-			case ansi_text_color::BRIGHT_RED:
-				*in_out_str = STR "\u001b[31;1m" + *in_out_str;
-				break;
-			case ansi_text_color::BRIGHT_YELLOW:
-				*in_out_str = STR "\u001b[33;1m" + *in_out_str;
-				break;
-		}
-	}
+    if (isatty(fileno(output_loc))) {
+        switch (color) {
+            case ansi_text_color::BRIGHT_RED:
+                *in_out_str = STR "\u001b[31;1m" + *in_out_str;
+                break;
+            case ansi_text_color::BRIGHT_YELLOW:
+                *in_out_str = STR "\u001b[33;1m" + *in_out_str;
+                break;
+        }
+    }
 #elif defined(_WIN32)
-	// Currently using SetConsoleTextAttribute() approach over an ASCII escape character
-	// approach because it makes the output text easier to parse. Unfortunately, this
-	// also currently makes this a Windows-only solution.
-	CONSOLE_SCREEN_BUFFER_INFO screenInfo;
-	HANDLE win_handle = (HANDLE)_get_osfhandle(fileno(output_loc));
-	if (GetConsoleScreenBufferInfo(win_handle, &screenInfo) == TRUE)
-	{
-		DWORD color = 0u;
-		switch (color)
-		{
-		case ansi_text_color::BRIGHT_RED:
-			color = FOREGROUND_RED;
-			break;
-		case ansi_text_color::BRIGHT_YELLOW:
-			color = FOREGROUND_RED | FOREGROUND_GREEN;
-			break;
-		}
+    // Currently using SetConsoleTextAttribute() approach over an ASCII escape character
+    // approach because it makes the output text easier to parse. Unfortunately, this
+    // also currently makes this a Windows-only solution.
+    CONSOLE_SCREEN_BUFFER_INFO screenInfo;
+    HANDLE win_handle = (HANDLE)_get_osfhandle(fileno(output_loc));
+    if (GetConsoleScreenBufferInfo(win_handle, &screenInfo) == TRUE) {
+        DWORD color = 0u;
+        switch (color) {
+            case ansi_text_color::BRIGHT_RED:
+                color = FOREGROUND_RED;
+                break;
+            case ansi_text_color::BRIGHT_YELLOW:
+                color = FOREGROUND_RED | FOREGROUND_GREEN;
+                break;
+        }
 
-		windows_screen_attributes = screenInfo.wAttributes;
-		has_windows_screen_info = true;
-		SetConsoleTextAttribute(win_handle, (windows_screen_attributes & 0x00F0) | FOREGROUND_INTENSITY | color);
-	}
+        windows_screen_attributes = screenInfo.wAttributes;
+        has_windows_screen_info = true;
+        SetConsoleTextAttribute(win_handle, (windows_screen_attributes & 0x00F0) |
+                                                    FOREGROUND_INTENSITY | color);
+    }
 #endif
 }
 
-void reset_text_color(FILE* output_loc, string* in_out_str)
-{
+void reset_text_color(FILE* output_loc, string* in_out_str) {
 #if defined(linux)
-	if (isatty(fileno(output_loc)))
-	{
-		*in_out_str = STR "\u001b[0m" + *in_out_str;
-	}
+    if (isatty(fileno(output_loc))) {
+        *in_out_str = STR "\u001b[0m" + *in_out_str;
+    }
 #elif defined(_WIN32)
-	if (has_windows_screen_info)
-	{
-		HANDLE win_handle = (HANDLE)_get_osfhandle(fileno(output_loc));
-		SetConsoleTextAttribute(win_handle, windows_screen_attributes);
-	}
+    if (has_windows_screen_info) {
+        HANDLE win_handle = (HANDLE)_get_osfhandle(fileno(output_loc));
+        SetConsoleTextAttribute(win_handle, windows_screen_attributes);
+    }
 #endif
 }
 
-void error_interface(int errid, int whichpass, const char * e_)
-{
-	errored = true;
-	if (pass == whichpass)
-	{
-		errnum++;
-		const char* current_block = get_current_block();
-		// don't show current block if the error came from an error command or limit reached
-		bool show_block = (current_block && (errid != error_id_error_command && errid != error_id_limit_reached));
-		bool show_stack = (errid != error_id_limit_reached);
-		string location;
-		string details;
-		get_current_line_details(&location, &details, !show_block);
-		string error_string = (show_stack ? location+": " : STR "") + "error: (" + get_error_name((asar_error_id)errid) + "): " + e_;
-		string details_string = (show_stack ? details + get_callstack() : "") + "\n";
-		set_text_color(errloc, &error_string, ansi_text_color::BRIGHT_RED);
-		fputs(error_string, errloc);
-		reset_text_color(errloc, &details_string);
-		fputs(details_string, errloc);
-		static const int max_num_errors = 20;
-		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
-	}
+void error_interface(int errid, int whichpass, const char* e_) {
+    errored = true;
+    if (pass == whichpass) {
+        errnum++;
+        const char* current_block = get_current_block();
+        // don't show current block if the error came from an error command or limit
+        // reached
+        bool show_block = (current_block && (errid != error_id_error_command &&
+                                             errid != error_id_limit_reached));
+        bool show_stack = (errid != error_id_limit_reached);
+        string location;
+        string details;
+        get_current_line_details(&location, &details, !show_block);
+        string error_string = (show_stack ? location + ": " : STR "") + "error: (" +
+                              get_error_name((asar_error_id)errid) + "): " + e_;
+        string details_string = (show_stack ? details + get_callstack() : "") + "\n";
+        set_text_color(errloc, &error_string, ansi_text_color::BRIGHT_RED);
+        fputs(error_string, errloc);
+        reset_text_color(errloc, &details_string);
+        fputs(details_string, errloc);
+        static const int max_num_errors = 20;
+        if (errnum == max_num_errors + 1)
+            asar_throw_error(pass, error_type_fatal, error_id_limit_reached,
+                             max_num_errors);
+    }
 }
 
-static bool werror=false;
-static bool warned=false;
+static bool werror = false;
+static bool warned = false;
 
-void warn(int errid, const char * e_)
-{
-	const char* current_block = get_current_block();
-	// don't show current block if the warning came from a warn command
-	bool show_block = (current_block && (errid != warning_id_warn_command));
-	string location;
-	string details;
-	get_current_line_details(&location, &details, !show_block);
-	string warning_string = location+": warning: (" + get_warning_name((asar_warning_id)errid) + "): " + e_;
-	string details_string = details + get_callstack() + "\n";
-	set_text_color(errloc, &warning_string, ansi_text_color::BRIGHT_YELLOW);
-	fputs(warning_string, errloc);
-	reset_text_color(errloc, &details_string);
-	fputs(details_string, errloc);
-	warned=true;
+void warn(int errid, const char* e_) {
+    const char* current_block = get_current_block();
+    // don't show current block if the warning came from a warn command
+    bool show_block = (current_block && (errid != warning_id_warn_command));
+    string location;
+    string details;
+    get_current_line_details(&location, &details, !show_block);
+    string warning_string = location + ": warning: (" +
+                            get_warning_name((asar_warning_id)errid) + "): " + e_;
+    string details_string = details + get_callstack() + "\n";
+    set_text_color(errloc, &warning_string, ansi_text_color::BRIGHT_YELLOW);
+    fputs(warning_string, errloc);
+    reset_text_color(errloc, &details_string);
+    fputs(details_string, errloc);
+    warned = true;
 }
 
 #ifdef TIMELIMIT
 #if defined(linux)
-void onsigxcpu(int ignored)
-{
-	error<errnull>(pass, "Time limit exceeded.");
-	exit(1);
+void onsigxcpu(int ignored) {
+    error<errnull>(pass, "Time limit exceeded.");
+    exit(1);
 }
 #elif defined(_WIN32)
-//null
+// null
 #endif
 #endif
 
 
-int main(int argc, const char * argv[])
-{
+int main(int argc, const char* argv[]) {
 #ifdef TIMELIMIT
 #if defined(linux)
-	rlimit lim;
-	lim.rlim_cur=TIMELIMIT;
-	lim.rlim_max=RLIM_INFINITY;
-	setrlimit(RLIMIT_CPU, &lim);
-	signal(SIGXCPU, onsigxcpu);
+    rlimit lim;
+    lim.rlim_cur = TIMELIMIT;
+    lim.rlim_max = RLIM_INFINITY;
+    setrlimit(RLIMIT_CPU, &lim);
+    signal(SIGXCPU, onsigxcpu);
 #elif defined(_WIN32)
-	HANDLE hjob=CreateJobObject(NULL, nullptr);
-	AssignProcessToJobObject(hjob, GetCurrentProcess());
-	JOBOBJECT_BASIC_LIMIT_INFORMATION jbli;
-	jbli.LimitFlags=JOB_OBJECT_LIMIT_PROCESS_TIME;
-	jbli.PerProcessUserTimeLimit.LowPart=10*1000*1000*TIMELIMIT;
-	jbli.PerProcessUserTimeLimit.HighPart=0;
-	SetInformationJobObject(hjob, JobObjectBasicLimitInformation, &jbli, sizeof(jbli));
+    HANDLE hjob = CreateJobObject(NULL, nullptr);
+    AssignProcessToJobObject(hjob, GetCurrentProcess());
+    JOBOBJECT_BASIC_LIMIT_INFORMATION jbli;
+    jbli.LimitFlags = JOB_OBJECT_LIMIT_PROCESS_TIME;
+    jbli.PerProcessUserTimeLimit.LowPart = 10 * 1000 * 1000 * TIMELIMIT;
+    jbli.PerProcessUserTimeLimit.HighPart = 0;
+    SetInformationJobObject(hjob, JobObjectBasicLimitInformation, &jbli, sizeof(jbli));
 #endif
 #endif
 
-#define pause(sev) do { if (pause>=pause_##sev) libcon_pause(); } while(0)
+#define pause(sev)                                \
+    do {                                          \
+        if (pause >= pause_##sev) libcon_pause(); \
+    } while (0)
 
-	enum {
-		pause_no,
-		pause_err,
-		pause_warn,
-		pause_yes,
-	} pause=pause_no;
+    enum {
+        pause_no,
+        pause_err,
+        pause_warn,
+        pause_yes,
+    } pause = pause_no;
 
-	enum cmdlparam
-	{
-		cmdlparam_none,
+    enum cmdlparam {
+        cmdlparam_none,
 
-		cmdlparam_addincludepath,
-		cmdlparam_adddefine,
+        cmdlparam_addincludepath,
+        cmdlparam_adddefine,
 
-		cmdlparam_count
-	};
+        cmdlparam_count
+    };
 
 #if defined(windows)
-	// RPG Hacker: MinGW compatibility hack.
-#	if !defined(_O_U16TEXT)
-#		define _O_U16TEXT 0x20000
-#	endif
-
-	_setmode(_fileno(stdin), _O_U16TEXT);
-	// RPG Hacker: These would currently break Asar, because we're using narrow print functions everywhere.
-	//_setmode(_fileno(stdout), _O_U16TEXT);
-	//_setmode(_fileno(stderr), _O_U16TEXT);
-
-	SetConsoleOutputCP(CP_UTF8);
-	SetConsoleCP(CP_UTF8);
-
-
-	// RPG Hacker: Full Unicode support on Windows requires using a wchar_t command line.
-	// This means we have to convert our arguments from UTF-16 to UTF-8 here.
-	LPWSTR * argv_w = CommandLineToArgvW(GetCommandLineW(), &argc);
-
-	autoarray<string> u8_argv_arr;
-	autoarray<const char *> raw_argv_arr;
-
-	for (int i = 0; i < argc; ++i)
-	{
-		if (!utf16_to_utf8(&u8_argv_arr[i], argv_w[i]))
-		{
-			asar_throw_error(pass, error_type_null, error_id_cmdl_utf16_to_utf8_failed, "Command line arguments on Windows must be valid UTF-16.");
-			pause(err);
-			return 1;
-		}
-
-		raw_argv_arr[i] = u8_argv_arr[i];
-	}
-
-	argv = (const char**)raw_argv_arr;
+    // RPG Hacker: MinGW compatibility hack.
+#if !defined(_O_U16TEXT)
+#define _O_U16TEXT 0x20000
 #endif
 
-	try
-	{
-		romdata_r = nullptr;
-		string version=STR"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
-				dec(asarver_bug)+(asarver_beta?"pre":"")+", originally developed by Alcaro, maintained by Asar devs.\n"+
-				"Source code: https://github.com/RPGHacker/asar\n";
-		const char * myname=argv[0];
-		if (strrchr(myname, '/')) myname=strrchr(myname, '/')+1;
-		//char * dot=strrchr(myname, '.');
-		//if (dot) *dot='\0';
-		//if (dot) *dot='.';
-		libcon_init(argc, argv,
-			"[options] asm_file [rom_file]\n\n"
-			"Supported options:\n\n"
-			" --version         \n"
-			"                   Display version information.\n\n"
-			" -v, --verbose     \n"
-			"                   Enable verbose mode.\n\n"
-			" --symbols=<none/wla/nocash>\n"
-			"                   Specifies the format of the symbols output file. (Default is none for no symbols file)\n\n"
-			" --symbols-path=<filename>\n"
-			"                   Override the default path to the symbols output file. The default is the ROM's base name with an\n"
-			"                   extension of '.sym'.\n\n"
-			" --no-title-check\n"
-			"                   Disable verifying ROM title. (Note that irresponsible use will likely corrupt your ROM)\n\n"
-			" --pause-mode=<never/on-error/on-warning/always>\n"
-			"                   Specify when Asar should pause the application. (Never, on error, on warning or always)\n\n"
-			" --fix-checksum=<on/off>\n"
-			"                   Override Asar's checksum generation, allowing you to manually enable/disable generating a checksum\n\n"
-			" -I<path>          \n"
-			" --include <path>  \n"
-			"                   Add an include search path to Asar.\n\n"
-			" -D<def>[=<val>]   \n"
-			" --define <def>[=<val>]\n"
-			"                   Add a define (optionally with a value) to Asar.\n\n"
-			" -werror           \n"
-			"                   Treat warnings as errors.\n\n"
-			" -w<name>          \n"
-			"                   Enable a specific warning.\n\n"
-			" -wno<name>        \n"
-			"                   Disable a specific warning.\n\n"
-			" --full-call-stack\n"
-			"                   Enables detailed call stack information for warnings and errors.\n\n"
-			);
-		ignoretitleerrors=false;
-		string par;
-		bool verbose=libcon_interactive;
-		string symbols="";
-		string symfilename="";
+    _setmode(_fileno(stdin), _O_U16TEXT);
+    // RPG Hacker: These would currently break Asar, because we're using narrow print
+    // functions everywhere.
+    //_setmode(_fileno(stdout), _O_U16TEXT);
+    //_setmode(_fileno(stderr), _O_U16TEXT);
 
-		autoarray<string> includepaths;
-		autoarray<const char*> includepath_cstrs;
+    SetConsoleOutputCP(CP_UTF8);
+    SetConsoleCP(CP_UTF8);
 
-		while ((par=libcon_option()))
-		{
-			cmdlparam postprocess_param = cmdlparam_none;
-			const char* postprocess_arg = nullptr;
 
-#define checkstartmatch(arg, stringliteral) (!strncmp(arg, stringliteral, strlen(stringliteral)))
+    // RPG Hacker: Full Unicode support on Windows requires using a wchar_t command
+    // line. This means we have to convert our arguments from UTF-16 to UTF-8 here.
+    LPWSTR* argv_w = CommandLineToArgvW(GetCommandLineW(), &argc);
 
-			if (par=="--no-title-check") ignoretitleerrors=true;
-			else if (par == "-v" || par=="--verbose") verbose=true;
-			else if (checkstartmatch(par, "--symbols="))
-			{
-				if (par == "--symbols=none") symbols = "";
-				else if (par=="--symbols=wla") symbols="wla";
-				else if (par=="--symbols=nocash") symbols="nocash";
-				else libcon_badusage();
-			}
-			else if (checkstartmatch(par, "--symbols-path=")) {
-				symfilename=((const char*)par) + strlen("--symbols-path=");
-			}
-			else if (par=="--version")
-			{
-				puts(version);
-				return 0;
-			}
-			else if (checkstartmatch(par, "--pause-mode="))
-			{
-				if (par=="--pause-mode=never") pause=pause_no;
-				else if (par=="--pause-mode=on-error") pause=pause_err;
-				else if (par=="--pause-mode=on-warning") pause=pause_warn;
-				else if (par=="--pause-mode=always") pause=pause_yes;
-				else libcon_badusage();
-			}
-			else if(checkstartmatch(par, "--fix-checksum=")) {
-				if(par=="--fix-checksum=on") {
-					force_checksum_fix = true;
-					checksum_fix_enabled = true;
-				} else if(par=="--fix-checksum=off") {
-					force_checksum_fix = true;
-					checksum_fix_enabled = false;
-				} else libcon_badusage();
-			}
-			else if (checkstartmatch(par, "-I"))
-			{
-				postprocess_param = cmdlparam_addincludepath;
-				postprocess_arg = ((const char*)par) + strlen("-I");
-			}
-			else if (checkstartmatch(par, "-D"))
-			{
-				postprocess_param = cmdlparam_adddefine;
-				postprocess_arg = ((const char*)par) + strlen("-D");
-			}
-			else if (par == "--include")
-			{
-				postprocess_arg = libcon_option_value();
-				if (postprocess_arg != nullptr)
-				{
-					postprocess_param = cmdlparam_addincludepath;
-				}
-			}
-			else if (par == "--define")
-			{
-				postprocess_arg = libcon_option_value();
-				if (postprocess_arg != nullptr)
-				{
-					postprocess_param = cmdlparam_adddefine;
-				}
-			}
-			else if (checkstartmatch(par, "-w"))
-			{
-				const char* w_param = ((const char*)par) + strlen("-w");
+    autoarray<string> u8_argv_arr;
+    autoarray<const char*> raw_argv_arr;
 
-				if (checkstartmatch(w_param, "error"))
-				{
-					werror = true;
-				}
-				else if (checkstartmatch(w_param, "no"))
-				{
-					const char* name_start = w_param + strlen("no");
-					asar_warning_id warnid = parse_warning_id_from_string(name_start);
+    for (int i = 0; i < argc; ++i) {
+        if (!utf16_to_utf8(&u8_argv_arr[i], argv_w[i])) {
+            asar_throw_error(pass, error_type_null, error_id_cmdl_utf16_to_utf8_failed,
+                             "Command line arguments on Windows must be valid UTF-16.");
+            pause(err);
+            return 1;
+        }
 
-					if (warnid != warning_id_end)
-					{
-						set_warning_enabled(warnid, false);
-					}
-					else
-					{
-						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, name_start, "-wno");
-					}
-				}
-				else
-				{
-					asar_warning_id warnid = parse_warning_id_from_string(w_param);
+        raw_argv_arr[i] = u8_argv_arr[i];
+    }
 
-					if (warnid != warning_id_end)
-					{
-						set_warning_enabled(warnid, true);
-					}
-					else
-					{
-						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, w_param, "-w");
-					}
-				}
+    argv = (const char**)raw_argv_arr;
+#endif
 
-			}
-			else if (par=="--full-call-stack") simple_callstacks=false;
-			else libcon_badusage();
+    try {
+        romdata_r = nullptr;
+        string version =
+                STR "Asar " + dec(asarver_maj) + "." + dec(asarver_min) +
+                ((asarver_bug >= 10 || asarver_min >= 10) ? "." : "") +
+                dec(asarver_bug) + (asarver_beta ? "pre" : "") +
+                ", originally developed by Alcaro, maintained by Asar devs.\n" +
+                "Source code: https://github.com/RPGHacker/asar\n";
+        const char* myname = argv[0];
+        if (strrchr(myname, '/')) myname = strrchr(myname, '/') + 1;
+        // char * dot=strrchr(myname, '.');
+        // if (dot) *dot='\0';
+        // if (dot) *dot='.';
+        libcon_init(
+                argc, argv,
+                "[options] asm_file [rom_file]\n\n"
+                "Supported options:\n\n"
+                " --version         \n"
+                "                   Display version information.\n\n"
+                " -v, --verbose     \n"
+                "                   Enable verbose mode.\n\n"
+                " --symbols=<none/wla/nocash>\n"
+                "                   Specifies the format of the symbols output file. "
+                "(Default is none for no symbols file)\n\n"
+                " --symbols-path=<filename>\n"
+                "                   Override the default path to the symbols output "
+                "file. The default is the ROM's base name with an\n"
+                "                   extension of '.sym'.\n\n"
+                " --no-title-check\n"
+                "                   Disable verifying ROM title. (Note that "
+                "irresponsible use will likely corrupt your ROM)\n\n"
+                " --pause-mode=<never/on-error/on-warning/always>\n"
+                "                   Specify when Asar should pause the application. "
+                "(Never, on error, on warning or always)\n\n"
+                " --fix-checksum=<on/off>\n"
+                "                   Override Asar's checksum generation, allowing you "
+                "to manually enable/disable generating a checksum\n\n"
+                " -I<path>          \n"
+                " --include <path>  \n"
+                "                   Add an include search path to Asar.\n\n"
+                " -D<def>[=<val>]   \n"
+                " --define <def>[=<val>]\n"
+                "                   Add a define (optionally with a value) to Asar.\n\n"
+                " -werror           \n"
+                "                   Treat warnings as errors.\n\n"
+                " -w<name>          \n"
+                "                   Enable a specific warning.\n\n"
+                " -wno<name>        \n"
+                "                   Disable a specific warning.\n\n"
+                " --full-call-stack\n"
+                "                   Enables detailed call stack information for "
+                "warnings and errors.\n\n");
+        ignoretitleerrors = false;
+        string par;
+        bool verbose = libcon_interactive;
+        string symbols = "";
+        string symfilename = "";
 
-			if (postprocess_param == cmdlparam_addincludepath)
-			{
-				includepaths.append(postprocess_arg);
-			}
-			else if (postprocess_param == cmdlparam_adddefine)
-			{
-				if (strchr(postprocess_arg, '=') != nullptr)
-				{
-					// argument contains value, not only name
-					const char* eq_loc = strchr(postprocess_arg, '=');
-					string name = string(postprocess_arg, (int)(eq_loc - postprocess_arg));
-					strip_whitespace(name);
-					name.strip_prefix('!'); // remove leading ! if present
+        autoarray<string> includepaths;
+        autoarray<const char*> includepath_cstrs;
 
-					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
+        while ((par = libcon_option())) {
+            cmdlparam postprocess_param = cmdlparam_none;
+            const char* postprocess_arg = nullptr;
 
-					if (clidefines.exists(name)) {
-						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.data());
-						pause(err);
-						return 1;
-					}
-					clidefines.create(name) = eq_loc + 1;
-				}
-				else
-				{
-					// argument doesn't have a value, only name
-					string name = postprocess_arg;
-					strip_whitespace(name);
-					name.strip_prefix('!'); // remove leading ! if present
+#define checkstartmatch(arg, stringliteral) \
+    (!strncmp(arg, stringliteral, strlen(stringliteral)))
 
-					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
+            if (par == "--no-title-check")
+                ignoretitleerrors = true;
+            else if (par == "-v" || par == "--verbose")
+                verbose = true;
+            else if (checkstartmatch(par, "--symbols=")) {
+                if (par == "--symbols=none")
+                    symbols = "";
+                else if (par == "--symbols=wla")
+                    symbols = "wla";
+                else if (par == "--symbols=nocash")
+                    symbols = "nocash";
+                else
+                    libcon_badusage();
+            } else if (checkstartmatch(par, "--symbols-path=")) {
+                symfilename = ((const char*)par) + strlen("--symbols-path=");
+            } else if (par == "--version") {
+                puts(version);
+                return 0;
+            } else if (checkstartmatch(par, "--pause-mode=")) {
+                if (par == "--pause-mode=never")
+                    pause = pause_no;
+                else if (par == "--pause-mode=on-error")
+                    pause = pause_err;
+                else if (par == "--pause-mode=on-warning")
+                    pause = pause_warn;
+                else if (par == "--pause-mode=always")
+                    pause = pause_yes;
+                else
+                    libcon_badusage();
+            } else if (checkstartmatch(par, "--fix-checksum=")) {
+                if (par == "--fix-checksum=on") {
+                    force_checksum_fix = true;
+                    checksum_fix_enabled = true;
+                } else if (par == "--fix-checksum=off") {
+                    force_checksum_fix = true;
+                    checksum_fix_enabled = false;
+                } else
+                    libcon_badusage();
+            } else if (checkstartmatch(par, "-I")) {
+                postprocess_param = cmdlparam_addincludepath;
+                postprocess_arg = ((const char*)par) + strlen("-I");
+            } else if (checkstartmatch(par, "-D")) {
+                postprocess_param = cmdlparam_adddefine;
+                postprocess_arg = ((const char*)par) + strlen("-D");
+            } else if (par == "--include") {
+                postprocess_arg = libcon_option_value();
+                if (postprocess_arg != nullptr) {
+                    postprocess_param = cmdlparam_addincludepath;
+                }
+            } else if (par == "--define") {
+                postprocess_arg = libcon_option_value();
+                if (postprocess_arg != nullptr) {
+                    postprocess_param = cmdlparam_adddefine;
+                }
+            } else if (checkstartmatch(par, "-w")) {
+                const char* w_param = ((const char*)par) + strlen("-w");
 
-					if (clidefines.exists(name)) {
-						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.data());
-						pause(err);
-						return 1;
-					}
-					clidefines.create(name) = "";
-				}
-			}
-		}
-		if (verbose)
-		{
-			puts(version);
-		}
-		string asmname=libcon_require_filename("Enter patch name:");
-		string romname=libcon_optional_filename("Enter ROM name:", nullptr);
-		//char * outname=libcon_optional_filename("Enter output ROM name:", nullptr);
-		libcon_end();
-		if (!strchr(asmname, '.') && !file_exists(asmname)) asmname+=".asm";
-		if (!romname)
-		{
-			string romnametmp = get_base_name(asmname);
-			if (file_exists(romnametmp+".sfc")) romname=romnametmp+".sfc";
-			else if (file_exists(romnametmp+".smc")) romname=romnametmp+".smc";
-			else romname=romnametmp+".sfc";
-		}
-		else if (!strchr(romname, '.') && !file_exists(romname))
-		{
-			if (file_exists(romname+".sfc")) romname+=".sfc";
-			else if (file_exists(romname+".smc")) romname+=".smc";
-		}
-		if (!file_exists(romname))
-		{
-			FileHandleType f = open_file(romname, FileOpenMode_Write);
-			if (f == InvalidFileHandle)
-			{
-				asar_throw_error(pass, error_type_fatal, error_id_create_rom_failed);
-			}
-			close_file(f);
-		}
-		if (!openrom(romname, false))
-		{
-			asar_throw_error(pass, error_type_null, openromerror);
-			pause(err);
-			return 1;
-		}
-		//check if the ROM title and checksum looks sane
-		if (romlen>=32768 && !ignoretitleerrors)
-		{
-			bool validtitle=setmapper();
-			if (!validtitle)
-			{
-				string title;
-				for (int i=0;i<21;i++)
-				{
-					unsigned char c=romdata[snestopc(0x00FFC0+i)];
-					if (c==7) c=14;
-					if (c==8) c=27;//to not generate more hard-to-print characters than needed
-					if (c==9) c=26;//random characters are picked in accordance with the charset Windows-1252, but they should be garbage in all charsets
-					if (c=='\r') c=17;
-					if (c=='\n') c=25;
-					if (c=='\0') c=155;
-					title+=(char)c;
-				}
-				if (libcon_interactive)
-				{
-					if (!libcon_question_bool(STR"Warning: The ROM title appears to be \""+title+"\", which looks like garbage. "
-							"Is this your ROM title? (Note that improperly answering \"yes\" will crash your ROM.)", false))
-					{
-						puts("Assembling aborted. snespurify should be able to fix your ROM.");
-						return 1;
-					}
-				}
-				else
-				{
-					puts(STR"Error: The ROM title appears to be \""+title+"\", which looks like garbage. "
-								"If this is the ROM title, add --no-title-check to the command line options. If the ROM title is something else, use snespurify on your ROM.");
-					pause(err);
-					return 1;
-				}
-			}
-		}
-		romdata_r=(unsigned char*)malloc((size_t)romlen);
-		romlen_r=romlen;
-		memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
+                if (checkstartmatch(w_param, "error")) {
+                    werror = true;
+                } else if (checkstartmatch(w_param, "no")) {
+                    const char* name_start = w_param + strlen("no");
+                    asar_warning_id warnid = parse_warning_id_from_string(name_start);
 
-		string stdincludespath = STR dir(argv[0]) + "stdincludes.txt";
-		parse_std_includes(stdincludespath, includepaths);
+                    if (warnid != warning_id_end) {
+                        set_warning_enabled(warnid, false);
+                    } else {
+                        asar_throw_error(pass, error_type_null,
+                                         error_id_invalid_warning_id, name_start,
+                                         "-wno");
+                    }
+                } else {
+                    asar_warning_id warnid = parse_warning_id_from_string(w_param);
 
-		for (int i = 0; i < includepaths.count; ++i)
-		{
-			includepath_cstrs.append((const char*)includepaths[i]);
-		}
+                    if (warnid != warning_id_end) {
+                        set_warning_enabled(warnid, true);
+                    } else {
+                        asar_throw_error(pass, error_type_null,
+                                         error_id_invalid_warning_id, w_param, "-w");
+                    }
+                }
 
-		size_t includepath_count = (size_t)includepath_cstrs.count;
-		virtual_filesystem new_filesystem;
-		new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
-		filesystem = &new_filesystem;
+            } else if (par == "--full-call-stack")
+                simple_callstacks = false;
+            else
+                libcon_badusage();
 
-		string stddefinespath = STR dir(argv[0]) + "stddefines.txt";
-		parse_std_defines(stddefinespath);
+            if (postprocess_param == cmdlparam_addincludepath) {
+                includepaths.append(postprocess_arg);
+            } else if (postprocess_param == cmdlparam_adddefine) {
+                if (strchr(postprocess_arg, '=') != nullptr) {
+                    // argument contains value, not only name
+                    const char* eq_loc = strchr(postprocess_arg, '=');
+                    string name =
+                            string(postprocess_arg, (int)(eq_loc - postprocess_arg));
+                    strip_whitespace(name);
+                    name.strip_prefix('!');  // remove leading ! if present
 
-		auto execute_patch = [&]()
-		{
-			try {
-				for (pass=0;pass<3;pass++)
-				{
-					//pass 1: find which bank all labels are in, for label optimizations
-					//  freespaces are listed as above 0xFFFFFF, to find if it's in the ROM or if it's dynamic
-					//pass 2: find where exactly all labels are
-					//pass 3: assemble it all
-					initstuff();
-					assemblefile(asmname);
-					// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
-					callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, asmname));
-					finishpass();
-				}
-				return true;
-			} catch(errfatal&) {
-				return false;
-			}
-		};
+                    if (!validatedefinename(name))
+                        asar_throw_error(pass, error_type_null,
+                                         error_id_cmdl_define_invalid,
+                                         "command line defines", name.data());
+
+                    if (clidefines.exists(name)) {
+                        asar_throw_error(pass, error_type_null,
+                                         error_id_cmdl_define_override,
+                                         "Command line define", name.data());
+                        pause(err);
+                        return 1;
+                    }
+                    clidefines.create(name) = eq_loc + 1;
+                } else {
+                    // argument doesn't have a value, only name
+                    string name = postprocess_arg;
+                    strip_whitespace(name);
+                    name.strip_prefix('!');  // remove leading ! if present
+
+                    if (!validatedefinename(name))
+                        asar_throw_error(pass, error_type_null,
+                                         error_id_cmdl_define_invalid,
+                                         "command line defines", name.data());
+
+                    if (clidefines.exists(name)) {
+                        asar_throw_error(pass, error_type_null,
+                                         error_id_cmdl_define_override,
+                                         "Command line define", name.data());
+                        pause(err);
+                        return 1;
+                    }
+                    clidefines.create(name) = "";
+                }
+            }
+        }
+        if (verbose) {
+            puts(version);
+        }
+        string asmname = libcon_require_filename("Enter patch name:");
+        string romname = libcon_optional_filename("Enter ROM name:", nullptr);
+        // char * outname=libcon_optional_filename("Enter output ROM name:", nullptr);
+        libcon_end();
+        if (!strchr(asmname, '.') && !file_exists(asmname)) asmname += ".asm";
+        if (!romname) {
+            string romnametmp = get_base_name(asmname);
+            if (file_exists(romnametmp + ".sfc"))
+                romname = romnametmp + ".sfc";
+            else if (file_exists(romnametmp + ".smc"))
+                romname = romnametmp + ".smc";
+            else
+                romname = romnametmp + ".sfc";
+        } else if (!strchr(romname, '.') && !file_exists(romname)) {
+            if (file_exists(romname + ".sfc"))
+                romname += ".sfc";
+            else if (file_exists(romname + ".smc"))
+                romname += ".smc";
+        }
+        if (!file_exists(romname)) {
+            FileHandleType f = open_file(romname, FileOpenMode_Write);
+            if (f == InvalidFileHandle) {
+                asar_throw_error(pass, error_type_fatal, error_id_create_rom_failed);
+            }
+            close_file(f);
+        }
+        if (!openrom(romname, false)) {
+            asar_throw_error(pass, error_type_null, openromerror);
+            pause(err);
+            return 1;
+        }
+        // check if the ROM title and checksum looks sane
+        if (romlen >= 32768 && !ignoretitleerrors) {
+            bool validtitle = setmapper();
+            if (!validtitle) {
+                string title;
+                for (int i = 0; i < 21; i++) {
+                    unsigned char c = romdata[snestopc(0x00FFC0 + i)];
+                    if (c == 7) c = 14;
+                    if (c == 8)
+                        c = 27;  // to not generate more hard-to-print characters than
+                                 // needed
+                    if (c == 9)
+                        c = 26;  // random characters are picked in accordance with the
+                                 // charset Windows-1252, but they should be garbage in
+                                 // all charsets
+                    if (c == '\r') c = 17;
+                    if (c == '\n') c = 25;
+                    if (c == '\0') c = 155;
+                    title += (char)c;
+                }
+                if (libcon_interactive) {
+                    if (!libcon_question_bool(
+                                STR "Warning: The ROM title appears to be \"" + title +
+                                        "\", which looks like garbage. "
+                                        "Is this your ROM title? (Note that improperly "
+                                        "answering \"yes\" will crash your ROM.)",
+                                false)) {
+                        puts("Assembling aborted. snespurify should be able to fix "
+                             "your ROM.");
+                        return 1;
+                    }
+                } else {
+                    puts(STR "Error: The ROM title appears to be \"" + title +
+                         "\", which looks like garbage. "
+                         "If this is the ROM title, add --no-title-check to the "
+                         "command line options. If the ROM title is something else, "
+                         "use snespurify on your ROM.");
+                    pause(err);
+                    return 1;
+                }
+            }
+        }
+        romdata_r = (unsigned char*)malloc((size_t)romlen);
+        romlen_r = romlen;
+        memcpy((void*)romdata_r, romdata, (size_t)romlen);  // recently allocated, dead
+
+        string stdincludespath = STR dir(argv[0]) + "stdincludes.txt";
+        parse_std_includes(stdincludespath, includepaths);
+
+        for (int i = 0; i < includepaths.count; ++i) {
+            includepath_cstrs.append((const char*)includepaths[i]);
+        }
+
+        size_t includepath_count = (size_t)includepath_cstrs.count;
+        virtual_filesystem new_filesystem;
+        new_filesystem.initialize(&includepath_cstrs[0], includepath_count);
+        filesystem = &new_filesystem;
+
+        string stddefinespath = STR dir(argv[0]) + "stddefines.txt";
+        parse_std_defines(stddefinespath);
+
+        auto execute_patch = [&]() {
+            try {
+                for (pass = 0; pass < 3; pass++) {
+                    // pass 1: find which bank all labels are in, for label
+                    // optimizations
+                    //  freespaces are listed as above 0xFFFFFF, to find if it's in the
+                    //  ROM or if it's dynamic
+                    // pass 2: find where exactly all labels are
+                    // pass 3: assemble it all
+                    initstuff();
+                    assemblefile(asmname);
+                    // RPG Hacker: Necessary, because finishpass() can throws warning
+                    // and errors.
+                    callstack_push cs_push(
+                            callstack_entry_type::FILE,
+                            filesystem->create_absolute_path(nullptr, asmname));
+                    finishpass();
+                }
+                return true;
+            } catch (errfatal&) {
+                return false;
+            }
+        };
 #if defined(RUN_VIA_FIBER)
-		run_as_fiber(execute_patch);
+        run_as_fiber(execute_patch);
 #elif defined(RUN_VIA_THREAD)
-		run_as_thread(execute_patch);
+        run_as_thread(execute_patch);
 #else
-		execute_patch();
+        execute_patch();
 #endif
 
-		new_filesystem.destroy();
-		filesystem = nullptr;
+        new_filesystem.destroy();
+        filesystem = nullptr;
 
-		if (werror && warned) asar_throw_error(pass, error_type_null, error_id_werror);
-		if (checksum_fix_enabled) fixchecksum();
-		//if (pcpos>romlen) romlen=pcpos;
-		if (errored)
-		{
-			if (errnum==0)
-				asar_throw_error(pass, error_type_null, error_id_phantom_error);
-			puts("Errors were detected while assembling the patch. Assembling aborted. Your ROM has not been modified.");
-			closerom(false);
-			reseteverything();
-			pause(err);
-			return 1;
-		}
-		if (warned)
-		{
-			if (libcon_interactive)
-			{
-				if (!libcon_question_bool("One or more warnings were detected while assembling the patch. "
-																	"Do you want insert the patch anyways? (Default: yes)", true))
-				{
-					puts("ROM left unchanged.");
-					closerom(false);
-					reseteverything();
-					return 1;
-				}
-			}
-			else
-			{
-				if (verbose) puts("Assembling completed, but one or more warnings were detected.");
-				pause(warn);
-			}
-		}
-		else
-		{
-			if (verbose) puts("Assembling completed without problems.");
-			pause(yes);
-		}
-		unsigned int romCrc = closerom();
-		if (symbols)
-		{
-			if (!symfilename) symfilename = get_base_name(romname)+".sym";
-			string contents = create_symbols_file(symbols, romCrc).convert_line_endings_to_native();
+        if (werror && warned) asar_throw_error(pass, error_type_null, error_id_werror);
+        if (checksum_fix_enabled) fixchecksum();
+        // if (pcpos>romlen) romlen=pcpos;
+        if (errored) {
+            if (errnum == 0)
+                asar_throw_error(pass, error_type_null, error_id_phantom_error);
+            puts("Errors were detected while assembling the patch. Assembling aborted. "
+                 "Your ROM has not been modified.");
+            closerom(false);
+            reseteverything();
+            pause(err);
+            return 1;
+        }
+        if (warned) {
+            if (libcon_interactive) {
+                if (!libcon_question_bool(
+                            "One or more warnings were detected while assembling the "
+                            "patch. "
+                            "Do you want insert the patch anyways? (Default: yes)",
+                            true)) {
+                    puts("ROM left unchanged.");
+                    closerom(false);
+                    reseteverything();
+                    return 1;
+                }
+            } else {
+                if (verbose)
+                    puts("Assembling completed, but one or more warnings were "
+                         "detected.");
+                pause(warn);
+            }
+        } else {
+            if (verbose) puts("Assembling completed without problems.");
+            pause(yes);
+        }
+        unsigned int romCrc = closerom();
+        if (symbols) {
+            if (!symfilename) symfilename = get_base_name(romname) + ".sym";
+            string contents = create_symbols_file(symbols, romCrc)
+                                      .convert_line_endings_to_native();
 
-			FileHandleType symfile = open_file(symfilename, FileOpenMode_Write);
+            FileHandleType symfile = open_file(symfilename, FileOpenMode_Write);
 
-			if (symfile == InvalidFileHandle)
-			{
-				puts(STR"Failed to create symbols file: \""+symfilename+"\".");
-				pause(err);
-				return 1;
-			}
-			else
-			{
-				write_file(symfile, (const char*)contents, (uint32_t)contents.length());
-				close_file(symfile);
-			}
-		}
-		reseteverything();
-	}
-	catch(errfatal&)
-	{
-		puts("A fatal error was detected while assembling the patch. Assembling aborted. Your ROM has not been modified.");
-		closerom(false);
-		reseteverything();
-		pause(err);
-		return 1;
-	}
-	return 0;
+            if (symfile == InvalidFileHandle) {
+                puts(STR "Failed to create symbols file: \"" + symfilename + "\".");
+                pause(err);
+                return 1;
+            } else {
+                write_file(symfile, (const char*)contents, (uint32_t)contents.length());
+                close_file(symfile);
+            }
+        }
+        reseteverything();
+    } catch (errfatal&) {
+        puts("A fatal error was detected while assembling the patch. Assembling "
+             "aborted. Your ROM has not been modified.");
+        closerom(false);
+        reseteverything();
+        pause(err);
+        return 1;
+    }
+    return 0;
 }
