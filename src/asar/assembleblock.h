@@ -6,32 +6,31 @@ extern int arch;
 bool assemblemapper(char** word, int numwords);
 
 struct snes_struct {
-	string parent;
-	int base_end;
-	int struct_size;
-	int object_size;
-	bool is_static;
+    string parent;
+    int base_end;
+    int struct_size;
+    int object_size;
+    bool is_static;
 };
 
 extern assocarr<snes_struct> structs;
 
 
 struct snes_label {
-	unsigned int pos;
-	bool is_static;
+    unsigned int pos;
+    bool is_static;
 
-	snes_label()
-	{
-		pos = 0;
-		is_static = false;
-	}
+    snes_label() {
+        pos = 0;
+        is_static = false;
+    }
 };
 
 
-// RPG Hacker: Really the only purpose of this struct is to support pushtable and pulltable
-// Also don't know where else to put this, so putting it in this header
+// RPG Hacker: Really the only purpose of this struct is to support pushtable and
+// pulltable Also don't know where else to put this, so putting it in this header
 /*struct chartabledata {
-	unsigned int table[256];
+        unsigned int table[256];
 };
 
 extern chartabledata table;
@@ -39,15 +38,15 @@ unsigned int get_table_val(int inp);
 void set_table_val(int inp, unsigned int out);*/
 
 struct whiletracker {
-	bool iswhile;
-	int startline;
-	bool cond;
+    bool iswhile;
+    int startline;
+    bool cond;
 };
 
 extern autoarray<whiletracker> whilestatus;
 
-bool confirmname(const char * name);
-string posneglabelname(const char ** input, bool define);
+bool confirmname(const char* name);
+string posneglabelname(const char** input, bool define);
 
 void write1_pick(unsigned int num);
 void write2(unsigned int num);
@@ -58,19 +57,19 @@ int snestopc_pick(int addr);
 
 int getlenfromchar(char c);
 
-snes_label labelval(const char ** rawname, bool define = false);
+snes_label labelval(const char** rawname, bool define = false);
 snes_label labelval(string name, bool define = false);
-bool labelval(const char ** rawname, snes_label * rval, bool define = false);
-bool labelval(string name, snes_label * rval, bool define = false);
+bool labelval(const char** rawname, snes_label* rval, bool define = false);
+bool labelval(string name, snes_label* rval, bool define = false);
 
-const char * safedequote(char * str);
+const char* safedequote(char* str);
 
 void checkbankcross();
 
 void initstuff();
 void finishpass();
 
-void assembleblock(const char * block);
+void assembleblock(const char* block);
 
 extern int snespos;
 extern int realsnespos;

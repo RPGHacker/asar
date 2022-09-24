@@ -1,9 +1,9 @@
 #if !defined(ASAR_UNICODE_H)
 #define ASAR_UNICODE_H
 
-#include "libstr.h"
-
 #include <string>
+
+#include "libstr.h"
 
 // Writes the code point at *inp into codepoint (-1 on invalid UTF-8).
 // Returns the number of bytes consumed for the code point (0 for invalid UTF-8).
@@ -17,8 +17,9 @@ bool is_valid_utf8(const char* inp);
 
 
 // RPG Hacker: UTF-16 functions below expect wchar_t to be at least 16-bit wide.
-// Not that this should be a problem, since we shouldn't need those for anything aside from Windows.
-// char16_t would be more reliable, but would mean always having to cast to wchar_t* for Windows APIs.
+// Not that this should be a problem, since we shouldn't need those for anything aside
+// from Windows. char16_t would be more reliable, but would mean always having to cast
+// to wchar_t* for Windows APIs.
 
 // Same as utf8_val(), but for UTF-16.
 size_t utf16_val(int* codepoint, const wchar_t* inp);
