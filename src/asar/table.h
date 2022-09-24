@@ -1,5 +1,6 @@
-
 // data structures for the "table" command
+
+#include <cstdint>
 
 class table_page {
 public:

@@ -2,8 +2,10 @@
 
 #if defined(_WIN32)
 
-#include <processthreadsapi.h>
 #include <windows.h>
+
+// windows.h must be called first
+#include <processthreadsapi.h>
 
 struct function_pointer_wrapper /*have this struct at global level*/
 {

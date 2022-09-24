@@ -1,5 +1,9 @@
 #pragma once
 
+#include "assocarr.h"
+#include "autoarray.h"
+#include "libstr.h"
+
 enum { arch_65816, arch_spc700, arch_superfx };
 extern int arch;
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <cstdint>
+
 void initmathcore();
 void deinitmathcore();
 
