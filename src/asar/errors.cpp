@@ -145,7 +145,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ ERR(invalid_macro_name), "Invalid macro name." },
 	{ ERR(macro_not_found), "Macro '%s' wasn't found." },
-	{ ERR(macro_redefined), "Macro '%s' redefined." },
+	{ ERR(macro_redefined), "Macro '%s' redefined. First defined at %s:%d" },
 	{ ERR(broken_macro_declaration), "Broken macro declaration." },
 	{ ERR(invalid_macro_param_name), "Invalid macro parameter name." },
 	{ ERR(macro_param_not_found), "Macro parameter '%s' wasn't found." },
