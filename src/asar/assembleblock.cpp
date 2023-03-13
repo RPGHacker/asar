@@ -827,6 +827,7 @@ int numtrue=0;//if 1 -> increase both
 int numif = 0;  //if 0 or inside if 0 -> increase only numif
 
 autoarray<whiletracker> whilestatus;
+int single_line_for_tracker;
 
 static int freespaceuse=0;
 
@@ -992,10 +993,12 @@ void assembleblock(const char * block, bool isspecialline)
 		int fakeendif_prev = fakeendif;
 		int moreonlinecond_prev = moreonlinecond;
 		int calledmacros_prev = calledmacros;
+		int single_line_for_tracker_prev = single_line_for_tracker;
 		callmacro(strchr(block, '%')+1);
 		fakeendif = fakeendif_prev;
 		moreonlinecond = moreonlinecond_prev;
 		calledmacros = calledmacros_prev;
+		single_line_for_tracker = single_line_for_tracker_prev;
 		if (!macrorecursion)
 		{
 			callerfilename="";
@@ -1003,7 +1006,7 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		return;
 	}
-	if (is("if") || is("elseif") || is("assert") || is("while"))
+	if (is("if") || is("elseif") || is("assert") || is("while") || is("for"))
 	{
 		if(is("if") && moreonline) fakeendif++;
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
@@ -1012,8 +1015,22 @@ void assembleblock(const char * block, bool isspecialline)
 		wstatus.startline = thisline;
 		wstatus.iswhile = false;
 		wstatus.cond = false;
+		wstatus.is_for = false;
+		wstatus.for_start = wstatus.for_end = wstatus.for_cur = 0;
 		if (is("while")) wstatus.iswhile = true;
-		whiletracker& addedwstatus = (whilestatus[numif] = wstatus);
+		if (is("for")) wstatus.is_for = true;
+		// if we are a for loop and:
+		// 1) whilestatus has an entry at this level already
+		// 2) said entry represents an incomplete for loop
+		// then this loop must be meant "for us".
+		// check number 2 is necessary because otherwise, 2 for loops back-to-back (not nested) would try to use the same whilestatus entry
+		bool is_for_cont = false;
+		if (is("for") && whilestatus.count > numif && whilestatus[numif].is_for && whilestatus[numif].for_cur < whilestatus[numif].for_end)
+		{
+			// continuation of a for loop
+			is_for_cont = true;
+		}
+		whiletracker& addedwstatus = is_for_cont ? whilestatus[numif] : (whilestatus[numif] = wstatus);
 		if (is("assert"))
 		{
 			autoptr<char**> tokens = qpsplit(word[numwords - 1], ",");
@@ -1036,108 +1053,118 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		if (numtrue!=numif && !(is("elseif") && numtrue+1==numif))
 		{
-			if ((is("if") || is("while"))) numif++;
+			if ((is("if") || is("while") || is("for"))) numif++;
 			return;
 		}
-		if ((is("if") || is("while"))) numif++;
+		if ((is("if") || is("while") || is("for"))) numif++;
 		bool cond;
 
 		bool isassert = is("assert");
 
 		char ** nextword=word+1;
 		char * condstr= nullptr;
-		while (true)
-		{
-			if (!nextword[0]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-			bool thiscond = false;
-			if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
+		if(!is("for")) {
+			while (true)
 			{
-				if (nextword[0][0] == '!')
+				if (!nextword[0]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
+				bool thiscond = false;
+				if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
 				{
-					asar_throw_warning(0, warning_id_feature_deprecated, "old style conditional negation (if !condition) ", "the not function");
-					double val = getnumdouble(nextword[0]+1);
-					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-					thiscond = !(val > 0);
+					if (nextword[0][0] == '!')
+					{
+						asar_throw_warning(0, warning_id_feature_deprecated, "old style conditional negation (if !condition) ", "the not function");
+						double val = getnumdouble(nextword[0]+1);
+						if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
+						thiscond = !(val > 0);
+					}
+					else
+					{
+						double val = getnumdouble(nextword[0]);
+						if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
+						thiscond = (val > 0);
+					}
+
+					if (condstr && nextword[1])
+					{
+						if (strcmp(condstr, nextword[1])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
+					}
+					else condstr=nextword[1];
+					nextword+=2;
 				}
 				else
 				{
-					double val = getnumdouble(nextword[0]);
+					if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
+					double par1=getnumdouble(nextword[0]);
 					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-					thiscond = (val > 0);
-				}
+					double par2=getnumdouble(nextword[2]);
+					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
+					if(0);
+					else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
+					else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
+					else if (!strcmp(nextword[1], ">=")) thiscond=(par1>=par2);
+					else if (!strcmp(nextword[1], "<=")) thiscond=(par1<=par2);
+					else if (!strcmp(nextword[1], "="))  thiscond=(par1==par2);
+					else if (!strcmp(nextword[1], "==")) thiscond=(par1==par2);
+					else if (!strcmp(nextword[1], "!=")) thiscond=(par1!=par2);
+					//else if (!strcmp(nextword[1], "<>")) thiscond=(par1!=par2);
+					else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 
-				if (condstr && nextword[1])
-				{
-					if (strcmp(condstr, nextword[1])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
+					if (condstr && nextword[3])
+					{
+						if (strcmp(condstr, nextword[3])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
+					}
+					else condstr=nextword[3];
+					nextword+=4;
 				}
-				else condstr=nextword[1];
-				nextword+=2;
+				if (condstr)
+				{
+					if (!strcmp(condstr, "&&")) { if(thiscond) continue; }
+					else if (!strcmp(condstr, "||")) { if(!thiscond) continue; }
+					else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
+				}
+				cond=thiscond;
+				break;
+			}
+		}
+
+		if (is("for"))
+		{
+			// for loops as anything except the first block cause weirdness
+			// (while loops do too, but let's not talk about it)
+			if(single_line_for_tracker != 1) {
+				numif--;
+				asar_throw_error(0, error_type_line, error_id_bad_single_line_for);
+			}
+			// TODO: these errors could probably be a bit more descriptive
+			if(!is_for_cont)
+			{
+				// "for i = 0 to 16"
+				if(numwords != 6) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
+				if(strcmp(word[2], "=") != 0) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
+				if(strcmp(word[4], "to") != 0) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
+				addedwstatus.for_start = getnum(word[3]);
+				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
+				addedwstatus.for_end = getnum(word[5]);
+				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
+				string varname = word[1];
+				if(!validatedefinename(varname)) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
+				addedwstatus.for_variable = varname;
+				addedwstatus.for_cur = addedwstatus.for_start;
 			}
 			else
 			{
-				if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-				double par1=getnumdouble(nextword[0]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-				double par2=getnumdouble(nextword[2]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-				if(0);
-				else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
-				else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
-				else if (!strcmp(nextword[1], ">=")) thiscond=(par1>=par2);
-				else if (!strcmp(nextword[1], "<=")) thiscond=(par1<=par2);
-				else if (!strcmp(nextword[1], "="))  thiscond=(par1==par2);
-				else if (!strcmp(nextword[1], "==")) thiscond=(par1==par2);
-				else if (!strcmp(nextword[1], "!=")) thiscond=(par1!=par2);
-				//else if (!strcmp(nextword[1], "<>")) thiscond=(par1!=par2);
-				else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-
-				if (condstr && nextword[3])
-				{
-					if (strcmp(condstr, nextword[3])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
-				}
-				else condstr=nextword[3];
-				nextword+=4;
+				addedwstatus.for_cur++;
 			}
-			if (condstr)
+			// this cond is actually also used to tell assemblefile whether to jump back to the beginning of the loop, so keep it updated
+			addedwstatus.cond = addedwstatus.for_cur < addedwstatus.for_end;
+			single_line_for_tracker = 2;
+			if(addedwstatus.cond)
 			{
-				if (!strcmp(condstr, "&&")) { if(thiscond) continue; }
-				else if (!strcmp(condstr, "||")) { if(!thiscond) continue; }
-				else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
+				numtrue++;
+				defines.create(addedwstatus.for_variable) = ftostr(addedwstatus.for_cur);
 			}
-			cond=thiscond;
-			break;
 		}
-		//if (numwords==4)
-		//{
-		//	int par1=getnum(word[1]);
-		//	if (foundlabel && !foundlabel_static) error(0, S"Label in "+lower(word[0])+" command");
-		//	int par2=getnum(word[3]);
-		//	if (foundlabel && !foundlabel_static) error(0, S"Label in "+lower(word[0])+" command");
-		//	if(0);
-		//	else if (!strcmp(word[2], ">"))  cond=(par1>par2);
-		//	else if (!strcmp(word[2], "<"))  cond=(par1<par2);
-		//	else if (!strcmp(word[2], ">=")) cond=(par1>=par2);
-		//	else if (!strcmp(word[2], "<=")) cond=(par1<=par2);
-		//	else if (!strcmp(word[2], "="))  cond=(par1==par2);
-		//	else if (!strcmp(word[2], "==")) cond=(par1==par2);
-		//	else if (!strcmp(word[2], "!=")) cond=(par1!=par2);
-		//	//else if (!stricmp(word[2], "<>")) cond=(par1!=par2);
-		//	else error(0, S"Broken "+lower(word[0])+" command");
-		//}
-		//else if (*par=='!')
-		//{
-		//	int val=getnum(par+1);
-		//	if (foundlabel && !foundlabel_static) error(0, "Label in if or assert command");
-		//	cond=!(val>0);
-		//}
-		//else
-		//{
-		//	int val=getnum(par);
-		//	if (foundlabel && !foundlabel_static) error(0, "Label in if or assert command");
-		//	cond=(val>0);
-		//}
-
-		if (is("if") || is("while"))
+		else if (is("if") || is("while"))
 		{
 			if(0);
 			else if (cond)
@@ -1171,16 +1198,40 @@ void assembleblock(const char * block, bool isspecialline)
 			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
-	else if (is("endif") || is("endwhile"))
+	else if (is("endif") || is("endwhile") || is("endfor"))
 	{
 		if(fakeendif) fakeendif--;
 		if (numwords != 1) asar_throw_error(1, error_type_block, error_id_unknown_command);
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
 		if (numif==numtrue) numtrue--;
 		numif--;
-		if (whilestatus[numif].iswhile && is("endif") && warn_endwhile){
-			warn_endwhile = false;
-			asar_throw_warning(0, warning_id_feature_deprecated, "endif terminating while statements", "use endwhile instead");
+		if(whilestatus[numif].is_for) {
+			if(single_line_for_tracker == 2) single_line_for_tracker = 3;
+			if(moreonline) {
+				// sabotage the whilestatus to prevent the loop running again
+				// and spamming more of the same error
+				whilestatus[numif].for_cur = whilestatus[numif].for_end;
+				whilestatus[numif].cond = false;
+				asar_throw_error(0, error_type_block, error_id_bad_single_line_for);
+			}
+		}
+		if(warn_endwhile) {
+			if(whilestatus[numif].iswhile) {
+				if(!is("endwhile")) {
+					warn_endwhile = false;
+					asar_throw_warning(0, warning_id_feature_deprecated, "mismatched terminators", "use endwhile to terminate a while statement");
+				}
+			}
+			else if(whilestatus[numif].is_for) {
+				if(!is("endfor")) {
+					warn_endwhile = false;
+					asar_throw_warning(0, warning_id_feature_deprecated, "mismatched terminators", "use endfor to terminate a for statement");
+				}
+			}
+			else if(!is("endif")) {
+				warn_endwhile = false;
+				asar_throw_warning(0, warning_id_feature_deprecated, "mismatched terminators", "use endif to terminate an if statement");
+			}
 		}
 	}
 	else if (is("else"))
@@ -1188,7 +1239,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if(!moreonlinecond) moreonlinecond = true;
 		if (numwords != 1) asar_throw_error(1, error_type_block, error_id_unknown_command);
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_else);
-		if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
+		if (whilestatus[numif - 1].iswhile || whilestatus[numif - 1].is_for) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
 		else if (numif==numtrue) numtrue--;
 		else if (numif==numtrue+1 && !elsestatus[numif])
 		{

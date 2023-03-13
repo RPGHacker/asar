@@ -265,6 +265,9 @@ enum asar_error_id : int
 
 	error_id_macro_param_outside_macro,
 
+	error_id_broken_for_loop,
+	error_id_bad_single_line_for,
+
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
 };

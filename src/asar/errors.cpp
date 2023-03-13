@@ -290,6 +290,10 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(invalid_vararg), "Trying to use variadic macro parameter syntax to resolve a non variadic argument." },
 
 	{ ERR(macro_param_outside_macro), "Reference to macro parameter outside of macro" },
+
+	{ ERR(broken_for_loop), "Broken for loop declaration." },
+	{ ERR(bad_single_line_for), "Single-line for loop not allowed here." },
+
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
 // matches with the number of constants in asar_warning_id. This is important, because

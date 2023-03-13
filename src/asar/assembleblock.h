@@ -40,9 +40,20 @@ struct whiletracker {
 	bool iswhile;
 	int startline;
 	bool cond;
+	bool is_for;
+	string for_variable;
+	int for_start;
+	int for_end;
+	int for_cur;
 };
 
 extern autoarray<whiletracker> whilestatus;
+
+// 0 - not first block, not in for
+// 1 - first block
+// 2 - inside single-line for
+// 3 - after endfor
+extern int single_line_for_tracker;
 
 bool confirmname(const char * name);
 string posneglabelname(const char ** input, bool define);

@@ -500,6 +500,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	thisfilename = absolutepath;
 	thisline=linenum;
 	thisblock= nullptr;
+	single_line_for_tracker = 1;
 	try
 	{
 		string tmp=replace_macro_args(line);
@@ -547,6 +548,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 				catch (errblock&) {}
 				if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
 			}
+			if(single_line_for_tracker == 1) single_line_for_tracker = 0;
 		}
 		if(fakeendif)
 		{
@@ -688,7 +690,7 @@ void assemblefile(const char * filename, bool toplevel)
 				assembleline(absolutepath, i, connectedline);
 				thisfilename = absolutepath;
 				i += skiplines;
-				if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
+				if ((numif != prevnumif || single_line_for_tracker == 3) && (whilestatus[numif].iswhile || whilestatus[numif].is_for) && whilestatus[numif].cond)
 					i = whilestatus[numif].startline - 1;
 			}
 		}

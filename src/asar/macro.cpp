@@ -158,7 +158,7 @@ void callmacro(const char * data)
 			int prevnumif = numif;
 			assembleline(thismacro->fname, thismacro->startline+i, connectedline);
 			i += skiplines;
-			if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
+			if ((numif != prevnumif || single_line_for_tracker == 3) && (whilestatus[numif].iswhile || whilestatus[numif].is_for) && whilestatus[numif].cond)
 				i = whilestatus[numif].startline - thismacro->startline - 1;
 		}
 		catch(errline&){}
