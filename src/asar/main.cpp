@@ -502,7 +502,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	thisblock= nullptr;
 	try
 	{
-		string tmp=line;
+		string tmp=replace_macro_args(line);
 		clean(tmp);
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);
@@ -654,7 +654,7 @@ void assemblefile(const char * filename, bool toplevel)
 	} else { // filecontents.exists(absolutepath)
 		file = filecontents.find(absolutepath);
 	}
-	bool inmacro=false;
+	bool in_macro_def=false;
 	asarverallowed=true;
 	for (int i=0;file.contents[i] && i<file.numlines;i++)
 	{
@@ -666,17 +666,17 @@ void assemblefile(const char * filename, bool toplevel)
 			istoplevel=toplevel;
 			if (stribegin(file.contents[i], "macro ") && numif==numtrue)
 			{
-				if (inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
-				inmacro=true;
+				if (in_macro_def || inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
+				in_macro_def=true;
 				if (!pass) startmacro(file.contents[i]+6);
 			}
 			else if (!stricmp(file.contents[i], "endmacro") && numif==numtrue)
 			{
-				if (!inmacro) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
-				inmacro=false;
+				if (!in_macro_def) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
+				in_macro_def=false;
 				if (!pass) endmacro(true);
 			}
-			else if (inmacro)
+			else if (in_macro_def)
 			{
 				if (!pass) tomacro(file.contents[i]);
 			}
@@ -696,7 +696,7 @@ void assemblefile(const char * filename, bool toplevel)
 	}
 	thisline++;
 	thisblock= nullptr;
-	if (inmacro)
+	if (in_macro_def)
 	{
 		asar_throw_error(0, error_type_null, error_id_unclosed_macro);
 		if (!pass) endmacro(false);
