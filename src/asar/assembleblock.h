@@ -42,6 +42,8 @@ struct whiletracker {
 	bool cond;
 	bool is_for;
 	string for_variable;
+	string for_var_backup;
+	bool for_has_var_backup;
 	int for_start;
 	int for_end;
 	int for_cur;

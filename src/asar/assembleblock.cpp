@@ -1017,6 +1017,7 @@ void assembleblock(const char * block, bool isspecialline)
 		wstatus.cond = false;
 		wstatus.is_for = false;
 		wstatus.for_start = wstatus.for_end = wstatus.for_cur = 0;
+		wstatus.for_has_var_backup = false;
 		if (is("while")) wstatus.iswhile = true;
 		if (is("for")) wstatus.is_for = true;
 		// if we are a for loop and:
@@ -1161,6 +1162,10 @@ void assembleblock(const char * block, bool isspecialline)
 			if(addedwstatus.cond)
 			{
 				numtrue++;
+				if(defines.exists(addedwstatus.for_variable)) {
+					addedwstatus.for_has_var_backup = true;
+					addedwstatus.for_var_backup = defines.find(addedwstatus.for_variable);
+				}
 				defines.create(addedwstatus.for_variable) = ftostr(addedwstatus.for_cur);
 			}
 		}
@@ -1213,6 +1218,11 @@ void assembleblock(const char * block, bool isspecialline)
 				whilestatus[numif].for_cur = whilestatus[numif].for_end;
 				whilestatus[numif].cond = false;
 				asar_throw_error(0, error_type_block, error_id_bad_single_line_for);
+			}
+			if(whilestatus[numif].cond) {
+				if(whilestatus[numif].for_has_var_backup)
+					defines.create(whilestatus[numif].for_variable) = whilestatus[numif].for_var_backup;
+				else defines.remove(whilestatus[numif].for_variable);
 			}
 		}
 		if(warn_endwhile) {
