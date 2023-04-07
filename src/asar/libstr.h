@@ -318,6 +318,7 @@ inline char ** qpsplit1(char * str, const char * key, int * len= nullptr) { retu
 bool confirmquotes(const char * str);
 bool confirmqpar(const char * str);
 char* strqpchr(const char* str, char key);
+char* strqpstr(const char* str, const char* key);
 
 inline string hex(unsigned int value)
 {

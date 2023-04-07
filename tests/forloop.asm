@@ -11,41 +11,41 @@ org $8000
 
 !i = $42
 
-for i = 0 to 5
+for i = 0..5
     db !i
 endfor
 
-for i = 0 to 5 : db 1 : endfor
+for i = 0..5 : db 1 : endfor
 
-for i = 3 to 2
+for i = 3..2
   dw $dead
 endfor
 
 db !i
 
-for i = 0 to 3
-	for j = 3 to 6
+for i = 0..3
+	for j = 3..6
 		db !i,!j
 	endfor
 endfor
 
 if 1
-	for i = 10 to 12
+	for i = 10..12
 		db !i
 	endfor
 endif
 
 if 0
-	for i = 12 to 14
+	for i = 12..14
 		db !i
 	endfor
 endif
 
 if 1
-	for i = 0 to 3 : db $11 : endfor
+	for i = 0..3 : db $11 : endfor
 endif
 
-for i = $69 to $6b
+for i = $69..$6b
 	!j = 0
 	while !j < 2
 		db !i,!j
@@ -53,8 +53,8 @@ for i = $69 to $6b
 	endwhile
 endfor
 
-for i = 0 to 3
-	for i = 0 to 3
+for i = 0..3
+	for i = 0..3
 		db !i
 	endfor
 endfor

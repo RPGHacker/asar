@@ -1139,13 +1139,19 @@ void assembleblock(const char * block, bool isspecialline)
 			// TODO: these errors could probably be a bit more descriptive
 			if(!is_for_cont)
 			{
-				// "for i = 0 to 16"
-				if(numwords != 6) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
+				// "for i = 0..16"
+				if(numwords != 4) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
 				if(strcmp(word[2], "=") != 0) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
-				if(strcmp(word[4], "to") != 0) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
-				addedwstatus.for_start = getnum(word[3]);
+
+				char* range_sep = strqpstr(word[3], "..");
+				if(!range_sep)
+					asar_throw_error(0, error_type_block, error_id_broken_for_loop, "invalid loop range");
+
+				string for_start(word[3], range_sep - word[3]);
+				string for_end(range_sep+2);
+				addedwstatus.for_start = getnum(for_start);
 				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
-				addedwstatus.for_end = getnum(word[5]);
+				addedwstatus.for_end = getnum(for_end);
 				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
 				string varname = word[1];
 				if(!validatedefinename(varname)) asar_throw_error(0, error_type_block, error_id_broken_for_loop);

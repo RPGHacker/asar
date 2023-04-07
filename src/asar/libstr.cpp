@@ -533,6 +533,20 @@ char* strqpchr(const char* str, char key)
 	return nullptr;
 }
 
+
+char* strqpstr(const char* str, const char* key)
+{
+	size_t keylen = strlen(key);
+	while (*str)
+	{
+		skippar(*str, str++, return nullptr);
+		else if (!strncmp(str, key, keylen)) return const_cast<char*>(str);
+		else if (!*str) return nullptr;
+		else str++;
+	}
+	return nullptr;
+}
+
 extern const uint8_t char_props[256] = {
 	//x0   x1   x2   x3   x4   x5   x6   x7   x8   x9   xA   xB   xC   xD   xE   xF
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x80,0x00,0x00,0x80,0x00,0x00, // 0x
