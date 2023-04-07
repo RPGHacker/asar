@@ -474,7 +474,11 @@ EXPORT const labeldata * asar_getalllabels(int * count)
 EXPORT int asar_getlabelval(const char * name)
 {
 	if (!stricmp(name, ":$:opcodes:$:")) return numopcodes;//aaah, you found me
-	int i=(int)labelval(&name).pos;
+	int i;
+	try {
+		i=(int)labelval(&name).pos;
+	}
+	catch(errfatal&) { return -1; }
 	if (*name || i<0) return -1;
 	else return i&0xFFFFFF;
 }
