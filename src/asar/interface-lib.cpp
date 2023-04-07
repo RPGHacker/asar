@@ -119,6 +119,11 @@ void warn(int errid, const char * str)
 	fillerror(warnings[numwarn++], errid, STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
 }
 
+static autoarray<labeldata> ldata;
+static int labelsinldata = 0;
+static autoarray<definedata> ddata;
+static int definesinddata=0;
+
 static void resetdllstuff()
 {
 #define free_and_null(x) free((void*)x); x = nullptr
@@ -150,6 +155,18 @@ static void resetdllstuff()
 	}
 	warnings.reset();
 	numwarn=0;
+
+	for (int i=0;i<labelsinldata;i++) free((void*)ldata[i].name);
+	ldata.reset();
+	labelsinldata=0;
+
+	for (int i=0;i<definesinddata;i++)
+	{
+		free((void*)ddata[i].name);
+		free((void*)ddata[i].contents);
+	}
+	ddata.reset();
+	definesinddata=0;
 #undef free_and_null
 
 	romCrc = 0;
@@ -161,8 +178,6 @@ static void resetdllstuff()
 
 #define maxromsize (16*1024*1024)
 
-static autoarray<labeldata> ldata;
-static int labelsinldata = 0;
 static bool expectsNewAPI = false;
 
 static void addlabel(const string & name, const snes_label & label_data)
@@ -480,9 +495,6 @@ EXPORT const char * asar_resolvedefines(const char * data)
 	catch(errfatal&){}
 	return out;
 }
-
-static autoarray<definedata> ddata;
-static int definesinddata=0;
 
 static void adddef(const string& name, string& value)
 {
