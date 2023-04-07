@@ -30,7 +30,7 @@ bool asblock_65816(char** word, int numwords)
 	bool explicitlen = false;
 	bool hexconstant = false;
 	if(0);
-#define getvars(optbank) num=(pass!=0)?getnum(par):0; hexconstant=is_hex_constant(par); if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
+#define getvars(optbank) num=(pass==2)?getnum(par):0; hexconstant=is_hex_constant(par); if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
 #define match(left, right) (word[1] && stribegin(par, left) && striend(par, right))
 #define init(left, right) strip_suffix(par, right); strip_prefix(par, left); getvars(false)
 #define init_index(left, right) itrim(par, left, right); getvars(false)
@@ -168,8 +168,8 @@ bool asblock_65816(char** word, int numwords)
 			if (numargs ==2)
 			{
 				write1(is("MVN")?(unsigned int)0x54:(unsigned int)0x44);
-				write1(getnum(param[0]));
-				write1(getnum(param[1]));
+				write1(pass==2?getnum(param[0]):0);
+				write1(pass==2?getnum(param[1]):0);
 				return true;
 			}
 		}

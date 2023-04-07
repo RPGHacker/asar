@@ -11,6 +11,11 @@
 static int writesizeto=-1;
 static int inlinestartpos=0;
 
+static int64_t getnum_ck(const char* math)
+{
+	return pass == 2 ? getnum(math) : 0;
+}
+
 static void inline_finalizeorg()
 {
 	if (writesizeto>=0 && pass==2)
@@ -101,7 +106,7 @@ static bool assinglebitwithc(const char * op, const char * math, int bits)
 		else if (isop("or")) write1(0x2A);
 		else if (isop("and")) write1(0x6A);
 		else return false;
-		num=getnum(math+1);
+		num=getnum_ck(math+1);
 	}
 	else
 	{
@@ -112,7 +117,7 @@ static bool assinglebitwithc(const char * op, const char * math, int bits)
 		else if (isop("mov")) write1(0xAA);
 		else if (isop("not")) write1(0xEA);
 		else return false;
-		num=getnum(math);
+		num=getnum_ck(math);
 	}
 	if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_spc700_addr_out_of_range, hex4(num).data());
 	write2(((unsigned int)bits<<13)|num);
@@ -139,7 +144,7 @@ bool asblock_spc700(char** word, int numwords)
 	}
 	else if (arch==arch_spc700_inline && is1("skip"))
 	{
-		int num=snespos+(int)getnum64(par);
+		int num=snespos+(int)getnum(par);
 		if (foundlabel) asar_throw_error(0, error_type_block, error_id_skip_label_invalid);
 		inline_org(num);
 	}
@@ -149,7 +154,7 @@ bool asblock_spc700(char** word, int numwords)
 	}
 	else if (arch==arch_spc700_inline && is1("startpos"))
 	{
-		inlinestartpos=(int)getnum64(par);
+		inlinestartpos=(int)getnum_ck(par);
 	}
 	else if (numwords==1)
 	{
@@ -199,10 +204,10 @@ bool asblock_spc700(char** word, int numwords)
 #define ismatch(left, right) (matchandwrite(arg[0], left, right, math))
 #define eq(str) if (isam(str))
 #define w0(hex) do { write1((unsigned int)hex); return true; } while(0)
-#define w1(hex) do { write1((unsigned int)hex); write1(getnum(math)); return true; } while(0)
-#define w2(hex) do { write1((unsigned int)hex); write2(getnum(math)); return true; } while(0)
-#define wv(hex1, hex2) do { if ((opLen == 1) || (opLen == 0 && getlen(math) == 1)) { write1((unsigned int)hex1); write1(getnum(math)); } else { write1((unsigned int)hex2); write2(getnum(math)); } return true; } while(0)
-#define wr(hex) do { int len=getlen(math); int num=(int)getnum64(math); int pos=(len==1)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)hex); write1((unsigned int)pos); \
+#define w1(hex) do { write1((unsigned int)hex); write1(getnum_ck(math)); return true; } while(0)
+#define w2(hex) do { write1((unsigned int)hex); write2(getnum_ck(math)); return true; } while(0)
+#define wv(hex1, hex2) do { if ((opLen == 1) || (opLen == 0 && getlen(math) == 1)) { write1((unsigned int)hex1); write1(getnum_ck(math)); } else { write1((unsigned int)hex2); write2(getnum_ck(math)); } return true; } while(0)
+#define wr(hex) do { int len=getlen(math); int num=(int)getnum_ck(math); int pos=(len==1)?num:num-((snespos&0xFFFFFF)+2); write1((unsigned int)hex); write1((unsigned int)pos); \
 								if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								return true; } while(0)
 #define op0(str, hex) if (isop(str)) w0(hex)
@@ -261,7 +266,7 @@ bool asblock_spc700(char** word, int numwords)
 				else if (!stricmp(op, "set")) write1((unsigned int)(0x02|(bits<<5)));
 				else if (!stricmp(op, "clr")) write1((unsigned int)(0x12|(bits<<5)));
 				else return false;
-				unsigned int num=getnum(math);
+				unsigned int num=getnum_ck(math);
 				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
 				write1(num);
 				return true;
@@ -271,7 +276,7 @@ bool asblock_spc700(char** word, int numwords)
 				math=arg[0];
 				if (isop("tcall"))
 				{
-					unsigned int num = getnum(math);
+					unsigned int num = getnum_ck(math);
 					if (num >= 16) asar_throw_error(2, error_type_block, error_id_invalid_tcall);
 					write1(((num<<4)|1));
 					return true;
@@ -324,18 +329,18 @@ bool asblock_spc700(char** word, int numwords)
 #define vc(left1, right1, str2) if (isvc(left1, right1, str2))
 #define vv(left1, right1, left2, right2) if (isvv(left1, right1, left2, right2))
 #define w0(opcode) do { write1((unsigned int)opcode); return true; } while(0)
-#define w1(opcode, math) do { write1((unsigned int)opcode); unsigned int val=getnum(math); \
-		if ((((val&0xFF00)&&(val&0x80000000)==0)||(((val&0xFF00)!=0xFF00)&&(val&0x80000000)))&&opLen!=1) asar_throw_warning(0, warning_id_spc700_assuming_8_bit); write1(val);return true; } while(0)
-#define w2(opcode, math) do { write1((unsigned int)opcode); write2(getnum(math)); return true; } while(0)
-#define wv(opcode1, opcode2, math) do { if ((opLen == 1) || (opLen == 0 && getlen(math)==1)) { write1((unsigned int)opcode1); write1(getnum(math)); } \
-																	 else { write1((unsigned int)opcode2); write2(getnum(math)); } return true; } while(0)
-#define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1(getnum(math1)); write1(getnum(math2)); return true; } while(0)
-#define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum64(math); int pos=(len==1)?num:num-(snespos+2); \
+#define w1(opcode, math) do { write1((unsigned int)opcode); unsigned int val=getnum_ck(math); \
+		if ((((val&0xFF00)&&(val&0x80000000)==0)||(((val&0xFF00)!=0xFF00)&&(val&0x80000000)))&&opLen!=1) asar_throw_warning(2, warning_id_spc700_assuming_8_bit); write1(val);return true; } while(0)
+#define w2(opcode, math) do { write1((unsigned int)opcode); write2(getnum_ck(math)); return true; } while(0)
+#define wv(opcode1, opcode2, math) do { if ((opLen == 1) || (opLen == 0 && getlen(math)==1)) { write1((unsigned int)opcode1); write1(getnum_ck(math)); } \
+																	 else { write1((unsigned int)opcode2); write2(getnum_ck(math)); } return true; } while(0)
+#define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1(getnum_ck(math1)); write1(getnum_ck(math2)); return true; } while(0)
+#define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum_ck(math); int pos=(len==1)?num:num-(snespos+2); \
 								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								write1((unsigned int)opcode); write1((unsigned int)pos); return true; } while(0)
-#define w1r(opcode, math1, math2) do { int len=getlen(math2); int num=(int)getnum64(math2); int pos=(len==1)?num:num-(snespos+3); \
+#define w1r(opcode, math1, math2) do { int len=getlen(math2); int num=(int)getnum_ck(math2); int pos=(len==1)?num:num-(snespos+3); \
 								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
-								write1((unsigned int)opcode); write1(getnum(math1)); write1((unsigned int)pos); return true; } while(0)
+								write1((unsigned int)opcode); write1(getnum_ck(math1)); write1((unsigned int)pos); return true; } while(0)
 			string s1;
 			string s2;
 			string op;
@@ -350,7 +355,7 @@ bool asblock_spc700(char** word, int numwords)
 			{
 				if (isop("mov") && !stricmp(arg[1], "c"))
 				{
-					unsigned int num=getnum(s1);
+					unsigned int num=getnum_ck(s1);
 					if (num>=0x2000) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6((unsigned int)num).data());
 					write1(0xCA);
 					write2(((unsigned int)bits<<13)|num);
@@ -360,10 +365,10 @@ bool asblock_spc700(char** word, int numwords)
 				else if (isop("bbs")) write1((unsigned int)(0x03|(bits<<5)));
 				else if (isop("bbc")) write1((unsigned int)(0x13|(bits<<5)));
 				else return false;
-				unsigned int num=getnum(s1);
+				unsigned int num=getnum_ck(s1);
 				if (num>=0x100) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, hex6(num).data());
 				write1(num);
-				write1((getnum(arg[1])- (unsigned int)(snespos+1)));
+				write1((getnum_ck(arg[1])- (unsigned int)(snespos+1)));
 				return true;
 			}
 #undef isop
