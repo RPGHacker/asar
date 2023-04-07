@@ -42,6 +42,13 @@ struct whiletracker {
 	bool iswhile;
 	int startline;
 	bool cond;
+	bool is_for;
+	string for_variable;
+	string for_var_backup;
+	bool for_has_var_backup;
+	int for_start;
+	int for_end;
+	int for_cur;
 };
 
 extern autoarray<whiletracker> whilestatus;
@@ -70,7 +77,7 @@ void checkbankcross();
 void initstuff();
 void finishpass();
 
-void assembleblock(const char * block);
+void assembleblock(const char * block, int& single_line_for_tracker);
 
 extern int snespos;
 extern int realsnespos;

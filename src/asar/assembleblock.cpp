@@ -887,7 +887,12 @@ string handle_print(char* input)
 	return out;
 }
 
-void assembleblock(const char * block)
+// single_line_for_tracker is:
+// 0 if not in first block of line, not in (single-line) for loop
+// 1 if first block of line
+// 2 if in single-line for loop
+// 3 if after endfor (of a single-line loop)
+void assembleblock(const char * block, int& single_line_for_tracker)
 {
 #define is(test) (!stricmpwithlower(word[0], test))
 #define is0(test) (numwords==1 && !stricmpwithlower(word[0], test))
@@ -912,14 +917,26 @@ void assembleblock(const char * block)
 		numwords--;
 	}
 	if (!word[0] || !word[0][0]) return;
-	if (is("if") || is("elseif") || is("assert") || is("while"))
+	if (is("if") || is("elseif") || is("assert") || is("while") || is("for"))
 	{
 		string errmsg;
 		whiletracker wstatus;
 		wstatus.startline = get_current_line();
 		wstatus.iswhile = is("while");
 		wstatus.cond = false;
-		whiletracker& addedwstatus = (whilestatus[numif] = wstatus);
+		wstatus.is_for = false;
+		wstatus.for_start = wstatus.for_end = wstatus.for_cur = 0;
+		wstatus.for_has_var_backup = false;
+		if(is("for")) wstatus.is_for = true;
+
+		bool is_for_cont = false;
+		// if this is a for loop and a whilestatus entry already exists at this level,
+		// and the for loop isn't finished, this is a continuation of the for loop
+		if (is("for") && whilestatus.count > numif && whilestatus[numif].is_for
+				&& whilestatus[numif].for_cur < whilestatus[numif].for_end)
+			is_for_cont = true;
+
+		whiletracker& addedwstatus = is_for_cont ? whilestatus[numif] : (whilestatus[numif] = wstatus);
 		if (is("assert"))
 		{
 			autoptr<char**> tokens = qpsplit(word[numwords - 1], ',');
@@ -945,19 +962,79 @@ void assembleblock(const char * block)
 		//handle nested if statements
 		if (numtrue!=numif && !(is("elseif") && numtrue+1==numif))
 		{
-			if ((is("if") || is("while"))) numif++;
+			if ((is("if") || is("while") || is("for"))) numif++;
 			return;
 		}
-		if ((is("if") || is("while"))) numif++;
+		if ((is("if") || is("while") || is("for"))) numif++;
 
 		for(int i = 1; i < numwords - 1; i++)
 		{
 			word[i][strlen(word[i])] = ' ';
 		}
 		numwords = 2;
-		bool cond = getnum(word[1]);
-		if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
-		if (is("if") || is("while"))
+
+		bool cond;
+		if(!is("for"))
+		{
+			cond = getnum(word[1]);
+			if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+		}
+
+		if (is("for"))
+		{
+			if(single_line_for_tracker != 1)
+			{
+				numif--;
+				asar_throw_error(0, error_type_line, error_id_bad_single_line_for);
+			}
+
+			if(!is_for_cont)
+			{
+				char* past_eq = strchr(word[1], '=');
+				if(!past_eq)
+					asar_throw_error(0, error_type_block, error_id_broken_for_loop, "missing loop range");
+
+				string varname(word[1], past_eq - word[1]);
+				past_eq += 1;
+				strip_whitespace(varname);
+				if(!validatedefinename(varname))
+					asar_throw_error(0, error_type_block, error_id_broken_for_loop, "invalid define name");
+
+				char* range_sep = strqpstr(past_eq, "..");
+				if(!range_sep)
+					asar_throw_error(0, error_type_block, error_id_broken_for_loop, "invalid loop range");
+
+				string for_start(past_eq, range_sep - past_eq);
+				strip_whitespace(for_start);
+				string for_end(range_sep+2);
+				strip_whitespace(for_end);
+
+				addedwstatus.for_start = getnum(for_start);
+				if(foundlabel && !foundlabel_static)
+					asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
+				addedwstatus.for_end = getnum(for_end);
+				if(foundlabel && !foundlabel_static)
+					asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
+
+				addedwstatus.for_variable = varname;
+				addedwstatus.for_cur = addedwstatus.for_start;
+			}
+			else addedwstatus.for_cur++;
+
+			addedwstatus.cond = addedwstatus.for_cur < addedwstatus.for_end;
+			single_line_for_tracker = 2;
+			if(addedwstatus.cond)
+			{
+				numtrue++;
+				if(defines.exists(addedwstatus.for_variable))
+				{
+					addedwstatus.for_has_var_backup = true;
+					addedwstatus.for_var_backup = defines.find(addedwstatus.for_variable);
+				}
+				defines.create(addedwstatus.for_variable) = ftostr(addedwstatus.for_cur);
+			}
+		}
+		else if (is("if") || is("while"))
 		{
 			if(0);
 			else if (cond)
@@ -989,16 +1066,45 @@ void assembleblock(const char * block)
 			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
-	else if (is0("endif") || is0("endwhile"))
+	else if (is0("endif") || is0("endwhile") || is0("endfor"))
 	{
-		if (!numif || (whilestatus[numif - 1].iswhile && is("endif"))) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
+		if (!numif)
+			asar_throw_error(1, error_type_block, error_id_misplaced_endif);
+		whiletracker& thisws = whilestatus[numif - 1];
+
+		if((!thisws.is_for && !thisws.iswhile && !is("endif")) ||
+				(thisws.iswhile && !is("endwhile")) ||
+				(thisws.is_for && !is("endfor")))
+			asar_throw_error(1, error_type_block, error_id_misplaced_endif);
+
 		if (numif==numtrue) numtrue--;
 		numif--;
+
+		if(thisws.is_for)
+		{
+			if(single_line_for_tracker == 2) single_line_for_tracker = 3;
+			if(moreonline)
+			{
+				// sabotage the whilestatus to prevent the loop running again
+				// and spamming more of the same error
+				thisws.for_cur = thisws.for_end;
+				thisws.cond = false;
+				asar_throw_error(0, error_type_block, error_id_bad_single_line_for);
+			}
+
+			if(thisws.cond)
+			{
+				if(thisws.for_has_var_backup)
+					defines.create(thisws.for_variable) = thisws.for_var_backup;
+				else
+					defines.remove(thisws.for_variable);
+			}
+		}
 	}
 	else if (is0("else"))
 	{
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_else);
-		if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
+		if (whilestatus[numif - 1].iswhile || whilestatus[numif - 1].is_for) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
 		else if (numif==numtrue) numtrue--;
 		else if (numif==numtrue+1 && !elsestatus[numif])
 		{

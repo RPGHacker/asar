@@ -341,6 +341,7 @@ char ** qsplitstr(char * str, const char * key, int * len= nullptr);
 bool confirmquotes(const char * str);
 bool confirmqpar(const char * str);
 char* strqpchr(char* str, char key);
+char* strqpstr(char* str, const char* key);
 
 inline string hex(unsigned int value)
 {

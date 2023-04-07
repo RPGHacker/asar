@@ -454,7 +454,18 @@ char* strqpchr(char* str, char key)
 {
 	while (*str)
 	{
-		if (*str == key) return const_cast<char*>(str);
+		if (*str == key) return str;
+		else if(!skip_par(str)) return nullptr;
+	}
+	return nullptr;
+}
+
+char* strqpstr(char* str, const char* key)
+{
+	size_t keylen = strlen(key);
+	while (*str)
+	{
+		if (!strncmp(str, key, keylen)) return str;
 		else if(!skip_par(str)) return nullptr;
 	}
 	return nullptr;

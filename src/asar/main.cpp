@@ -699,13 +699,14 @@ void resolvedefines(string& out, const char * start)
 bool moreonline;
 bool asarverallowed = false;
 
-void assembleline(const char * fname, int linenum, const char * line)
+void assembleline(const char * fname, int linenum, const char * line, int& single_line_for_tracker)
 {
 	recurseblock rec;
 	bool moreonlinetmp=moreonline;
 	// randomdude999: redundant, assemblefile already converted the path to absolute
 	//string absolutepath = filesystem->create_absolute_path("", fname);
 	string absolutepath = fname;
+	single_line_for_tracker = 1;
 	try
 	{
 		string out=line;
@@ -720,12 +721,13 @@ void assembleline(const char * fname, int linenum, const char * line)
 				string stripped_block = strip_whitespace(blocks[block]);
 
 				callstack_push cs_push(callstack_entry_type::BLOCK, stripped_block);
-					
-				assembleblock(stripped_block);
+
+				assembleblock(stripped_block, single_line_for_tracker);
 				checkbankcross();
 			}
 			catch (errblock&) {}
 			if (blocks[block][0]!='\0') asarverallowed=false;
+			if(single_line_for_tracker == 1) single_line_for_tracker = 0;
 		}
 	}
 	catch (errline&) {}
@@ -814,12 +816,11 @@ void assemblefile(const char * filename)
 		string connectedline;
 		int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
 		
-		int prevnumif = numif;
-		
-		do_line_logic(connectedline, absolutepath, i);
+		bool was_loop_end = do_line_logic(connectedline, absolutepath, i);
 		i += skiplines;
 		
-		if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
+		// if a loop ended on this line, should it run again?
+		if (was_loop_end && whilestatus[numif].cond)
 			i = whilestatus[numif].startline - 1;
 	}
 	while (in_macro_def > 0)
@@ -841,8 +842,11 @@ void assemblefile(const char * filename)
 // RPG Hacker: At some point, this should probably be merged
 // into assembleline(), since the two names just cause
 // confusion otherwise.
-void do_line_logic(const char* line, const char* filename, int lineno)
+// return value is "did a loop end on this line"
+bool do_line_logic(const char* line, const char* filename, int lineno)
 {			
+	int prevnumif = numif;
+	int single_line_for_tracker = 1;
 	try
 	{
 		string current_line;
@@ -897,10 +901,12 @@ void do_line_logic(const char* line, const char* filename, int lineno)
 		}
 		else
 		{
-			assembleline(filename, lineno, current_line);
+			assembleline(filename, lineno, current_line, single_line_for_tracker);
 		}
 	}
 	catch (errline&) {}
+	return (numif != prevnumif || single_line_for_tracker == 3)
+		&& (whilestatus[numif].iswhile || whilestatus[numif].is_for);
 }
 
 
