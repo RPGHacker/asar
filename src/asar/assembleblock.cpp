@@ -1539,7 +1539,7 @@ void assembleblock(const char * block, bool isspecialline)
 			{
 				const char * math=pars[i];
 				if (math[0]=='#') math++;
-				unsigned int num=(pass!=0)?getnum(math):0;
+				unsigned int num=(pass==2)?getnum(math):0;
 				if (len == 1) write1(num);
 				if (len == 2) write2(num);
 				if (len == 3) write3(num);

@@ -100,7 +100,7 @@ static cachedfile * opencachedfile(string fname, bool should_error)
 
 	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) && should_error)
 	{
-		asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.data());
+		asar_throw_error(2, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.data());
 	}
 
 	return cachedfilehandle;
@@ -129,14 +129,14 @@ void closecachedfiles()
 
 static int struct_size(const char *name)
 {
-       if(pass && !structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
+       if(pass && !structs.exists(name)) asar_throw_error(2, error_type_block, error_id_struct_not_found, name);
        else if(!structs.exists(name)) return 0;
        return structs.find(name).struct_size;
 }
 
 static int object_size(const char *name)
 {
-       if(pass && !structs.exists(name)) asar_throw_error(1, error_type_block, error_id_struct_not_found, name);
+       if(pass && !structs.exists(name)) asar_throw_error(2, error_type_block, error_id_struct_not_found, name);
        else if(!structs.exists(name)) return 0;
        return structs.find(name).object_size;
 }
@@ -145,7 +145,7 @@ static int data_size(const char *name)
 {
 	unsigned int label;
 	unsigned int next_label = 0xFFFFFF;
-	if(!labels.exists(name)) asar_throw_error(1, error_type_block, error_id_label_not_found, name);
+	if(!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_not_found, name);
 	foundlabel = true;
 	snes_label label_data = labels.find(name);
 	foundlabel_static &= label_data.is_static;
@@ -156,8 +156,8 @@ static int data_size(const char *name)
 			next_label = current_label.pos;
 		}
 	});
-	if(next_label == 0xFFFFFF) asar_throw_warning(1, warning_id_datasize_last_label, name);
-	if(next_label-label > 0xFFFF) asar_throw_warning(1, warning_id_datasize_exceeds_size, name);
+	if(next_label == 0xFFFFFF) asar_throw_warning(2, warning_id_datasize_last_label, name);
+	if(next_label-label > 0xFFFF) asar_throw_warning(2, warning_id_datasize_exceeds_size, name);
 	return next_label-label;
 }
 
@@ -179,10 +179,10 @@ string get_string_argument()
 		}
 		// RPG Hacker: AFAIK, this is never actually triggered, since unmatched quotes are already detected earlier,
 		// but since it does no harm here, I'll keep it in, just to be safe
-		else asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+		else asar_throw_error(2, error_type_block, error_id_string_literal_not_terminated);
 	}//make this error a better one later
 	
-	asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+	asar_throw_error(2, error_type_block, error_id_string_literal_not_terminated);
 	return ""; //never actually called, but I don't feel like figuring out __attribute__ ((noreturn)) on MSVC
 }
 
@@ -193,19 +193,19 @@ string get_symbol_argument()
 	const char * strpos = str;
 	// hack: for backwards compat, allow strings as symbols
 	if(*str=='"') {
-		asar_throw_warning(1, warning_id_feature_deprecated, "quoted symbolic arguments", "Remove the quotations");
+		asar_throw_warning(2, warning_id_feature_deprecated, "quoted symbolic arguments", "Remove the quotations");
 		string arg = get_string_argument();
 		int i = 0;
 		if(is_alpha(arg[i]) || arg[i] == '_') i++;
 		while(is_alnum(arg[i]) || arg[i] == '_' || arg[i] == '.') i++;
-		if(arg[i] != '\0') asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+		if(arg[i] != '\0') asar_throw_error(2, error_type_block, error_id_invalid_label_name);
                 return arg;
 	}
 	if(is_alpha(*str) || *str == '_') str++;
 	while (is_alnum(*str) || *str == '_' || *str == '.') str++;
 	if(strpos == str){
 		//error nothing was read, this is a placeholder error
-		asar_throw_error(1, error_type_block, error_id_string_literal_not_terminated);
+		asar_throw_error(2, error_type_block, error_id_string_literal_not_terminated);
 	}
 	
 	string symbol = string(strpos, (int)(str - strpos));
@@ -239,7 +239,7 @@ void require_next_parameter()
 		str++;
 		return;
 	}
-	asar_throw_error(1, error_type_block, error_id_require_parameter);
+	asar_throw_error(2, error_type_block, error_id_require_parameter);
 }
 
 template <typename F> double asar_unary_wrapper()
@@ -363,8 +363,8 @@ template <int count> double asar_read()
 	}
 	else
 	{
-		if (addr<0) asar_throw_error(1, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)target) + " in read function").data());
-		else if (addr+count>romlen_r) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, (hex6(target) + " in read function").data());
+		if (addr<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex6((unsigned int)target) + " in read function").data());
+		else if (addr+count>romlen_r) asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, (hex6(target) + " in read function").data());
 	}
 	
 	unsigned int value = 0;
@@ -404,8 +404,8 @@ template <size_t count> double asar_readfile()
 	}
 	else
 	{		
-		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
-		if (offset < 0 || offset + count > fhandle->filesize) asar_throw_error(1, error_type_block, error_id_file_offset_out_of_bounds, dec(offset).data(), name.data());
+		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(2, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
+		if (offset < 0 || offset + count > fhandle->filesize) asar_throw_error(2, error_type_block, error_id_file_offset_out_of_bounds, dec(offset).data(), name.data());
 	}
 	
 	unsigned char data[4] = { 0, 0, 0, 0 };
@@ -460,7 +460,7 @@ static double asar_filesize()
 {
 	string name = get_string_argument();
 	cachedfile * fhandle = opencachedfile(name, false);
-	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(1, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
+	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) asar_throw_error(2, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
 	return (double)fhandle->filesize;
 }
 
@@ -495,8 +495,8 @@ static double asar_structsize_wrapper()
 {
 	string symbol = get_symbol_argument();
 	if(symbol == "..."){
-		if(!inmacro) asar_throw_error(1, error_type_block, error_id_vararg_sizeof_nomacro);
-		if(numvarargs == -1) asar_throw_error(1, error_type_block, error_id_macro_not_varadic);
+		if(!inmacro) asar_throw_error(2, error_type_block, error_id_vararg_sizeof_nomacro);
+		if(numvarargs == -1) asar_throw_error(2, error_type_block, error_id_macro_not_varadic);
 		return numvarargs;
 	}
 	return (double)struct_size(symbol);
@@ -662,7 +662,7 @@ static double asar_call_user_function()
 	{
 		if(!has_next)
 		{
-			asar_throw_error(1, error_type_block, error_id_expected_parameter, current_user_function_name);
+			asar_throw_error(2, error_type_block, error_id_expected_parameter, current_user_function_name);
 		}
 		args[i] = copy_arg();
 		has_next = has_next_parameter();
@@ -670,7 +670,7 @@ static double asar_call_user_function()
 	
 	if(has_next)
 	{
-		asar_throw_error(1, error_type_block, error_id_unexpected_parameter, current_user_function_name);
+		asar_throw_error(2, error_type_block, error_id_unexpected_parameter, current_user_function_name);
 	}
 	
 	for(int i=0; user_function.content[i]; i++)
@@ -746,24 +746,24 @@ static double getnumcore()
 	{
 		str++;
 		double rval=eval(0);
-		if (*str != ')') asar_throw_error(1, error_type_block, error_id_mismatched_parentheses);
+		if (*str != ')') asar_throw_error(2, error_type_block, error_id_mismatched_parentheses);
 		str++;
 		return rval;
 	}
 	if (*str=='$')
 	{
-		if (!is_xdigit(str[1])) asar_throw_error(1, error_type_block, error_id_invalid_hex_value);
+		if (!is_xdigit(str[1])) asar_throw_error(2, error_type_block, error_id_invalid_hex_value);
 		if (to_lower(str[2])=='x') return -42;//let str get an invalid value so it'll throw an invalid operator later on
 		return strtoull(str+1, const_cast<char**>(&str), 16);
 	}
 	if (*str=='%')
 	{
-		if (str[1] != '0' && str[1] != '1') asar_throw_error(1, error_type_block, error_id_invalid_binary_value);
+		if (str[1] != '0' && str[1] != '1') asar_throw_error(2, error_type_block, error_id_invalid_binary_value);
 		return strtoull(str+1, const_cast<char**>(&str), 2);
 	}
 	if (*str=='\'')
 	{
-		if (!str[1] || str[2] != '\'') asar_throw_error(1, error_type_block, error_id_invalid_character);
+		if (!str[1] || str[2] != '\'') asar_throw_error(2, error_type_block, error_id_invalid_character);
 		unsigned int rval=table.table[(unsigned char)str[1]];
 		str+=3;
 		return rval;
@@ -809,10 +809,10 @@ static double getnumcore()
 					str++;
 					return result;
 				}
-				asar_throw_error(1, error_type_block, error_id_malformed_function_call);
+				asar_throw_error(2, error_type_block, error_id_malformed_function_call);
 			}
 
-			asar_throw_error(1, error_type_block, error_id_function_not_found, start);
+			asar_throw_error(2, error_type_block, error_id_function_not_found, start);
 		}
 		else
 		{
@@ -831,13 +831,13 @@ static double getnumcore()
 				{
 					if (subscript_passed)
 					{
-						asar_throw_error(1, error_type_block, error_id_multiple_subscript_operators);
+						asar_throw_error(2, error_type_block, error_id_multiple_subscript_operators);
 						break;
 					}
 					subscript_passed = true;
 					if (scope_passed)
 					{
-						asar_throw_error(1, error_type_block, error_id_invalid_subscript);
+						asar_throw_error(2, error_type_block, error_id_invalid_subscript);
 						break;
 					}
 					string struct_name = substr(old_start, (int)(str - old_start - 1));
@@ -850,13 +850,13 @@ static double getnumcore()
 			return (int)i&0xFFFFFF;
 		}
 	}
-	asar_throw_error(1, error_type_block, error_id_invalid_number);
+	asar_throw_error(2, error_type_block, error_id_invalid_number);
 	return 0.0;
 }
 
 static double sanitize(double val)
 {
-	if (val != val) asar_throw_error(1, error_type_block, error_id_nan);
+	if (val != val) asar_throw_error(2, error_type_block, error_id_nan);
 	if (math_round && !default_math_round_off) return trunc(val); // originally used int cast, but that broke numbers > $8000_0000
 	return val;
 }
@@ -865,7 +865,7 @@ static double getnum()
 {
 	while (*str==' ') str++;
 #define prefix(sym, func) if (*str == sym) { str+=1; double val=getnum(); return sanitize(func); }
-#define prefix_dep(sym, func) if (*str == sym) { str+=1; asar_throw_warning(0, warning_id_feature_deprecated, "xkas style numbers ", "remove the #"); double val=getnum(); return sanitize(func); }
+#define prefix_dep(sym, func) if (*str == sym) { str+=1; asar_throw_warning(2, warning_id_feature_deprecated, "xkas style numbers ", "remove the #"); double val=getnum(); return sanitize(func); }
 #define prefix2(sym, sym2, func) if (*str == sym && *(str+1) == sym2) { str+=2; double val=getnum(); return sanitize(func); }
 	prefix('-', -val);
 	prefix('~', ~(int)val);
@@ -922,7 +922,7 @@ double getnumdouble(const char * instr)
 
 static double oper_wrapped_throw(asar_error_id errid)
 {
-	asar_throw_error(1, error_type_block, errid);
+	asar_throw_error(2, error_type_block, errid);
 	return 0.0;
 }
 
@@ -984,7 +984,7 @@ notposneglabel:
 		oper("&", 0, (int64_t)left&(int64_t)right);
 		oper("|", 0, (int64_t)left|(int64_t)right);
 		oper("^", 0, (int64_t)left^(int64_t)right);
-		asar_throw_error(1, error_type_block, error_id_unknown_operator);
+		asar_throw_error(2, error_type_block, error_id_unknown_operator);
 #undef oper
 	}
 	return left;
@@ -1030,8 +1030,8 @@ double math(const char * s)
 	}
 	if (*str)
 	{
-		if (*str == ',') asar_throw_error(1, error_type_block, error_id_invalid_input);
-		else asar_throw_error(1, error_type_block, error_id_mismatched_parentheses);
+		if (*str == ',') asar_throw_error(2, error_type_block, error_id_invalid_input);
+		else asar_throw_error(2, error_type_block, error_id_mismatched_parentheses);
 	}
 	return rval;
 }
