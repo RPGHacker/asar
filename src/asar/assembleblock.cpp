@@ -2272,27 +2272,42 @@ void assembleblock(const char * block, bool isspecialline)
 			char * lengths=strqchr(par, ':');
 			*lengths=0;
 			lengths++;
-			if (strchr(lengths, '"')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			if(*lengths=='(') {
-				char* tmp = strqpchr(lengths, '-');
-				if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				start = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+			if(strqpstr(lengths, ".."))
+			{
+				// new style ranges
+				char* split = strqpstr(lengths, "..");
+				string start_str(lengths, split-lengths);
+				start = getnum(start_str);
 				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-				lengths = tmp;
-			} else {
-				start=(int)strtoul(lengths, &lengths, 16);
+				string end_str(split+2);
+				end = getnum(end_str);
+				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 			}
-			if (*lengths!='-') asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			lengths++;
-			if(*lengths=='(') {
-				char* tmp = strchr(lengths, '\0');
-				if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				end = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-				// no need to check end-of-string here
-			} else {
-				end=(int)strtoul(lengths, &lengths, 16);
-				if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			else
+			{
+				asar_throw_warning(0, warning_id_feature_deprecated, "old style incbin ranges", "use the :start..end syntax instead");
+				if (strchr(lengths, '"')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+				if(*lengths=='(') {
+					char* tmp = strqpchr(lengths, '-');
+					if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+					start = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+					if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+					lengths = tmp;
+				} else {
+					start=(int)strtoul(lengths, &lengths, 16);
+				}
+				if (*lengths!='-') asar_throw_error(0, error_type_block, error_id_broken_incbin);
+				lengths++;
+				if(*lengths=='(') {
+					char* tmp = strchr(lengths, '\0');
+					if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
+					end = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+					if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+					// no need to check end-of-string here
+				} else {
+					end=(int)strtoul(lengths, &lengths, 16);
+					if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+				}
 			}
 		}
 		string name;
