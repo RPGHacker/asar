@@ -2229,7 +2229,7 @@ void assembleblock(const char * block, bool isspecialline)
 				return;
 			}
 		}
-		asar_throw_warning(0, warning_id_feature_deprecated, "rep X : {command}", "Use while loops, unrolled loops, pseudo opcodes or other replacements");
+		asar_throw_warning(0, warning_id_feature_deprecated, "rep X : {command}", "Use while loops, unrolled loops, pseudo opcodes or for loops");
 		repeatnext=rep;
 	}
 #ifdef SANDBOX
