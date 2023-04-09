@@ -164,8 +164,8 @@ bool asblock_65816(char** word, int numwords)
 			if (numargs ==2)
 			{
 				write1(is("MVN")?(unsigned int)0x54:(unsigned int)0x44);
-				write1(getnum(param[0]));
-				write1(getnum(param[1]));
+				write1(pass==2?getnum(param[0]):0);
+				write1(pass==2?getnum(param[1]):0);
 				return true;
 			}
 		}
