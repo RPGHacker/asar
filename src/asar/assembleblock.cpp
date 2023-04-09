@@ -2082,28 +2082,17 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			char * lengths=strqchr(par, ':');
 			*lengths=0;
 			lengths++;
-			if (strchr(lengths, '"')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			if(*lengths=='(') {
-				char* tmp = strqpchr(lengths, '-');
-				if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				start = (int)getnum(string(lengths+1, tmp-1-lengths-1));
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-				lengths = tmp;
-			} else {
-				start=(int)strtoul(lengths, &lengths, 16);
-			}
-			if (*lengths!='-') asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			lengths++;
-			if(*lengths=='(') {
-				char* tmp = strchr(lengths, '\0');
-				if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				end = (int)getnum(string(lengths+1, tmp-1-lengths-1));
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-				// no need to check end-of-string here
-			} else {
-				end=(int)strtoul(lengths, &lengths, 16);
-				if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			}
+
+			char* split = strqpstr(lengths, "..");
+			if(!split) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			string start_str(lengths, split-lengths);
+			if(start_str == "") asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			start = getnum(start_str);
+			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			string end_str(split+2);
+			if(end_str == "") asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			end = getnum(end_str);
+			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		}
 		const char* current_file = get_current_file_name();
 		string name;

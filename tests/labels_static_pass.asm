@@ -49,7 +49,7 @@ endif
 IncbinStart = $008000
 IncbinEnd = $008002
 
-incbin "data/64kb.bin":(IncbinStart)-(IncbinEnd)
+incbin "data/64kb.bin":IncbinStart..IncbinEnd
 
 FunStuff = $BA
 'a' = FunStuff

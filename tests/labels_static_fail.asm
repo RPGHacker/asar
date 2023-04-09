@@ -44,8 +44,8 @@ if TestStruct.NewStruct[0].new == 3
 	; This should fail
 endif
 
-incbin "data/64kb.bin":(ANonStaticLabel)-(8002)
-incbin "data/64kb.bin":(8000)-(ANonStaticLabel+2)
+incbin "data/64kb.bin":ANonStaticLabel..$8002
+incbin "data/64kb.bin":$8000..ANonStaticLabel+2
 
 ANewLabel = ANonStaticLabel
 
