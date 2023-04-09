@@ -303,6 +303,8 @@ static asar_error_mapping asar_errors[] =
 
 	{ ERR(bad_single_line_for), "Single-line for loop not allowed here." },
 	{ ERR(broken_for_loop), "Broken for loop command: %s" },
+
+	{ ERR(missing_org), "Missing org or freespace command." },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_error
 // matches with the number of constants in asar_error_id. This is important, because

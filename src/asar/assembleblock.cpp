@@ -74,11 +74,12 @@ inline void verifysnespos()
 {
 	if (!snespos_valid)
 	{
-		asar_throw_warning(0, warning_id_missing_org);
+		asar_throw_error(0, error_type_block, error_id_missing_org);
 		snespos=0x008000;
 		realsnespos=0x008000;
 		startpos=0x008000;
 		realstartpos=0x008000;
+		snespos_valid = true;
 	}
 }
 
