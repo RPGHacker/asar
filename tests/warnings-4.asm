@@ -1,12 +1,13 @@
 ;`+
-;`01
-;`warnWmissing_org
+;`warnWmapper_already_set
+
+hirom
 
 warnings push
 
-warnings disable Wmissing_org
-warnings enable Wmissing_org
+warnings disable Wmapper_already_set
+warnings enable Wmapper_already_set
 
-db $01
+lorom
 
 warnings pull

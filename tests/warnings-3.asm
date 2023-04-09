@@ -1,8 +1,9 @@
 ;`+
 ;`errEpullwarnings_without_pushwarnings
 
-warnings disable Wmissing_org
+warnings disable Wmapper_already_set
 
-db $01
+lorom
+hirom
 
 warnings pull
