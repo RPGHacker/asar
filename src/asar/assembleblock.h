@@ -18,12 +18,14 @@ extern assocarr<snes_struct> structs;
 
 struct snes_label {
 	unsigned int pos;
+	int freespace_id;
 	bool is_static;
 
 	snes_label()
 	{
 		pos = 0;
 		is_static = false;
+		freespace_id = 0;
 	}
 };
 
@@ -92,6 +94,7 @@ extern int numif;
 extern int numtrue;
 
 extern int freespaceextra;
+extern int freespaceid;
 
 extern assocarr<snes_label> labels;
 

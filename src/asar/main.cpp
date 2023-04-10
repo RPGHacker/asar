@@ -356,10 +356,10 @@ virtual_file_error asar_get_last_io_error()
 }
 
 static bool freespaced;
-static int getlenforlabel(int insnespos, int thislabel, bool exists)
+static int getlenforlabel(snes_label thislabel, bool exists)
 {
-	unsigned int bank = thislabel>>16;
-	unsigned int word = thislabel&0xFFFF;
+	unsigned int bank = thislabel.pos>>16;
+	unsigned int word = thislabel.pos&0xFFFF;
 	unsigned int relaxed_bank = optimizeforbank < 0 ? 0 : optimizeforbank;
 	if (!exists)
 	{
@@ -389,16 +389,16 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 	}
 	else if (optimizeforbank>=0)
 	{
-		if ((unsigned int)thislabel&0xFF000000) return 3;
+		if (thislabel.freespace_id > 0) return 3;
 		else if (bank==(unsigned int)optimizeforbank) return 2;
 		else return 3;
 	}
-	else if ((unsigned int)(thislabel|insnespos)&0xFF000000)
+	else if (thislabel.freespace_id > 0 || freespaceid > 0)
 	{
-		if ((unsigned int)(thislabel^insnespos)&0xFF000000) return 3;
+		if (thislabel.freespace_id != freespaceid) return 3;
 		else return 2;
 	}
-	else if ((thislabel^insnespos)&0xFF0000){ return 3; }
+	else if (bank != snespos >> 16){ return 3; }
 	else { return 2;}
 }
 
@@ -434,7 +434,7 @@ int getlen(const char * orgstr, bool optimizebankextraction)
 		// RPG Hacker: Umm... what kind of magic constant is this?
 		label_data.pos = 31415926;
 		bool found = labelval(posnegname, &label_data);
-		return getlenforlabel(snespos, (int)label_data.pos, found);
+		return getlenforlabel(label_data, found);
 	}
 notposneglabel:
 	int len=0;
@@ -476,7 +476,7 @@ notposneglabel:
 		{
 			snes_label thislabel;
 			bool exists=labelval(&str, &thislabel);
-			thislen=getlenforlabel(snespos, (int)thislabel.pos, exists);
+			thislen=getlenforlabel(thislabel, exists);
 		}
 		else str++;
 		if (optimizebankextraction && maybebankextraction &&

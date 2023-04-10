@@ -286,6 +286,24 @@ autoarray<string> namespace_list;
 
 autoarray<string> includeonce;
 
+// data necessary for one freespace block
+struct freespace_data {
+	int pos;
+	int len;
+	bool leaked;
+	int orgpos;
+	int orglen;
+	bool is_static;
+	unsigned char cleanbyte;
+};
+static autoarray<freespace_data> freespaces;
+
+static int freespaceidnext;
+int freespaceid;
+static int freespacestart;
+int freespaceextra;
+
+
 bool confirmname(const char * name)
 {
 	if (!name[0]) return false;
@@ -489,7 +507,7 @@ bool labelval(string name, snes_label * rval, bool define)
 	return labelvalcore(&str, rval, define, false);
 }
 
-static void setlabel(string name, int loc=-1, bool is_static=false)
+static void setlabel(string name, int loc=-1, bool is_static=false, int freespace_id = -1)
 {
 	if (loc==-1)
 	{
@@ -500,6 +518,7 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 	snes_label label_data;
 	label_data.pos = (unsigned int)loc;
 	label_data.is_static = is_static;
+	label_data.freespace_id = freespace_id == -1 ? freespaceid : freespace_id;
 
 	unsigned int labelpos;
 	if (pass==0)
@@ -530,24 +549,8 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 	}
 }
 
-
 table thetable;
 static autoarray<table> tablestack;
-
-static int freespacepos[256];
-static int freespacelen[256];
-static int freespaceidnext;
-static int freespaceid;
-static int freespacestart;
-int freespaceextra;
-
-static bool freespaceleak[256];
-static string freespacefile[256];
-
-static int freespaceorgpos[256];
-static int freespaceorglen[256];
-static bool freespacestatic[256];
-static unsigned char freespacebyte[256];
 
 static void cleartable()
 {
@@ -591,9 +594,16 @@ static bool nested_namespaces = false;
 
 static int getfreespaceid()
 {
-	static const int max_num_freespaces = 125;
-	if (freespaceidnext > max_num_freespaces) asar_throw_error(pass, error_type_fatal, error_id_freespace_limit_reached, max_num_freespaces);
-	return freespaceidnext++;
+	/*static const int max_num_freespaces = 125;
+	if (freespaceidnext > max_num_freespaces) asar_throw_error(pass, error_type_fatal, error_id_freespace_limit_reached, max_num_freespaces);*/
+	int newid = freespaceidnext++;
+	if(newid >= freespaces.count) {
+		freespaces[newid].leaked = true;
+		freespaces[newid].orgpos = -2;
+		freespaces[newid].orglen = -1;
+		freespaces[newid].cleanbyte = 0x00;
+	}
+	return newid;
 }
 
 void checkbankcross()
@@ -613,13 +623,14 @@ void checkbankcross()
 
 static void freespaceend()
 {
-	if ((snespos&0x7F000000) && ((unsigned int)snespos&0x80000000)==0)
+	if (freespaceid > 0)
 	{
-		freespacelen[freespaceid]=snespos-freespacestart+freespaceextra;
+		freespaces[freespaceid].len = snespos-freespacestart+freespaceextra;
 		snespos=(int)0xFFFFFFFF;
 		snespos_valid = false;
 	}
 	freespaceextra=0;
+	freespaceid = 0;
 }
 
 int numopcodes;
@@ -633,13 +644,7 @@ void initstuff()
 {
 	if (pass==0)
 	{
-		for (int i=0;i<256;i++)
-		{
-			freespaceleak[i]=true;
-			freespaceorgpos[i]=-2;
-			freespaceorglen[i]=-1;
-			freespacebyte[i] = 0x00;
-		}
+		freespaces.reset();
 		movinglabelspossible = false;
 	}
 	arch=arch_65816;
@@ -675,7 +680,7 @@ void initstuff()
 	realstartpos= (int)0xFFFFFFFF;
 	//fastrom=false;
 	freespaceidnext=1;
-	freespaceid=1;
+	freespaceid=0;
 	freespaceextra=0;
 	numopcodes=0;
 	incsrcdepth = 0;
@@ -1784,32 +1789,33 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (mapper == norom) asar_throw_error(0, error_type_block, error_id_no_freespace_norom);
 		freespaceend();
 		freespaceid=getfreespaceid();
-		freespacebyte[freespaceid] = fsbyte;
-		if (pass==0) snespos=(freespaceid<<24)|0x8000;
+		freespace_data& thisfs = freespaces[freespaceid];
+		thisfs.cleanbyte = fsbyte;
+		if (pass==0) snespos=0x8000;
 		if (pass==1)
 		{
-			if (fixedpos && freespaceorgpos[freespaceid]<0)
+			if (fixedpos && thisfs.orgpos<0)
 			{
-				freespacepos[freespaceid]=0x008000;
-				freespaceleak[freespaceid]=false;//mute some other errors
+				thisfs.pos = 0x008000;
+				thisfs.leaked = false;//mute some other errors
 				asar_throw_error(1, error_type_block, error_id_static_freespace_autoclean);
 			}
-			if (fixedpos && freespaceorgpos[freespaceid]) freespacepos[freespaceid]=snespos=(freespaceid<<24)|freespaceorgpos[freespaceid];
-			else freespacepos[freespaceid]=snespos=(freespaceid<<24)|getsnesfreespace(freespacelen[freespaceid], (useram != 0), true, true, align, freespacebyte[freespaceid]);
+			if (fixedpos && thisfs.orgpos) thisfs.pos = snespos = thisfs.orgpos;
+			else thisfs.pos = snespos = getsnesfreespace(thisfs.len, (useram != 0), true, true, align, thisfs.cleanbyte);
 		}
 		if (pass==2)
 		{
-			if (fixedpos && freespaceorgpos[freespaceid]==-1) return;//to kill some errors
-			snespos=(freespaceid<<24)|freespacepos[freespaceid];
-			resizerats(snespos&0xFFFFFF, freespacelen[freespaceid]);
-			if (freespaceleak[freespaceid] && leakwarn) asar_throw_warning(2, warning_id_freespace_leaked);
-			if (fixedpos && freespaceorgpos[freespaceid]>0 && freespacelen[freespaceid]>freespaceorglen[freespaceid])
+			if (fixedpos && thisfs.orgpos == -1) return;//to kill some errors
+			snespos=thisfs.pos;
+			resizerats(snespos&0xFFFFFF, thisfs.len);
+			if (thisfs.leaked && leakwarn) asar_throw_warning(2, warning_id_freespace_leaked);
+			if (fixedpos && thisfs.orgpos>0 && thisfs.len > thisfs.orglen)
 				asar_throw_error(2, error_type_block, error_id_static_freespace_growing);
-			freespaceuse+=8+freespacelen[freespaceid];
+			freespaceuse += 8 + thisfs.len;
 		}
-		freespacestatic[freespaceid]=fixedpos;
-		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(freespacelen[freespaceid]).data());
-		if (snespos < 0) asar_throw_error(pass, error_type_fatal, error_id_no_freespace, dec(freespacelen[freespaceid]).data());
+		thisfs.is_static = fixedpos;
+		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(thisfs.len).data());
+		if (snespos < 0) asar_throw_error(pass, error_type_fatal, error_id_no_freespace, dec(thisfs.len).data());
 		bytes+=8;
 		freespacestart=snespos;
 		startpos=snespos;
@@ -1838,10 +1844,10 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			//int num=getnum(pars[i]);
 			const char * labeltest=pars[i];
 			string testlabel = labeltest;
-			int labelnum=(int)labelval(&labeltest).pos;
+			snes_label lblval = labelval(&labeltest);
 			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
-			write3((unsigned int)labelnum);
-			if (pass==1) freespaceleak[labelnum >>24]=false;
+			write3(lblval.pos);
+			if (pass==1) freespaces[lblval.freespace_id].leaked = false;
 		}
 		write1('S');
 		write1('T');
@@ -1855,26 +1861,27 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		if (numwords==3)
 		{
-			if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
+			if(freespaceid > 0)
+				asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
 			const char * labeltest = word[2];
 			string testlabel = labeltest;
-			int num=(int)labelval(&labeltest).pos;
+			snes_label lblval = labelval(&labeltest);
 			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
-			unsigned char targetid=(unsigned char)(num>>24);
-			if (pass==1) freespaceleak[targetid]=false;
-			num&=0xFFFFFF;
+			int targetid= lblval.freespace_id;
+			if (pass==1) freespaces[targetid].leaked = false;
+			int num = lblval.pos & 0xFFFFFF;
 			if (strlen(par)>3 && !stricmp(par+3, ".l")) par[3]=0;
 			if (!stricmp(par, "JSL") || !stricmp(par, "JML"))
 			{
 				int orgpos=read3(snespos+1);
-				int ratsloc=freespaceorgpos[targetid];
+				int ratsloc=freespaces[targetid].orgpos;
 				int firstbyte = ((!stricmp(par, "JSL")) ? 0x22 : 0x5C);
 				int pcpos=snestopc(snespos);
 				if (/*pass==1 && */pcpos>=0 && pcpos<romlen_r && romdata_r[pcpos]==firstbyte)
 				{
 					ratsloc=ratsstart(orgpos)+8;
-					freespaceorglen[targetid]=read2(ratsloc-4)+1;
-					if (!freespacestatic[targetid] && pass==1) removerats(orgpos, freespacebyte[targetid]);
+					freespaces[targetid].orglen=read2(ratsloc-4)+1;
+					if (!freespaces[targetid].is_static && pass==1) removerats(orgpos, freespaces[targetid].cleanbyte);
 				}
 				else if (ratsloc<0) ratsloc=0;
 				write1((unsigned int)firstbyte);
@@ -1891,27 +1898,28 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 					addressToLineMapping.includeMapping(get_current_file_name(), get_current_line() + 1, addrToLinePos);
 				}
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
-				freespaceorgpos[targetid]=ratsloc;
+				freespaces[targetid].orgpos = ratsloc;
 			}
 			else if (!stricmp(par, "dl"))
 			{
 				int orgpos=read3(snespos);
-				int ratsloc=freespaceorgpos[targetid];
+				int ratsloc=freespaces[targetid].orgpos;
 				int start=ratsstart(num);
 				if (pass==1 && num>=0)
 				{
 					ratsloc=ratsstart(orgpos)+8;
-					if (!freespacestatic[targetid]) removerats(orgpos, freespacebyte[targetid]);
+					if (!freespaces[targetid].is_static) removerats(orgpos, freespaces[targetid].cleanbyte);
 				}
 				else if (!ratsloc) ratsloc=0;
 				if ((start==num || start<0) && pass==2)
 					asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
 				write3((unsigned int)num);
-				freespaceorgpos[targetid]=ratsloc;
-				freespaceorglen[targetid]=read2(ratsloc-4)+1;
+				freespaces[targetid].orgpos = ratsloc;
+				freespaces[targetid].orglen = read2(ratsloc-4)+1;
 			}
 			else asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 		}
+		// weird gotcha: we don't know the freespace id here, so we don't know what clean_byte to use
 		else if (pass==0) removerats((int)getnum(word[1]), 0x00);
 	}
 	else if (is0("pushpc"))
@@ -2049,7 +2057,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (is1("warnpc"))
 	{
 		unsigned int maxpos=getnum(par);
-		if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
+		if (freespaceid > 0) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
 		if ((unsigned int)maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);
 		if ((unsigned int)snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex((unsigned int)snespos).data(), hex((unsigned int)maxpos, 6).data());
 	}
@@ -2130,8 +2138,9 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 					pos=getpcfreespace(end-start, false, true, false);
 					if (pos < 0) asar_throw_error(0, error_type_block, error_id_no_freespace, dec(end - start).data());
 					int foundfreespaceid=getfreespaceid();
-					freespacepos[foundfreespaceid]=pctosnes(pos)|(/*fastrom?0x800000:*/0x000000)|(foundfreespaceid <<24);
-					setlabel(word[3], freespacepos[foundfreespaceid]);
+					freespaces[foundfreespaceid].pos = pctosnes(pos);
+					setlabel(word[3], freespaces[foundfreespaceid].pos, false, foundfreespaceid);
+					// is this necessary?
 					writeromdata_bytes(pos, 0xFF, end-start);
 				}
 				if (pass==1)
@@ -2141,8 +2150,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				if (pass==2)
 				{
 					int foundfreespaceid =getfreespaceid();
-					if (freespaceleak[foundfreespaceid]) asar_throw_warning(2, warning_id_freespace_leaked);
-					writeromdata(snestopc(freespacepos[foundfreespaceid]&0xFFFFFF), data+start, end-start);
+					if (freespaces[foundfreespaceid].leaked) asar_throw_warning(2, warning_id_freespace_leaked);
+					writeromdata(snestopc(freespaces[foundfreespaceid].pos&0xFFFFFF), data+start, end-start);
 					freespaceuse+=8+end-start;
 				}
 			}
@@ -2247,7 +2256,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("pad"))
 	{
-		if ((unsigned int)realsnespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
+		if (freespaceid > 0) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
 		int num=(int)getnum(par);
 		if ((unsigned int)num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)num, 6).data());
 		if (num>realsnespos)
