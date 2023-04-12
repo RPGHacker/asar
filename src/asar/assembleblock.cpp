@@ -2337,6 +2337,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (end < start || end > len || end < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).data(), name.data());
 		if (numwords==4)
 		{
+			asar_throw_warning(0, warning_id_feature_deprecated, "incbin with target location", "put an org before the incbin");
 			if (!confirmname(word[3]))
 			{
 				int pos=(int)getnum(word[3]);
