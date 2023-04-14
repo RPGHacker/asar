@@ -60,7 +60,7 @@ virtual_file_error asar_get_last_io_error();
 extern volatile int recursioncount;
 extern int pass;
 
-size_t check_stack_left();
+bool have_enough_stack_left();
 
 class recurseblock {
 public:
@@ -70,7 +70,7 @@ public:
 #if !defined(_WIN32) && defined(NO_USE_THREADS)
 		if(recursioncount > 500)
 #else
-		if(check_stack_left() < 32768 || recursioncount > 5000)
+		if(!have_enough_stack_left() || recursioncount > 5000)
 #endif
 			asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
 	}

@@ -84,10 +84,19 @@ bool run_as_thread(functor&& callback) {
 	return wrapper.result;
 }
 
-size_t check_stack_left() {
-	ULONG_PTR stack_low, stack_high;
-	GetCurrentThreadStackLimits(&stack_low, &stack_high);
-	size_t stack_left = (char*)&stack_low - (char*)stack_low;
-	return stack_left;
+// shamelessly stolen from raymond chen's blog
+// https://devblogs.microsoft.com/oldnewthing/20200609-00/?p=103847
+__declspec(noinline)
+bool have_enough_stack_left() {
+	__try {
+		_alloca(32768);
+		return true;
+	} __except (
+		GetExceptionCode() == EXCEPTION_STACK_OVERFLOW
+			? EXCEPTION_EXECUTE_HANDLER
+			: EXCEPTION_CONTINUE_SEARCH) {
+		_resetstkoflw();
+		return false;
+	}
 }
 #endif
