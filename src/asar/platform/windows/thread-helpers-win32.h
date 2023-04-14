@@ -3,7 +3,6 @@
 #if defined(_WIN32)
 
 #include <windows.h>
-#include <processthreadsapi.h>
 
 struct function_pointer_wrapper /*have this struct at global level*/
 {
@@ -87,13 +86,8 @@ bool run_as_thread(functor&& callback) {
 bool have_enough_stack_left() {
 	MEMORY_BASIC_INFORMATION mbi;
 	char stackvar;
-	if (VirtualQuery(&stackvar, &mbi, sizeof(mbi)))
-	{
-		char* stack_bottom = (char*)mbi.AllocationBase;
-		long long left = &stackvar - stack_bottom;
-		return left >= 32768;
-		
-	} else return true; // idk if we should assume false here?
-
+	VirtualQuery(&stackvar, &mbi, sizeof(mbi));
+	char* stack_bottom = (char*)mbi.AllocationBase;
+	return (&stackvar - stack_bottom) >= 32768;
 }
 #endif
