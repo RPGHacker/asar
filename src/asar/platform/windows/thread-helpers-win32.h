@@ -84,19 +84,16 @@ bool run_as_thread(functor&& callback) {
 	return wrapper.result;
 }
 
-// shamelessly stolen from raymond chen's blog
-// https://devblogs.microsoft.com/oldnewthing/20200609-00/?p=103847
-__declspec(noinline)
 bool have_enough_stack_left() {
-	__try {
-		_alloca(32768);
-		return true;
-	} __except (
-		GetExceptionCode() == EXCEPTION_STACK_OVERFLOW
-			? EXCEPTION_EXECUTE_HANDLER
-			: EXCEPTION_CONTINUE_SEARCH) {
-		_resetstkoflw();
-		return false;
-	}
+	MEMORY_BASIC_INFORMATION mbi;
+	char stackvar;
+	if (VirtualQuery(&stackvar, &mbi, sizeof(mbi)))
+	{
+		char* stack_bottom = (char*)mbi.AllocationBase;
+		long long left = &stackvar - stack_bottom;
+		return left >= 32768;
+		
+	} else return true; // idk if we should assume false here?
+
 }
 #endif
