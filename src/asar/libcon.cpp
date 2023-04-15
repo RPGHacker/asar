@@ -59,7 +59,7 @@ void u8_fgets(char* buffer, int buffer_size, FILE* handle)
 	// this was originally using fgetws, but it was broken on mingw for some
 	// weird reason. (or, more specifically, msvcrt.dll is broken. msvc itself
 	// doesn't use that one.)
-	 BOOL res = ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), w_buf, num_chars, &num_chars, nullptr);
+	BOOL res = ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), w_buf, num_chars-1, &num_chars, nullptr);
 	if(!res) { free(w_buf); return; }
 	w_buf[num_chars] = 0;
 	//(void)fgetws(w_buf, num_chars, stdin);
