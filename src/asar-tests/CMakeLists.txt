@@ -108,6 +108,8 @@ if(ASAR_GEN_DLL_TEST)
 
 	set_asar_test_shared_properties(asar-dll-test)
 
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
-	set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
+	if(ASAR_USE_SANITIZER)
+		target_compile_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
+		target_link_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
+	endif()
 endif()

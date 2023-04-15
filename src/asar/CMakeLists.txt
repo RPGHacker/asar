@@ -12,12 +12,6 @@ if (MSVC)
 	message(STATUS "In MSVC you can override MSVC_LIB_TYPE, valid values are D for dynamic and T for static")
 endif()
 
-set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
-set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address -fsanitize=undefined")
-
-#Maybe make these conditional.  Not sure.
-set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fprofile-arcs -ftest-coverage")
-set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -lgcov --coverage -fprofile-arcs")
 
 set (CMAKE_CXX_STANDARD 17)
 
@@ -42,9 +36,9 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 		endif()
 	endif()
 
-	if (enable_sanitizer)
-		target_compile_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
-		target_link_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
+	if (${enable_sanitizer} AND ${ASAR_USE_SANITIZER})
+		target_compile_options(${target} PRIVATE -fsanitize=address -fsanitize=undefined)
+		target_link_options(${target} PRIVATE -fsanitize=address -fsanitize=undefined)
 	endif()
 
 	target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
