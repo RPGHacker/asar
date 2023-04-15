@@ -143,7 +143,8 @@ std::vector<char> read_file_into_buffer(const char *filename)
 
 		out.resize((size_t)f_size.QuadPart);
 
-		ReadFile(handle, out.data(), out.size(), NULL, NULL);
+		DWORD amount;
+		ReadFile(handle, out.data(), out.size(), &amount, NULL);
 
 		CloseHandle(handle);
 	}
@@ -159,7 +160,8 @@ void write_buffer_to_file(const char *filename, const void* data, size_t data_si
 
 	if (handle != INVALID_HANDLE_VALUE)
 	{
-		WriteFile(handle, data, data_size, NULL, NULL);
+		DWORD amount;
+		WriteFile(handle, data, data_size, &amount, NULL);
 
 		CloseHandle(handle);
 	}
