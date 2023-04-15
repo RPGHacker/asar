@@ -3,6 +3,11 @@
 #include "unicode.h"
 #include <csignal>
 
+#ifdef windows
+// for readconsole
+#include <windows.h>
+#endif
+
 static const char * progname;
 static const char ** args;
 static int argsleft;
@@ -49,14 +54,22 @@ void u8_fgets(char* buffer, int buffer_size, FILE* handle)
 	// RPG Hacker: Using buffer_size * 2 here to account for potential surrogate pairs.
 	// The idea is that our buffer here should be able to at least hold the same amount
 	// of characters as the old ANSI version would have supported.
-	int num_chars = buffer_size * 2;
+	DWORD num_chars = buffer_size * 2;
 	wchar_t* w_buf = (wchar_t*)malloc(num_chars * sizeof(wchar_t));
-	(void)fgetws(w_buf, num_chars, stdin);
+	// this was originally using fgetws, but it was broken on mingw for some
+	// weird reason. (or, more specifically, msvcrt.dll is broken. msvc itself
+	// doesn't use that one.)
+	 BOOL res = ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), w_buf, num_chars, &num_chars, nullptr);
+	if(!res) { free(w_buf); return; }
+	w_buf[num_chars] = 0;
+	//(void)fgetws(w_buf, num_chars, stdin);
 	string u8_str;
 	if (utf16_to_utf8(&u8_str, w_buf))
 	{
 		strncpy(buffer, u8_str, buffer_size);
 		buffer[buffer_size-1] = '\0';
+		// no point doing more than 1 since the next function cuts off input at the first newline anyways
+		if(strchr(buffer, '\r')) *(strchr(buffer, '\r')) = '\n';
 	}
 	free(w_buf);
 #else
