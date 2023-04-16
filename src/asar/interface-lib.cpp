@@ -427,6 +427,7 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 
 		asar_patch_main(paramscurrent.patchloc);
 
+		closecachedfiles(); // this needs the vfs so do it before destroying it
 		new_filesystem.destroy();
 		filesystem = nullptr;
 

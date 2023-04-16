@@ -418,6 +418,7 @@ int main(int argc, char * argv[])
 			finishpass();
 		}
 
+		closecachedfiles(); // this needs the vfs so do it before destroying it
 		new_filesystem.destroy();
 		filesystem = nullptr;
 
