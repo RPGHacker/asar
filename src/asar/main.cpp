@@ -980,8 +980,5 @@ void reseteverything()
 	default_math_round_off = false;
 	suppress_all_warnings = false;
 	
-	#ifndef ASAR_SHARED
-		free(const_cast<unsigned char*>(romdata_r));
-	#endif
 #undef free
 }

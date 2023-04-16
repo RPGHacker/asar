@@ -390,9 +390,6 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		romdata_r=(unsigned char*)malloc((size_t)romlen);
-		romlen_r=romlen;
-		memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
 
 		string stdincludespath = STR dir(argv[0]) + "stdincludes.txt";
 		parse_std_includes(stdincludespath, includepaths);
