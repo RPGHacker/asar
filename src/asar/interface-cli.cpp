@@ -291,7 +291,7 @@ int main(int argc, const char * argv[])
 			"                   Enable a specific warning.\n\n"
 			" -wno<name>        \n"
 			"                   Disable a specific warning.\n\n"
-			" --full-call-stack\n"
+			" --full-error-stack\n"
 			"                   Enables detailed call stack information for warnings and errors.\n\n"
 			);
 		ignoretitleerrors=false;
@@ -407,7 +407,7 @@ int main(int argc, const char * argv[])
 				}
 
 			}
-			else if (par=="--full-call-stack") simple_callstacks=false;
+			else if (par=="--full-error-stack") simple_callstacks=false;
 			else libcon_badusage();
 
 			if (postprocess_param == cmdlparam_addincludepath)

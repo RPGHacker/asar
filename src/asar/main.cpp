@@ -172,7 +172,7 @@ void push_stack_line(autoarray<printable_callstack_entry>* out, const char* curr
 	new_entry.fullpath = current_file;
 	new_entry.prettypath = get_pretty_filename(current_file);
 	new_entry.lineno = current_line_no;
-	new_entry.details = strip_whitespace(generate_call_details_string(current_block, current_call, indentation, add_lines).raw());
+	new_entry.details = generate_call_details_string(current_block, current_call, indentation, add_lines).raw();
 	out->append(new_entry);
 }
 
