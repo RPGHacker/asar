@@ -5,6 +5,7 @@
 ;`01 02 03 04 10 01 02 03 04 11 12
 ;`20 01 02 20 20 20 03 04 20 10 01 02 03 04 11 12
 ;P>The values of !a and !b are 10 and 20.
+;P>The values of !a and !b are 10 and 20.
 ;;`01 02 03 04 05 06 20 30 40
 macro do_stuff_1(stuff_1, stuff_2)
 	<stuff_1>
@@ -40,6 +41,12 @@ org $008000
 !b = 20
 
 print "The values of \!a and \!b are !a and !b."
+
+macro do_print()
+	print "The values of \!a and \!b are !a and !b."
+endmacro
+
+%do_print()
 
 ; RPG Hacker: IMO, we should make this work for Asar 2.0,
 ; but for now, I'll leave this commented out.
