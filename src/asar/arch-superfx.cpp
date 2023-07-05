@@ -17,11 +17,6 @@ void asend_superfx()
 {
 }
 
-static int64_t getnum_ck(const char* math)
-{
-	return pass == 2 ? getnum(math) : 0;
-}
-
 static void range(int min, int mid, int max)
 {
 	if (mid<min || mid>max) asar_throw_error(0, error_type_block, error_id_superfx_invalid_register, min, max);
