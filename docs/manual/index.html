@@ -101,6 +101,7 @@
 					<li><a href="#macro-labels">Macro Labels</a></li>
 					<li><a href="#structs">Structs</a></li>
 					<li><a href="#namespaces">Namespaces</a></li>
+					<li><a href="#pushns">pushns/pullns</a></li>
 					<li><a href="#global-labels">Global labels</a></li>
 				</ul>
 			</li>
@@ -129,6 +130,7 @@
 				<ul>
 					<li><a href="#if-else">if/elseif/else/endif</a></li>
 					<li><a href="#while">while</a></li>
+					<li><a href="#for">for</a></li>
 				</ul>
 			</li>
 			<li>
@@ -2193,6 +2195,9 @@ dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main
 dl TheFirst_Main                ; TheFirst_Main
 dl TheSecond_Main               ; TheSecond_Main
 dl TheThird_Main                ; TheThird_Main</code></pre>
+		<h4 id="pushns">pushns/pullns</h4>
+		<code>pushns</code> saves the current namespace. <code>pullns</code> restores the last-pushed value of the namespace.
+
 		<h4 id="global-labels">Global labels</h4>
 		While in a namespace, you can use the keyword <code class="65c816_asar">global</code> to define labels outside all namespaces. The syntax is <code class="65c816_asar">global [#]{identifier}:</code>. For example:
 		<pre><code class="65c816_asar">
@@ -2711,6 +2716,10 @@ endif</code></pre></td>
 	warn "This patch was only tested in Asar and might not work correctly in your assembler."
 endif</code></pre></td>
 			</tr>
+			<tr>
+				<td><code class="65c816_asar">realbase()</code></td>
+				<td>Returns the current address in the ROM being written to. This is not the same as the value of a nearby label when the <code>base</code> command is active: it returns the actual address the code will end up at.</td>
+			</tr>
 		</table><br/>
 		While user-defined functions can't use string parameters themselves, passthrough of string parameters to built-in functions is supported.
 		<pre><code class="65c816_asar">function readfilenormalized(filename, pos) = readfile4(filename, pos)/2147483648.0
@@ -2817,6 +2826,17 @@ while !counter &lt; $10
 	!counter #= !counter+1
 endwhile</code></pre>
 		Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the compiler, as Asar won't attempt to detect those.<br/><br/>
+
+		<h4 id="for">for</h4>
+		For loops repeat the contents a specified number of times. In the for loop body, you have access to a loop counter as a define. The range is specified as start-inclusive and end-exclusive.
+
+		For example:
+		<pre><code class="65c816_asar">for i = 1..5
+    db !i
+	db 2*!i
+endfor</code></pre>
+		This will write the bytes 01 02 02 04 03 06 04 08.
+		
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="binary-data"><h3>Binary Data</h3>
@@ -2930,7 +2950,7 @@ padbyte $FF
 pad $008004</code></pre>
 		It's also possible to write 16-bit, 24-bit or 32-bit values with the pad command by using <code>padword</code>, <code>padlong</code> or <code>paddword</code> instead of padbyte. Note that the <code>snes_address</code> parameter of pad still specifies the end offset of the write in those cases. Values might get truncated as needed to exactly reach the specified end offset.
 		<h4 id="incbin">incbin</h4>
-		<pre><code class="65c816_asar">incbin {filename}[:range_start-range_end][ -> label_identifier_or_sness_address]</code></pre>
+		<pre><code class="65c816_asar">incbin {filename}[:range_start..range_end][ -> label_identifier_or_sness_address]</code></pre>
 		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are hexadecimal number literals (without a prefix) which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file). If you surround <code>range_start</code> or <code>range_end</code> in parentheses, Asar will interpret it as math, not a hex literal.
 		<pre><code class="65c816_asar">; datafile.bin contains the following bytes:
 ; $00 $01 $02 $03 $04 $05 $06 $07 $08 $09 $0A $0B $0C $0D $0E $0F
@@ -3258,8 +3278,8 @@ org $009053
 org $009068
 	nop #3</code></pre>
 		<h4 id="check-bankcross">check bankcross</h4>
-		<pre><code class="65c816_asar">check bankcross {full/half/off}</code></pre>
-		The <code class="65c816_asar">check bankcross</code> command enables or disables throwing errors when a bank border is crossed while assembling a file. The default is <code class="65c816_asar">full</code>, which will throw an error after crossing full bank borders only. A value of <code class="65c816_asar">half</code> will throw an error at crossing half banks (aka multiples of 0x8000). <code class="65c816_asar">off</code>code> will disable checks entirely. Use this setting with caution as some features may not behave correctly with bank border checking disabled, and some places may check for bank borders, anyways.
+		<pre><code class="65c816_asar">check bankcross {off/half/full}</code></pre>
+		The <code class="65c816_asar">check bankcross</code> command enables (<code class="65c816_asar">full</code> or <code class="65c816_asar">half</code>) or disables (<code class="65c816_asar">off</code>) throwing errors when a bank border is crossed while assembling a file. The default is <code class="65c816_asar">full</code>, which checks whether the code crosses from pc $FFFF to $0000 in the next bank, and throws an error if that happens. With <code class="65c816_asar">half</code>, Asar will additionally check crossings from $7FFF to $8000. Use <code>off</code> with caution as some features may not behave correctly with bank border checking disabled and some places may still check for bank borders, anyways.
 		<pre><code class="65c816_asar">check bankcross off
 
 org $80FFFF

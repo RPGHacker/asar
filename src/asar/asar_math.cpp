@@ -168,7 +168,6 @@ string get_string_argument()
 		while (*str==' ') str++;	//eat space
 		return tempname;
 	}//todo make this error a better one later
-
 	asar_throw_error(2, error_type_block, error_id_string_literal_not_terminated);
 	return ""; //never actually called, but I don't feel like figuring out __attribute__ ((noreturn)) on MSVC
 }
@@ -967,7 +966,6 @@ notposneglabel:
 		oper("<", 1, left<right);
 		oper("==", 1, left==right);
 		oper("!=", 1, left!=right);
-
 		asar_throw_error(2, error_type_block, error_id_unknown_operator);
 #undef oper
 	}

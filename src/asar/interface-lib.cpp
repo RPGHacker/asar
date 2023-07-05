@@ -218,7 +218,6 @@ static void resetdllstuff()
 		free((void*)ldata[i].name);
 	ldata.reset();
 	labelsinldata=0;
-
 #undef free_and_null
 
 	romCrc = 0;

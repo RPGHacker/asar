@@ -419,6 +419,11 @@ bool openrom(const char * filename, bool confirm)
 		openromerror = header ? error_id_open_rom_not_smw_extension : error_id_open_rom_not_smw_header;
 		return false;
 	}
+
+	romdata_r=(unsigned char*)malloc((size_t)romlen);
+	romlen_r=romlen;
+	memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
+
 	return true;
 }
 
@@ -447,6 +452,7 @@ uint32_t closerom(bool save)
 	if (romdata) free(const_cast<unsigned char*>(romdata));
 	thisfile= InvalidFileHandle;
 	romdata= nullptr;
+	romdata_r = nullptr;
 	romlen=0;
 	return romCrc;
 }

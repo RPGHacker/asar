@@ -783,6 +783,7 @@ int numtrue=0;//if 1 -> increase both
 int numif = 0;  //if 0 or inside if 0 -> increase only numif
 
 autoarray<whiletracker> whilestatus;
+int single_line_for_tracker;
 
 
 static void push_pc()
@@ -941,7 +942,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (is("for") && whilestatus.count > numif && whilestatus[numif].is_for
 				&& whilestatus[numif].for_cur < whilestatus[numif].for_end)
 			is_for_cont = true;
-
 		whiletracker& addedwstatus = is_for_cont ? whilestatus[numif] : (whilestatus[numif] = wstatus);
 		if (is("assert"))
 		{
@@ -2120,6 +2120,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (end < start || end > len || end < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).data(), name.data());
 		if (numwords==4)
 		{
+			asar_throw_warning(0, warning_id_feature_deprecated, "incbin with target location", "put an org before the incbin");
 			if (!confirmname(word[3]))
 			{
 				int pos=(int)getnum(word[3]);

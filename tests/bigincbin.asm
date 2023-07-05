@@ -15,6 +15,7 @@
 ;`90000 56 78
 ;`97FFE CD EF
 ;`FFFFF 00
+;`warnWfeature_deprecated
 
 org $00F606
 autoclean JML Mymain
