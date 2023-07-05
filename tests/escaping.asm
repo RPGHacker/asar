@@ -5,6 +5,7 @@
 ;`01 02 03 04 10 01 02 03 04 11 12
 ;`20 01 02 20 20 20 03 04 20 10 01 02 03 04 11 12
 ;P>The values of !a and !b are 10 and 20.
+;P>The values of !a and !b are 10 and 20.
 macro do_stuff_1(stuff_1, stuff_2)
 	<stuff_1>
 	<stuff_2>
@@ -37,3 +38,9 @@ org $008000
 !b = 20
 
 print "The values of \!a and \!b are !a and !b."
+
+macro do_print()
+	print "The values of \!a and \!b are !a and !b."
+endmacro
+
+%do_print()
