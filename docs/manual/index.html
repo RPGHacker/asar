@@ -3,15 +3,18 @@
 	<head>
 		<title>Asar User Manual</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<link rel="stylesheet" href="../shared/highlight_js/styles/default.css">
-		<script src="../shared/highlight_js/highlight.pack.js"></script>
+		<link rel="stylesheet" href="../shared/highlight_js_asar/styles/default.css"/>
+		<script src="../shared/highlight_js/highlight.min.js"></script>
+		<script src="../shared/highlight_js_asar/highlight_js_asar.js"></script>
 		<script>
 				hljs.configure(
 					{
 						tabReplace: '    ',
 					}
 				);
-				hljs.initHighlightingOnLoad();
+				hljs.highlightAll();
+				
+				hljsAsar.init();
 				
 				function toggle_visibility(id)
 				{
@@ -508,7 +511,9 @@ LSR $0000
 LSR $0000,x
 LSR A
 MVN $00,$00
+(Note: destination, source)
 MVP $00,$00
+(Note: destination, source))
 NOP
 ORA #$00
 ORA #$0000
@@ -1894,7 +1899,7 @@ lda #5+6*2	; the same as &quot;lda #17&quot;
 lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 		Math statements in Asar support the following operators:<br/><br/>
 		
-		<code>+  : Addition (Also valid as prefix, but a no-op)
+		<pre><code class="no-highlight">+  : Addition (Also valid as prefix, but a no-op)
 -  : Subtraction (Or negation prefix)
 *  : Multiplication
 /  : Division
@@ -1905,8 +1910,8 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 |  : Bitwise OR
 ^  : Bitwise XOR (Note: not exponentials)
 ~  : Bitwise NOT (Prefix)
-&lt;:  : Bitshift right 16, shorthand for isolating address bank (Prefix)
-** : Exponentials (2**4 = 2*2*2*2 = pow(2, 4) in C)</code><br/><br/>
+&lt;: : Bitshift right 16, shorthand for isolating address bank (Prefix)
+** : Exponentials (2**4 = 2*2*2*2 = pow(2, 4) in C)</code></pre><br/>
 		
 		Note that whitespace is not supported inside math statements, but the <a href="#multiline">multi-line operator \</a> can be used to split them into multiple lines. Using math in labels can be useful when you want to apply an offset to the label:
 		<pre><code class="65c816_asar">lda .Data+3	; Will load $03 into A
@@ -2299,7 +2304,7 @@ lda [!x],y	; Treated as &quot;lda [$00],y&quot;
 !y = $12
 !x = !y$34
 		
-lda !x		; Treated as &quot;lda $1234&quot;
+lda !x		; Treated as &quot;lda $12$34&quot; (will throw error)
 		
 !phr = &quot;pha : phx : phy&quot;
 		
@@ -2876,7 +2881,7 @@ endwhile</code></pre>
 
 		For example:
 		<pre><code class="65c816_asar">for i = 1..5
-    db !i
+	db !i
 	db 2*!i
 endfor</code></pre>
 		This will write the bytes 01 02 02 04 03 06 04 08.
