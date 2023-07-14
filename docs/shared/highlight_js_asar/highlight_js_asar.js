@@ -59,6 +59,21 @@ hljsAsar = {
     	relevance: 0
     }
 	
+	const asarDefinesMode = 
+    {
+    	scope: "define",
+    	variants:
+    	[
+    		{
+    			begin: /!\^*[a-zA-Z0-9_{}]+/
+    		},
+    		{
+    			begin: /<\^*[a-zA-Z0-9_]+>/
+    		},
+    	],
+    	relevance: 10
+    }
+	
     hljs.registerLanguage("65c816_asar",
     	function(hljs)
     	{
@@ -124,17 +139,18 @@ hljsAsar = {
 						],
     					relevance: 0
     				},
+					asarDefinesMode,
     				{
+						// Special mode for variadic macro arguments.
     					scope: "define",
-    					variants:
-    					[
-    						{
-    							begin: /!\^*[a-zA-Z0-9_{}]+/
-    						},
-    						{
-    							begin: /<\^*[a-zA-Z0-9_]+>/
-    						},
-    					],
+    					begin: /\<\^*\.\.\.\[/,
+						end: /\]\>/,
+						contains:
+						[
+							asarNumberLiteralsMode,
+							asarLabelsMode,
+							asarDefinesMode
+						],
     					relevance: 10
     				},
     				{
