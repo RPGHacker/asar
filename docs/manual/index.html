@@ -406,7 +406,7 @@ BPL $00
 BRA $00
 BRK
 BRK #$00
-BRL $00
+BRL $0000
 BVC $00
 BVS $00
 CLC
@@ -512,8 +512,10 @@ LSR $0000,x
 LSR A
 MVN $00,$00
 (Note: destination, source)
+MVN $0000
 MVP $00,$00
 (Note: destination, source))
+MVP $0000
 NOP
 ORA #$00
 ORA #$0000
