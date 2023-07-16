@@ -14,6 +14,7 @@
 ;`1D 80 00
 ;`04 80 00
 ;`04 80 00
+;`3C 61 3E
 
 org $008000
 	Main:
@@ -49,4 +50,7 @@ org $008000
 		dl Main_Sub
 		dl InMacro
 		dl Main_InMacroSub		; Note that this is not InMacro_InMacroSub
+
+		; not exactly a test for macro labels, but close enough
+		db "<a>" ; macro argument outside macro - should be left unexpanded
 		

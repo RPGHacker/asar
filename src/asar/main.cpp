@@ -503,7 +503,9 @@ void assembleline(const char * fname, int linenum, const char * line)
 	single_line_for_tracker = 1;
 	try
 	{
-		string tmp=replace_macro_args(line);
+		string tmp;
+		if(inmacro) tmp = replace_macro_args(line);
+		else tmp = line;
 		clean(tmp);
 		string out;
 		if (numif==numtrue) resolvedefines(out, tmp);
