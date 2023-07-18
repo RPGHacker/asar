@@ -70,9 +70,10 @@
 			<li><code>check bankcross</code> now allows disabling checking for half-bank crossings (going from $7FFF to $8000). (p4plus2)</li>
 			<li>New <code>realbase()</code> function: returns the current SNES address that is being written to. (p4plus2)</li>
 			<li>Namespaces can now be saved using <code>pushns</code> and <code>pullns</code>. (p4plus2)</li>
-			<li>Things that look like macro arguments will now throw errors outside of macros. However, it's now possible to use macro arguments and macro labels in files that are <code>incsrc</code>'d from macros. (randomdude999)</li>
+			<li>It's now possible to use macro arguments and macro labels in files that are <code>incsrc</code>'d from macros. (randomdude999)</li>
 			<li>Added <code>for</code> loops, used like <code>for i = 1..10</code>. These are more convenient than while loops in most cases and are the main replacement for <code>rep</code>. (randomdude999)</li>
 			<li><code>incbin</code> now has a new syntax for including a range of the target file which looks like the for loop range syntax and is less ambiguous. (randomdude999)</li>
+			<li>Added <code>spcblock</code> feature as a replacement for <code>spc-inline</code>, which allows defining blocks of SPC data, but in a more flexible way that can easily be extended in the future. (p4plus2)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
