@@ -538,12 +538,14 @@ void resolvedefines(string& out, const char * start)
 		if (here[0] == '\\' && here[1] == '\\')
 		{
 			// allow using \\ as escape sequence
+			if (in_macro_def > 0) out += "\\";
 			out += "\\";
 			here += 2;
 		}
 		else if (here[0] == '\\' && here[1] == '!')
 		{
 			// allow using \! to escape !
+			if (in_macro_def > 0) out += "\\";
 			out+="!";
 			here += 2;
 		}
