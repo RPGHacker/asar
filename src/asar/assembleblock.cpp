@@ -778,9 +778,7 @@ void allocate_freespaces() {
 		freespace_data& fs = freespaces[i];
 		if(fs.dont_find) continue;
 		// todo lol
-		printf("freespace %d: len %x isforcode %d", i, fs.len, (fs.bank == -2));
 		fs.pos = getsnesfreespace(fs.len, (fs.bank == -2), true, true, fs.flag_align, fs.cleanbyte);
-		printf(" pos %x\n", fs.pos);
 	}
 	labels.each([](const char * key, snes_label & val) {
 		if(val.freespace_id != 0 && !freespaces[val.freespace_id].dont_find)
@@ -1965,7 +1963,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			string testlabel = labeltest;
 			snes_label lblval = labelval(&labeltest);
 			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
-			printf("proting %x\n", lblval.pos);
 			write3(lblval.pos);
 			if (pass==1) freespaces[lblval.freespace_id].leaked = false;
 		}
@@ -2006,7 +2003,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				else if (ratsloc<0) ratsloc=0;
 				write1((unsigned int)firstbyte);
 				write3((unsigned int)num);
-				printf("lol. xd. %d %d %d %d, %d\n", pass, orgpos, ratsloc, num, pass==2?ratsstart(num):0);
 				if (pass==2)
 				{
 					int start=ratsstart(num);
