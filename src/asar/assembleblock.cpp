@@ -288,20 +288,52 @@ autoarray<string> includeonce;
 
 // data necessary for one freespace block
 struct freespace_data {
+	// snespos of the start of the freespace block. set to the found freespace
+	// block during the `freespace` command in pass 1.
 	int pos;
+	// length of the freespace block
 	int len;
+	// whether this freespace is leaked (no autocleans pointing at it)
 	bool leaked;
+	// position of the previous version of this freespace
 	int orgpos;
+	// length of previous version
 	int orglen;
+	// whether this freespace is static, i.e. can't be relocated when reinserting
 	bool is_static;
+	// what byte to use when searching for freespace, and clearing out previous rats tags
 	unsigned char cleanbyte;
+
+	// options only used for finding freespace:
+
+	// if this freespace is pinned to another one, this holds the name of the label of the target.
+	// we can't resolve this into a freespace number earlier since it could be a forward reference.
+	// we also need to keep the current namespace around since this is necessary for resolving label references.
+	string pin_target;
+	string pin_target_ns;
+	// computed at the end of pass 0. this is the freespace id of the final pin
+	// target, in case of multiple "nested" pins or whatnot.
+	int pin_target_id;
+	// what address to start searching for freespace at
+	int search_start;
+	// what bank to search for freespace in: -1 for any bank, -2 for banks with
+	// code mirrors, positive for specific bank
+	int bank;
+	bool write_rats;
+	// should rework this...
+	bool flag_align;
+	// hack for incbin -> label
+	bool dont_find;
 };
 static autoarray<freespace_data> freespaces;
 
+// id of the next unused freespace.
 static int freespaceidnext;
+// id of the current freespace, or 0 if not in freespace.
 int freespaceid;
+// start address of the current freespace, used for computing the length of the
+// current freespace.
 static int freespacestart;
-int freespaceextra;
 
 
 bool confirmname(const char * name)
@@ -475,6 +507,7 @@ inline bool labelvalcore(const char ** rawname, snes_label * rval, bool define, 
 			asar_throw_error(2, error_type_block, error_id_label_not_found, name.data());
 		}
 		rval->pos = (unsigned int)-1;
+		rval->freespace_id = 0;
 		rval->is_static = false;
 		return false;
 	}
@@ -564,7 +597,6 @@ struct pushable {
 	int snesposreal;
 	int snesstartreal;
 	int freeid;
-	int freeex;
 	int freest;
 	int arch1;
 	int arch2;
@@ -625,11 +657,10 @@ static void freespaceend()
 {
 	if (freespaceid > 0)
 	{
-		freespaces[freespaceid].len = snespos-freespacestart+freespaceextra;
+		freespaces[freespaceid].len = snespos-freespacestart;
 		snespos=(int)0xFFFFFFFF;
 		snespos_valid = false;
 	}
-	freespaceextra=0;
 	freespaceid = 0;
 }
 
@@ -681,7 +712,6 @@ void initstuff()
 	//fastrom=false;
 	freespaceidnext=1;
 	freespaceid=0;
-	freespaceextra=0;
 	numopcodes=0;
 	incsrcdepth = 0;
 
@@ -715,6 +745,49 @@ void initstuff()
 }
 
 
+void resolve_pinned_freespaces() {
+	for(int i = 0; i < freespaces.count; i++)
+		// default to everyone being in a separate component
+		freespaces[i].pin_target_id = i;
+	for(int i = 0; i < freespaces.count; i++) {
+		freespace_data& fs = freespaces[i];
+		if(fs.pin_target == "") continue;
+		snes_label value;
+		if(fs.pin_target_ns && labels.exists(fs.pin_target_ns + fs.pin_target))
+			value = labels.find(fs.pin_target_ns + fs.pin_target);
+		else if(labels.exists(fs.pin_target))
+			value = labels.find(fs.pin_target);
+		else continue; // the error for this is thrown in the freespace command during pass 2
+		int target_id = value.freespace_id;
+		// do a DSU find
+		while(freespaces[target_id].pin_target_id != target_id) {
+			// i love programming
+			freespaces[target_id].pin_target_id = freespaces[freespaces[target_id].pin_target_id].pin_target_id;
+			target_id = freespaces[target_id].pin_target_id;
+			// TODO actually this might be broken lol
+			// should do a linear post-processing step...
+		}
+		// found the root of this component
+		fs.pin_target_id = target_id;
+		fs.len = 0;
+	}
+}
+
+void allocate_freespaces() {
+	for(int i = 0; i < freespaces.count; i++) {
+		freespace_data& fs = freespaces[i];
+		if(fs.dont_find) continue;
+		// todo lol
+		printf("freespace %d: len %x isforcode %d", i, fs.len, (fs.bank == -2));
+		fs.pos = getsnesfreespace(fs.len, (fs.bank == -2), true, true, fs.flag_align, fs.cleanbyte);
+		printf(" pos %x\n", fs.pos);
+	}
+	labels.each([](const char * key, snes_label & val) {
+		if(val.freespace_id != 0 && !freespaces[val.freespace_id].dont_find)
+			val.pos += freespaces[val.freespace_id].pos;
+	});
+}
+
 //void nerf(const string& left, string& right){puts(S left+" = "+right);}
 
 void finishpass()
@@ -733,6 +806,11 @@ void finishpass()
 	if (arch==arch_superfx) asend_superfx();
 
 	deinitmathcore();
+	if(pass == 0) {
+		resolve_pinned_freespaces();
+	} else if(pass == 1) {
+		allocate_freespaces();
+	}
 }
 
 static bool addlabel(const char * label, int pos=-1, bool global_label = false)
@@ -794,7 +872,6 @@ static void push_pc()
 	pushpc[pushpcnum].snesposreal=realsnespos;
 	pushpc[pushpcnum].snesstartreal=realstartpos;
 	pushpc[pushpcnum].freeid=freespaceid;
-	pushpc[pushpcnum].freeex=freespaceextra;
 	pushpc[pushpcnum].freest=freespacestart;
 	pushpcnum++;
 }
@@ -807,7 +884,6 @@ static void pop_pc()
 	realsnespos=pushpc[pushpcnum].snesposreal;
 	realstartpos=pushpc[pushpcnum].snesstartreal;
 	freespaceid=pushpc[pushpcnum].freeid;
-	freespaceextra=pushpc[pushpcnum].freeex;
 	freespacestart=pushpc[pushpcnum].freest;
 }
 
@@ -1737,7 +1813,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num, 6).data());
 		optimizeforbank=(int)num;
 	}
-	else if (is("freespace") || is("freecode") || is("freedata"))
+	else if (is("freespace") || is("freecode") || is("freedata") || is("segment"))
 	{
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		string parstr;
@@ -1746,24 +1822,29 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 		if (is("freecode")) parstr=STR"ram,"+parstr;
 		if (is("freedata")) parstr=STR"noram,"+parstr;
+		if (is("segment")) parstr = STR "norats," + parstr;
 		autoptr<char**> pars=split(parstr.temp_raw(), ',');
 		unsigned char fsbyte = 0x00;
-		int useram=-1;
 		bool fixedpos=false;
 		bool align=false;
 		bool leakwarn=true;
+		bool write_rats=true;
+		int target_bank = -3;
+		string pin_to_freespace = "";
+		int search_start_pos = -1;
+
 		for (int i=0;pars[i];i++)
 		{
 			if (pars[i][0]=='\n') {}
 			else if (!stricmp(pars[i], "ram"))
 			{
-				if (useram!=-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				useram=1;
+				if (target_bank!=-3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+				target_bank = -2;
 			}
 			else if (!stricmp(pars[i], "noram"))
 			{
-				if (useram!=-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				useram=0;
+				if (target_bank!=-3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+				target_bank = -1;
 			}
 			else if (!stricmp(pars[i], "static"))
 			{
@@ -1780,49 +1861,87 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				if (!leakwarn) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 				leakwarn=false;
 			}
+			else if (!stricmp(pars[i], "norats"))
+			{
+				write_rats=false;
+			}
+			else if (stribegin(pars[i], "bank="))
+			{
+				if(target_bank != -3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+				target_bank = getnum(pars[i] + 5);
+				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			}
+			else if (stribegin(pars[i], "start="))
+			{
+				search_start_pos = getnum(pars[i] + 6);
+				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			}
+			else if (stribegin(pars[i], "pin="))
+			{
+				// TODO: should we handle posneg labels here too?
+				string pin_to = pars[i] + 4;
+				const char* pin_to_c = pin_to.data();
+				pin_to_freespace = labelname(&pin_to_c);
+				if(*pin_to_c) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+				// this is to throw an "undefined label" error with the proper callstack
+				if(pass) labelval(pin_to);
+			}
+			else if (stribegin(pars[i], "cleanbyte="))
+			{
+				fsbyte = getnum(pars[i] + strlen("cleanbyte="));
+				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			}
 			else
 			{
+				// for backwards compat i guess
 				fsbyte = (unsigned char)getnum(pars[i]);
 			}
 		}
-		if (useram==-1) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-		if (mapper == norom) asar_throw_error(0, error_type_block, error_id_no_freespace_norom);
+		if(target_bank == -3 && !write_rats) target_bank = -1;
+		if(target_bank == -3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		// no point specifying anything about cleaning when not writing a rats tag
+		if(!write_rats && (leakwarn || fixedpos)) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 		freespaceend();
 		freespaceid=getfreespaceid();
 		freespace_data& thisfs = freespaces[freespaceid];
 		thisfs.cleanbyte = fsbyte;
-		if (pass==0) snespos=0x8000;
+
+		thisfs.pin_target = pin_to_freespace;
+		if(pin_to_freespace) thisfs.pin_target_ns = ns;
+		thisfs.write_rats = write_rats;
+		thisfs.search_start = search_start_pos;
+		thisfs.bank = target_bank;
+		thisfs.flag_align = align;
+
+		if (pass==0) snespos=0;
 		if (pass==1)
 		{
 			if (fixedpos && thisfs.orgpos<0)
 			{
-				thisfs.pos = 0x008000;
+				thisfs.pos = 0;
 				thisfs.leaked = false;//mute some other errors
 				asar_throw_error(1, error_type_block, error_id_static_freespace_autoclean);
 			}
 			if (fixedpos && thisfs.orgpos) thisfs.pos = snespos = thisfs.orgpos;
-			else thisfs.pos = snespos = getsnesfreespace(thisfs.len, (useram != 0), true, true, align, thisfs.cleanbyte);
+			else snespos = 0;
 		}
 		if (pass==2)
 		{
 			if (fixedpos && thisfs.orgpos == -1) return;//to kill some errors
 			snespos=thisfs.pos;
-			resizerats(snespos&0xFFFFFF, thisfs.len);
 			if (thisfs.leaked && leakwarn) asar_throw_warning(2, warning_id_freespace_leaked);
-			if (fixedpos && thisfs.orgpos>0 && thisfs.len > thisfs.orglen)
-				asar_throw_error(2, error_type_block, error_id_static_freespace_growing);
-			freespaceuse += 8 + thisfs.len;
+			freespaceuse += (write_rats ? 8 : 0) + thisfs.len;
 		}
 		thisfs.is_static = fixedpos;
 		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(thisfs.len).data());
 		if (snespos < 0) asar_throw_error(pass, error_type_fatal, error_id_no_freespace, dec(thisfs.len).data());
-		bytes+=8;
+		bytes+=write_rats ? 8 : 0;
 		freespacestart=snespos;
 		startpos=snespos;
 		realstartpos=snespos;
 		realsnespos=snespos;
 		optimizeforbank=-1;
-		ratsmetastate=ratsmeta_allow;
+		ratsmetastate=write_rats ? ratsmeta_allow : ratsmeta_ban;
 		snespos_valid = true;
 	}
 	else if (is1("prot"))
@@ -1846,6 +1965,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			string testlabel = labeltest;
 			snes_label lblval = labelval(&labeltest);
 			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
+			printf("proting %x\n", lblval.pos);
 			write3(lblval.pos);
 			if (pass==1) freespaces[lblval.freespace_id].leaked = false;
 		}
@@ -1869,7 +1989,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
 			int targetid= lblval.freespace_id;
 			if (pass==1) freespaces[targetid].leaked = false;
-			int num = lblval.pos & 0xFFFFFF;
+			int num = lblval.pos;
 			if (strlen(par)>3 && !stricmp(par+3, ".l")) par[3]=0;
 			if (!stricmp(par, "JSL") || !stricmp(par, "JML"))
 			{
@@ -1886,6 +2006,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				else if (ratsloc<0) ratsloc=0;
 				write1((unsigned int)firstbyte);
 				write3((unsigned int)num);
+				printf("lol. xd. %d %d %d %d, %d\n", pass, orgpos, ratsloc, num, pass==2?ratsstart(num):0);
 				if (pass==2)
 				{
 					int start=ratsstart(num);
@@ -1931,7 +2052,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		pushpc[pushpcnum].snesposreal=realsnespos;
 		pushpc[pushpcnum].snesstartreal=realstartpos;
 		pushpc[pushpcnum].freeid=freespaceid;
-		pushpc[pushpcnum].freeex=freespaceextra;
 		pushpc[pushpcnum].freest=freespacestart;
 		pushpcnum++;
 		snespos=(int)0xFFFFFFFF;
@@ -1951,7 +2071,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		realsnespos=pushpc[pushpcnum].snesposreal;
 		realstartpos=pushpc[pushpcnum].snesstartreal;
 		freespaceid=pushpc[pushpcnum].freeid;
-		freespaceextra=pushpc[pushpcnum].freeex;
 		freespacestart=pushpc[pushpcnum].freest;
 		snespos_valid = true;
 	}
@@ -2139,6 +2258,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 					pos=getpcfreespace(end-start, false, true, false);
 					if (pos < 0) asar_throw_error(0, error_type_block, error_id_no_freespace, dec(end - start).data());
 					int foundfreespaceid=getfreespaceid();
+					freespaces[foundfreespaceid].dont_find = true;
 					freespaces[foundfreespaceid].pos = pctosnes(pos);
 					setlabel(word[3], freespaces[foundfreespaceid].pos, false, foundfreespaceid);
 					// is this necessary?

@@ -363,8 +363,6 @@ static int getlenforlabel(snes_label thislabel, bool exists)
 	unsigned int relaxed_bank = optimizeforbank < 0 ? 0 : optimizeforbank;
 	if (!exists)
 	{
-		if (!freespaced) freespaceextra++;
-		freespaced=true;
 		return 2;
 	}
 	else if((optimize_dp == optimize_dp_flag::RAM) && bank == 0x7E && (word-dp_base < 0x100))
@@ -395,6 +393,7 @@ static int getlenforlabel(snes_label thislabel, bool exists)
 	}
 	else if (thislabel.freespace_id > 0 || freespaceid > 0)
 	{
+		// TODO: check whether they're pinned to the same bank
 		if (thislabel.freespace_id != freespaceid) return 3;
 		else return 2;
 	}

@@ -99,7 +99,6 @@ extern int numopcodes;
 extern int numif;
 extern int numtrue;
 
-extern int freespaceextra;
 extern int freespaceid;
 
 extern assocarr<snes_label> labels;
