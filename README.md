@@ -53,6 +53,7 @@ These two characters should precede each test line, so that Asar sees them as co
 * 2 hex digits - a byte for it to check for 
   * You can specify more than one, like in the examples below, and it will automatically increment the offset.
 * A line starting with `+` tells the testing app to patch the SMW ROM instead of creating a new ROM
+* `#{num}` tells the testing app to apply the patch `{num}` times to the same file
 * `errE{name}` and `warnW{name}` (where `{name}` is the name of an error or warning) means that the test is expected to throw that specific error or warning while patching. The test will succeed only if the number and order of errors and warnings thrown exactly matches what's specified here. Be wary that Asar uses multiple passes and throws errors and warnings across multiple of them. This can make the actual order in which errors and warnings are thrown a bit unintuitive.
 
 In addition to the format mentioned above, it's also possible to check for user prints a patch is expected to output (by `print`, `error`, `warn` or `assert` commands). This is done by starting the line with one of the following sequences:
