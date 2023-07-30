@@ -182,6 +182,11 @@ inline void write1_65816(unsigned int num)
 		writeromdata_byte(pcpos, (unsigned char)num);
 		if (pcpos>=romlen) romlen=pcpos+1;
 	}
+	if(pass == 1 && freespaceid == 0) {
+		int pcpos = snestopc(realsnespos & 0xFFFFFF);
+		if(pcpos < 0) asar_throw_error(pass, error_type_fatal, error_id_internal_error, "invalid pos in pass 1");
+		addromwrite(pcpos, 1);
+	}
 	step(1);
 	ratsmetastate=ratsmeta_ban;
 }
@@ -744,6 +749,16 @@ void initstuff()
 	callstack.reset();
 }
 
+int get_freespace_pin_target(int target_id) {
+	// union-find algorithm
+	while(freespaces[target_id].pin_target_id != target_id) {
+		// i love programming
+		freespaces[target_id].pin_target_id =
+			freespaces[freespaces[target_id].pin_target_id].pin_target_id;
+		target_id = freespaces[target_id].pin_target_id;
+	}
+	return target_id;
+}
 
 void resolve_pinned_freespaces() {
 	for(int i = 0; i < freespaces.count; i++)
@@ -758,17 +773,7 @@ void resolve_pinned_freespaces() {
 		else if(labels.exists(fs.pin_target))
 			value = labels.find(fs.pin_target);
 		else continue; // the error for this is thrown in the freespace command during pass 2
-		int target_id = value.freespace_id;
-		// do a DSU find
-		while(freespaces[target_id].pin_target_id != target_id) {
-			// i love programming
-			freespaces[target_id].pin_target_id = freespaces[freespaces[target_id].pin_target_id].pin_target_id;
-			target_id = freespaces[target_id].pin_target_id;
-			// TODO actually this might be broken lol
-			// should do a linear post-processing step...
-		}
-		// found the root of this component
-		fs.pin_target_id = target_id;
+		fs.pin_target_id = get_freespace_pin_target(value.freespace_id);
 		fs.len = 0;
 	}
 }
@@ -777,12 +782,21 @@ void allocate_freespaces() {
 	for(int i = 0; i < freespaces.count; i++) {
 		freespace_data& fs = freespaces[i];
 		if(fs.dont_find) continue;
-		// todo lol
-		fs.pos = getsnesfreespace(fs.len, (fs.bank == -2), true, true, fs.flag_align, fs.cleanbyte);
+		if(fs.is_static && fs.orgpos > 0) {
+			fs.pos = fs.orgpos;
+			continue;
+		}
+		// TODO:
+		// * fs.pin_target_id
+		// * fs.search_start
+		// and possibly fancier align
+		fs.pos = getsnesfreespace(fs.len, fs.bank, true, true, fs.flag_align, fs.cleanbyte, fs.write_rats);
 	}
+	// relocate all labels that were in freespace to point them to their real location
 	labels.each([](const char * key, snes_label & val) {
-		if(val.freespace_id != 0 && !freespaces[val.freespace_id].dont_find)
+		if(val.freespace_id != 0 && !freespaces[val.freespace_id].dont_find) {
 			val.pos += freespaces[val.freespace_id].pos;
+		}
 	});
 }
 
@@ -808,6 +822,7 @@ void finishpass()
 		resolve_pinned_freespaces();
 	} else if(pass == 1) {
 		allocate_freespaces();
+		handle_cleared_rats_tags();
 	}
 }
 
@@ -1898,7 +1913,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if(target_bank == -3 && !write_rats) target_bank = -1;
 		if(target_bank == -3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 		// no point specifying anything about cleaning when not writing a rats tag
-		if(!write_rats && (leakwarn || fixedpos)) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		if(!write_rats && (!leakwarn || fixedpos)) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		if(!write_rats) leakwarn = false;
 		freespaceend();
 		freespaceid=getfreespaceid();
 		freespace_data& thisfs = freespaces[freespaceid];
@@ -1920,8 +1936,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				thisfs.leaked = false;//mute some other errors
 				asar_throw_error(1, error_type_block, error_id_static_freespace_autoclean);
 			}
-			if (fixedpos && thisfs.orgpos) thisfs.pos = snespos = thisfs.orgpos;
-			else snespos = 0;
+			snespos = 0;
 		}
 		if (pass==2)
 		{
@@ -1941,6 +1956,13 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		optimizeforbank=-1;
 		ratsmetastate=write_rats ? ratsmeta_allow : ratsmeta_ban;
 		snespos_valid = true;
+		// check this at the very end so that snespos gets set properly, to
+		// prevent spurious errors later
+		//...i guess this can still cause bankcross errors if the old freespace
+		//happened to be very close to the end of a bank or something, but
+		//whatever
+		if (pass == 2 && fixedpos && thisfs.orgpos > 0 && thisfs.len > thisfs.orglen)
+			asar_throw_error(2, error_type_block, error_id_static_freespace_growing);
 	}
 	else if (is1("prot"))
 	{
@@ -2244,14 +2266,18 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				if (offset + end - start > 0xFFFFFF) asar_throw_error(0, error_type_block, error_id_16mb_rom_limit);
 				if (offset+end-start>romlen) romlen=offset+end-start;
 				if (pass==2) writeromdata(offset, data+start, end-start);
+				else if(pass == 1) addromwrite(offset, end-start);
 			}
 			else
 			{
 				int pos;
 				if (pass==0)
 				{
+					// TODO: this shouldn't allocate in pass 0 actually
+					// and needs an addromwrite probably......
+					// actually it should just use the freespace finder at the end of pass 1
 					if (end - start > 65536) asar_throw_error(0, error_type_block, error_id_incbin_64kb_limit);
-					pos=getpcfreespace(end-start, false, true, false);
+					pos=getpcfreespace(end-start, -1, true, false);
 					if (pos < 0) asar_throw_error(0, error_type_block, error_id_no_freespace, dec(end - start).data());
 					int foundfreespaceid=getfreespaceid();
 					freespaces[foundfreespaceid].dont_find = true;

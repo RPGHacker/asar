@@ -13,6 +13,9 @@ static FileHandleType thisfile = InvalidFileHandle;
 asar_error_id openromerror;
 
 autoarray<writtenblockdata> writtenblocks;
+// not immediately put into writtenblocks to allow the freespace finder to use
+// the reclaimed space.
+autoarray<writtenblockdata> cleared_rats_tag_blocks;
 
 // RPG Hacker: Uses binary search to find the insert position of our ROM write
 static int findromwritepos(int snesoffset, int searchstartpos, int searchendpos)
@@ -79,7 +82,7 @@ static void addromwriteforbank(int snesoffset, int numbytes)
 }
 
 
-static void addromwrite(int pcoffset, int numbytes)
+void addromwrite(int pcoffset, int numbytes)
 {
 	int snesaddr = pctosnes(pcoffset);
 	int bytesleft = numbytes;
@@ -136,17 +139,6 @@ int ratsstart(int snesaddr)
 	return -1;
 }
 
-void resizerats(int snesaddr, int newlen)
-{
-	int pos=snestopc(ratsstart(snesaddr));
-	if (pos<0) return;
-	if (newlen!=0) newlen--;
-	writeromdata_byte(pos+4, (unsigned char)(newlen&0xFF));
-	writeromdata_byte(pos+5, (unsigned char)((newlen>>8)&0xFF));
-	writeromdata_byte(pos+6, (unsigned char)((newlen&0xFF)^0xFF));
-	writeromdata_byte(pos+7, (unsigned char)(((newlen>>8)&0xFF)^0xFF));
-}
-
 static void handleprot(int loc, char * name, int len, const unsigned char * contents)
 {
 	(void)loc;		// RPG Hacker: Silence "unused argument" warning.
@@ -167,14 +159,27 @@ void removerats(int snesaddr, unsigned char clean_byte)
 	// randomdude999: don't forget bank borders
 	WalkMetadata(pctosnes(snestopc(addr)+8), handleprot);
 	addr=snestopc(addr);
-	for (int i=(romdata[addr+4]|(romdata[addr+5]<<8))+8;i>=0;i--) writeromdata_byte(addr+i, clean_byte);
+	// don't use writeromdata() because this must not go to the writtenblocks list.
+	int len = (romdata[addr+4]|(romdata[addr+5]<<8))+9;
+	memset(const_cast<unsigned char*>(romdata) + addr, clean_byte, len);
+	cleared_rats_tag_blocks[cleared_rats_tag_blocks.count] = writtenblockdata{addr, 0, len};
+	//for (int i=(romdata[addr+4]|(romdata[addr+5]<<8))+8;i>=0;i--) writeromdata_byte(addr+i, clean_byte);
 }
 
-static inline int trypcfreespace(int start, int end, int size, int banksize, int minalign, unsigned char freespacebyte)
+void handle_cleared_rats_tags()
+{
+	for(int i = 0; i < cleared_rats_tag_blocks.count; i++) {
+		auto & block = cleared_rats_tag_blocks[i];
+		addromwrite(block.pcoffset, block.numbytes);
+	}
+	cleared_rats_tag_blocks.reset();
+}
+
+static inline int trypcfreespace(int start, int end, int size, int banksize, int minalign, unsigned char freespacebyte, bool write_rats)
 {
 	while (start+size<=end)
 	{
-		if (
+		if (write_rats &&
 				((start+8)&~banksize)!=((start+size-1)&~banksize&0xFFFFFF)//if the contents won't fit in this bank...
 			&&
 				(start&banksize&0xFFFFF8)!=(banksize&0xFFFFF8)//and the RATS tag can't fit in the bank either...
@@ -182,6 +187,13 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 		{
 			start&=~banksize&0xFFFFFF;//round it down to the start of the bank,
 			start|=banksize&0xFFFFF8;//then round it up to the end minus the RATS tag...
+			continue;
+		}
+		else if(!write_rats &&
+				(start&~banksize) != ((start+size-1)&~banksize))
+		{
+			// go to next bank.
+			start = (start|banksize)+1;
 			continue;
 		}
 		if (minalign)
@@ -209,17 +221,50 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 			}
 		}
 		if (bad) continue;
-		size-=8;
-		if (size) size--;//rats tags eat one byte more than specified for some reason
-		writeromdata_byte(start+0, 'S');
-		writeromdata_byte(start+1, 'T');
-		writeromdata_byte(start+2, 'A');
-		writeromdata_byte(start+3, 'R');
-		writeromdata_byte(start+4, (unsigned char)(size&0xFF));
-		writeromdata_byte(start+5, (unsigned char)((size>>8)&0xFF));
-		writeromdata_byte(start+6, (unsigned char)((size&0xFF)^0xFF));
-		writeromdata_byte(start+7, (unsigned char)(((size>>8)&0xFF)^0xFF));
-		return start+8;
+		// check against collisions with any written blocks.
+		// written blocks go through like 3x snes->pc->snes and are then sorted by snes.
+		// todo: this is janky..... should sort writtenblocks by pc maybe??
+		int snesstart = pctosnes(start);
+		// this gives the index of the first block whose snespos is >= start.
+		int writtenblock_pos = findromwritepos(snesstart, 0, writtenblocks.count);
+		// we might need to check the preceding block too.
+		// (but we don't need to check any older ones, as blocks are merged together)
+		if(writtenblock_pos > 0) writtenblock_pos--;
+		for(; writtenblock_pos < writtenblocks.count; writtenblock_pos++)
+		{
+			auto & block = writtenblocks[writtenblock_pos];
+			if(snesstart < block.snesoffset+block.numbytes
+				&& snesstart+size > block.snesoffset)
+			{
+				start = block.pcoffset + block.numbytes;
+				bad = true;
+				break;
+			}
+			// blocks are sorted by snesoffset, so if they start after our end we know there are no more that could intersect
+			if(block.snesoffset > snesstart+size) break;
+		}
+		if (bad) continue;
+		if(write_rats)
+		{
+			size-=8;
+			if (size) size--;//rats tags eat one byte more than specified for some reason
+			writeromdata_byte(start+0, 'S');
+			writeromdata_byte(start+1, 'T');
+			writeromdata_byte(start+2, 'A');
+			writeromdata_byte(start+3, 'R');
+			writeromdata_byte(start+4, (unsigned char)(size&0xFF));
+			writeromdata_byte(start+5, (unsigned char)((size>>8)&0xFF));
+			writeromdata_byte(start+6, (unsigned char)((size&0xFF)^0xFF));
+			writeromdata_byte(start+7, (unsigned char)(((size>>8)&0xFF)^0xFF));
+			return start+8;
+		}
+		else
+		{
+			// not sure if needs to be done here,
+			// but it needs to be done somewhere
+			addromwrite(start, size);
+			return start;
+		}
 	}
 	return -1;
 }
@@ -228,24 +273,36 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 //isforcode=false tells it to favor banks 40+, true tells it to avoid them entirely.
 //It automatically adds a RATS tag.
 
-int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte)
+int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte, bool write_rats)
 {
+	// TODO: probably should error if specifying target_bank and align, or target_bank and respectbankborders
 	if (!size) return 0x1234;//in case someone protects zero bytes for some dumb reason.
 		//You can write zero bytes to anywhere, so I'll just return something that removerats will ignore.
 	if (size>0x10000) return -1;
-	size+=8;
+	bool isforcode = target_bank == -2;
+	if(write_rats)
+		size+=8;
+
+	auto find_for_fixed_bank = [&](int banksize, bool force_high_half = false) {
+		if(!force_high_half && (target_bank & 0x40) == 0x40)
+			return trypcfreespace(snestopc(target_bank<<16), min(romlen, snestopc(target_bank<<16)+0x10000), size, banksize, 0, freespacebyte, write_rats);
+		else
+			return trypcfreespace(snestopc(target_bank<<16 | 0x8000), min(romlen, snestopc(target_bank<<16 | 0x8000)+0x8000), size, banksize, 0, freespacebyte, write_rats);
+	};
+
 	if (mapper==lorom)
 	{
+		if(target_bank >= 0) return find_for_fixed_bank(0x7fff);
 		if (size>0x8008 && respectbankborders) return -1;
 	rebootlorom:
 		if (romlen>0x200000 && !isforcode)
 		{
 			int pos=trypcfreespace(0x200000-8, (romlen<0x400000)?romlen:0x400000, size,
-					respectbankborders?0x7FFF:0xFFFFFF, align?0x7FFF:(respectbankborders || size<32768)?0:0x7FFF, freespacebyte);
+					respectbankborders?0x7FFF:0xFFFFFF, align?0x7FFF:(respectbankborders || size<32768)?0:0x7FFF, freespacebyte, write_rats);
 			if (pos>=0) return pos;
 		}
 		int pos=trypcfreespace(0x80000, (romlen<0x200000)?romlen:0x200000, size,
-				respectbankborders?0x7FFF:0xFFFFFF, align?0x7FFF:(respectbankborders || size<32768)?0:0x7FFF, freespacebyte);
+				respectbankborders?0x7FFF:0xFFFFFF, align?0x7FFF:(respectbankborders || size<32768)?0:0x7FFF, freespacebyte, write_rats);
 		if (pos>=0) return pos;
 		if (autoexpand)
 		{
@@ -273,46 +330,51 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 	}
 	if (mapper==hirom)
 	{
+		if(target_bank >= 0) return find_for_fixed_bank(0xffff);
 		if (isforcode)
 		{
-			for(int i = 0x8000; i < min(romlen, 0x400000); i += 0xFFFF){
-				int space = trypcfreespace(i, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte);
+			for(int i = 0x8000; i < min(romlen, 0x400000); i += 0x10000){
+				int space = trypcfreespace(i, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte, write_rats);
 				if(space != -1) return space;
 			}
 			return -1;
 		}
-		return trypcfreespace(0, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte);
+		return trypcfreespace(0, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
 	}
 	if (mapper==exlorom)
 	{
+		if(target_bank >= 0) return find_for_fixed_bank(0x7fff);
 		// RPG Hacker: Not really 100% sure what to do here, but I suppose this simplified code will do
 		// and we won't need all the complicated stuff from LoROM above?
 		if (isforcode)
 		{
-			trypcfreespace(0, min(romlen, 0x200000), size, 0x7FFF, align?0x7FFF:0, freespacebyte);
+			trypcfreespace(0, min(romlen, 0x200000), size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
 		}
-		return trypcfreespace(0, romlen, size, 0x7FFF, align ? 0x7FFF : 0, freespacebyte);
+		return trypcfreespace(0, romlen, size, 0x7FFF, align ? 0x7FFF : 0, freespacebyte, write_rats);
 	}
 	if (mapper==exhirom)
 	{
+		if(target_bank >= 0) return find_for_fixed_bank(0xffff);
 		if (isforcode)
 		{
-			for(int i = 0x8000; i < romlen && i < 0x400000; i += 0xFFFF){
-				int space = trypcfreespace(i, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte);
+			for(int i = 0x8000; i < romlen && i < 0x400000; i += 0x10000){
+				int space = trypcfreespace(i, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte, write_rats);
 				if(space != -1) return space;
 			}
 			return -1;
 		}
-		return trypcfreespace(0, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte);
+		return trypcfreespace(0, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
 	}
 	if (mapper==sfxrom)
 	{
+		if(target_bank >= 0) return find_for_fixed_bank(0xffff);
 		if (!isforcode) return -1;
 		// try not to overwrite smw stuff
-		return trypcfreespace(0x80000, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte);
+		return trypcfreespace(0x80000, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
 	}
 	if (mapper==sa1rom)
 	{
+		if(target_bank >= 0) return find_for_fixed_bank(0xffff);
 	rebootsa1rom:
 		int nextbank=-1;
 		for (int i=0;i<8;i++)
@@ -323,7 +385,7 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 				if (sa1banks[i]<=romlen && sa1banks[i]+0x100000>romlen) nextbank=sa1banks[i];
 				continue;
 			}
-			int pos=trypcfreespace(sa1banks[i]?sa1banks[i]:0x80000, sa1banks[i]+0x100000, size, 0x7FFF, align?0x7FFF:0, freespacebyte);
+			int pos=trypcfreespace(sa1banks[i]?sa1banks[i]:0x80000, sa1banks[i]+0x100000, size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
 			if (pos>=0) return pos;
 		}
 		if (autoexpand && nextbank>=0)
@@ -337,12 +399,13 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 	}
 	if (mapper==bigsa1rom)
 	{
+		if(target_bank >= 0) return find_for_fixed_bank(0xffff);
 		if(!isforcode && romlen > 0x400000)
 		{
-			int pos=trypcfreespace(0x400000, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte);
+			int pos=trypcfreespace(0x400000, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
 			if(pos>=0) return pos;
 		}
-		int pos=trypcfreespace(0x080000, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte);
+		int pos=trypcfreespace(0x080000, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
 		if(pos>=0) return pos;
 	}
 	return -1;
@@ -373,9 +436,9 @@ void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsi
 	}
 }
 
-int getsnesfreespace(int size, bool isforcode, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte)
+int getsnesfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte, bool write_rats)
 {
-	return pctosnes(getpcfreespace(size, isforcode, autoexpand, respectbankborders, align, freespacebyte));
+	return pctosnes(getpcfreespace(size, target_bank, autoexpand, respectbankborders, align, freespacebyte, write_rats));
 }
 
 bool openrom(const char * filename, bool confirm)
