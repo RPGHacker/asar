@@ -747,9 +747,8 @@ void initstuff()
 	initmathcore();
 	
 	callstack.reset();
-#if !defined(_WIN32) && defined(NO_USE_THREADS)
-#else
-	reset_stack_use_check();
+#if defined(_WIN32) || !defined(NO_USE_THREADS)
+	init_stack_use_check();
 #endif
 }
 
@@ -828,6 +827,9 @@ void finishpass()
 		allocate_freespaces();
 		handle_cleared_rats_tags();
 	}
+#if defined(_WIN32) || !defined(NO_USE_THREADS)
+	deinit_stack_use_check();
+#endif
 }
 
 static bool addlabel(const char * label, int pos=-1, bool global_label = false)

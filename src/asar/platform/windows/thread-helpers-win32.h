@@ -83,15 +83,18 @@ bool run_as_thread(functor&& callback) {
 	return wrapper.result;
 }
 
-char* stack_bottom;
-void reset_stack_use_check() {
+char* stack_bottom = nullptr;
+void init_stack_use_check() {
 	MEMORY_BASIC_INFORMATION mbi;
 	char stackvar;
 	VirtualQuery(&stackvar, &mbi, sizeof(mbi));
 	stack_bottom = (char*)mbi.AllocationBase;
 }
+void deinit_stack_use_check() {
+	stack_bottom = nullptr;
+}
 bool have_enough_stack_left() {
 	char stackvar;
-	return (&stackvar - stack_bottom) >= 32768;
+	return stack_bottom == nullptr || (&stackvar - stack_bottom) >= 32768;
 }
 #endif
