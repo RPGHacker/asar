@@ -57,17 +57,18 @@ bool run_as_thread(functor&& callback) {
 }
 
 #ifndef NO_USE_THREADS
-bool have_enough_stack_left() {
+void* stack_start = nullptr;
+size_t stack_size = 0;
+void reset_stack_use_check() {
 	pthread_attr_t attrs;
-	void *stack_start;
-	size_t stack_size;
-
 	pthread_getattr_np(pthread_self(), &attrs);
 	pthread_attr_getstack(&attrs, &stack_start, &stack_size);
 	pthread_attr_destroy(&attrs);
-
+}
+bool have_enough_stack_left() {
 	// using a random local as a rough estimate for current top-of-stack
-	size_t stack_left = (char*)&stack_size - (char*)stack_start;
+	char stackvar;
+	size_t stack_left = &stackvar - (char*)stack_start;
 	return stack_left >= 32768;
 }
 #endif

@@ -60,6 +60,7 @@ virtual_file_error asar_get_last_io_error();
 extern volatile int recursioncount;
 extern int pass;
 
+void reset_stack_use_check();
 bool have_enough_stack_left();
 
 class recurseblock {

@@ -747,6 +747,10 @@ void initstuff()
 	initmathcore();
 	
 	callstack.reset();
+#if !defined(_WIN32) && defined(NO_USE_THREADS)
+#else
+	reset_stack_use_check();
+#endif
 }
 
 int get_freespace_pin_target(int target_id) {
