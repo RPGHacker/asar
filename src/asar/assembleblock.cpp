@@ -1662,6 +1662,9 @@ void assembleblock(const char * block, bool isspecialline)
 		struct_base = snespos;
 		realsnespos = 0;
 		realstartpos = 0;
+
+		setlabel(struct_name, snespos, static_struct);
+
 #undef ret_error_cleanup
 #undef ret_error_params_cleanup
 	}
