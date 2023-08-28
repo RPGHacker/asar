@@ -21,6 +21,7 @@ int realstartpos;
 
 bool mapper_set = false;
 bool warn_endwhile = true;
+int label_counter = 0;
 
 static int old_snespos;
 static int old_startpos;
@@ -745,7 +746,7 @@ void initstuff()
 	push_warnings(false);
 
 	initmathcore();
-	
+
 	callstack.reset();
 #if defined(_WIN32) || !defined(NO_USE_THREADS)
 	init_stack_use_check();
@@ -1004,7 +1005,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 #define par word[1]
 
 	callstack_push cs_push(callstack_entry_type::BLOCK, block);
-	
+
 	int numwords;
 	string splitblock = block;
 	char ** word = qsplit(splitblock.temp_raw(), ' ', &numwords);

@@ -43,7 +43,7 @@ static int cachedfileindex = 0;
 static cachedfile * opencachedfile(string fname, bool should_error)
 {
 	cachedfile * cachedfilehandle = nullptr;
-	
+
 	const char* current_file = get_current_file_name();
 
 	// RPG Hacker: Only using a combined path here because that should
@@ -136,22 +136,23 @@ static int object_size(const char *name)
 
 static int data_size(const char *name)
 {
-	unsigned int label;
-	unsigned int next_label = 0xFFFFFF;
+	int label;
 	if(!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_not_found, name);
 	foundlabel = true;
 	snes_label label_data = labels.find(name);
 	foundlabel_static &= label_data.is_static;
-	label = label_data.pos & 0xFFFFFF;
-	labels.each([&next_label, label](const char *key, snes_label current_label){
-		current_label.pos &= 0xFFFFFF;
-		if(label < current_label.pos && current_label.pos < next_label){
-			next_label = current_label.pos;
+	label = label_data.id;
+	snes_label selected_label;
+	selected_label.id = 0xFFFFFF;
+	selected_label.pos = 0xFFFFFF;
+	labels.each([&selected_label, label](const char *key, snes_label current_label){
+		if(label < current_label.id && current_label.id < selected_label.id){
+			selected_label = current_label;
 		}
 	});
-	if(next_label == 0xFFFFFF) asar_throw_warning(2, warning_id_datasize_last_label, name);
-	if(next_label-label > 0xFFFF) asar_throw_warning(2, warning_id_datasize_exceeds_size, name);
-	return next_label-label;
+	if(selected_label.id == 0xFFFFFF) asar_throw_warning(2, warning_id_datasize_last_label, name);
+	if(selected_label.pos-label_data.pos > 0xFFFF) asar_throw_warning(2, warning_id_datasize_exceeds_size, name);
+	return selected_label.pos-label_data.pos;
 }
 
 

@@ -129,7 +129,7 @@ string generate_call_details_string(const char* current_block, const char* curre
 		string indent;
 		if (add_lines) indent += "|";
 		for (; indentation > 0; --indentation) indent += " ";
-		
+
 		if (current_block != nullptr) e += STR "\n"+indent+"in block: ["+current_block+"]";
 		if (current_call != nullptr) e += STR "\n"+indent+"in macro call: [%"+current_call+"]";
 	}
@@ -161,7 +161,7 @@ string format_stack_line(const printable_callstack_entry& entry, int stack_frame
 	// hundreds even, so this very specific, lazy solution suffices.
 	if (stack_frame_index < 100) indent += " ";
 	if (stack_frame_index < 10) indent += " ";
-	return indent 
+	return indent
 		+ generate_filename_and_line(entry.prettypath, entry.lineno)
 		+ entry.details;
 }
@@ -177,7 +177,7 @@ void push_stack_line(autoarray<printable_callstack_entry>* out, const char* curr
 }
 
 void get_current_line_details(string* location, string* details, bool exclude_block)
-{	
+{
 	const char* current_file = nullptr;
 	const char* current_block = nullptr;
 	const char* current_call = nullptr;
@@ -275,7 +275,7 @@ string get_simple_callstack()
 			break;
 		}
 	}
-	
+
 	const char* current_file = nullptr;
 	int current_line_no = -1;
 	if (current_call != nullptr)
@@ -302,13 +302,13 @@ string get_simple_callstack()
 				case callstack_entry_type::BLOCK:
 					break;
 			}
-			
+
 			if (current_file != nullptr && current_line_no != -1) stop = true;
-			
+
 			if (stop) break;
 		}
 	}
-	
+
 	string e;
 	if (current_call != nullptr && current_file != nullptr)
 	{
@@ -553,14 +553,14 @@ void resolvedefines(string& out, const char * start)
 			bool first=(here==start || (here>=start+4 && here[-1]==' ' && here[-2]==':' && here[-3]==' '));//check if it's the start of a block
 			string defname;
 			here++;
-			
+
 			int depth = 0;
 			for (const char* depth_str = here; *depth_str=='^'; depth_str++)
 			{
 				depth++;
 			}
 			here += depth;
-			
+
 			if (depth != in_macro_def)
 			{
 				out += '!';
@@ -568,7 +568,7 @@ void resolvedefines(string& out, const char * start)
 				if (depth > in_macro_def) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "define", "define", depth, in_macro_def);
 				continue;
 			}
-			
+
 			if (*here=='{')
 			{
 				here++;
@@ -756,7 +756,7 @@ autoarray<string> macro_defs;
 int in_macro_def=0;
 
 void assemblefile(const char * filename)
-{		
+{
 	incsrcdepth++;
 	string absolutepath = filesystem->create_absolute_path(get_current_file_name(), filename);
 
@@ -766,7 +766,7 @@ void assemblefile(const char * filename)
 	}
 
 	callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
-	
+
 	sourcefile file;
 	file.contents = nullptr;
 	file.numlines = 0;
@@ -816,10 +816,10 @@ void assemblefile(const char * filename)
 	{
 		string connectedline;
 		int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
-		
+
 		bool was_loop_end = do_line_logic(connectedline, absolutepath, i);
 		i += skiplines;
-		
+
 		// if a loop ended on this line, should it run again?
 		if (was_loop_end && whilestatus[numif].cond)
 			i = whilestatus[numif].startline - 1;
@@ -845,7 +845,7 @@ void assemblefile(const char * filename)
 // confusion otherwise.
 // return value is "did a loop end on this line"
 bool do_line_logic(const char* line, const char* filename, int lineno)
-{			
+{
 	int prevnumif = numif;
 	int single_line_for_tracker = 1;
 	try
@@ -859,9 +859,9 @@ bool do_line_logic(const char* line, const char* filename, int lineno)
 			resolvedefines(current_line, tmp);
 		}
 		else current_line=line;
-		
+
 		callstack_push cs_push(callstack_entry_type::LINE, current_line, lineno);
-		
+
 		if (stribegin(current_line, "macro ") && numif==numtrue)
 		{
 			// RPG Hacker: Slight redundancy here with code that is
@@ -870,7 +870,7 @@ bool do_line_logic(const char* line, const char* filename, int lineno)
 			char * startpar=strqchr(macro_name.data(), '(');
 			if (startpar) *startpar=0;
 			macro_defs.append(macro_name);
-			
+
 			// RPG Hacker: I think it would make more logical sense
 			// to have this ++ after the if, but hat breaks compatibility
 			// with at least one test, and it generally leads to more
@@ -1149,7 +1149,7 @@ bool in_top_level_file()
 		{
 			num_files++;
 			if (num_files > 1) break;
-		}			
+		}
 	}
 	return (num_files <= 1);
 }
@@ -1208,16 +1208,17 @@ void reseteverything()
 	closecachedfiles();
 
 	incsrcdepth=0;
+	label_counter = 0;
 	errored = false;
 	checksum_fix_enabled = true;
 	force_checksum_fix = false;
-	
+
 	in_macro_def = 0;
-	
+
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));
 	#endif
-	
+
 	callstack.reset();
 	simple_callstacks = true;
 #undef free
