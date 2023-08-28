@@ -1,8 +1,3 @@
-;`errEmacro_param_outside_macro
-;`errEmacro_param_outside_macro
-;`errEmacro_param_outside_macro
-;`errEinvalid_depth_resolve
-;`errEinvalid_depth_resolve
 ;`errEinvalid_depth_resolve
 ;`errEinvalid_depth_resolve
 ;`errEinvalid_depth_resolve
@@ -17,6 +12,11 @@
 ;`errEunclosed_macro
 ;`errEvararg_out_of_bounds
 ;`errEvararg_out_of_bounds
+;`errEinvalid_number
+;`errEinvalid_number
+;`errEinvalid_number
+;`errEinvalid_number
+;`errEinvalid_number
 
 org $008000
 

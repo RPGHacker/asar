@@ -173,16 +173,16 @@ void callmacro(const char * data)
 	current_macro = thismacro;
 	current_macro_args = args;
 	current_macro_numargs = numargs;
-		
+
 	callstack_push cs_push(callstack_entry_type::MACRO_CALL, data);
-	
+
 	{
 		callstack_push cs_push(callstack_entry_type::FILE, thismacro->fname);
 
 		for (int i=0;i<thismacro->numlines;i++)
 		{
 			bool was_loop_end = do_line_logic(thismacro->lines[i], thismacro->fname, thismacro->startline+i+1);
-		
+
 			if (was_loop_end && whilestatus[numif].cond)
 				// RPG Hacker: -1 to compensate for the i++, and another -1
 				// because ->lines doesn't include the macro header.
@@ -211,7 +211,7 @@ void callmacro(const char * data)
 }
 
 string generate_macro_arg_string(const char* named_arg, int depth)
-{	
+{
 	string ret="<";
 	for (int i = 0; i < depth;++i)
 	{
@@ -223,7 +223,7 @@ string generate_macro_arg_string(const char* named_arg, int depth)
 }
 
 string generate_macro_arg_string(int var_arg, int depth)
-{	
+{
 	string ret="<";
 	for (int i = 0; i < depth;++i)
 	{
@@ -249,10 +249,10 @@ string generate_macro_hint_string(const char* named_arg, const macrodata* thisma
 				ret += generate_macro_arg_string(thisone->arguments[j], 0);
 				ret += "'?";
 				return ret;
-			}	
+			}
 		}
 	}
-	
+
 	// RPG Hacker: Technically, we could skip a level here and go straight
 	// to the parent, but maybe at some point we'll want to expand this to
 	// also look for similar args in the current level, so I'll leave it
@@ -271,7 +271,7 @@ string generate_macro_hint_string(const char* named_arg, const macrodata* thisma
 		}
 		return generate_macro_hint_string(named_arg, thismacro->parent_macro, desired_depth, current_depth+1);
 	}
-	
+
 	return "";
 }
 
@@ -288,12 +288,17 @@ string generate_macro_hint_string(int var_arg, const macrodata* thismacro, int d
 		}
 		return generate_macro_hint_string(var_arg, thismacro->parent_macro, desired_depth, current_depth+1);
 	}
-	
+
 	return "";
 }
 
 string replace_macro_args(const char* line) {
 	string out;
+	if(!inmacro)
+	{
+		out += line;
+		return out;
+	}
 	for (const char * in=line;*in;)
 	{
 		if (*in=='<' && in[1]=='<' && in[2] != ':')
@@ -329,13 +334,13 @@ string replace_macro_args(const char* line) {
 				out+=*(in++);
 				continue;
 			}
-			
+
 			int depth = 0;
 			for (const char* depth_str = in+1; *depth_str=='^'; depth_str++)
 			{
 				depth++;
 			}
-			
+
 			if (depth != in_macro_def)
 			{
 				string temp(in, end-in+1);
@@ -344,26 +349,26 @@ string replace_macro_args(const char* line) {
 				if (depth > in_macro_def)
 				{
 					if (in_macro_def > 0) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
-					else asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
+					//else asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
 				}
 				continue;
 			}
-			
+
 			if (depth > 0 && !inmacro) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
 			in += depth+1;
-			
+
 			bool is_variadic_arg = false;
 			if (in[0] == '.' && in[1] == '.' && in[2] == '.' && in[3] == '[')
 			{
 				if (end[-1] != ']')
 					asar_throw_error(0, error_type_block, error_id_unclosed_vararg);
-							
+
 				is_variadic_arg = true;
 				in += 4;
 				end--;
 			}
 
-			if(!inmacro) asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
+			//if(!inmacro) asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
 			if(is_variadic_arg && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_macro_not_varadic, "<...[math]>");
 			//*end=0;
 			string param;
