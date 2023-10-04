@@ -1233,7 +1233,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		numopcodes += recent_opcode_num;
 	}
-	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
+	else if (numwords > 1 && (is("db") || is("dw") || is("dl") || is("dd")))
 	{
 		string line;
 		for(int i = 1; i < numwords; i++){
