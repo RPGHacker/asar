@@ -1235,7 +1235,12 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("db") || is1("dw") || is1("dl") || is1("dd"))
 	{
-		autoptr<char**> pars=qpsplit(par, ',');
+		string line;
+		for(int i = 1; i < numwords; i++){
+			if(i > 1) line += " ";
+			line += word[i];
+		}
+		autoptr<char**> pars=qpsplit(line.temp_raw(), ',');
 		verify_paren(pars);
 
 		void (*do_write)(unsigned int);
