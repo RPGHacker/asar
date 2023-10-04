@@ -19,8 +19,12 @@ bool asblock_65816(char** word, int numwords)
 {
 #define is(test) (!stricmpwithupper(word[0], test))
 //#define par word[1]
+	if(word[0][0] == '\'') return false;
 	string par;
-	if (word[1]) par = word[1];
+	for(int i = 1; i < numwords; i++){
+		if(i > 1) par += " ";
+		par += word[i];
+	 }
 	unsigned int num;
 	int len=0;//declared here for A->generic fallback
 	bool explicitlen = false;
@@ -59,8 +63,8 @@ bool asblock_65816(char** word, int numwords)
 #define thefinal7(offset, len) as##len("TSB", offset+0x00); as##len("TRB", offset+0x10); as##len("STY", offset+0x80); as##len("STX", offset+0x82); \
 															 as##len("LDX", offset+0xA2); as##len("CPY", offset+0xC0); as##len("CPX", offset+0xE0)
 #define onlythe8(left, right, offset) else if (match(left, right)) do { init_index(left, right); the8(offset, 1); end(); } while(0)
-	else if ((strlen(word[0])!=3 && (strlen(word[0])!=5 || word[0][3]!='.')) || (word[1] && word[2])) return false;
-	else if (!word[1])
+	else if ((strlen(word[0])!=3 && (strlen(word[0])!=5 || word[0][3]!='.'))) return false;
+	else if (numwords == 1)
 	{
 		blankinit();
 		as0("PHP", 0x08); as0("ASL", 0x0A); as0("PHD", 0x0B); as0("CLC", 0x18);
@@ -217,5 +221,5 @@ opAFallback:
 		as_rel2("PER", 0x62);
 		end();
 	}
-	return true;
+	return false;
 }
