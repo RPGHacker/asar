@@ -24,7 +24,7 @@ bool asblock_65816(char** word, int numwords)
 	for(int i = 1; i < numwords; i++){
 		if(i > 1) par += " ";
 		par += word[i];
-	 }
+	}
 	unsigned int num;
 	int len=0;//declared here for A->generic fallback
 	bool explicitlen = false;

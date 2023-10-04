@@ -2359,7 +2359,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		thetable=tablestack[tablestack.count-1];
 		tablestack.remove(tablestack.count-1);
 	}
-	else if (is3("function"))
+	else if (is("function") && numwords >= 3)
 	{
 		if (stricmp(word[2], "=")) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 		if (!confirmqpar(word[1])) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
@@ -2374,7 +2374,14 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nulls
 		if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
 		*endpar=0;
-		createuserfunc(line, startpar, word[3]);
+
+		string pars;
+		for(int i = 3; i < numwords; i++){
+			if(i > 3) pars += " ";
+			pars += word[i];
+		}
+
+		createuserfunc(line, startpar, pars.data());
 	}
 	else if (is1("print"))
 	{
