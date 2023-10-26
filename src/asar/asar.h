@@ -9,20 +9,21 @@
 #pragma once
 #define Asar
 
-#include "autoarray.h"
 #include "assocarr.h"
 #include "libstr.h"
 #include "libsmw.h"
 #include "errors.h"
+#include "warnings.h"
 #include "virtualfile.h"
 #include <cstdint>
 
 extern unsigned const char * romdata_r;
 extern int romlen_r;
 
-#define clean(string) do { string.qreplace(", ", ",", true); string.qreplace("  ", " ", true); \
-						strip_whitespace(string); string.qreplace("\t", " ", true);} while(0)
-#define clean_and_trim(string) do { clean(string); string.qreplace(" ", "", true);} while(0)
+inline void verify_paren(autoptr<char **> &ptr)
+{
+	 if(!ptr) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
+}
 
 int getlen(const char * str, bool optimizebankextraction=false);
 bool is_hex_constant(const char * str);
@@ -42,12 +43,15 @@ int get_version_int();
 
 bool setmapper();
 
-void assemblefile(const char * filename, bool toplevel);
-void assembleline(const char * fname, int linenum, const char * line);
+void assemblefile(const char * filename);
+void assembleline(const char * fname, int linenum, const char * line, int& single_line_for_tracker);
+
+bool do_line_logic(const char* line, const char* filename, int lineno);
 
 bool file_included_once(const char* file);
 
-string getdecor();
+void get_current_line_details(string* location, string* details, bool exclude_block=false);
+string get_callstack();
 
 asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error);
 
@@ -56,12 +60,21 @@ virtual_file_error asar_get_last_io_error();
 extern volatile int recursioncount;
 extern int pass;
 
+void init_stack_use_check();
+void deinit_stack_use_check();
+bool have_enough_stack_left();
+
 class recurseblock {
 public:
 	recurseblock()
 	{
 		recursioncount++;
-		if (recursioncount > 250) asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
+#if !defined(_WIN32) && defined(NO_USE_THREADS)
+		if(recursioncount > 500)
+#else
+		if(!have_enough_stack_left() || recursioncount > 5000)
+#endif
+			asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
 	}
 	~recurseblock()
 	{
@@ -73,32 +86,21 @@ extern const int asarver_maj;
 extern const int asarver_min;
 extern const int asarver_bug;
 extern const bool asarver_beta;
-extern bool default_math_pri;
-extern bool default_math_round_off;
 
 extern bool asarverallowed;
-extern bool istoplevel;
 
 extern bool moreonline;
-extern bool moreonlinecond;
-extern int fakeendif;
 
 extern bool checksum_fix_enabled;
 extern bool force_checksum_fix;
-
-extern string callerfilename;
-extern int callerline;
-extern string thisfilename;
-extern int thisline;
-extern const char * thisblock;
 
 extern int incsrcdepth;
 
 extern bool ignoretitleerrors;
 
-extern int repeatnext;
-
 extern int optimizeforbank;
+
+extern int in_macro_def;
 
 //this is a trick to namespace an enum to avoid name collision without too much verbosity
 //could technically name the enum too but this is fine for now.
@@ -132,3 +134,72 @@ extern virtual_filesystem* filesystem;
 extern assocarr<string> defines;
 
 extern assocarr<string> builtindefines;
+
+
+namespace callstack_entry_type {
+	enum e : int {
+		FILE,
+		MACRO_CALL,
+		LINE,
+		BLOCK,
+	};
+}
+
+struct callstack_entry {
+	callstack_entry_type::e type;
+	string content;
+	int lineno;
+	
+	callstack_entry(callstack_entry_type::e type, const char* content, int lineno)
+	{
+		this->type = type;
+		this->content = content;
+		this->lineno = lineno;
+	}
+	
+	callstack_entry()
+	{
+	}
+};
+
+
+struct printable_callstack_entry {
+	string fullpath;
+	string prettypath;
+	int lineno;
+	string details;
+};
+
+
+extern autoarray<callstack_entry> callstack;
+extern bool simple_callstacks;
+
+class callstack_push {
+public:
+	callstack_push(callstack_entry_type::e type, const char* content, int lineno=-1)
+	{
+		callstack.append(callstack_entry(type, content, lineno));
+	}
+	
+	~callstack_push()
+	{
+		callstack.remove(callstack.count-1);
+	}
+};
+
+bool in_top_level_file();
+const char* get_current_file_name();
+int get_current_line();
+const char* get_current_block();
+
+void get_full_printable_callstack(autoarray<printable_callstack_entry>* out, int indentation, bool add_lines);
+
+#if !defined(NO_USE_THREADS) && !defined(RUN_VIA_THREAD)
+// RPG Hacker: This is currently disabled for debug builds, because it causes random crashes
+// when used in combination with -fsanitize=address.
+#  if defined(_WIN32) && defined(NDEBUG)
+#    define RUN_VIA_FIBER
+#  else
+#    define RUN_VIA_THREAD
+#  endif
+#endif

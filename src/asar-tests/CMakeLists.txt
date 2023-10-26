@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.9.0)
 OPTION(ASAR_GEN_EXE_TEST "Build Asar standalone application test suite" ON)
 OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON)
 
+set(CMAKE_CXX_STANDARD 17)
+
 # Shared settings for Asar test applications
 
 macro(set_asar_test_shared_properties target)
@@ -18,9 +20,16 @@ macro(set_asar_test_shared_properties target)
 			/wd4711 # function selected for automatic inline expansion
 			/wd4820 # 'bytes' bytes padding added after construct 'member_name'
 			/wd4464 # relativ include path contains '..'
+			/wd4668 # undefined define used in #if (thrown in windows headers)
+			/wd5045 # compiler will insert spectre mitigation
+			/wd4365 # implicit conversion changes signedness
+			/wd4242 # implicit conversion loses precision
+			/wd4244 # implicit conversion loses precision
+			/wd4267 # implicit conversion loses precision
+			/wd4800 # implicit conversion to bool
 		)
 
-		if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$")
+		if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "llvm" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "ClangCL")
 			target_compile_options(${target} PRIVATE
 				-Wno-old-style-cast # use of old-style-cast
 				-Wno-unknown-argument # unknown argument ignored in clang-cl
@@ -31,38 +40,44 @@ macro(set_asar_test_shared_properties target)
 				-Wno-float-equal # comparting floating point with == or != is unsafe
 				-Wno-covered-switch-default # default label in switch which covers all enumeration values
 				-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
+				-Wno-extra-semi-stmt # remove unnecessary ';'
+
+				# a bunch of warnings about casts which we honestly should deal with at some point, but there's just way too many of them
+				-Wno-sign-conversion # implicit conversion changes signedness
+				-Wno-shorten-64-to-32 # implicit conversion of int64_t to int32_t
+				-Wno-old-style-cast # use of old-style cast
+				-Wno-cast-qual # cast drops const qualifier
+				-Wno-implicit-int-conversion # implicit conversion loses precision
 
 				# RPG Hacker: These two are really nasty, but not easily fixable in Asar, so have to disable them...
 				-Wno-exit-time-destructors # declaration requires an exit-time destructor
 				-Wno-global-constructors # delcaration requires a global destructor
 			)
 		endif()
-		
-		if(MSVC_VERSION VERSION_LESS "1900")
-			target_compile_features(${target} PRIVATE cxx_std_11)
-		else()
-			# MSVC throws errors in STL headers when building with MSVC 2017 without C++14...
-			target_compile_features(${target} PRIVATE cxx_std_14)
-		endif()
 	else()
 		if(NOT MINGW)
 			# Not available nor needed on mingw
 			target_link_libraries(${target} dl)
 		endif()
-		target_compile_options(${target} PRIVATE -Wall -pedantic
-		-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
-		-Wno-unused-result # ignoring return value
-	)
 
-	# Static link for MinGW
-	if(MINGW)
-		target_compile_options(${target} PRIVATE -static -static-libgcc -s)
-		target_link_libraries(${target} PRIVATE -static -static-libgcc -s)
-	endif()
+		target_compile_options(${target} PRIVATE -Wall -pedantic
+			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
+			-Wno-unused-result # ignoring return value
+		)
+
+		# Static link for MinGW
+		if(MINGW)
+			target_compile_options(${target} PRIVATE -static -static-libgcc -s)
+			target_link_libraries(${target} PRIVATE -static -static-libgcc -s)
+		endif()
 
 		# for some reason this isn't available on MSVC?
 		target_compile_features(${target} PRIVATE c_std_99)
-	target_compile_features(${target} PRIVATE cxx_std_11)
+	endif()
+			
+	if (WIN32)
+		# RPG Hacker: We define UNICODE on Windows, just to make sure we don't accidentally call an ANSI API somewhere.
+		target_compile_definitions(${target} PRIVATE "UNICODE" "_UNICODE")
 	endif()
 endmacro()
 
@@ -93,6 +108,8 @@ if(ASAR_GEN_DLL_TEST)
 
 	set_asar_test_shared_properties(asar-dll-test)
 
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
-	set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
+	if(ASAR_USE_SANITIZER)
+		target_compile_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
+		target_link_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
+	endif()
 endif()

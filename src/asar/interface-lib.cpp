@@ -1,19 +1,12 @@
 #include "asar.h"
-#include "assocarr.h"
 #include "crc32.h"
-#include "libstr.h"
-#include "libsmw.h"
 #include "virtualfile.h"
-#include "warnings.h"
 #include "platform/file-helpers.h"
 #include "interface-shared.h"
 #include "assembleblock.h"
 #include "asar_math.h"
-#if defined(_WIN32)
-#include "dll_helper.h"
-#endif
+#include "platform/thread-helpers.h"
 
-#include <cstdint>
 #if defined(CPPCLI)
 #define EXPORT extern "C"
 #elif defined(_WIN32)
@@ -26,30 +19,42 @@
 #define EXPORT extern "C" __attribute__ ((visibility ("default")))
 #endif
 
-// RPG Hacker: This is currently disabled for debug builds, because it causes random crashes
-// when used in combination with -fsanitize=address.
-#if defined(_WIN32) && defined(NDEBUG)
-#	define RUN_VIA_FIBER
-#endif
-
 static autoarray<const char *> prints;
 static string symbolsfile;
 static int numprint;
 static uint32_t romCrc;
 
+#define APIVERSION 400
+
+// note: somewhat fragile, assumes that every patchparams struct inherits from exactly the previous one
+/* $EXPORTSTRUCT_PP$
+ */
 struct patchparams_base {
+	// The size of this struct. Set to (int)sizeof(patchparams).
 	int structsize;
 };
 
+
+/* $EXPORTSTRUCT$
+ */
+struct stackentry {
+	const char * fullpath;
+	const char * prettypath;
+	int lineno;
+	const char * details;
+};
+
+/* $EXPORTSTRUCT$
+ */
 struct errordata {
 	const char * fullerrdata;
 	const char * rawerrdata;
 	const char * block;
 	const char * filename;
 	int line;
-	const char * callerfilename;
-	int callerline;
-	int errid;
+	const struct stackentry * callstack;
+	int callstacksize;
+	const char * errname;
 };
 static  autoarray<errordata> errors;
 static int numerror;
@@ -57,21 +62,29 @@ static int numerror;
 static autoarray<errordata> warnings;
 static int numwarn;
 
+/* $EXPORTSTRUCT$
+ */
 struct labeldata {
 	const char * name;
 	int location;
 };
 
+/* $EXPORTSTRUCT$
+ */
 struct definedata {
 	const char * name;
 	const char * contents;
 };
 
+/* $EXPORTSTRUCT$
+ */
 struct warnsetting {
 	const char * warnid;
 	bool enabled;
 };
 
+/* $EXPORTSTRUCT$
+ */
 struct memoryfile {
 	const char* path;
 	const void* buffer;
@@ -83,18 +96,37 @@ void print(const char * str)
 	prints[numprint++]= duplicate_string(str);
 }
 
-static void fillerror(errordata& myerr, int errid, const char * type, const char * str, bool show_block)
+static void fillerror(errordata& myerr, const char* errname, const char * type, const char * str, bool show_block)
 {
-	myerr.filename= duplicate_string(thisfilename);
-	myerr.line=thisline;
-	if (thisblock) myerr.block= duplicate_string(thisblock);
+	const char* current_filename = get_current_file_name();
+	if(current_filename) myerr.filename= duplicate_string(current_filename);
+	else myerr.filename = duplicate_string("");
+	myerr.line=get_current_line();
+	const char* current_block = get_current_block();
+	if (current_block) myerr.block= duplicate_string(current_block);
 	else myerr.block= duplicate_string("");
 	myerr.rawerrdata= duplicate_string(str);
-	myerr.fullerrdata= duplicate_string(STR getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):STR ""));
-	myerr.callerline=callerline;
-	myerr.callerfilename=callerfilename ? duplicate_string(callerfilename) : nullptr;
-	// RPG Hacker: TODO: Rework this once we bump the DLL API version again.
-	myerr.errid = errid;
+	string location;
+	string details;
+	get_current_line_details(&location, &details);
+	myerr.fullerrdata= duplicate_string(location+": "+type+str+details+get_callstack());
+	myerr.errname = duplicate_string(errname);
+
+	autoarray<printable_callstack_entry> printable_stack;
+	get_full_printable_callstack(&printable_stack, 0, false);
+
+	myerr.callstacksize = printable_stack.count;
+	myerr.callstack = static_cast<stackentry*>(malloc(sizeof(stackentry) * myerr.callstacksize));
+
+	for (int i = 0; i < myerr.callstacksize; ++i)
+	{
+		stackentry& entry = const_cast<stackentry&>(myerr.callstack[i]);
+
+		entry.fullpath = duplicate_string(printable_stack[i].fullpath);
+		entry.prettypath = duplicate_string(printable_stack[i].prettypath);
+		entry.lineno = printable_stack[i].lineno;
+		entry.details = duplicate_string(printable_stack[i].details);
+	}
 }
 
 static bool ismath=false;
@@ -107,7 +139,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 	else if (pass == whichpass) {
 		// don't show current block if the error came from an error command
 		bool show_block = (errid != error_id_error_command);
-		fillerror(errors[numerror++], errid, STR "error: (" + get_error_name((asar_error_id)errid) + "): ", e_, show_block);
+		fillerror(errors[numerror++], get_error_name((asar_error_id)errid), STR "error: (" + get_error_name((asar_error_id)errid) + "): ", e_, show_block);
 	}
 	else {}//ignore anything else
 }
@@ -116,8 +148,13 @@ void warn(int errid, const char * str)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (errid != warning_id_warn_command);
-	fillerror(warnings[numwarn++], errid, STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
+	fillerror(warnings[numwarn++], get_warning_name((asar_warning_id)errid), STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
 }
+
+static autoarray<labeldata> ldata;
+static int labelsinldata = 0;
+static autoarray<definedata> ddata;
+static int definesinddata=0;
 
 static void resetdllstuff()
 {
@@ -134,8 +171,17 @@ static void resetdllstuff()
 		free_and_null(errors[i].filename);
 		free_and_null(errors[i].rawerrdata);
 		free_and_null(errors[i].fullerrdata);
-		free_and_null(errors[i].callerfilename);
 		free_and_null(errors[i].block);
+		free_and_null(errors[i].errname);
+
+		for (int j=0;j<errors[i].callstacksize;++j)
+		{
+			stackentry& entry = const_cast<stackentry&>(errors[i].callstack[j]);
+			free_and_null(entry.fullpath);
+			free_and_null(entry.prettypath);
+			free_and_null(entry.details);
+		}
+		free_and_null(errors[i].callstack);
 	}
 	errors.reset();
 	numerror=0;
@@ -145,11 +191,33 @@ static void resetdllstuff()
 		free_and_null(warnings[i].filename);
 		free_and_null(warnings[i].rawerrdata);
 		free_and_null(warnings[i].fullerrdata);
-		free_and_null(warnings[i].callerfilename);
 		free_and_null(warnings[i].block);
+		free_and_null(warnings[i].errname);
+
+		for (int j=0;j<warnings[i].callstacksize;++j)
+		{
+			stackentry& entry = const_cast<stackentry&>(warnings[i].callstack[j]);
+			free_and_null(entry.fullpath);
+			free_and_null(entry.prettypath);
+			free_and_null(entry.details);
+		}
+		free_and_null(warnings[i].callstack);
 	}
 	warnings.reset();
 	numwarn=0;
+	
+	for (int i=0;i<definesinddata;i++)
+	{
+		free_and_null(ddata[i].name);
+		free_and_null(ddata[i].contents);
+	}
+	ddata.reset();
+	definesinddata=0;
+
+	for (int i=0;i<labelsinldata;i++)
+		free((void*)ldata[i].name);
+	ldata.reset();
+	labelsinldata=0;
 #undef free_and_null
 
 	romCrc = 0;
@@ -161,8 +229,6 @@ static void resetdllstuff()
 
 #define maxromsize (16*1024*1024)
 
-static autoarray<labeldata> ldata;
-static int labelsinldata = 0;
 static bool expectsNewAPI = false;
 
 static void addlabel(const string & name, const snes_label & label_data)
@@ -173,40 +239,59 @@ static void addlabel(const string & name, const snes_label & label_data)
 	ldata[labelsinldata++] = label;
 }
 
-struct patchparams_v160 : public patchparams_base
+/* $EXPORTSTRUCT_PP$
+ */
+struct patchparams_v200 : public patchparams_base
 {
+	// Same parameters as asar_patch()
 	const char * patchloc;
 	char * romdata;
 	int buflen;
 	int * romlen;
 
+	// Include paths to use when searching files.
 	const char** includepaths;
 	int numincludepaths;
 
-	bool should_reset;
+	// A list of additional defines to make available to the patch.
+	const struct definedata* additional_defines;
+	int additional_define_count;
 
-	const definedata* additional_defines;
-	int definecount;
-
+	// Path to a text file to parse standard include search paths from.
+	// Set to NULL to not use any standard includes search paths.
 	const char* stdincludesfile;
+
+	// Path to a text file to parse standard defines from.
+	// Set to NULL to not use any standard defines.
 	const char* stddefinesfile;
 
-	const warnsetting * warning_settings;
+	// A list of warnings to enable or disable.
+	// Specify warnings in the format "WXXXX" where XXXX = warning ID.
+	const struct warnsetting * warning_settings;
 	int warning_setting_count;
 
+	// List of memory files to create on the virtual filesystem.
 	const struct memoryfile * memory_files;
 	int memory_file_count;
 
+	// Set override_checksum_gen to true and generate_checksum to true/false
+	// to force generating/not generating a checksum.
 	bool override_checksum_gen;
 	bool generate_checksum;
+
+	// Set this to true for generated error and warning texts to always
+	// contain their full call stack.
+	bool full_call_stack;
 };
 
-struct patchparams : public patchparams_v160
+/* $EXPORTSTRUCT_PP$
+ */
+struct patchparams : public patchparams_v200
 {
 
 };
 
-static void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool should_reset)
+static void asar_patch_begin(char * romdata_, int buflen, int * romlen_)
 {
 	if (buflen != maxromsize)
 	{
@@ -218,8 +303,7 @@ static void asar_patch_begin(char * romdata_, int buflen, int * romlen_, bool sh
 	// RPG Hacker: Without this memset, freespace commands can (and probably will) fail.
 	memset((void*)romdata, 0, maxromsize);
 	memcpy(const_cast<unsigned char*>(romdata), romdata_, (size_t)*romlen_);
-	if (should_reset)
-		resetdllstuff();
+	resetdllstuff();
 	romlen = *romlen_;
 	romlen_r = *romlen_;
 }
@@ -233,7 +317,9 @@ static void asar_patch_main(const char * patchloc)
 		for (pass = 0;pass < 3;pass++)
 		{
 			initstuff();
-			assemblefile(patchloc, true);
+			assemblefile(patchloc);
+			// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
+			callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, patchloc));
 			finishpass();
 		}
 	}
@@ -247,6 +333,8 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 	if (buflen < romlen) asar_throw_error(pass, error_type_null, error_id_buffer_too_small);
 	if (errored)
 	{
+		if (numerror==0)
+			asar_throw_error(pass, error_type_null, error_id_phantom_error);
 		free(const_cast<unsigned char*>(romdata));
 		return false;
 	}
@@ -265,23 +353,41 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 #	pragma clang diagnostic ignored "-Wmissing-prototypes"
 #endif
 
+// this and asar_close are hardcoded in each api
 EXPORT bool asar_init()
 {
 	if (!expectsNewAPI) return false;
 	return true;
 }
 
+/* $EXPORT$
+ * Returns the version, in the format major*10000+minor*100+bugfix*1. This
+ * means that 1.2.34 would be returned as 10234.
+ */
 EXPORT int asar_version()
 {
 	return get_version_int();
 }
 
+/* $EXPORT$
+ * Returns the API version, format major*100+minor. Minor is incremented on
+ * backwards compatible changes; major is incremented on incompatible changes.
+ * Does not have any correlation with the Asar version.
+ *
+ * It's not very useful directly, since asar_init() verifies this automatically.
+ * Calling this one also sets a flag that makes asar_init not instantly return
+ * false; this is so programs expecting an older API won't do anything unexpected.
+ */
 EXPORT int asar_apiversion()
 {
 	expectsNewAPI=true;
-	return 303;
+	return APIVERSION;
 }
 
+/* $EXPORT$
+ * Clears out all errors, warnings and printed statements, and clears the file
+ * cache. Not really useful, since asar_patch() already does this.
+ */
 EXPORT bool asar_reset()
 {
 	resetdllstuff();
@@ -294,30 +400,18 @@ EXPORT void asar_close()
 	resetdllstuff();
 }
 
-EXPORT bool asar_patch(const char *patchloc, char *romdata_, int buflen, int *romlen_)
-{
-	auto execute_patch = [&]() {
-		asar_patch_begin(romdata_, buflen, romlen_, true);
-
-		virtual_filesystem new_filesystem;
-		new_filesystem.initialize(nullptr, 0);
-		filesystem = &new_filesystem;
-
-		asar_patch_main(patchloc);
-
-		new_filesystem.destroy();
-		filesystem = nullptr;
-
-		return asar_patch_end(romdata_, buflen, romlen_);
-	};
-#if defined(RUN_VIA_FIBER)
-	return run_as_fiber(execute_patch);
-#else
-	return execute_patch();
-#endif
-}
-
-EXPORT bool asar_patch_ex(const patchparams_base *params)
+/* $EXPORT$
+ * Applies a patch. The first argument is a filename (so Asar knows where to
+ * look for incsrc'd stuff); however, the ROM is in memory.
+ * This function assumes there are no headers anywhere, neither in romdata nor
+ * the sizes. romlen may be altered by this function; if this is undesirable,
+ * set romlen equal to buflen.
+ * The return value is whether any errors appeared (false=errors, call
+ * asar_geterrors for details). If there is an error, romdata and romlen will
+ * be left unchanged.
+ * See the documentation of struct patchparams for more information.
+ */
+EXPORT bool asar_patch(const struct patchparams_base *params)
 {
 	auto execute_patch = [&]() {
 		if (params == nullptr)
@@ -325,7 +419,7 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 			asar_throw_error(pass, error_type_null, error_id_params_null);
 		}
 
-		if (params->structsize != sizeof(patchparams_v160))
+		if (params->structsize != sizeof(patchparams_v200))
 		{
 			asar_throw_error(pass, error_type_null, error_id_params_invalid_size);
 		}
@@ -335,7 +429,9 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 		memcpy(&paramscurrent, params, (size_t)params->structsize);
 
 
-		asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen, paramscurrent.should_reset);
+		asar_patch_begin(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
+
+		simple_callstacks = !paramscurrent.full_call_stack;
 
 		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;
@@ -369,11 +465,11 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 		}
 
 		clidefines.reset();
-		for (int i = 0; i < paramscurrent.definecount; ++i)
+		for (int i = 0; i < paramscurrent.additional_define_count; ++i)
 		{
 			string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
-			name = strip_whitespace(name);
-			name = strip_prefix(name, '!', false); // remove leading ! if present
+			strip_whitespace(name);
+			name.strip_prefix('!'); // remove leading ! if present
 			if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
 			if (clidefines.exists(name)) {
 				asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.data());
@@ -401,7 +497,7 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 			}
 			else
 			{
-				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, "asar_patch_ex() warning_settings", (int)(warning_id_start + 1), (int)(warning_id_end - 1));
+				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, paramscurrent.warning_settings[i].warnid, "asar_patch_ex() warning_settings");
 			}
 		}
 
@@ -412,6 +508,10 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 
 		asar_patch_main(paramscurrent.patchloc);
 
+		// RPG Hacker: Required before the destroy() below,
+		// otherwise it will leak memory.
+		closecachedfiles();
+
 		new_filesystem.destroy();
 		filesystem = nullptr;
 
@@ -419,35 +519,58 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 };
 #if defined(RUN_VIA_FIBER)
 	return run_as_fiber(execute_patch);
+#elif defined(RUN_VIA_THREAD)
+	return run_as_thread(execute_patch);
 #else
 	return execute_patch();
 #endif
 }
 
+/* $EXPORT$
+ * Returns the maximum possible size of the output ROM from asar_patch().
+ * Giving this size to buflen guarantees you will not get any buffer too small
+ * errors; however, it is safe to give smaller buffers if you don't expect any
+ * ROMs larger than 4MB or something.
+ */
 EXPORT int asar_maxromsize()
 {
 	return maxromsize;
 }
 
-EXPORT const errordata * asar_geterrors(int * count)
+/* $EXPORT$
+ * Get a list of all errors.
+ * All pointers from these functions are valid only until the same function is
+ * called again, or until asar_patch, asar_reset or asar_close is called,
+ * whichever comes first. Copy the contents if you need it for a longer time.
+ */
+EXPORT const struct errordata * asar_geterrors(int * count)
 {
 	*count=numerror;
 	return errors;
 }
 
-EXPORT const errordata * asar_getwarnings(int * count)
+/* $EXPORT$
+ * Get a list of all warnings.
+ */
+EXPORT const struct errordata * asar_getwarnings(int * count)
 {
 	*count=numwarn;
 	return warnings;
 }
 
+/* $EXPORT$
+ * Get a list of all printed data.
+ */
 EXPORT const char * const * asar_getprints(int * count)
 {
 	*count=numprint;
 	return prints;
 }
 
-EXPORT const labeldata * asar_getalllabels(int * count)
+/* $EXPORT$
+ * Get a list of all labels.
+ */
+EXPORT const struct labeldata * asar_getalllabels(int * count)
 {
 	for (int i=0;i<labelsinldata;i++) free((void*)ldata[i].name);
 	labelsinldata=0;
@@ -456,20 +579,33 @@ EXPORT const labeldata * asar_getalllabels(int * count)
 	return ldata;
 }
 
+/* $EXPORT$
+ * Get the ROM location of one label. -1 means "not found".
+ */
 EXPORT int asar_getlabelval(const char * name)
 {
 	if (!stricmp(name, ":$:opcodes:$:")) return numopcodes;//aaah, you found me
-	int i=(int)labelval(&name).pos;
+	int i;
+	try {
+		i=(int)labelval(&name).pos;
+	}
+	catch(errfatal&) { return -1; }
 	if (*name || i<0) return -1;
 	else return i&0xFFFFFF;
 }
 
+/* $EXPORT$
+ * Get the value of a define.
+ */
 EXPORT const char * asar_getdefine(const char * name)
 {
 	if (!defines.exists(name)) return "";
 	return defines.find(name);
 }
 
+/* $EXPORT$
+ * Parses all defines in the parameter. Note that it may emit errors.
+ */
 EXPORT const char * asar_resolvedefines(const char * data)
 {
 	static string out;
@@ -481,9 +617,6 @@ EXPORT const char * asar_resolvedefines(const char * data)
 	return out;
 }
 
-static autoarray<definedata> ddata;
-static int definesinddata=0;
-
 static void adddef(const string& name, string& value)
 {
 	definedata define;
@@ -492,7 +625,10 @@ static void adddef(const string& name, string& value)
 	ddata[definesinddata++]=define;
 }
 
-EXPORT const definedata * asar_getalldefines(int * count)
+/* $EXPORT$
+ * Gets the values and names of all defines.
+ */
+EXPORT const struct definedata * asar_getalldefines(int * count)
 {
 	for (int i=0;i<definesinddata;i++)
 	{
@@ -505,7 +641,14 @@ EXPORT const definedata * asar_getalldefines(int * count)
 	return ddata;
 }
 
-EXPORT double asar_math(const char * str, const char ** e)
+/* $EXPORT$
+ * Parses a string containing math. It automatically assumes global scope (no
+ * namespaces), and has access to all functions and labels from the last call
+ * to asar_patch. Remember to check error to see if it's successful (NULL) or
+ * if it failed (non-NULL, contains a descriptive string). It does not affect
+ * asar_geterrors.
+ */
+EXPORT double asar_math(const char * math_, const char ** error)
 {
 	ns="";
 	namespace_list.reset();
@@ -516,28 +659,38 @@ EXPORT double asar_math(const char * str, const char ** e)
 	double rval=0;
 	try
 	{
-		rval=(double)math(str);
+		rval=(double)math(math_);
 	}
 	catch(errfatal&)
 	{
-		*e=matherror;
+		*error=matherror;
 	}
 	ismath=false;
 	deinitmathcore();
 	return rval;
 }
 
-EXPORT const writtenblockdata * asar_getwrittenblocks(int * count)
+/* $EXPORT$
+ * Get a list of all the blocks written to the ROM by calls such as
+ * asar_patch().
+ */
+EXPORT const struct writtenblockdata * asar_getwrittenblocks(int * count)
 {
 	*count = writtenblocks.count;
 	return writtenblocks;
 }
 
-EXPORT mapper_t asar_getmapper()
+/* $EXPORT$
+ * Get the mapper currently used by Asar.
+ */
+EXPORT enum mapper_t asar_getmapper()
 {
 	return mapper;
 }
 
+/* $EXPORT$
+ * Generates the contents of a symbols file for in a specific format.
+ */
 EXPORT const char * asar_getsymbolsfile(const char* type){
 	symbolsfile = create_symbols_file(type, romCrc);
 	return symbolsfile;

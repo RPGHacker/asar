@@ -18,7 +18,7 @@ __all__ = ["errordata", "writtenblockdata", "mappertype", "version",
            "geterrors", "getwarnings", "getprints", "getalllabels",
            "getlabelval", "getdefine", "getalldefines", "resolvedefines",
            "math", "getwrittenblocks", "getmapper", "getsymbolsfile"]
-_target_api_ver = 303
+_target_api_ver = 400
 _asar = None
 
 
@@ -84,7 +84,6 @@ class _patchparams(ctypes.Structure):
                 ("romlen", c_int_ptr),
                 ("includepaths", POINTER(c_char_p)),
                 ("numincludepaths", c_int),
-                ("should_reset", ctypes.c_bool),
                 ("additional_defines", POINTER(_definedata)),
                 ("additional_define_count", c_int),
                 ("stdincludesfile", c_char_p),
@@ -133,9 +132,7 @@ class _AsarDLL:
             self.setup_func("apiversion", (), c_int)
             self.setup_func("init", (), ctypes.c_bool)
             self.setup_func("reset", (), ctypes.c_bool)
-            self.setup_func("patch", (c_char_p, c_char_p, c_int, c_int_ptr),
-                            ctypes.c_bool)
-            self.setup_func("patch_ex", (POINTER(_patchparams),), ctypes.c_bool)
+            self.setup_func("patch", (POINTER(_patchparams),), ctypes.c_bool)
             self.setup_func("maxromsize", (), c_int)
             self.setup_func("close", (), None)
             self.setup_func("geterrors", (c_int_ptr,), POINTER(errordata))
@@ -250,7 +247,7 @@ def reset():
     return _asar.dll.asar_reset()
 
 
-def patch(patch_name, rom_data, includepaths=[], should_reset=True,
+def patch(patch_name, rom_data, includepaths=[],
           additional_defines={}, std_include_file=None, std_define_file=None,
           warning_overrides={}, memory_files={}, override_checksum=None):
     """Applies a patch.
@@ -260,10 +257,6 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
 
     If includepaths is specified, it lists additional include paths for asar
     to search.
-
-    should_reset specifies whether asar should clear out all defines, labels,
-    etc from the last inserted file. Setting it to False will make Asar act
-    like the currently patched file was directly appended to the previous one.
 
     additional_defines specifies extra defines to give to the patch
     (similar to the -D option).
@@ -302,8 +295,6 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
     pp.additional_defines = defines
     pp.additional_define_count = len(additional_defines)
 
-    pp.should_reset = should_reset
-
     pp.stdincludesfile = std_include_file.encode() if std_include_file else None
     pp.stddefinesfile = std_define_file.encode() if std_define_file else None
 
@@ -329,7 +320,7 @@ def patch(patch_name, rom_data, includepaths=[], should_reset=True,
         pp.override_checksum_gen = False
         pp.generate_checksum = False
 
-    result = _asar.dll.asar_patch_ex(ctypes.byref(pp))
+    result = _asar.dll.asar_patch(ctypes.byref(pp))
     return result, rom_ptr.raw[:romlen.value]
 
 

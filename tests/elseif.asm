@@ -1,5 +1,5 @@
 ;`01
-
+;`02
 !count = 0
 
 !y = "!count #= !count+1"
@@ -178,3 +178,4 @@ else
 endif
 
 if !count == 4**2 : db 1 : endif
+if 0 : db 0 : elseif !count == 4**2 : db 2 : endif

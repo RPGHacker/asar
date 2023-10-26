@@ -1,29 +1,19 @@
 // "because satanism is best defeated by summoning a bigger satan"
 //   ~Alcaro, 2019 (discussing Asar)
 #include "addr2line.h"
-#include "std-includes.h"
-#include "libsmw.h"
-#include "libstr.h"
-#include "assocarr.h"
-#include "autoarray.h"
 #include "asar.h"
 #include "virtualfile.h"
-#include "warnings.h"
 #include "platform/file-helpers.h"
 #include "assembleblock.h"
 #include "asar_math.h"
 #include "macro.h"
-#include <cstdint>
-
+#include <ctime>
 // randomdude999: remember to also update the .rc files (in res/windows/) when changing this.
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
-const int asarver_maj=1;
-const int asarver_min=9;
+const int asarver_maj=2;
+const int asarver_min=0;
 const int asarver_bug=0;
 const bool asarver_beta=true;
-bool default_math_pri=false;
-bool default_math_round_off=false;
-extern bool suppress_all_warnings;
 
 #ifdef _I_RELEASE
 extern char blockbetareleases[(!asarver_beta)?1:-1];
@@ -42,12 +32,7 @@ int optimize_dp = optimize_dp_flag::NONE;
 int dp_base = 0;
 int optimize_address = optimize_address_flag::DEFAULT;
 
-string thisfilename;
-int thisline;
-const char * thisblock;
-
-string callerfilename;
-int callerline=-1;
+autoarray<callstack_entry> callstack;
 
 bool errored=false;
 bool ignoretitleerrors=false;
@@ -109,17 +94,236 @@ bool setmapper()
 	return (maxscore>=0);
 }
 
-string getdecor()
+
+// TODO: Make this accessible to the DLL interface.
+// Will require lib API addition.
+bool simple_callstacks = true;
+
+// Shortens target_path to a relative path, but only if it resides
+// within base_path or a child directory of it.
+string shorten_to_relative_path(const char* base_path, const char* target_path)
+{
+	if (stribegin(target_path, base_path)) target_path += strlen(base_path);
+	return target_path;
+}
+
+string get_top_level_directory()
+{
+	string top_level_file_dir;
+	for (int i = 0; i < callstack.count; ++i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			top_level_file_dir = dir(callstack[i].content);
+			break;
+		}
+	}
+	return top_level_file_dir;
+}
+
+string generate_call_details_string(const char* current_block, const char* current_call, int indentation, bool add_lines)
 {
 	string e;
-	if (thisfilename)
+	if (current_block != nullptr || current_call != nullptr)
 	{
-		e+=STR thisfilename;
-		if (thisline!=-1) e+=STR ":"+dec(thisline+1);
-		if (callerfilename) e+=STR" (called from "+callerfilename+":"+dec(callerline+1)+")";
-		e+=": ";
+		string indent;
+		if (add_lines) indent += "|";
+		for (; indentation > 0; --indentation) indent += " ";
+
+		if (current_block != nullptr) e += STR "\n"+indent+"in block: ["+current_block+"]";
+		if (current_call != nullptr) e += STR "\n"+indent+"in macro call: [%"+current_call+"]";
 	}
 	return e;
+}
+
+string get_pretty_filename(const char* current_file)
+{
+	// RPG Hacker: One could make an argument that we shouldn't shorten paths
+	// here, since some IDEs support jumping to files by double-clicking their
+	// paths. However, AFAIK, no IDE supports this for Asar yet, and if it's
+	// ever desired, we could just make it a command line option. Until then,
+	// I think it's more important to optimize for pretty command line display.
+	return shorten_to_relative_path(get_top_level_directory(), current_file);
+}
+
+string generate_filename_and_line(const char* current_file, int current_line_no)
+{
+	return STR current_file
+		+ (current_line_no>=0?STR ":"+dec(current_line_no+1):"");
+}
+
+string format_stack_line(const printable_callstack_entry& entry, int stack_frame_index)
+{
+	string indent = "\n|   ";
+	indent += dec(stack_frame_index);
+	indent += ": ";
+	// RPG Hacker: We'll probably never have a call stack in the
+	// hundreds even, so this very specific, lazy solution suffices.
+	if (stack_frame_index < 100) indent += " ";
+	if (stack_frame_index < 10) indent += " ";
+	return indent
+		+ generate_filename_and_line(entry.prettypath, entry.lineno)
+		+ entry.details;
+}
+
+void push_stack_line(autoarray<printable_callstack_entry>* out, const char* current_file, const char* current_block, const char* current_call, int current_line_no, int indentation, bool add_lines)
+{
+	printable_callstack_entry new_entry;
+	new_entry.fullpath = current_file;
+	new_entry.prettypath = get_pretty_filename(current_file);
+	new_entry.lineno = current_line_no;
+	new_entry.details = generate_call_details_string(current_block, current_call, indentation, add_lines).raw();
+	out->append(new_entry);
+}
+
+void get_current_line_details(string* location, string* details, bool exclude_block)
+{
+	const char* current_file = nullptr;
+	const char* current_block = nullptr;
+	const char* current_call = nullptr;
+	int current_line_no = -1;
+	for (int i = callstack.count-1; i >= 0 ; --i)
+	{
+		switch (callstack[i].type)
+		{
+			case callstack_entry_type::FILE:
+				current_file = callstack[i].content;
+				if (exclude_block) current_block = nullptr;
+				*location = generate_filename_and_line(get_pretty_filename(current_file), current_line_no);
+				*details = generate_call_details_string(current_block, current_call, 4, false);
+				return;
+			case callstack_entry_type::MACRO_CALL:
+				if (current_call == nullptr) current_call = callstack[i].content;
+				break;
+			case callstack_entry_type::LINE:
+				if (current_block == nullptr && current_call == nullptr) current_block = callstack[i].content;
+				if (current_line_no == -1) current_line_no = callstack[i].lineno;
+				break;
+			case callstack_entry_type::BLOCK:
+				if (current_block == nullptr) current_block = callstack[i].content;
+				break;
+		}
+	}
+	*location = "";
+	*details = "";
+}
+
+void get_full_printable_callstack(autoarray<printable_callstack_entry>* out, int indentation, bool add_lines)
+{
+	out->reset();
+	const char* current_file = nullptr;
+	const char* current_block = nullptr;
+	const char* current_call = nullptr;
+	int current_line_no = -1;
+	for (int i = 0; i < callstack.count; ++i)
+	{
+		switch (callstack[i].type)
+		{
+			case callstack_entry_type::FILE:
+				if (current_file != nullptr)
+				{
+					push_stack_line(out, current_file, current_block, current_call, current_line_no, indentation, add_lines);
+				}
+				current_file = callstack[i].content;
+				current_block = nullptr;
+				current_call = nullptr;
+				current_line_no = -1;
+				break;
+			case callstack_entry_type::MACRO_CALL:
+				current_block = nullptr;
+				current_call = callstack[i].content;
+				break;
+			case callstack_entry_type::LINE:
+				current_line_no = callstack[i].lineno;
+				current_block = callstack[i].content;
+				break;
+			case callstack_entry_type::BLOCK:
+				current_block = callstack[i].content;
+				break;
+		}
+	}
+}
+
+string get_full_callstack()
+{
+	autoarray<printable_callstack_entry> printable_stack;
+	get_full_printable_callstack(&printable_stack, 12, true);
+
+	string e;
+	if (printable_stack.count > 0)
+	{
+		e += "\nFull call stack:";
+		for (int i = printable_stack.count-1; i >= 0; --i)
+		{
+			e += format_stack_line(printable_stack[i], i);
+		}
+	}
+	return e;
+}
+
+// RPG Hacker: This function essetially replicates classic Asar behavior
+// of only printing a single macro call below the current level.
+string get_simple_callstack()
+{
+	int i;
+	const char* current_call = nullptr;
+	for (i = callstack.count-1; i >= 0 ; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::MACRO_CALL)
+		{
+			current_call = callstack[i].content;
+			break;
+		}
+	}
+
+	const char* current_file = nullptr;
+	int current_line_no = -1;
+	if (current_call != nullptr)
+	{
+		bool stop = false;
+		for (int j = i-1; j >= 0 ; --j)
+		{
+			switch (callstack[j].type)
+			{
+				case callstack_entry_type::FILE:
+					if (current_file != nullptr)
+					{
+						stop = true;
+						break;
+					}
+					current_file = callstack[j].content;
+					break;
+				case callstack_entry_type::MACRO_CALL:
+					stop = true;
+					break;
+				case callstack_entry_type::LINE:
+					if (current_line_no == -1) current_line_no = callstack[j].lineno;
+					break;
+				case callstack_entry_type::BLOCK:
+					break;
+			}
+
+			if (current_file != nullptr && current_line_no != -1) stop = true;
+
+			if (stop) break;
+		}
+	}
+
+	string e;
+	if (current_call != nullptr && current_file != nullptr)
+	{
+		e += STR "\n    called from: " + generate_filename_and_line(get_pretty_filename(current_file), current_line_no)
+			+ ": [%" + current_call + "]";
+	}
+	return e;
+}
+
+string get_callstack()
+{
+	if (simple_callstacks)
+		return get_simple_callstack();
+	else
+		return get_full_callstack();
 }
 
 asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error)
@@ -152,17 +356,13 @@ virtual_file_error asar_get_last_io_error()
 }
 
 static bool freespaced;
-static int getlenforlabel(int insnespos, int thislabel, bool exists)
+static int getlenforlabel(snes_label thislabel, bool exists)
 {
-	if (warnxkas && (((unsigned int)(thislabel^insnespos)&0xFFFF0000)==0))
-		asar_throw_warning(1, warning_id_xkas_label_access);
-	unsigned int bank = thislabel>>16;
-	unsigned int word = thislabel&0xFFFF;
+	unsigned int bank = thislabel.pos>>16;
+	unsigned int word = thislabel.pos&0xFFFF;
 	unsigned int relaxed_bank = optimizeforbank < 0 ? 0 : optimizeforbank;
 	if (!exists)
 	{
-		if (!freespaced) freespaceextra++;
-		freespaced=true;
 		return 2;
 	}
 	else if((optimize_dp == optimize_dp_flag::RAM) && bank == 0x7E && (word-dp_base < 0x100))
@@ -187,16 +387,17 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 	}
 	else if (optimizeforbank>=0)
 	{
-		if ((unsigned int)thislabel&0xFF000000) return 3;
+		if (thislabel.freespace_id > 0) return 3;
 		else if (bank==(unsigned int)optimizeforbank) return 2;
 		else return 3;
 	}
-	else if ((unsigned int)(thislabel|insnespos)&0xFF000000)
+	else if (thislabel.freespace_id > 0 || freespaceid > 0)
 	{
-		if ((unsigned int)(thislabel^insnespos)&0xFF000000) return 3;
+		// TODO: check whether they're pinned to the same bank
+		if (thislabel.freespace_id != freespaceid) return 3;
 		else return 2;
 	}
-	else if ((thislabel^insnespos)&0xFF0000){ return 3; }
+	else if (bank != snespos >> 16){ return 3; }
 	else { return 2;}
 }
 
@@ -232,7 +433,7 @@ int getlen(const char * orgstr, bool optimizebankextraction)
 		// RPG Hacker: Umm... what kind of magic constant is this?
 		label_data.pos = 31415926;
 		bool found = labelval(posnegname, &label_data);
-		return getlenforlabel(snespos, (int)label_data.pos, found);
+		return getlenforlabel(label_data, found);
 	}
 notposneglabel:
 	int len=0;
@@ -269,13 +470,12 @@ notposneglabel:
 			if (val>=0) thislen=1;
 			if (val>=256) thislen=2;
 			if (val>=65536) thislen=3;
-			if (val>=16777216) thislen=4;
 		}
-		else if (is_alpha(*str) || *str=='_' || *str=='.' || *str=='?')
+		else if (is_ualpha(*str) || *str=='.' || *str=='?')
 		{
 			snes_label thislabel;
 			bool exists=labelval(&str, &thislabel);
-			thislen=getlenforlabel(snespos, (int)thislabel.pos, exists);
+			thislen=getlenforlabel(thislabel, exists);
 		}
 		else str++;
 		if (optimizebankextraction && maybebankextraction &&
@@ -283,7 +483,6 @@ notposneglabel:
 					return 1;
 		if (thislen>len) len=thislen;
 	}
-	if (len>3) return 3;
 	return len;
 }
 
@@ -302,6 +501,7 @@ struct stricompare {
 };
 
 struct sourcefile {
+	char *data;
 	char** contents;
 	int numlines;
 };
@@ -327,24 +527,24 @@ void resolvedefines(string& out, const char * start)
 {
 	recurseblock rec;
 	const char * here=start;
+	if (!strchr(here, '!'))
+	{
+		out += here;
+		return;
+	}
 	while (*here)
 	{
-		if (*here=='"' && emulatexkas)
-		{
-			asar_throw_warning(0, warning_id_feature_deprecated, "xkas define quotes", "removing the quotes generally does what you want");
-			out+=*here++;
-			while (*here && *here!='"') out+=*here++;
-			out+=*here++;
-		}
-		else if (here[0] == '\\' && here[1] == '\\')
+		if (here[0] == '\\' && here[1] == '\\')
 		{
 			// allow using \\ as escape sequence
+			if (in_macro_def > 0) out += "\\";
 			out += "\\";
 			here += 2;
 		}
 		else if (here[0] == '\\' && here[1] == '!')
 		{
 			// allow using \! to escape !
+			if (in_macro_def > 0) out += "\\";
 			out+="!";
 			here += 2;
 		}
@@ -353,6 +553,22 @@ void resolvedefines(string& out, const char * start)
 			bool first=(here==start || (here>=start+4 && here[-1]==' ' && here[-2]==':' && here[-3]==' '));//check if it's the start of a block
 			string defname;
 			here++;
+
+			int depth = 0;
+			for (const char* depth_str = here; *depth_str=='^'; depth_str++)
+			{
+				depth++;
+			}
+			here += depth;
+
+			if (depth != in_macro_def)
+			{
+				out += '!';
+				for (int i=0; i < depth; ++i) out += '^';
+				if (depth > in_macro_def) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "define", "define", depth, in_macro_def);
+				continue;
+			}
+
 			if (*here=='{')
 			{
 				here++;
@@ -374,9 +590,6 @@ void resolvedefines(string& out, const char * start)
 			{
 				while (is_ualnum(*here)) defname+=*here++;
 			}
-			if (warnxkas && here[0]=='(' && here[1]==')')
-				asar_throw_warning(0, warning_id_xkas_eat_parentheses);
-			//if (emulatexkas && here[0]=='(' && here[1]==')') here+=2;
 
 			if (first)
 			{
@@ -394,8 +607,6 @@ void resolvedefines(string& out, const char * start)
 				else if (stribegin(here, " #= ")) { here+=4; mode=domath; }
 				else if (stribegin(here, " ?= ")) { here+=4; mode=setifnotset; }
 				else goto notdefineset;
-				if (emulatexkas && mode != null) asar_throw_warning(0, warning_id_convert_to_asar);
-				//else if (stribegin(here, " equ ")) here+=5;
 				string val;
 				if (*here=='"')
 				{
@@ -418,7 +629,10 @@ void resolvedefines(string& out, const char * start)
 				}
 				//if (strqchr(val.data(), ';')) *strqchr(val.data(), ';')=0;
 				if (*here && !stribegin(here, " : ")) asar_throw_error(0, error_type_line, error_id_broken_define_declaration);
-				clean(val);
+				// RPG Hacker: Is it really a good idea to normalize
+				// the content of defines? That kinda violates their
+				// functionality as a string replacement mechanism.
+				val.qnormalize();
 
 				// RPG Hacker: throw an error if we're trying to overwrite built-in defines.
 				if (builtindefines.exists(defname))
@@ -480,81 +694,41 @@ void resolvedefines(string& out, const char * start)
 		}
 		else out+=*here++;
 	}
+	if (!confirmquotes(out)) { asar_throw_error(0, error_type_null, error_id_mismatched_quotes); out = ""; }
 }
 
-int repeatnext=1;
-
 bool moreonline;
-bool moreonlinecond;
-int fakeendif;
-bool asarverallowed;
-bool istoplevel;
+bool asarverallowed = false;
 
-void assembleline(const char * fname, int linenum, const char * line)
+void assembleline(const char * fname, int linenum, const char * line, int& single_line_for_tracker)
 {
 	recurseblock rec;
 	bool moreonlinetmp=moreonline;
 	// randomdude999: redundant, assemblefile already converted the path to absolute
 	//string absolutepath = filesystem->create_absolute_path("", fname);
 	string absolutepath = fname;
-	thisfilename = absolutepath;
-	thisline=linenum;
-	thisblock= nullptr;
+	single_line_for_tracker = 1;
 	try
 	{
-		string tmp=replace_macro_args(line);
-		clean(tmp);
-		string out;
-		if (numif==numtrue) resolvedefines(out, tmp);
-		else out=tmp;
-		// recheck quotes - defines can mess those up sometimes
-		if (!confirmquotes(out)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
-		out.qreplace(": :", ":  :", true);
-//puts(out);
-		autoptr<char**> blocks=qsplit(out.temp_raw(), " : ");
+		string out=line;
+		out.qreplace(": :", ":  :");
+		autoptr<char**> blocks=qsplitstr(out.temp_raw(), " : ");
 		moreonline=true;
-		moreonlinecond=true;
-		fakeendif=0;
 		for (int block=0;moreonline;block++)
 		{
 			moreonline=(blocks[block+1] != nullptr);
-			int repeatthis=repeatnext;
-			repeatnext=1;
-			for (int i=0;i<repeatthis;i++)
+			try
 			{
-				try
-				{
-					string stripped_block = blocks[block];
-					strip_both(stripped_block, ' ', true);
-					
-					thisline=linenum;//do not optimize, this one is recursive
-					thisblock = stripped_block.data();
-					bool isspecialline = false;
-					if (thisblock[0] == '@')
-					{
-						asar_throw_warning(0, warning_id_feature_deprecated, "prefixing Asar commands with @ or ;@", "remove the @ or ;@ prefix");
+				string stripped_block = strip_whitespace(blocks[block]);
 
-						isspecialline = true;
-						thisblock++;
-						while (is_space(*thisblock))
-						{
-							thisblock++;
-						}
-					}
-					assembleblock(thisblock, isspecialline);
-					checkbankcross();
-				}
-				catch (errblock&) {}
-				if (blocks[block][0]!='\0' && blocks[block][0]!='@') asarverallowed=false;
+				callstack_push cs_push(callstack_entry_type::BLOCK, stripped_block);
+
+				assembleblock(stripped_block, single_line_for_tracker);
+				checkbankcross();
 			}
-		}
-		if(fakeendif)
-		{
-			thisline = linenum;
-			thisblock = blocks[0];
-			asar_throw_warning(0, warning_id_feature_deprecated, "inline if statements", "Add an \" : endif\" at the end of the line");
-			if (numif==numtrue) numtrue--;
-			numif--;
+			catch (errblock&) {}
+			if (blocks[block][0]!='\0') asarverallowed=false;
+			if(single_line_for_tracker == 1) single_line_for_tracker = 0;
 		}
 	}
 	catch (errline&) {}
@@ -578,133 +752,84 @@ bool file_included_once(const char* file)
 	return false;
 }
 
-void assemblefile(const char * filename, bool toplevel)
+autoarray<string> macro_defs;
+int in_macro_def=0;
+
+void assemblefile(const char * filename)
 {
 	incsrcdepth++;
-	string absolutepath = filesystem->create_absolute_path(thisfilename, filename);
+	string absolutepath = filesystem->create_absolute_path(get_current_file_name(), filename);
 
 	if (file_included_once(absolutepath))
 	{
 		return;
 	}
 
-	string prevthisfilename = thisfilename;
-	thisfilename = absolutepath;
-	int prevline = thisline;
-	thisline=-1;
-	const char* prevthisblock = thisblock;
-	thisblock= nullptr;
+	callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
+
 	sourcefile file;
 	file.contents = nullptr;
 	file.numlines = 0;
 	int startif=numif;
 	if (!filecontents.exists(absolutepath))
 	{
-		char * temp= readfile(absolutepath, "");
+		char * temp = readfile(absolutepath, "");
 		if (!temp)
 		{
-			// RPG Hacker: This is so that we hopefully always end up with a proper decor
-			// and get better error messages.
-			thisfilename = prevthisfilename;
-			thisline = prevline;
-			thisblock = prevthisblock;
-
 			asar_throw_error(0, error_type_null, vfile_error_to_error_id(asar_get_last_io_error()), filename);
 
 			return;
 		}
-		file.contents =split(temp, "\n");
-		for (int i=0;file.contents[i];i++)
+		sourcefile& newfile = filecontents.create(absolutepath);
+		newfile.contents =split(temp, '\n');
+		newfile.data = temp;
+		for (int i=0;newfile.contents[i];i++)
 		{
-			file.numlines++;
-			char * line= file.contents[i];
-			char * comment=line;
-			comment = strqchr(comment, ';');
-			while (comment != nullptr)
-			{
-				if (comment[1]!='@')
-				{
-					comment[0]='\0';
-				}
-				else
-				{
-					comment[0] = ' ';
-				}
-				comment = strqchr(comment, ';');
-			}
-			while (strqchr(line, '\t')) *strqchr(line, '\t')=' ';
-			if (!confirmquotes(line)) { thisline = i; thisblock = line; asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
-			itrim(line, " ", " ", true);	//todo make use strip
+			newfile.numlines++;
+			char * line= newfile.contents[i];
+			char * comment = strqchr(line, ';');
+			if(comment) *comment = 0;
+			if (!confirmquotes(line)) { callstack_push cs_push(callstack_entry_type::LINE, line, i); asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
+			newfile.contents[i] = strip_whitespace(line);
 		}
-		for(int i=0;file.contents[i];i++)
+		for(int i=0;newfile.contents[i];i++)
 		{
-			char* line = file.contents[i];
-			for (int j=1;strqrchr(line, ',') && !strqrchr(line, ',')[1] && file.contents[i+j];j++)
+			char* line = newfile.contents[i];
+			if(!*line) continue;
+			for (int j=1;line[strlen(line) - 1] == ',' && newfile.contents[i+j];j++)
 			{
 				// not using strcat because the source and dest overlap here
-				char* otherline = file.contents[i+j];
+				char* otherline = newfile.contents[i+j];
 				char* line_end = line + strlen(line);
 				while(*otherline) *line_end++ = *otherline++;
 				*line_end = '\0';
 				static char nullstr[]="";
-				file.contents[i+j]=nullstr;
+				newfile.contents[i+j]=nullstr;
 			}
 		}
-		filecontents.create(absolutepath) = file;
+		file = newfile;
 	} else { // filecontents.exists(absolutepath)
 		file = filecontents.find(absolutepath);
 	}
-	bool in_macro_def=false;
 	asarverallowed=true;
 	for (int i=0;file.contents[i] && i<file.numlines;i++)
 	{
-		try
-		{
-			thisfilename= absolutepath;
-			thisline=i;
-			thisblock= nullptr;
-			istoplevel=toplevel;
-			if (stribegin(file.contents[i], "macro ") && numif==numtrue)
-			{
-				if (in_macro_def || inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
-				in_macro_def=true;
-				if (!pass) startmacro(file.contents[i]+6);
-			}
-			else if (!stricmp(file.contents[i], "endmacro") && numif==numtrue)
-			{
-				if (!in_macro_def) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
-				in_macro_def=false;
-				if (!pass) endmacro(true);
-			}
-			else if (in_macro_def)
-			{
-				if (!pass) tomacro(file.contents[i]);
-			}
-			else
-			{
-				int prevnumif = numif;
-				string connectedline;
-				int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
-				assembleline(absolutepath, i, connectedline);
-				thisfilename = absolutepath;
-				i += skiplines;
-				if (numif != prevnumif && whilestatus[numif].iswhile && whilestatus[numif].cond)
-					i = whilestatus[numif].startline - 1;
-			}
-		}
-		catch (errline&) {}
+		string connectedline;
+		int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
+
+		bool was_loop_end = do_line_logic(connectedline, absolutepath, i);
+		i += skiplines;
+
+		// if a loop ended on this line, should it run again?
+		if (was_loop_end && whilestatus[numif].cond)
+			i = whilestatus[numif].startline - 1;
 	}
-	thisline++;
-	thisblock= nullptr;
-	if (in_macro_def)
+	while (in_macro_def > 0)
 	{
-		asar_throw_error(0, error_type_null, error_id_unclosed_macro);
-		if (!pass) endmacro(false);
-	}
-	if (repeatnext!=1)
-	{
-		repeatnext=1;
-		asar_throw_error(0, error_type_null, error_id_rep_at_file_end);
+		asar_throw_error(0, error_type_null, error_id_unclosed_macro, macro_defs[in_macro_def-1].data());
+		if (!pass && in_macro_def == 1) endmacro(false);
+		in_macro_def--;
+		macro_defs.remove(in_macro_def);
 	}
 	if (numif!=startif)
 	{
@@ -714,6 +839,77 @@ void assemblefile(const char * filename, bool toplevel)
 	}
 	incsrcdepth--;
 }
+
+// RPG Hacker: At some point, this should probably be merged
+// into assembleline(), since the two names just cause
+// confusion otherwise.
+// return value is "did a loop end on this line"
+bool do_line_logic(const char* line, const char* filename, int lineno)
+{
+	int prevnumif = numif;
+	int single_line_for_tracker = 1;
+	try
+	{
+		string current_line;
+		if (numif==numtrue || (numtrue+1==numif && stribegin(line, "elseif ")))
+		{
+			callstack_push cs_push(callstack_entry_type::LINE, line, lineno);
+			string tmp=replace_macro_args(line);
+			tmp.qnormalize();
+			resolvedefines(current_line, tmp);
+		}
+		else current_line=line;
+
+		callstack_push cs_push(callstack_entry_type::LINE, current_line, lineno);
+
+		if (stribegin(current_line, "macro ") && numif==numtrue)
+		{
+			// RPG Hacker: Slight redundancy here with code that is
+			// also in startmacro(). Could improve this for Asar 2.0.
+			string macro_name = current_line.data()+6;
+			char * startpar=strqchr(macro_name.data(), '(');
+			if (startpar) *startpar=0;
+			macro_defs.append(macro_name);
+
+			// RPG Hacker: I think it would make more logical sense
+			// to have this ++ after the if, but hat breaks compatibility
+			// with at least one test, and it generally leads to more
+			// errors being output after a broken macro declaration.
+			in_macro_def++;
+			if (!pass)
+			{
+				if (in_macro_def == 1) startmacro(current_line.data()+6);
+				else tomacro(current_line);
+			}
+		}
+		else if (!stricmp(current_line, "endmacro") && numif==numtrue)
+		{
+			if (in_macro_def == 0) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
+			else
+			{
+				in_macro_def--;
+				macro_defs.remove(in_macro_def);
+				if (!pass)
+				{
+					if (in_macro_def == 0) endmacro(true);
+					else tomacro(current_line);
+				}
+			}
+		}
+		else if (in_macro_def > 0)
+		{
+			if (!pass) tomacro(current_line);
+		}
+		else
+		{
+			assembleline(filename, lineno, current_line, single_line_for_tracker);
+		}
+	}
+	catch (errline&) {}
+	return (numif != prevnumif || single_line_for_tracker == 3)
+		&& (whilestatus[numif].iswhile || whilestatus[numif].is_for);
+}
+
 
 void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 {
@@ -727,7 +923,7 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 		{
 			string stdinclude;
 
-			do 
+			do
 			{
 				if (pos[0] != '\r' && pos[0] != '\n')
 				{
@@ -736,7 +932,7 @@ void parse_std_includes(const char* textfile, autoarray<string>& outarray)
 				pos++;
 			} while (pos[0] != '\0' && pos[0] != '\n');
 
-			stdinclude = strip_whitespace(stdinclude);
+			strip_whitespace(stdinclude);
 
 			if (stdinclude != "")
 			{
@@ -760,6 +956,7 @@ void parse_std_defines(const char* textfile)
 	// one convenient place for doing it).
 	builtindefines.create("assembler") = "asar";
 	builtindefines.create("assembler_ver") = dec(get_version_int());
+	builtindefines.create("assembler_time") = dec(time(nullptr));
 
 	if(textfile == nullptr) return;
 
@@ -784,8 +981,8 @@ void parse_std_defines(const char* textfile)
 			if (*pos != 0)
 				pos++; // skip \n
 			// clean define_name
-			define_name = strip_whitespace(define_name);
-			define_name = strip_prefix(define_name, '!', false); // remove leading ! if present
+			strip_whitespace(define_name);
+			define_name.strip_prefix('!'); // remove leading ! if present
 
 			if (define_name == "")
 			{
@@ -854,19 +1051,16 @@ bool force_checksum_fix = false;
 static void clearmacro(const string & key, macrodata* & macro)
 {
 	(void)key;
-	macro->lines.~autoarray();
-	cfree(macro->fname);
-	cfree(macro->arguments[0]);
-	cfree(macro->arguments);
-	cfree(macro);
+	freemacro(macro);
 }
 
 static void clearfile(const string & key, sourcefile& filecontent)
 {
 	(void)key;
-	cfree(*filecontent.contents);
+	cfree(filecontent.data);
 	cfree(filecontent.contents);
 }
+#undef cfree
 
 static void adddefine(const string & key, string & value)
 {
@@ -877,13 +1071,13 @@ static string symbolfile;
 
 static void printsymbol_wla(const string& key, snes_label& label)
 {
-	string line = hex2((label.pos & 0xFF0000)>>16)+":"+hex4(label.pos & 0xFFFF)+" "+key+"\n";
+	string line = hex((label.pos & 0xFF0000)>>16, 2)+":"+hex(label.pos & 0xFFFF, 4)+" "+key+"\n";
 	symbolfile += line;
 }
 
 static void printsymbol_nocash(const string& key, snes_label& label)
 {
-	string line = hex8(label.pos & 0xFFFFFF)+" "+key+"\n";
+	string line = hex(label.pos & 0xFFFFFF, 8)+" "+key+"\n";
 	symbolfile += line;
 }
 
@@ -945,6 +1139,50 @@ string create_symbols_file(string format, uint32_t romCrc){
 	return symbolfile;
 }
 
+
+bool in_top_level_file()
+{
+	int num_files = 0;
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+		{
+			num_files++;
+			if (num_files > 1) break;
+		}
+	}
+	return (num_files <= 1);
+}
+
+const char* get_current_file_name()
+{
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::FILE)
+			return callstack[i].content.raw();
+	}
+	return nullptr;
+}
+
+int get_current_line()
+{
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::LINE) return callstack[i].lineno;
+	}
+	return -1;
+}
+
+const char* get_current_block()
+{
+	for (int i = callstack.count-1; i >= 0; --i)
+	{
+		if (callstack[i].type == callstack_entry_type::LINE || callstack[i].type == callstack_entry_type::BLOCK) return callstack[i].content.raw();
+	}
+	return nullptr;
+}
+
+
 void reseteverything()
 {
 	string str;
@@ -970,16 +1208,18 @@ void reseteverything()
 	closecachedfiles();
 
 	incsrcdepth=0;
+	label_counter = 0;
 	errored = false;
 	checksum_fix_enabled = true;
 	force_checksum_fix = false;
 
-	default_math_pri = false;
-	default_math_round_off = false;
-	suppress_all_warnings = false;
-	
+	in_macro_def = 0;
+
 	#ifndef ASAR_SHARED
 		free(const_cast<unsigned char*>(romdata_r));
 	#endif
+
+	callstack.reset();
+	simple_callstacks = true;
 #undef free
 }

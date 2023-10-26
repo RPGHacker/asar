@@ -7,15 +7,16 @@ option(ASAR_GEN_EXE "Build Asar standalone application" ON)
 option(ASAR_GEN_DLL "Build Asar shared library" ON)
 option(ASAR_GEN_LIB "Build Asar static library" ON)
 option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
+option(ASAR_USE_THREADS "Run Asar in a new thread to alleviate stack usage problems" ON)
 if (MSVC)
 	message(STATUS "In MSVC you can override MSVC_LIB_TYPE, valid values are D for dynamic and T for static")
 endif()
 
-set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
-set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
+
+set (CMAKE_CXX_STANDARD 17)
 
 
-# This macro sets a number of properties required by both,
+# This maro sets a number of properties required by both,
 # stand-alone application and library interface
 
 macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
@@ -35,13 +36,13 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 		endif()
 	endif()
 
-	if (enable_sanitizer)
-		target_compile_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
-		target_link_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
+	if (${enable_sanitizer} AND ${ASAR_USE_SANITIZER})
+		target_compile_options(${target} PRIVATE -fsanitize=address -fsanitize=undefined)
+		target_link_options(${target} PRIVATE -fsanitize=address -fsanitize=undefined)
 	endif()
 
 	target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
-	
+
 	if(MSVC)
 		target_compile_definitions(${target} PRIVATE "strncasecmp=_strnicmp")
 		target_compile_definitions(${target} PRIVATE "strcasecmp=_stricmp")
@@ -49,7 +50,7 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 		target_compile_definitions(${target} PRIVATE "_CRT_NONSTDC_NO_WARNINGS")
 		target_compile_definitions(${target} PRIVATE "_ALLOW_KEYWORD_MACROS")
 
-		if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "llvm")
+		if(CMAKE_VS_PLATFORM_TOOLSET MATCHES "^LLVM-.*$" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "llvm" OR CMAKE_VS_PLATFORM_TOOLSET STREQUAL "ClangCL")
 			target_compile_options(${target} PRIVATE
 				-Wno-old-style-cast # use of old-style-cast
 				-Wno-unknown-argument # unknown argument ignored in clang-cl
@@ -60,6 +61,14 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 				-Wno-float-equal # comparting floating point with == or != is unsafe
 				-Wno-covered-switch-default # default label in switch which covers all enumeration values
 				-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
+				-Wno-extra-semi-stmt # remove unnecessary ';'
+
+				# a bunch of warnings about casts which we honestly should deal with at some point, but there's just way too many of them
+				-Wno-sign-conversion # implicit conversion changes signedness
+				-Wno-shorten-64-to-32 # implicit conversion of int64_t to int32_t
+				-Wno-old-style-cast # use of old-style cast
+				-Wno-cast-qual # cast drops const qualifier
+				-Wno-implicit-int-conversion # implicit conversion loses precision
 
 				# RPG Hacker: These two are really nasty, but not easily fixable in Asar, so have to disable them...
 				-Wno-exit-time-destructors # declaration requires an exit-time destructor
@@ -67,19 +76,27 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 			)
 		endif()
 	endif()
-		
+
 	if (WIN32)
 		target_compile_definitions(${target} PRIVATE "windows")
+		# RPG Hacker: We define UNICODE on Windows, just to make sure we don't accidentally call an ANSI API somewhere.
+		target_compile_definitions(${target} PRIVATE "UNICODE" "_UNICODE")
 	endif()
-		
+
 	if (UNIX)
 		target_compile_definitions(${target} PRIVATE "linux")
 		target_compile_definitions(${target} PRIVATE "stricmp=strcasecmp")
+
+		if(ASAR_USE_THREADS)
+			set(THREADS_PREFER_PTHREAD_FLAG ON)
+			find_package(Threads REQUIRED)
+			target_link_libraries(${target} PRIVATE Threads::Threads)
+		endif()
 	endif()
-	
-	
+
+
 	# Enable maximum warning level
-	
+
 	if(MSVC)
 		target_compile_options(${target} PRIVATE /W3 /EHa)
 		
@@ -90,16 +107,16 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 			/wd4711 # function selected for automatic inline expansion
 			/wd4820 # 'bytes' bytes padding added after construct 'member_name'
 			/wd4464 # relativ include path contains '..'
-			/wd4244 # 'conversion' conversion from 'type1' to 'type2', possible loss of data
+			/wd4668 # undefined define used in #if (thrown in windows headers)
+			/wd5045 # compiler will insert spectre mitigation
+			/wd4365 # implicit conversion changes signedness
+			/wd4242 # implicit conversion loses precision
+			/wd4244 # implicit conversion loses precision
+			/wd4267 # implicit conversion loses precision
+			/wd4800 # implicit conversion to bool
 			/wd5045 # compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
 		)
 		target_link_options(${target} PRIVATE /STACK:4194304)
-		if(MSVC_VERSION VERSION_LESS "1900")
-			target_compile_features(${target} PRIVATE cxx_std_11)
-		else()
-			# MSVC throws errors in STL headers when building with MSVC 2017 without C++14...
-			target_compile_features(${target} PRIVATE cxx_std_14)
-		endif()
 	else()
 		target_compile_options(${target} PRIVATE -Wall -pedantic
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
@@ -115,8 +132,10 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 
 		# for some reason this isn't available on MSVC?
 		target_compile_features(${target} PRIVATE c_std_99)
+	endif()
 
-		target_compile_features(${target} PRIVATE cxx_std_11)
+	if(NOT(ASAR_USE_THREADS))
+		target_compile_definitions(${target} PRIVATE NO_USE_THREADS)
 	endif()
 endmacro()
 
@@ -129,7 +148,7 @@ set(ASAR_SHARED_SOURCE_FILES "")
 
 list(
 	APPEND ASAR_SHARED_SOURCE_FILES
-	
+
 	"${CMAKE_CURRENT_SOURCE_DIR}/addr2line.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-65816.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-spc700.cpp"
@@ -145,9 +164,11 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/errors.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/table.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/unicode.cpp"
 
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.cpp"
-	
+
 	# Not required in here, but useful so they're add to your VS solution
 	"${CMAKE_CURRENT_SOURCE_DIR}/addr2line.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/asar.h"
@@ -160,17 +181,18 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/libstr.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/errors.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/unicode.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/assembleblock.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/asar_math.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/macro.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/interface-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/dll_helper.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/table.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.h"
-	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/platform/thread-helpers.h"
 )
 
 
@@ -182,34 +204,37 @@ if(WIN32)
 	# Windos-specific files
 	list(
 		APPEND ASAR_SHARED_SOURCE_FILES
-		
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/file-helpers-win32.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/windows/thread-helpers-win32.h"
 	)
-	
+
 	list(
-		APPEND ASAR_RESOURCE_FILES		
-	
+		APPEND ASAR_RESOURCE_FILES
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/res/windows/asar.rc"
 	)
 
 	list(
-		APPEND ASAR_LIB_RESOURCE_FILES		
-	
+		APPEND ASAR_LIB_RESOURCE_FILES
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/res/windows/asar_lib.rc"
 	)
 elseif(UNIX)
 	# Linux-specific files
 	list(
 		APPEND ASAR_SHARED_SOURCE_FILES
-		
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/linux/file-helpers-linux.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/thread-helpers-pthread.h"
 	)
 else()
 	# Files for any other platform
 	list(
 		APPEND ASAR_SHARED_SOURCE_FILES
-		
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/file-helpers-generic.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/thread-helpers-pthread.h"
 	)
 endif()
 
@@ -225,7 +250,7 @@ if(ASAR_GEN_EXE)
 
 		"${CMAKE_CURRENT_SOURCE_DIR}/interface-cli.cpp"
 
-		${ASAR_SHARED_SOURCE_FILES}	
+		${ASAR_SHARED_SOURCE_FILES}
 		${ASAR_RESOURCE_FILES}
 		)
 
@@ -256,10 +281,10 @@ endif(ASAR_GEN_EXE)
 
 if(ASAR_GEN_DLL)
 	add_library(
-		asar SHARED	
-		
+		asar SHARED
+
 		"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.cpp"
-		
+
 		${ASAR_SHARED_SOURCE_FILES}
 		${ASAR_LIB_RESOURCE_FILES}
 	)

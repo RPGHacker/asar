@@ -4,7 +4,8 @@
 ;`EA 12 60  EA 12 60
 ;`EA 12 60  EA 12 60
 warnings disable Wfeature_deprecated
-arch spc700-raw
+arch spc700
+norom
 org 0
 L:
 bbs1 $12.3,L : bbs $12.3,L

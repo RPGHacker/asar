@@ -1,13 +1,12 @@
 #include "warnings.h"
 
 #include "asar.h"
-#include <assert.h>
-#include <stdarg.h>
+#include <cassert>
+#include <cstdarg>
 
 #include "interface-shared.h"
 
 static int asar_num_warnings = 0;
-bool suppress_all_warnings = false;
 
 struct asar_warning_mapping
 {
@@ -99,7 +98,7 @@ static_assert(sizeof(asar_warnings) / sizeof(asar_warnings[0]) == warning_id_cou
 
 void asar_throw_warning(int whichpass, asar_warning_id warnid, ...)
 {
-	if (pass == whichpass && !suppress_all_warnings)
+	if (pass == whichpass)
 	{
 		assert(warnid > warning_id_start && warnid < warning_id_end);
 
@@ -172,23 +171,8 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 			return asar_warnings[i].warnid;
 		}
 	}
-	char* endpos = nullptr;
-	int numid = (int)strtol(pos, &endpos, 10);
 
-	if (endpos == nullptr || endpos[0] != '\0')
-	{
-		return warning_id_end;
-	}
-
-	asar_warning_id warnid = (asar_warning_id)numid;
-
-	if (warnid <= warning_id_start || warnid >= warning_id_end)
-	{
-		return warning_id_end;
-	}
-
-	asar_throw_warning(1, warning_id_feature_deprecated, "Numerical warnings", "Please transition to Wwarning_name");
-	return warnid;
+	return warning_id_end;
 }
 
 void reset_warnings_to_default()

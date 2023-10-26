@@ -24,6 +24,7 @@ enum mapper_t {
 
 extern int sa1banks[8];//only 0, 1, 4, 5 are used
 
+void addromwrite(int pcoffset, int numbytes);
 void writeromdata(int pcoffset, const void * indata, int numbytes);
 void writeromdata_byte(int pcoffset, unsigned char indata);
 void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes);
@@ -194,15 +195,13 @@ inline int pctosnes(int addr)
 	return -1;
 }
 
-int getpcfreespace(int size, bool isforcode, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00);
-int getsnesfreespace(int size, bool isforcode, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00);
+int getpcfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00, bool write_rats=true);
+int getsnesfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00, bool write_rats=true);
 
-void resizerats(int snesaddr, int newlen);
 void removerats(int snesaddr, unsigned char clean_byte);
+void handle_cleared_rats_tags();
 int ratsstart(int pcaddr);
 
-bool goodchecksum();
 void fixchecksum();
 
-void WalkRatsTags(void(*func)(int loc, int len));//This one calls func() for each RATS tag in the ROM. The pointer is SNES format.
 void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsigned char * contents));//This one calls func() for each metadata block in the RATS tag whose contents (metadata) start at loc in the ROM. Do not replace name with an invalid metadata name, and note that name is not null terminated.

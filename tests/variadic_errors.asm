@@ -1,16 +1,16 @@
 ;`errEvararg_must_be_last
 ;`errEinvalid_macro_param_name
-;`warnWfeature_deprecated
+;`errEinvalid_macro_param_name
 ;`errEunclosed_vararg
 ;`errEinvalid_vararg
-;`errEinvalid_vararg
-;`errEvararg_sizeof_nomacro
 ;`errEmacro_not_varadic
 ;`errEvararg_out_of_bounds
 ;`errEvararg_out_of_bounds
 ;`errEmacro_wrong_min_params
 ;`errEvararg_out_of_bounds
 ;`errEmacro_wrong_min_params
+;`errEvararg_sizeof_nomacro
+;`errEmacro_not_varadic
 
 
 

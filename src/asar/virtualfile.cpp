@@ -3,8 +3,6 @@
 #include "platform/file-helpers.h"
 #include "warnings.h"
 
-
-
 class virtual_file
 {
 public:
@@ -24,7 +22,7 @@ class memory_file : public virtual_file
 public:
 	memory_file(const void* data, size_t length)
 		: m_data(data), m_length(length)
-	{		
+	{
 	}
 
 	virtual ~memory_file()
@@ -61,8 +59,8 @@ class physical_file : public virtual_file
 {
 public:
 	physical_file()
-		: m_file_handle(nullptr)
-	{		
+		: m_file_handle(InvalidFileHandle)
+	{
 	}
 
 	virtual ~physical_file()
@@ -78,15 +76,17 @@ public:
 			if(!file_exists((const char*)path)) return vfe_doesnt_exist;
 			if(!check_is_regular_file((const char*)path)) return vfe_not_regular_file;
 
-			m_file_handle = fopen((const char*)path, "rb");
+			FileOpenError error = FileOpenError_None;
 
-			if (m_file_handle == nullptr)
+			m_file_handle = open_file((const char*)path, FileOpenMode_Read, &error);
+
+			if (m_file_handle == InvalidFileHandle)
 			{
-				if (errno == ENOENT)
+				if (error == FileOpenError_NotFound)
 				{
 					return vfe_doesnt_exist;
 				}
-				else if (errno == EACCES)
+				else if (error == FileOpenError_AccessDenied)
 				{
 					return vfe_access_denied;
 				}
@@ -104,32 +104,28 @@ public:
 
 	virtual void close()
 	{
-		if (m_file_handle != nullptr)
+		if (m_file_handle != InvalidFileHandle)
 		{
-			fclose(m_file_handle);
-			m_file_handle = nullptr;
+			close_file(m_file_handle);
+			m_file_handle = InvalidFileHandle;
 		}
 	}
 
 	virtual size_t read(void* out_buffer, size_t pos, size_t num_bytes)
 	{
-		fseek(m_file_handle, (long)pos, SEEK_SET);
-		return fread(out_buffer, 1, num_bytes, m_file_handle);
+		set_file_pos(m_file_handle, (uint64_t)pos);
+		return (size_t)read_file(m_file_handle, out_buffer, (uint32_t)num_bytes);
 	}
 
 	virtual size_t get_size()
 	{
-		fseek(m_file_handle, 0, SEEK_END);
-		long filepos = ftell(m_file_handle);
-		fseek(m_file_handle, 0, SEEK_SET);
-
-		return (size_t)filepos;
+		return (size_t)get_file_size(m_file_handle);
 	}
 
 private:
 	friend class virtual_filesystem;
 
-	FILE* m_file_handle;
+	FileHandleType m_file_handle;
 };
 
 
@@ -262,7 +258,6 @@ void virtual_filesystem::add_memory_file(const char* name, const void* buffer, s
 	string normalized_path = normalize_path(name);
 	m_memory_files.remove(normalized_path);
 	m_memory_files.create(normalized_path) = mem_buf;
-	
 }
 
 bool virtual_filesystem::is_path_absolute(const char* path)

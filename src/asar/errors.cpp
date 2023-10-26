@@ -1,8 +1,6 @@
-#include "errors.h"
-
 #include "asar.h"
-#include <assert.h>
-#include <stdarg.h>
+#include <cassert>
+#include <cstdarg>
 
 #include "interface-shared.h"
 
@@ -148,15 +146,15 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(macro_redefined), "Macro '%s' redefined. First defined at %s:%d" },
 	{ ERR(broken_macro_declaration), "Broken macro declaration." },
 	{ ERR(invalid_macro_param_name), "Invalid macro parameter name." },
-	{ ERR(macro_param_not_found), "Macro parameter '%s' wasn't found." },
+	{ ERR(macro_param_not_found), "Macro parameter '%s' wasn't found.%s" },
 	{ ERR(macro_param_redefined), "Macro parameter '%s' redefined" },
 	{ ERR(broken_macro_usage), "Broken macro usage." },
 	{ ERR(macro_wrong_num_params), "Wrong number of parameters to macro." },
 	{ ERR(broken_macro_contents), "Broken macro contents." },
 	{ ERR(rep_at_macro_end), "rep or if at the end of a macro." },
-	{ ERR(nested_macro_definition), "Nested macro definition." },
+	{ ERR(nested_macro_definition), "Nested macro definition: Trying to define a macro inside '%s', which is not supported." },
 	{ ERR(misplaced_endmacro), "Misplaced endmacro." },
-	{ ERR(unclosed_macro), "Unclosed macro." },
+	{ ERR(unclosed_macro), "Unclosed macro: '%s'." },
 
 	{ ERR(label_in_conditional), "Non-static label in %s command." },
 	{ ERR(broken_conditional), "Broken %s command." },
@@ -231,7 +229,7 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(invalid_print_function_syntax), "Invalid printable string syntax." },
 	{ ERR(unknown_variable), "Unknown variable." },
 
-	{ ERR(invalid_warning_id), "Invalid warning ID passed to %s. Expected format is WXXXX where %d <= XXXX <= %d." },
+	{ ERR(invalid_warning_id), "Warning '%s' (passed to %s) doesn't exist." },
 
 	{ ERR(pushwarnings_without_pullwarnings), "warnings push without matching warnings pull." },
 	{ ERR(pullwarnings_without_pushwarnings), "warnings pull without matching warnings push." },
@@ -254,7 +252,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ ERR(negative_shift), "Bitshift amount is negative." },
 
-	{ ERR(macro_not_varadic), "Invalid use of sizeof(...), active macro is not variadic." },
+	{ ERR(macro_not_varadic), "Invalid use of %s, active macro is not variadic." },
 	{ ERR(vararg_sizeof_nomacro), "Invalid use of sizeof(...), no active macro." },
 	{ ERR(macro_wrong_min_params), "Variadic macro call with too few parameters" },
 	{ ERR(vararg_out_of_bounds), "Variadic macro parameter requested is out of bounds." },
@@ -285,14 +283,31 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(pullns_without_pushns), "pullns without matching pushns." },
 
 	{ ERR(label_forward), "The use of forward labels is not allowed in this context." },
+	{ ERR(undefined_char), "'%s' is not defined in the character table" },
+
+	{ ERR(invalid_utf8), "Invalid text encoding detected. Asar expects UTF-8-encoded text. Please re-save this file in a text editor of choice using UTF-8 encoding." },
+	{ ERR(cmdl_utf16_to_utf8_failed), "UTF-16 to UTF-8 string conversion failed: %s." },
+
+	{ ERR(broken_command), "Broken %s command. %s" },
+	{ ERR(phantom_error), "A phantom error occurred. This is an Asar bug, please report it: https://github.com/RPGHacker/asar/issues" },
+
+	{ ERR(oob), "Operation out of bounds: Requested index %d for object of size %d" },
 
 	{ ERR(unclosed_vararg), "Variadic macro parameter wasn't closed properly." },
 	{ ERR(invalid_vararg), "Trying to use variadic macro parameter syntax to resolve a non variadic argument." },
 
 	{ ERR(macro_param_outside_macro), "Reference to macro parameter outside of macro" },
+	{ ERR(invalid_depth_resolve), "Invalid %s resolution depth: Trying to backwards-resolve a %s using %i '^', but current scope only supports up to %i '^'." },
+	
+	{ ERR(platform_paths), "Platform-specific paths aren'supported. Please use platform-independent paths (use / instead of \\)." },
+
+	{ ERR(bad_single_line_for), "Single-line for loop not allowed here." },
+	{ ERR(broken_for_loop), "Broken for loop command: %s" },
+
+	{ ERR(missing_org), "Missing org or freespace command." },
 };
-// RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
-// matches with the number of constants in asar_warning_id. This is important, because
+// RPG Hacker: Sanity check. This makes sure that the element count of asar_error
+// matches with the number of constants in asar_error_id. This is important, because
 // we are going to access asar_warnings as an array.
 static_assert(sizeof(asar_errors) / sizeof(asar_errors[0]) == error_id_count, "asar_errors and asar_error_id are not in sync");
 

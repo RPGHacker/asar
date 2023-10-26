@@ -203,7 +203,7 @@
 ;`
 ;`0A
 ;`0B
-;`warnWfeature_deprecated
+;`0C
 ;`
 ;P>
 ;P>;This is not a comment, so getconnectedlines() should ignore it and not remove it.
@@ -296,16 +296,16 @@ if !testlabel == 0
 	db $00
 elseif !testlabel == 1 && !anothertestlabel == 2
 	db $01
-elseif !testlabel == 2 && !anothertestlabel == 1
+elseif !testlabel == 2 || !anothertestlabel == 1
 	db $02
-elseif !testlabel == 3 && !anothertestlabel == 0
+elseif !testlabel != 3 && !anothertestlabel == 0
 	db $03
 else
 	db $FF
-	
+
 	while !testlabel > 0
 		db $0A
-	endif
+	endwhile
 endif
 
 !mathlabel #= 0.01+0.01
@@ -317,14 +317,14 @@ db !mathlabel
 while !whiletestvar > 0
 	db !whiletestvar
 	!whiletestvar #= !whiletestvar-1
-endif
+endwhile
 
 macro whilemacro1(numloops)
 	!loopdyloop = <numloops>
 	while !loopdyloop > 0
 		db !loopdyloop
 		!loopdyloop #= !loopdyloop-1
-	endif
+	endwhile
 endmacro
 
 macro whilemacro2()
@@ -339,15 +339,15 @@ endmacro
 
 while !cond1 < 10
 	!cond2 = 0
-	
+
 	while !cond2 < 10
 		db !cond1
 		db !cond2
 		!cond2 #= !cond2+1
-	endif
-	
+	endwhile
+
 	!cond1 #= !cond1+1
-endif
+endwhile
 
 
 db round(1.719247114, 2)*100
@@ -356,7 +356,7 @@ db round(100.6414710, 0)
 
 function multilinefunction(x) = x+\		;;;;; This is a comment, getconnectedlines() should remove it
                                10
-							  
+
 db multilinefunction(1)
 
 
@@ -371,13 +371,18 @@ endmacro
 db $0A		; This is a comment as well, so getconnectedlines() should remove it and ignore this backslah right here -> \
 db $0B
 
+if 0.5 == 0.6
+	db $0D
+else
+	db $0C
+endif
 
 print ""
 print ";This is not a comment, ",\
     "so getconnectedlines() should ignore it and not remove it."
- 
+
 print ""
- 
+
 print "Let's have some random decimal number with fractional part: ",double(10.340173447601384024017510834015701571048)
 print "Now the same number, but with a different precision: ",double(10.340173447601384024017510834015701571048, 10)
 print "Testing a few more numbers: ",double(0.0),", ",double(0.1),", ",double(-0.1),", ",double(1.0),", ",double(-1.0)

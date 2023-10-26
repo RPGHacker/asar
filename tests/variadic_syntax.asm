@@ -1,12 +1,10 @@
 ;`01 01 01 FF FF 05 01 01 FF FF 01 02 03 04 05 06 07 FF FF 02 03 04 05 06 07 01 01 02 03
-;`warnWfeature_deprecated
-;`warnWfeature_deprecated
 lorom
 org $008000
 
 !a = 0
 macro asd(...)
-	db sizeof(...), <...[0]>, <!a> ; Intentionally uses deprecated syntax, to make sure it still works
+	db sizeof(...), <...[0]>, <...[!a]>
 endmacro
 
 macro sorry(...)

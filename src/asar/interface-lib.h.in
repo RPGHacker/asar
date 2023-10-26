@@ -1,0 +1,20 @@
+#pragma once
+#ifndef ASAR_SHARED
+#define expectedapiversion $APIVERSION$
+
+#include <stdbool.h>
+#include <stddef.h> // for size_t
+
+//These structures are returned from various functions.
+$STRUCTS$
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+$FUNCTIONS$
+
+#ifdef __cplusplus
+}
+#endif
+#endif

@@ -11,7 +11,7 @@
 
 org $008000
 
-incsrc "data/table.asm"
+incsrc "data/table.tbl"
 db "ABCD"
 dw "ABCD"
 dl "ABCD"

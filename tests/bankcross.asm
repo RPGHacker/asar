@@ -46,24 +46,24 @@ org $00FFFF
 
 First:
 	db $00
-	
+
 Second:
 	db $00
-	
+
 	dl First
 	dl Second
-	
-check bankcross on
+
+check bankcross half
 
 	db $00,$00,$00
-	
+
 	dl First
 	dl Second
-	
+
 	nop #2
 
-	
-	
+
+
 norom
 
 check bankcross off
@@ -72,24 +72,24 @@ org $00FFFF
 
 Third:
 	db $00
-	
+
 Fourth:
 	db $00
-	
+
 	dl Third
 	dl Fourth
-	
-check bankcross on
+
+check bankcross half
 
 	db $00,$00,$00
-	
+
 	dl Third
 	dl Fourth
-	
+
 	nop #2
-	
-	
-	
+
+
+
 check bankcross off
 
 org $000015
@@ -100,8 +100,8 @@ Sixth:
 	dl $000000
 	dl Fifth
 	dl Sixth
-	
-check bankcross on
+
+check bankcross half
 
 
 
@@ -113,15 +113,15 @@ base $000015
 
 Seventh:
 	dl $000000
-	
+
 Eigth:
 	dl $000000
 	dl Seventh
 	dl Eigth
-	
+
 base off
 
-check bankcross on
+check bankcross half
 
 
 
@@ -147,7 +147,7 @@ db $FE
 
 lorom
 base off
-check bankcross on
+check bankcross half
 
 org $06FFF8
 padbyte $42 : pad $078000

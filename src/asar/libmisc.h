@@ -1,37 +1,17 @@
 #pragma once
-inline int min(int val)
+inline int min(int a, int b)
 {
-	return val;
+	return a > b ? b : a;
 }
 
-template<typename... Args> inline int min(int arg1, const Args&... args)//if this is functional programming, I don't want to know more about it.
+inline unsigned bitround(unsigned v)
 {
-	int i=min(args...);
-	if (arg1<i) return arg1;
-	return i;
-}
-
-inline int posmin(int val)
-{
-	return val;
-}
-
-template<typename... Args> inline int posmin(int arg1, const Args&... args)
-{
-	int i=posmin(args...);
-	if (arg1>=0 && arg1<i) return arg1;
-	return i;
-}
-
-template<int N> struct forceconst { enum { value = N }; };
-#define forceconst(n) (forceconst<n>::value)
-
-//from nall, license: ISC
-    //round up to next highest single bit:
-    //round(15) == 16, round(16) == 16, round(17) == 32
-inline unsigned bitround(unsigned x)
-{
-	if ((x & (x - 1)) == 0) return x;
-	while (x & (x - 1)) x &= x - 1;
-	return x << 1;
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	v++;
+	return v;
 }

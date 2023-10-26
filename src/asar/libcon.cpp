@@ -1,9 +1,15 @@
-#include "std-includes.h"
 #include "libcon.h"
-#include <signal.h>
+#include "libstr.h"
+#include "unicode.h"
+#include <csignal>
 
-static char * progname;
-static char ** args;
+#ifdef windows
+// for readconsole
+#include <windows.h>
+#endif
+
+static const char * progname;
+static const char ** args;
 static int argsleft;
 bool libcon_interactive;
 static const char * usage;
@@ -42,24 +48,33 @@ static const char * getarg(bool tellusage, const char * defval= nullptr)
 	return args[0];
 }
 
-static const char * getfname(bool tellusage, const char * defval= nullptr)
+void u8_fgets(char* buffer, int buffer_size, FILE* handle)
 {
-	return getarg(tellusage, defval);
-	//char * rval=malloc(char, 256);
-	//char * rvalend=rval;
-	//*rval=0;
-	//while (!strchr(rval, '.'))
-	//{
-	//	char * thisword=getarg(false, nullptr);
-	//	if (!thisword)
-	//	{
-	//		if (tellusage) libcon_badusage();
-	//		else return defval;
-	//	}
-	//	if (rval!=rvalend) *(rvalend++)=' ';
-	//	rvalend+=sprintf(rvalend, "%s", thisword);
-	//}
-	//return rval;
+#if defined(windows)
+	// RPG Hacker: Using buffer_size * 2 here to account for potential surrogate pairs.
+	// The idea is that our buffer here should be able to at least hold the same amount
+	// of characters as the old ANSI version would have supported.
+	DWORD num_chars = buffer_size * 2;
+	wchar_t* w_buf = (wchar_t*)malloc(num_chars * sizeof(wchar_t));
+	// this was originally using fgetws, but it was broken on mingw for some
+	// weird reason. (or, more specifically, msvcrt.dll is broken. msvc itself
+	// doesn't use that one.)
+	BOOL res = ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), w_buf, num_chars-1, &num_chars, nullptr);
+	if(!res) { free(w_buf); return; }
+	w_buf[num_chars] = 0;
+	//(void)fgetws(w_buf, num_chars, stdin);
+	string u8_str;
+	if (utf16_to_utf8(&u8_str, w_buf))
+	{
+		strncpy(buffer, u8_str, buffer_size);
+		buffer[buffer_size-1] = '\0';
+		// no point doing more than 1 since the next function cuts off input at the first newline anyways
+		if(strchr(buffer, '\r')) *(strchr(buffer, '\r')) = '\n';
+	}
+	free(w_buf);
+#else
+	(void)fgets(buffer, buffer_size, handle);
+#endif
 }
 
 static const char * requirestrfromuser(const char * question, bool filename)
@@ -71,7 +86,7 @@ static const char * requirestrfromuser(const char * question, bool filename)
 	{
 		*rval=0;
 		printf("%s ", question);
-		(void)fgets(rval, 250, stdin);
+		u8_fgets(rval, 250, stdin);
 	}
 	*strchr(rval, '\n')=0;
 	confirmclose=true;
@@ -92,8 +107,14 @@ static const char * requeststrfromuser(const char * question, bool filename, con
 	char * rval=(char*)malloc(256);
 	*rval=0;
 	printf("%s ", question);
-	(void)fgets(rval, 250, stdin);
-	*strchr(rval, '\n')=0;
+	u8_fgets(rval, 250, stdin);
+	char *eol = strchr(rval, '\n');
+	if(!eol)
+	{
+		printf("Unexpected end of input");
+		exit(-1);
+	}
+	*eol = 0;
 	confirmclose=true;
 	if (!*rval) return defval;
 #ifdef _WIN32
@@ -107,7 +128,7 @@ static const char * requeststrfromuser(const char * question, bool filename, con
 	return rval;
 }
 
-void libcon_init(int argc, char ** argv, const char * usage_)
+void libcon_init(int argc, const char ** argv, const char * usage_)
 {
 	progname=argv[0];
 	args=argv;
@@ -119,16 +140,10 @@ void libcon_init(int argc, char ** argv, const char * usage_)
 #endif
 }
 
-const char * libcon_require(const char * desc)
-{
-	if (libcon_interactive) return requirestrfromuser(desc, false);
-	else return getarg(true);
-}
-
 const char * libcon_require_filename(const char * desc)
 {
 	if (libcon_interactive) return requirestrfromuser(desc, true);
-	else return getfname(true);
+	else return getarg(true);
 }
 
 const char * libcon_optional(const char * desc, const char * defval)
@@ -140,7 +155,7 @@ const char * libcon_optional(const char * desc, const char * defval)
 const char * libcon_optional_filename(const char * desc, const char * defval)
 {
 	if (libcon_interactive) return requeststrfromuser(desc, true, defval);
-	else return getfname(false, defval);
+	else return getarg(false, defval);
 }
 
 const char * libcon_option()
@@ -153,12 +168,6 @@ const char * libcon_option_value()
 {
 	if (!libcon_interactive) return getarg(false);
 	return nullptr;
-}
-
-const char * libcon_question(const char * desc, const char * defval)
-{
-	if (libcon_interactive) return libcon_optional(desc, defval);
-	return defval;
 }
 
 bool libcon_question_bool(const char * desc, bool defval)
