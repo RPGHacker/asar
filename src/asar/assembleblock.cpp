@@ -649,11 +649,12 @@ void checkbankcross()
 	if (!snespos_valid) return;
 	if (disable_bank_cross_errors) return;
 	unsigned int mask = 0x7FFF0000 | (check_half_banks_crossed ? 0x8000 : 0);
-	if (((snespos^    startpos) & mask) && (((snespos - 1) ^ startpos) & mask))
+	if (((snespos^startpos) & mask) && (((snespos - 1) ^ startpos) & mask))
 	{
 		asar_throw_error(pass, error_type_fatal, error_id_bank_border_crossed, snespos);
 	}
-	else if (((realsnespos^realstartpos) & mask) && (((realsnespos - 1) ^ realstartpos) & mask))
+	// don't verify realsnespos when using norom. this allows making custom mappers where the file layout doesn't follow bank borders
+	else if (mapper != norom && ((realsnespos^realstartpos) & mask) && (((realsnespos - 1) ^ realstartpos) & mask))
 	{
 		asar_throw_error(pass, error_type_fatal, error_id_bank_border_crossed, realsnespos);
 	}
