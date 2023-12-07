@@ -2382,6 +2382,7 @@ void assembleblock(const char * block, bool isspecialline)
 		else
 		{
 			for (int i=start;i<end;i++) write1((unsigned int)data[i]);
+			add_addr_to_line(addrToLinePos);
 		}
 	}
 	else if (is("skip") || is("fill"))
