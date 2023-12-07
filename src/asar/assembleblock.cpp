@@ -877,6 +877,12 @@ static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 	return false;
 }
 
+static void add_addr_to_line(int pos)
+{
+	if (pass == 2)
+		addressToLineMapping.includeMapping(get_current_file_name(), get_current_line() + 1, pos);
+}
+
 static autoarray<bool> elsestatus;
 int numtrue=0;//if 1 -> increase both
 int numif = 0;  //if 0 or inside if 0 -> increase only numif
@@ -1218,20 +1224,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (numif!=numtrue) return;
 	else if (asblock_pick(word, numwords))
 	{
-		if (pass == 2)
-		{
-			// RPG Hacker: This makes a pretty big assumption to calculate the size of opcodes.
-			// However, this should currently only really be used for pseudo opcodes, where it should always be good enough.
-			if (recent_opcode_num > 0)
-			{
-				int opcode_size = ((0xFFFFFF & realsnespos) - addrToLinePos) / recent_opcode_num;
-				for (int i = 0; i < recent_opcode_num; ++i)
-				{
-					extern AddressToLineMapping addressToLineMapping;
-					addressToLineMapping.includeMapping(get_current_file_name(), get_current_line() + 1, addrToLinePos + (i * opcode_size));
-				}
-			}
-		}
+		add_addr_to_line(addrToLinePos);
 		numopcodes += recent_opcode_num;
 	}
 	else if (numwords > 1 && (is("db") || is("dw") || is("dl") || is("dd")))
@@ -1270,6 +1263,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				do_write((pass==2)?getnum(pars[i]):0);
 			}
 		}
+		add_addr_to_line(addrToLinePos);
 	}
 	else if(word[0][0]=='%')
 	{
@@ -1705,6 +1699,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				snespos=(int)spcblock.destination;
 				startpos=(int)spcblock.destination;
 				spcblock.execute_address = -1u;
+				add_addr_to_line(addrToLinePos);
 			break;
 			case spcblock_custom:
 				//this is a todo that probably won't be ready for 1.9
@@ -1960,6 +1955,9 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			snespos=thisfs.pos;
 			if (thisfs.leaked && leakwarn) asar_throw_warning(2, warning_id_freespace_leaked);
 			freespaceuse += (write_rats ? 8 : 0) + thisfs.len;
+
+			// add a mapping for the start of the rats tag
+			if (write_rats) add_addr_to_line(snespos-8);
 		}
 		thisfs.is_static = fixedpos;
 		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(thisfs.len).data());
@@ -2010,6 +2008,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		write1('P');
 		write1(0);
 		ratsmetastate=ratsmeta_used;
+
+		add_addr_to_line(addrToLinePos);
 	}
 	else if (is1("autoclean") || is2("autoclean"))
 	{
@@ -2049,8 +2049,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 						asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
 					}
 
-					extern AddressToLineMapping addressToLineMapping;
-					addressToLineMapping.includeMapping(get_current_file_name(), get_current_line() + 1, addrToLinePos);
+					add_addr_to_line(addrToLinePos);
 				}
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
 				freespaces[targetid].orgpos = ratsloc;
@@ -2071,6 +2070,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				write3((unsigned int)num);
 				freespaces[targetid].orgpos = ratsloc;
 				freespaces[targetid].orglen = read2(ratsloc-4)+1;
+				add_addr_to_line(addrToLinePos);
 			}
 			else asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 		}
@@ -2281,7 +2281,11 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				int offset=snestopc(pos);
 				if (offset + end - start > 0xFFFFFF) asar_throw_error(0, error_type_block, error_id_16mb_rom_limit);
 				if (offset+end-start>romlen) romlen=offset+end-start;
-				if (pass==2) writeromdata(offset, data+start, end-start);
+				if (pass==2)
+				{
+					writeromdata(offset, data+start, end-start);
+					add_addr_to_line(pos);
+				}
 				else if(pass == 1) addromwrite(offset, end-start);
 			}
 			else
@@ -2311,6 +2315,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 					int foundfreespaceid =getfreespaceid();
 					if (freespaces[foundfreespaceid].leaked) asar_throw_warning(2, warning_id_freespace_leaked);
 					writeromdata(snestopc(freespaces[foundfreespaceid].pos&0xFFFFFF), data+start, end-start);
+					add_addr_to_line((freespaces[foundfreespaceid].pos&0xFFFFFF) - 8);
 					freespaceuse+=8+end-start;
 				}
 			}
@@ -2348,7 +2353,11 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		}
 		if(is("skip")) step(amount);
-		else for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
+		else
+		{
+			for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
+			add_addr_to_line(addrToLinePos);
+		}
 
 	}
 	else if (is0("cleartable"))
@@ -2431,6 +2440,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			int start=snestopc(realsnespos);
 			int len=end-start;
 			for (int i=0;i<len;i++) write1(padbyte[i%12]);
+			add_addr_to_line(addrToLinePos);
 		}
 	}
 	else if (is1("fillbyte") || is1("fillword") || is1("filllong") || is1("filldword"))
