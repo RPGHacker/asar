@@ -1,4 +1,3 @@
-//Don't try using this in your own project, it's got a lot of Asar-specific tweaks. Use mathlib.cpp instead.
 #include "platform/file-helpers.h"
 #include "asar.h"
 #include "virtualfile.h"
