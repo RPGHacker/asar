@@ -480,7 +480,7 @@ inline bool labelvalcore(const char ** rawname, snes_label * rval, bool define, 
 	{
 		if (shouldthrow && pass)
 		{
-			asar_throw_error(1, error_type_block, error_id_label_not_found, name.data());
+			asar_throw_error(2, error_type_block, error_id_label_not_found, name.data());
 		}
 		if (rval) { rval->pos = (unsigned int)-1; rval->is_static = false; }
 		return false;
