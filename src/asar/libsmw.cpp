@@ -204,13 +204,21 @@ static inline int trypcfreespace(int start, int alt_start, int end, int size, in
 	{
 		if (write_rats &&
 				((start+8)&~banksize)!=((start+size-1)&~banksize&0xFFFFFF)//if the contents won't fit in this bank...
-			&&
-				(start&banksize&0xFFFFF8)!=(banksize&0xFFFFF8)//and the RATS tag can't fit in the bank either...
 			)
 		{
-			start&=~banksize&0xFFFFFF;//round it down to the start of the bank,
-			start|=banksize&0xFFFFF8;//then round it up to the end minus the RATS tag...
-			continue;
+			// if we are not already at the end of the bank
+			if((start&banksize&0xFFFFF8) != (banksize&0xFFFFF8)) {
+				start&=~banksize&0xFFFFFF;//round it down to the start of the bank,
+				start|=banksize&0xFFFFF8;//then round it up to the end minus the RATS tag...
+				continue;
+			//} else if((start&banksize) == (banksize&0xFFFFF8)) {
+				// we are exactly 8 bytes off the end, allow this one to continue
+			} else {
+				// less than 8 bytes left in this bank
+				// go to the start of the next bank
+				start = (start+7) & ~7;
+				continue;
+			}
 		}
 		else if(!write_rats &&
 				(start&~banksize) != ((start+size-1)&~banksize))
