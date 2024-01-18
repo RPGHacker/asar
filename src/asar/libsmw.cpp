@@ -327,8 +327,11 @@ static inline int trypcfreespace(int start, int alt_start, int end, int size, in
 int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte, bool write_rats, int search_start)
 {
 	// TODO: probably should error if specifying target_bank and align, or target_bank and respectbankborders
-	if (!size) return 0x1234;//in case someone protects zero bytes for some dumb reason.
-		//You can write zero bytes to anywhere, so I'll just return something that removerats will ignore.
+	if (!size) {
+		// return a dummy valid address. 0x8000 should work in most mappers
+		if(target_bank >= 0) return snestopc(target_bank << 16 | 0x8000);
+		return 0;
+	}
 	if (size>0x10000) return -1;
 	bool isforcode = target_bank == -2;
 	if(write_rats)
