@@ -130,11 +130,15 @@ void callmacro(const char * data)
 	thismacro = macros.find(line);
 	char * endpar=startpar+strlen(startpar)-1;
 	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nullptrs
-	if (*endpar != ')') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+	if (*endpar != ')') asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
 	*endpar=0;
 	autoptr<const char * const*> args;
 	int numargs=0;
-	if (*startpar) args=(const char* const*)qpsplit(startpar, ',', &numargs);
+	if (*startpar) {
+		args=(const char* const*)qpsplit(startpar, ',', &numargs);
+		// qpsplit returns a nullptr when the input is broken, e.g. closing paren before opening or whatnot
+		if(args == nullptr) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
+	}
 	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_num_params);
 	// RPG Hacker: -1, because the ... is also counted as an argument, yet we want it to be entirely optional.
 	if (numargs < thismacro->numargs - 1 && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);
