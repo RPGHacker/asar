@@ -1104,7 +1104,11 @@ void assembleblock(const char * block, bool isspecialline)
 					else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
 					else if (!strcmp(nextword[1], ">=")) thiscond=(par1>=par2);
 					else if (!strcmp(nextword[1], "<=")) thiscond=(par1<=par2);
-					else if (!strcmp(nextword[1], "="))  thiscond=(par1==par2);
+					else if (!strcmp(nextword[1], "="))
+					{
+						asar_throw_warning(0, warning_id_feature_deprecated, "if a = b", "use ""if a == b"" instead");
+						thiscond=(par1==par2);
+					}
 					else if (!strcmp(nextword[1], "==")) thiscond=(par1==par2);
 					else if (!strcmp(nextword[1], "!=")) thiscond=(par1!=par2);
 					//else if (!strcmp(nextword[1], "<>")) thiscond=(par1!=par2);
