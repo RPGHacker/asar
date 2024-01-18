@@ -187,6 +187,7 @@ inline void write1_65816(unsigned int num)
 		int pcpos = snestopc(realsnespos & 0xFFFFFF);
 		if(pcpos < 0) asar_throw_error(pass, error_type_fatal, error_id_internal_error, "invalid pos in pass 1");
 		addromwrite(pcpos, 1);
+		if (pcpos>=romlen) romlen=pcpos+1;
 	}
 	step(1);
 	ratsmetastate=ratsmeta_ban;
