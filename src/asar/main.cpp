@@ -626,6 +626,14 @@ void assemblefile(const char * filename, bool toplevel)
 			comment = strqchr(comment, ';');
 			while (comment != nullptr)
 			{
+				const char* comment_end = comment + strlen(comment);
+				if (comment_end - comment >= 2
+					&& comment[1] == '[' && comment[2] == '['
+					&& (comment_end[-1] != ']' || comment_end[-2] != ']'))
+				{
+					asar_throw_warning(0, warning_id_feature_deprecated, "comments starting with ;[[", "\";[[\" marks the start of a block comments in Asar 2.0 - either remove the \"[[\", or make sure the commented line ends on \"]]\"");
+				}
+
 				if (comment[1]!='@')
 				{
 					comment[0]='\0';

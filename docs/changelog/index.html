@@ -123,6 +123,7 @@
 			<li>incbin with a range like <code>incbin file.bin:0-F</code>: use <code>incbin file.bin:$0..$10</code> instead. (note that the new syntax is end-exclusive.)</li>
 			<li><code>incbin file.bin -&gt; target</code>: put an <code>org</code> or <code>freespace</code> command before the incbin.</li>
 			<li><code class="65c816_asar">if a = b</code>: use <code class="65c816_asar">if a == b</code> instead.</li>
+			<li>Comments starting with <code>;[[</code> : These mark the start of block comments in Asar 2.0, so either remove the <code>[[</code> for the time being, or make the commented line end with a <code>]]</code>.</li>
 		</ul></div>
 
 		<hr />
