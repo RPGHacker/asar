@@ -1,4 +1,5 @@
 #pragma once
+#include <vector>
 
 #include "errors.h"
 #include "autoarray.h"
@@ -36,6 +37,8 @@ struct writtenblockdata {
 };
 
 extern autoarray<writtenblockdata> writtenblocks;
+extern std::vector<writtenblockdata> found_rats_tags;
+extern bool found_rats_tags_initialized;
 
 inline int snestopc(int addr)
 {
@@ -195,8 +198,8 @@ inline int pctosnes(int addr)
 	return -1;
 }
 
-int getpcfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00, bool write_rats=true);
-int getsnesfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00, bool write_rats=true);
+int getpcfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00, bool write_rats=true, int search_start=-1);
+int getsnesfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00, bool write_rats=true, int search_start=-1);
 
 void removerats(int snesaddr, unsigned char clean_byte);
 void handle_cleared_rats_tags();

@@ -330,6 +330,10 @@ struct freespace_data {
 	bool flag_align;
 	// hack for incbin -> label
 	bool dont_find;
+	// pinned freespaces: how much space is actually needed for this freespace
+	int total_len;
+	// pinned freespaces: how much of this block we've already used
+	int used_len;
 };
 static autoarray<freespace_data> freespaces;
 
@@ -684,6 +688,8 @@ void initstuff()
 	{
 		freespaces.reset();
 		movinglabelspossible = false;
+		found_rats_tags_initialized = false;
+		found_rats_tags.clear();
 	}
 	arch=arch_65816;
 	mapper=lorom;
@@ -766,10 +772,10 @@ int get_freespace_pin_target(int target_id) {
 }
 
 void resolve_pinned_freespaces() {
-	for(int i = 0; i < freespaces.count; i++)
+	for(int i = 1; i < freespaces.count; i++)
 		// default to everyone being in a separate component
 		freespaces[i].pin_target_id = i;
-	for(int i = 0; i < freespaces.count; i++) {
+	for(int i = 1; i < freespaces.count; i++) {
 		freespace_data& fs = freespaces[i];
 		if(fs.pin_target == "") continue;
 		snes_label value;
@@ -784,19 +790,38 @@ void resolve_pinned_freespaces() {
 }
 
 void allocate_freespaces() {
-	for(int i = 0; i < freespaces.count; i++) {
+	// compute real size of all pinned freespace blocks
+	for(int i = 1; i < freespaces.count; i++) {
+		freespace_data& fs = freespaces[i];
+		// just in case the pin target changed again or something
+		fs.pin_target_id = get_freespace_pin_target(fs.pin_target_id);
+		freespace_data& target = freespaces[fs.pin_target_id];
+		target.total_len += fs.len;
+		target.search_start = std::max(fs.search_start, target.search_start);
+	}
+
+	for(int i = 1; i < freespaces.count; i++) {
 		freespace_data& fs = freespaces[i];
 		if(fs.dont_find) continue;
 		if(fs.is_static && fs.orgpos > 0) {
 			fs.pos = fs.orgpos;
 			continue;
 		}
-		// TODO:
-		// * fs.pin_target_id
-		// * fs.search_start
-		// and possibly fancier align
-		fs.pos = getsnesfreespace(fs.len, fs.bank, true, true, fs.flag_align, fs.cleanbyte, fs.write_rats);
+		// if this freespace is pinned to another one, set it later
+		if(fs.pin_target_id != i) continue;
+		// TODO: possibly fancier align
+		fs.pos = getsnesfreespace(fs.total_len, fs.bank, true, true, fs.flag_align, fs.cleanbyte, fs.write_rats, fs.search_start);
+		fs.used_len = fs.len;
 	}
+	// set pos for all pinned freespaces
+	for(int i = 1; i < freespaces.count; i++) {
+		freespace_data& fs = freespaces[i];
+		if(fs.pin_target_id == i) continue;
+		freespace_data& tgt = freespaces[fs.pin_target_id];
+		fs.pos = tgt.pos + tgt.used_len;
+		tgt.used_len += fs.len;
+	}
+
 	// relocate all labels that were in freespace to point them to their real location
 	labels.each([](const char * key, snes_label & val) {
 		if(val.freespace_id != 0 && !freespaces[val.freespace_id].dont_find) {

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "asar.h"
 #include "crc32.h"
 
@@ -16,6 +17,8 @@ autoarray<writtenblockdata> writtenblocks;
 // not immediately put into writtenblocks to allow the freespace finder to use
 // the reclaimed space.
 autoarray<writtenblockdata> cleared_rats_tag_blocks;
+std::vector<writtenblockdata> found_rats_tags;
+bool found_rats_tags_initialized;
 
 // RPG Hacker: Uses binary search to find the insert position of our ROM write
 static int findromwritepos(int snesoffset, int searchstartpos, int searchendpos)
@@ -163,7 +166,6 @@ void removerats(int snesaddr, unsigned char clean_byte)
 	int len = (romdata[addr+4]|(romdata[addr+5]<<8))+9;
 	memset(const_cast<unsigned char*>(romdata) + addr, clean_byte, len);
 	cleared_rats_tag_blocks[cleared_rats_tag_blocks.count] = writtenblockdata{addr, 0, len};
-	//for (int i=(romdata[addr+4]|(romdata[addr+5]<<8))+8;i>=0;i--) writeromdata_byte(addr+i, clean_byte);
 }
 
 void handle_cleared_rats_tags()
@@ -175,8 +177,29 @@ void handle_cleared_rats_tags()
 	cleared_rats_tag_blocks.reset();
 }
 
-static inline int trypcfreespace(int start, int end, int size, int banksize, int minalign, unsigned char freespacebyte, bool write_rats)
+void find_rats_tags()
 {
+	// TODO: should probably look for overlapping rats tags too, just in case.
+	// note that found_rats_tags must not have overlaps, but we can merge overlapped rats tags into one
+	found_rats_tags.clear();
+	for(int pos = 0; pos < romlen;) {
+		if (!strncmp((const char*)romdata+pos, "STAR", 4) &&
+				(romdata[pos+4]^romdata[pos+6])==0xFF &&
+				(romdata[pos+5]^romdata[pos+7])==0xFF) {
+			int block_len = (romdata[pos+4]|(romdata[pos+5]<<8))+1+8;
+			found_rats_tags.push_back(writtenblockdata{pos, 0, block_len});
+			pos += block_len;
+		} else {
+			pos++;
+		}
+	}
+	found_rats_tags_initialized = true;
+}
+
+static inline int trypcfreespace(int start, int alt_start, int end, int size, int banksize, int minalign, unsigned char freespacebyte, bool write_rats)
+{
+	if(alt_start >= 0) start = std::max(start, alt_start);
+	if(!found_rats_tags_initialized) find_rats_tags();
 	while (start+size<=end)
 	{
 		if (write_rats &&
@@ -201,12 +224,6 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 			start&=~minalign&0xFFFFFF;
 			start|=minalign&0xFFFFF8;
 		}
-		if (!strncmp((const char*)romdata+start, "STAR", 4) &&
-				(romdata[start+4]^romdata[start+6])==0xFF && (romdata[start+5]^romdata[start+7])==0xFF)
-		{
-			start+=(romdata[start+4]|(romdata[start+5]<<8))+1+8;
-			continue;
-		}
 		bool bad=false;
 		for (int i=0;i<size;i++)
 		{
@@ -221,6 +238,31 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 			}
 		}
 		if (bad) continue;
+		// check against collisions with rats tags.
+		// lower_bound returns first element where comp() is false,
+		// i.e. the first RATS tag that starts after our spot
+		auto rats = std::lower_bound(found_rats_tags.begin(), found_rats_tags.end(), start, [](writtenblockdata& blk, int start){
+			return blk.pcoffset < start;
+		});
+		// if there's a rats tag after us,
+		if(rats != found_rats_tags.end()) {
+			// check that it doesn't intersect our spot
+			if(rats->pcoffset < start+size) {
+				// our spot ends inside this rats tag, skip to the end of it
+				start = rats->pcoffset + rats->numbytes;
+				continue;
+			}
+		}
+		// if there's a rats tag before us,
+		if(rats != found_rats_tags.begin()) {
+			rats--;
+			// and it doesn't end before our spot starts,
+			if(start >= rats->pcoffset && start < rats->pcoffset+rats->numbytes) {
+				// we're inside this rats tag, skip to its end
+				start = rats->pcoffset + rats->numbytes;
+				continue;
+			}
+		}
 		// check against collisions with any written blocks.
 		// written blocks go through like 3x snes->pc->snes and are then sorted by snes.
 		// todo: this is janky..... should sort writtenblocks by pc maybe??
@@ -247,6 +289,7 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 		if(write_rats)
 		{
 			size-=8;
+			addromwrite(start+8, size);
 			if (size) size--;//rats tags eat one byte more than specified for some reason
 			writeromdata_byte(start+0, 'S');
 			writeromdata_byte(start+1, 'T');
@@ -273,7 +316,7 @@ static inline int trypcfreespace(int start, int end, int size, int banksize, int
 //isforcode=false tells it to favor banks 40+, true tells it to avoid them entirely.
 //It automatically adds a RATS tag.
 
-int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte, bool write_rats)
+int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte, bool write_rats, int search_start)
 {
 	// TODO: probably should error if specifying target_bank and align, or target_bank and respectbankborders
 	if (!size) return 0x1234;//in case someone protects zero bytes for some dumb reason.
@@ -285,9 +328,9 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 
 	auto find_for_fixed_bank = [&](int banksize, bool force_high_half = false) {
 		if(!force_high_half && (target_bank & 0x40) == 0x40)
-			return trypcfreespace(snestopc(target_bank<<16), min(romlen, snestopc(target_bank<<16)+0x10000), size, banksize, 0, freespacebyte, write_rats);
+			return trypcfreespace(snestopc(target_bank<<16), search_start, min(romlen, snestopc(target_bank<<16)+0x10000), size, banksize, 0, freespacebyte, write_rats);
 		else
-			return trypcfreespace(snestopc(target_bank<<16 | 0x8000), min(romlen, snestopc(target_bank<<16 | 0x8000)+0x8000), size, banksize, 0, freespacebyte, write_rats);
+			return trypcfreespace(snestopc(target_bank<<16 | 0x8000), search_start, min(romlen, snestopc(target_bank<<16 | 0x8000)+0x8000), size, banksize, 0, freespacebyte, write_rats);
 	};
 
 	if (mapper==lorom)
@@ -297,11 +340,11 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 	rebootlorom:
 		if (romlen>0x200000 && !isforcode)
 		{
-			int pos=trypcfreespace(0x200000-8, (romlen<0x400000)?romlen:0x400000, size,
+			int pos=trypcfreespace(search_start >= 0 ? 0 : 0x200000-8, search_start, (romlen<0x400000)?romlen:0x400000, size,
 					respectbankborders?0x7FFF:0xFFFFFF, align?0x7FFF:(respectbankborders || size<32768)?0:0x7FFF, freespacebyte, write_rats);
 			if (pos>=0) return pos;
 		}
-		int pos=trypcfreespace(0x80000, (romlen<0x200000)?romlen:0x200000, size,
+		int pos=trypcfreespace(search_start >= 0 ? 0 : 0x80000, search_start, (romlen<0x200000)?romlen:0x200000, size,
 				respectbankborders?0x7FFF:0xFFFFFF, align?0x7FFF:(respectbankborders || size<32768)?0:0x7FFF, freespacebyte, write_rats);
 		if (pos>=0) return pos;
 		if (autoexpand)
@@ -334,12 +377,12 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 		if (isforcode)
 		{
 			for(int i = 0x8000; i < min(romlen, 0x400000); i += 0x10000){
-				int space = trypcfreespace(i, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte, write_rats);
+				int space = trypcfreespace(i, search_start, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte, write_rats);
 				if(space != -1) return space;
 			}
 			return -1;
 		}
-		return trypcfreespace(0, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
+		return trypcfreespace(0, search_start, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
 	}
 	if (mapper==exlorom)
 	{
@@ -348,9 +391,9 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 		// and we won't need all the complicated stuff from LoROM above?
 		if (isforcode)
 		{
-			trypcfreespace(0, min(romlen, 0x200000), size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
+			trypcfreespace(0, search_start, min(romlen, 0x200000), size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
 		}
-		return trypcfreespace(0, romlen, size, 0x7FFF, align ? 0x7FFF : 0, freespacebyte, write_rats);
+		return trypcfreespace(0, search_start, romlen, size, 0x7FFF, align ? 0x7FFF : 0, freespacebyte, write_rats);
 	}
 	if (mapper==exhirom)
 	{
@@ -358,19 +401,19 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 		if (isforcode)
 		{
 			for(int i = 0x8000; i < romlen && i < 0x400000; i += 0x10000){
-				int space = trypcfreespace(i, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte, write_rats);
+				int space = trypcfreespace(i, search_start, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte, write_rats);
 				if(space != -1) return space;
 			}
 			return -1;
 		}
-		return trypcfreespace(0, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
+		return trypcfreespace(0, search_start, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
 	}
 	if (mapper==sfxrom)
 	{
 		if(target_bank >= 0) return find_for_fixed_bank(0xffff);
 		if (!isforcode) return -1;
 		// try not to overwrite smw stuff
-		return trypcfreespace(0x80000, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
+		return trypcfreespace(search_start >= 0 ? 0 : 0x80000, search_start, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
 	}
 	if (mapper==sa1rom)
 	{
@@ -385,7 +428,7 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 				if (sa1banks[i]<=romlen && sa1banks[i]+0x100000>romlen) nextbank=sa1banks[i];
 				continue;
 			}
-			int pos=trypcfreespace(sa1banks[i]?sa1banks[i]:0x80000, sa1banks[i]+0x100000, size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
+			int pos=trypcfreespace(sa1banks[i]?sa1banks[i]:0x80000, search_start, sa1banks[i]+0x100000, size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
 			if (pos>=0) return pos;
 		}
 		if (autoexpand && nextbank>=0)
@@ -402,10 +445,10 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 		if(target_bank >= 0) return find_for_fixed_bank(0xffff);
 		if(!isforcode && romlen > 0x400000)
 		{
-			int pos=trypcfreespace(0x400000, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
+			int pos=trypcfreespace(0x400000, search_start, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
 			if(pos>=0) return pos;
 		}
-		int pos=trypcfreespace(0x080000, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
+		int pos=trypcfreespace(search_start >= 0 ? 0 : 0x080000, search_start, romlen, size, 0x7FFF, align?0x7FFF:0, freespacebyte, write_rats);
 		if(pos>=0) return pos;
 	}
 	return -1;
@@ -436,9 +479,9 @@ void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsi
 	}
 }
 
-int getsnesfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte, bool write_rats)
+int getsnesfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte, bool write_rats, int search_start)
 {
-	return pctosnes(getpcfreespace(size, target_bank, autoexpand, respectbankborders, align, freespacebyte, write_rats));
+	return pctosnes(getpcfreespace(size, target_bank, autoexpand, respectbankborders, align, freespacebyte, write_rats, snestopc(search_start)));
 }
 
 bool openrom(const char * filename, bool confirm)
