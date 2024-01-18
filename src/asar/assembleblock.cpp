@@ -2494,6 +2494,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
 		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
+		asar_throw_error(0, error_type_block, error_id_broken_command, "arch", "Invalid architecture, expected one of 65816, spc700, superfx");
 	}
 	else if (is0("{") || is0("}")) {}
 	else
