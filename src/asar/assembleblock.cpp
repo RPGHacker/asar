@@ -480,7 +480,7 @@ inline bool labelvalcore(const char ** rawname, snes_label * rval, bool define, 
 	{
 		if (shouldthrow && pass)
 		{
-			asar_throw_error(1, error_type_block, error_id_label_not_found, name.data());
+			asar_throw_error(2, error_type_block, error_id_label_not_found, name.data());
 		}
 		if (rval) { rval->pos = (unsigned int)-1; rval->is_static = false; }
 		return false;
@@ -820,6 +820,12 @@ static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 		return true;
 	}
 	return false;
+}
+
+static void add_addr_to_line(int pos)
+{
+	if (pass == 2)
+		addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, pos);
 }
 
 static autoarray<bool> elsestatus;
@@ -1270,20 +1276,7 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (numif!=numtrue) return;
 	else if (asblock_pick(word, numwords))
 	{
-		if (pass == 2)
-		{
-			// RPG Hacker: This makes a pretty big assumption to calculate the size of opcodes.
-			// However, this should currently only really be used for pseudo opcodes, where it should always be good enough.
-			if (recent_opcode_num > 0)
-			{
-				int opcode_size = ((0xFFFFFF & realsnespos) - addrToLinePos) / recent_opcode_num;
-				for (int i = 0; i < recent_opcode_num; ++i)
-				{
-					extern AddressToLineMapping addressToLineMapping;
-					addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos + (i * opcode_size));
-				}
-			}
-		}
+		add_addr_to_line(addrToLinePos);
 		numopcodes += recent_opcode_num;
 	}
 	else if (is1("undef"))
@@ -1550,6 +1543,7 @@ void assembleblock(const char * block, bool isspecialline)
 				if (len == 4) write4(num);
 			}
 		}
+		add_addr_to_line(addrToLinePos);
 	}
 	else if (numwords==3 && !stricmp(word[1], "="))
 	{
@@ -1756,6 +1750,7 @@ void assembleblock(const char * block, bool isspecialline)
 				snespos=(int)spcblock.destination;
 				startpos=(int)spcblock.destination;
 				spcblock.execute_address = -1u;
+				add_addr_to_line(addrToLinePos);
 			break;
 			case spcblock_custom:
 				//this is a todo that probably won't be ready for 1.9
@@ -1967,6 +1962,9 @@ void assembleblock(const char * block, bool isspecialline)
 			if (fixedpos && freespaceorgpos[freespaceid]>0 && freespacelen[freespaceid]>freespaceorglen[freespaceid])
 				asar_throw_error(2, error_type_block, error_id_static_freespace_growing);
 			freespaceuse+=8+freespacelen[freespaceid];
+
+			// add a mapping for the start of the rats tag
+			add_addr_to_line(snespos-8);
 		}
 		freespacestatic[freespaceid]=fixedpos;
 		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(freespacelen[freespaceid]).data());
@@ -2009,6 +2007,8 @@ void assembleblock(const char * block, bool isspecialline)
 		write1('P');
 		write1(0);
 		ratsmetastate=ratsmeta_used;
+
+		add_addr_to_line(addrToLinePos);
 	}
 	else if (is1("autoclean") || is2("autoclean") || is1("autoclear") || is2("autoclear"))
 	{
@@ -2048,8 +2048,7 @@ void assembleblock(const char * block, bool isspecialline)
 						asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
 					}
 
-					extern AddressToLineMapping addressToLineMapping;
-					addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos);
+					add_addr_to_line(addrToLinePos);
 				}
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
 				freespaceorgpos[targetid]=ratsloc;
@@ -2070,6 +2069,8 @@ void assembleblock(const char * block, bool isspecialline)
 				write3((unsigned int)num);
 				freespaceorgpos[targetid]=ratsloc;
 				freespaceorglen[targetid]=read2(ratsloc-4)+1;
+
+				add_addr_to_line(addrToLinePos);
 			}
 			else asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 		}
@@ -2349,7 +2350,11 @@ void assembleblock(const char * block, bool isspecialline)
 				int offset=snestopc(pos);
 				if (offset + end - start > 0xFFFFFF) asar_throw_error(0, error_type_block, error_id_16mb_rom_limit);
 				if (offset+end-start>romlen) romlen=offset+end-start;
-				if (pass==2) writeromdata(offset, data+start, end-start);
+				if (pass==2)
+				{
+					writeromdata(offset, data+start, end-start);
+					add_addr_to_line(pos);
+				}
 			}
 			else
 			{
@@ -2373,6 +2378,7 @@ void assembleblock(const char * block, bool isspecialline)
 					int foundfreespaceid =getfreespaceid();
 					if (freespaceleak[foundfreespaceid]) asar_throw_warning(2, warning_id_freespace_leaked);
 					writeromdata(snestopc(freespacepos[foundfreespaceid]&0xFFFFFF), data+start, end-start);
+					add_addr_to_line((freespacepos[foundfreespaceid]&0xFFFFFF) - 8);
 					freespaceuse+=8+end-start;
 				}
 			}
@@ -2380,6 +2386,7 @@ void assembleblock(const char * block, bool isspecialline)
 		else
 		{
 			for (int i=start;i<end;i++) write1((unsigned int)data[i]);
+			add_addr_to_line(addrToLinePos);
 		}
 	}
 	else if (is("skip") || is("fill"))
@@ -2410,7 +2417,11 @@ void assembleblock(const char * block, bool isspecialline)
 			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		}
 		if(is("skip")) step(amount);
-		else for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
+		else
+		{
+			for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
+			add_addr_to_line(addrToLinePos);
+		}
 
 	}
 	else if (is0("cleartable"))
@@ -2525,6 +2536,7 @@ void assembleblock(const char * block, bool isspecialline)
 			int start=snestopc(realsnespos);
 			int len=end-start;
 			for (int i=0;i<len;i++) write1(padbyte[i%12]);
+			add_addr_to_line(addrToLinePos);
 		}
 	}
 	else if (is1("fillbyte") || is1("fillword") || is1("filllong") || is1("filldword"))
