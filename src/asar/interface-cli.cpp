@@ -253,8 +253,8 @@ int main(int argc, const char * argv[])
 	try
 	{
 		romdata_r = nullptr;
-		string version=STR"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+((asarver_bug>=10 || asarver_min>=10)?".":"")+
-				dec(asarver_bug)+(asarver_beta?"pre":"")+", originally developed by Alcaro, maintained by Asar devs.\n"+
+		string version=STR"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+"."+dec(asarver_bug)+(asarver_beta?"pre":"")
+				+", originally developed by Alcaro, maintained by Asar devs.\n"+
 				"Source code: https://github.com/RPGHacker/asar\n";
 		const char * myname=argv[0];
 		if (strrchr(myname, '/')) myname=strrchr(myname, '/')+1;
