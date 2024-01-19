@@ -1,6 +1,6 @@
+;`errEinvalid_subscript
+;`errEinvalid_subscript
 ;`errEinvalid_label_name
-;`errEinvalid_subscript
-;`errEinvalid_subscript
 ;`errEinvalid_subscript
 ;`errEinvalid_subscript
 org $008000

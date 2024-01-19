@@ -434,7 +434,7 @@ static string labelname(const char ** rawname, bool define=false)
 	string name;
 	int i=-1;
 
-	if (is_digit(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+	if (is_digit(*deref_rawname)) asar_throw_error(2, error_type_block, error_id_invalid_label_name);
 	if (*deref_rawname ==':')
 	{
 		deref_rawname++;
@@ -443,10 +443,10 @@ static string labelname(const char ** rawname, bool define=false)
 	else if (!in_struct && !in_sub_struct)
 	{
 		for (i=0;(*deref_rawname =='.');i++) deref_rawname++;
-		if (!is_ualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+		if (!is_ualnum(*deref_rawname)) asar_throw_error(2, error_type_block, error_id_invalid_label_name);
 		if (i)
 		{
-			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(1, error_type_block, error_id_label_missing_parent);
+			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(2, error_type_block, error_id_label_missing_parent);
 			name+=STR(*sublabellist)[i-1]+"_";
 			issublabel = true;
 		}
@@ -456,7 +456,7 @@ static string labelname(const char ** rawname, bool define=false)
 	{
 		// RPG Hacker: Don't add the prefix for sublabels, because they already inherit it from
 		// their parents' names.
-		if (!macrorecursion || macrosublabels == nullptr) asar_throw_error(1, error_type_block, error_id_macro_label_outside_of_macro);
+		if (!macrorecursion || macrosublabels == nullptr) asar_throw_error(2, error_type_block, error_id_macro_label_outside_of_macro);
 		name = STR":macro_" + dec(calledmacros) + "_" + name;
 	}
 
@@ -469,11 +469,11 @@ static string labelname(const char ** rawname, bool define=false)
 		}
 		name += struct_name;
 		name += '.';
-		if(*deref_rawname != '.') asar_throw_error(1, error_type_block, error_id_invalid_label_name);  //probably should be a better error. TODO!!!
+		if(*deref_rawname != '.') asar_throw_error(2, error_type_block, error_id_invalid_label_name);  //probably should be a better error. TODO!!!
 		deref_rawname++;
 	}
 
-	if (!is_ualnum(*deref_rawname)) asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+	if (!is_ualnum(*deref_rawname)) asar_throw_error(2, error_type_block, error_id_invalid_label_name);
 
 	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
 	{
@@ -483,9 +483,9 @@ static string labelname(const char ** rawname, bool define=false)
 	if(!define && *deref_rawname == '[')
 	{
 		while (*deref_rawname && *deref_rawname != ']') deref_rawname++;
-		if(*deref_rawname != ']') asar_throw_error(1, error_type_block, error_id_invalid_label_missing_closer);
+		if(*deref_rawname != ']') asar_throw_error(2, error_type_block, error_id_invalid_label_missing_closer);
 		deref_rawname++;
-		if(*deref_rawname != '.') asar_throw_error(1, error_type_block, error_id_invalid_label_name);
+		if(*deref_rawname != '.') asar_throw_error(2, error_type_block, error_id_invalid_label_name);
 	}
 
 	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
