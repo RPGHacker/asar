@@ -41,13 +41,14 @@
 
 		<hr />
 
-		<div><h2>v2.00</h2>
+		<div><h2>v2.0.0</h2>
 		<b>Release:</b> ???
 
 		<h3>Contributors:</h3>
 		<ul>
 			<li>randomdude999</li>
 			<li>RPG Hacker</li>
+			<li>p4plus2</li>
 		</ul>
 
 		<h3>New features:</h3>
@@ -56,11 +57,19 @@
 			<li>Added support for nested macro definitions. (RPG Hacker)</li>
 			<li>Improved readability of some error messages. (RPG Hacker)</li>
 			<li>Generally improved error formatting of Asar and added the <code>--full-error-stack</code> option to display complete call stacks. (RPG Hacker)</li>
+			<li>Added multiline comments using <code>;[[ comment ]]</code> (randomdude999)</li>
+			<li>Freespaces have a bunch of new features which make them more useful outside of SMW hacking - new options for disabling RATS tags, looking for code in a specific bank or a specific part of ROM. Along with this, freespace allocation should now be a bit more efficient, and the 125 freespace limit has been lifted. (randomdude999)</li>
+			<li>Allowed spaces in math. (p4plus2)</li>
+			<li>A struct can now be used directly like a regular label. (p4plus2)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
 		<ul>
 			<li>Asar no longer strips just any white space from defines, allowing them to more closely reflect user intent. (p4plus2)</li>
+			<li>Using <code>org $xxxxxx : db $00</code> to expand the ROM to a specific size will now allow the freespace finder to use the newly created space. (randomdude999)</li>
+			<!-- too minor to include? <li>Fixed a bug with macro calls that would sometimes ignore trailing garbage on the line with the call. (randomdude999)</li> -->
+			<li>In <code>norom</code>, using <code>base</code> will now no longer give bank cross errors for the "real" position, since there are no real banks in norom. (randomdude999)</li>
+			<li>A bunch more bugfixes and crash fixes that are too minor to list here</li>
 		</ul>
 
 		<h3>Removed features:</h3>
