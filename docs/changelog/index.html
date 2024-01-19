@@ -61,7 +61,7 @@
 
 		<h3>New features:</h3>
 		<ul>
-			<li>The <code>error</code>, <code>warn</code> and <code>assert</code> commands now support the same functions as the print command. (RPG Hacker)</li>
+			<li>The <code>error</code>, <code>warn</code> and <code>assert</code> commands now support the same functions as the <code>print</code> command. (RPG Hacker)</li>
 			<li>Static labels (i.e. labels that don't move between passes) can now be used in more places, including if statements. (RPG Hacker)</li>
 			<li>Asar can be built as a static library. (Atari2)</li>
 			<li>Asar now uses named warnings and errors instead of magic numbers as identifiers. (p4plus2, RPG Hacker)</li>
@@ -82,8 +82,7 @@
 			<li>Escaping quotes in macro calls now works more reliably. (RPG Hacker)</li>
 			<li>Macro calls &amp; definitions no longer break as easily from including whitespace. (RPG Hacker)</li>
 			<li>For invalid table files, Asar now prints the line number of the first invalid entry. (RPG Hacker)</li>
-			<li>When Asar generates addr-to-line mappings, it now includes multiple addresses for pseudo opcodes like &quot;asl #4&quot;. (RPG Hacker)</li>
-			<li>Addr-to-line mappings now include <code>autoclean jml/jsl</code> commands. (spooonsss)</li>
+			<li>Addr-to-line mappings now include <code>autoclean jml/jsl</code> commands, pseudo opcodes like <code>asl #4</code>, and most other data-writing commands like <code>db/dw/dl</code>. (spooonsss, RPG Hacker, randomdude999)</li>
 			<li><code>'''</code> and <code>';'</code> are now valid can now be used without causing errors. (randomdude999, RPG Hacker)</li>
 			<li>Fixed some edge case bugs in Asar's virtual filesystem (usable via the DLL) on Windows. (Atari2)</li>
 			<li>The <code>--version</code> commandline flag now causes asar to exit afterwards, which is the expected behavior for command-line flags. (Alcaro)</li>
@@ -92,6 +91,7 @@
 			<li>Assigning labels with = now puts them in the right namespace. (p4plus2)</li>
 			<li>Fixed some memory leaks and possible crashes in the DLL. (randomdude999)</li>
 			<li>Fixed some phantom errors when using forward labels. (randomdude999)</li>
+			<li>Asar should now allow as much recursion as system resources allow, and then throw a nice error instead of crashing. (Atari2.0, randomdude999, p4plus2)</li>
 		</ul></div>
 
 		<h3>Deprecated features:</h3>
@@ -102,14 +102,13 @@
 			<li>Quoted symbolic arguments to functions (e.g. <code>sizeof("my_struct")</code>): Remove the quotes (<code>sizeof(my_struct)</code>).</li>
 			<li>Redefining previously defined functions.</li>
 			<li><code>math round</code> and <code>math pri</code>: Use parentheses and explicit rounding where xkas-style math emulation is needed instead.</li>
-			<li><code>.d</code> length specifier on opcodes.</li>
 			<li><code>if !condition</code> to negate conditions: Use <code>if not(condition)</code> instead.</li>
 			<li>While blocks ending with <code>endif</code>: Use <code>endwhile</code> instead.</li>
 			<li><code>check bankcross on</code>: Use <code>check bankcross full</code> or <code>check bankcross half</code> instead.</li>
 			<li><code>rep</code> to repeat commands: Use while loops, unrolled loops or for loops instead.</li>
 			<li>Windows-specific paths (e.g. <code>incsrc dir\file.asm</code>): Use cross-platform paths instead (<code>incsrc dir/file.asm</code>).</li>
 			<li><code>table</code> command: Assign characters directly instead, like <code>'a' = $00</code>.</li>
-			<li>Non-static labels in <code>padbyte</code> or <code>fillbyte</code> commands.</li>			
+			<!-- this one is so obscure i doubt anyone has ever managed to use it. <li>Non-static labels in <code>padbyte</code> or <code>fillbyte</code> commands.</li> -->
 			<li><code>spc700-inline</code>: Use <code>spcblock</code> and <code>endspcblock</code> instead.</li>
 			<li><code>spc700-raw</code>: use <code>arch spc700</code> and <code>norom</code>.</li>
 			<li><code>fastrom</code>: Has never actually worked and can be removed.</li>
@@ -117,7 +116,7 @@
 			<li>Non-UTF-8 source files: Re-save your source files as UTF-8 in a text editor of choice.</li>
 			<li><code>;@command</code> and <code>@command</code> notation: Use <code>command</code> instead.</li>
 			<li>Wrapping defines to resolve in quotes (e.g. <code>db "!define"</code>): The quotes aren't needed (<code>db !define</code>).</li>
-			<li>Single-line/inline if statements: Use full if blocks with an <code>if</code>/<code>endif</code> pair instead.</li>
+			<li>Single-line/inline if statements: Use full if blocks with an <code>if</code>/<code>endif</code> pair instead. (Note that you can still have an if statement entirely on one line, you just need to have an <code> : endif</code> at the end of it.)</li>
 			<li><code>freespace fixed</code>: Use <code>freespace static</code> instead.</li>
 			<li><code class="65c816_asar">&lt;math&gt;</code> syntax for variadic macro parameters: Use <code class="65c816_asar">&lt;...[math]&gt;</code> instead.</li>
 			<li>incbin with a range like <code>incbin file.bin:0-F</code>: use <code>incbin file.bin:$0..$10</code> instead. (note that the new syntax is end-exclusive.)</li>
