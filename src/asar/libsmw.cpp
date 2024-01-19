@@ -559,6 +559,7 @@ uint32_t closerom(bool save)
 	}
 	if (thisfile != InvalidFileHandle) close_file(thisfile);
 	if (romdata) free(const_cast<unsigned char*>(romdata));
+	if (romdata_r) free(const_cast<unsigned char*>(romdata_r));
 	thisfile= InvalidFileHandle;
 	romdata= nullptr;
 	romdata_r = nullptr;
