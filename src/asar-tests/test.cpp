@@ -29,6 +29,7 @@
 #	include <set>
 #	include <list>
 #	include <cstdint>
+#	include <errno.h>
 
 #	if defined(_MSC_VER)
 #		pragma warning(pop)
@@ -44,6 +45,7 @@
 #	include <sys/stat.h>
 #	include <set>
 #	include <list>
+#	include <errno.h>
 #endif
 
 #if defined(ASAR_TEST_DLL)
@@ -714,6 +716,8 @@ int main(int argc, char * argv[])
 		{
 			asmfile.erase(asmfile.begin(), asmfile.begin() + 3);
 		}
+		FILE * rom = fopen(out_rom_name, "wb");
+		if (!rom) dief("Error: '%s' could not be opened for writing: %s", out_rom_name, strerror(errno));
 
 		int numiter = 1;
 

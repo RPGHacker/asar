@@ -362,7 +362,7 @@ stddefined5 = " $60,$50,$40 "</code></pre>
 				<td>
 					<a href="javascript:void(0);" onclick="toggle_visibility('65816-opcodes');" id="65816-opcodes-toggle">[+] Expand</a>
 					<div id="65816-opcodes" style="display:none;">
-						<code class="65c816_asar">ADC #$00
+						<pre><code class="65c816_asar">ADC #$00
 ADC #$0000
 ADC $00
 ADC $00,s
@@ -414,7 +414,7 @@ BPL $00
 BRA $00
 BRK
 BRK #$00
-BRL $00
+BRL $0000
 BVC $00
 BVS $00
 CLC
@@ -520,8 +520,10 @@ LSR $0000,x
 LSR A
 MVN $00,$00
 (Note: destination, source)
+MVN $0000
 MVP $00,$00
 (Note: destination, source))
+MVP $0000
 NOP
 ORA #$00
 ORA #$0000
@@ -634,7 +636,7 @@ WAI
 WDM
 WDM #$00
 XBA
-XCE</code>
+XCE</code></pre>
 					</div>
 				</td>
 				<td>Default setting. Compiles code for the 65c816 architecture.</td>
@@ -645,7 +647,7 @@ XCE</code>
 				<td>
 					<a href="javascript:void(0);" onclick="toggle_visibility('spc700-opcodes');" id="spc700-opcodes-toggle">[+] Expand</a>
 					<div id="spc700-opcodes" style="display:none;">
-						<code class="65c816_asar">ADC $00,#$00
+						<pre><code class="65c816_asar">ADC $00,#$00
 ADC $00,$00
 ADC (X),(Y)
 ADC A,#$00
@@ -900,7 +902,7 @@ TCALL 14
 TCALL 15
 TCLR $0000,a
 TSET $0000,a
-XCN A</code>
+XCN A</code></pre>
 					</div>
 				</td>
 				<td>Compiles code for the SPC700 architecture. Follows the format the SNES Dev Manual recommends, with the exception of mov (x)+,a and mov a,(x)+, which are moved to mov (x+),a and mov a,(x+).</td>
@@ -917,7 +919,7 @@ XCN A</code>
 				<td>
 					<a href="javascript:void(0);" onclick="toggle_visibility('superfx-opcodes');" id="superfx-opcodes-toggle">[+] Expand</a>
 					<div id="superfx-opcodes" style="display:none;">
-						<code class="65c816_asar">ADC #0
+						<pre><code class="65c816_asar">ADC #0
 ADC #0
 ADC #1
 ADC #2
@@ -1520,7 +1522,7 @@ XOR R11
 XOR R12
 XOR R13
 XOR R14
-XOR R15</code>
+XOR R15</code></pre>
 					</div>
 				</td>
 				<td>Compiles code for the Super FX architecture.</td>
