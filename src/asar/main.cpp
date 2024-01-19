@@ -397,7 +397,7 @@ static int getlenforlabel(snes_label thislabel, bool exists)
 		if (thislabel.freespace_id != freespaceid) return 3;
 		else return 2;
 	}
-	else if (bank != snespos >> 16){ return 3; }
+	else if ((int)bank != snespos >> 16){ return 3; }
 	else { return 2;}
 }
 

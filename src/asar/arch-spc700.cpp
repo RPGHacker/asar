@@ -4,9 +4,6 @@
 
 #define write1 write1_pick
 
-static int writesizeto=-1;
-static int inlinestartpos=0;
-
 static int64_t getnum_ck(const char* math)
 {
 	return pass == 2 ? getnum(math) : 0;
@@ -267,11 +264,15 @@ bool asblock_spc700(char** word, int numwords)
 #define vc(left1, right1, str2) if (isvc(left1, right1, str2))
 #define vv(left1, right1, left2, right2) if (isvv(left1, right1, left2, right2))
 #define w0(opcode) do { write1((unsigned int)opcode); return true; } while(0)
-#define w1(opcode, math) do { write1((unsigned int)opcode); unsigned int val=getnum_ck(math); \
-		if ((((val&0xFF00)&&(val&0x80000000)==0)||(((val&0xFF00)!=0xFF00)&&(val&0x80000000)))&&opLen!=1) asar_throw_warning(0, warning_id_spc700_assuming_8_bit); write1(val);return true; } while(0)
+#define w1(opcode, math) do { \
+	write1((unsigned int)opcode); unsigned int val=getnum_ck(math); \
+	if ((((val&0xFF00)&&(val&0x80000000)==0)||(((val&0xFF00)!=0xFF00)&&(val&0x80000000)))&&opLen!=1) asar_throw_warning(0, warning_id_spc700_assuming_8_bit); \
+	write1(val); return true; } while(0)
 #define w2(opcode, math) do { write1((unsigned int)opcode); write2(getnum_ck(math)); return true; } while(0)
-#define wv(opcode1, opcode2, math) do { if ((opLen == 1) || (opLen == 0 && getlen(math)==1)) { write1((unsigned int)opcode1); write1(getnum_ck(math)); } \
-																	 else { write1((unsigned int)opcode2); write2(getnum_ck(math)); } return true; } while(0)
+#define wv(opcode1, opcode2, math) do { \
+	if ((opLen == 1) || (opLen == 0 && getlen(math)==1)) { write1((unsigned int)opcode1); write1(getnum_ck(math)); } \
+	else { write1((unsigned int)opcode2); write2(getnum_ck(math)); } \
+	return true; } while(0)
 #define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1(getnum_ck(math1)); write1(getnum_ck(math2)); return true; } while(0)
 #define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum_ck(math); int pos=(len==1)?num:num-(snespos+2); \
 								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \

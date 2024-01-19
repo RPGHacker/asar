@@ -86,7 +86,7 @@ bool run_as_thread(functor&& callback) {
 char* stack_bottom = nullptr;
 void init_stack_use_check() {
 	MEMORY_BASIC_INFORMATION mbi;
-	char stackvar;
+	char stackvar = 0;
 	VirtualQuery(&stackvar, &mbi, sizeof(mbi));
 	stack_bottom = (char*)mbi.AllocationBase;
 }

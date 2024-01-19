@@ -2248,7 +2248,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 #endif
 	else if (is1("incsrc"))
 	{
-		const char* current_file = get_current_file_name();
 		string name;
 		// RPG Hacker: Should this also throw on absolute paths?
 		// E.g., on something starting with C:/ or whatever.

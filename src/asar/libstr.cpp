@@ -182,7 +182,7 @@ string& string::qnormalize()
 	string out;
 	char *startstr = thisstring.raw();
 	char *str = startstr;
-	while(str = strpbrk(str, "'\" \t,\r"))
+	while((str = strpbrk(str, "'\" \t,\r")))
 	{
 		if(is_space(*str))
 		{
@@ -255,7 +255,7 @@ bool confirmqpar(const char * str)
 {
 	//todo fully optimize
 	int par = 0;
-	while((unsigned char)*str >= 128 || !qparlut[*str]) str++;
+	while((unsigned char)*str >= 128 || !qparlut[(unsigned char)*str]) str++;
 	while(*str)
 	{
 		if(*str == '"')
@@ -275,7 +275,7 @@ bool confirmqpar(const char * str)
 			par += 1 - ((*str++ - '(') << 1);
 			if(par < 0) return false;
 		}
-		while((unsigned char)*str >= 128 || !qparlut[*str]) str++;
+		while((unsigned char)*str >= 128 || !qparlut[(unsigned char)*str]) str++;
 	}
 	return !par;
 }

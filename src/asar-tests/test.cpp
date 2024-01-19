@@ -28,6 +28,7 @@
 #	include <algorithm>
 #	include <set>
 #	include <list>
+#	include <cstdint>
 
 #	if defined(_MSC_VER)
 #		pragma warning(pop)
