@@ -305,6 +305,8 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(broken_for_loop), "Broken for loop command: %s" },
 
 	{ ERR(missing_org), "Missing org or freespace command." },
+
+	{ ERR(unclosed_block_comment), "Unclosed block comment." },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_error
 // matches with the number of constants in asar_error_id. This is important, because

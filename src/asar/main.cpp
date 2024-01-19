@@ -781,14 +781,37 @@ void assemblefile(const char * filename)
 		sourcefile& newfile = filecontents.create(absolutepath);
 		newfile.contents =split(temp, '\n');
 		newfile.data = temp;
+		bool in_block_comment = false;
+		int block_comment_start = -1;
+		string block_comment_start_line;
 		for (int i=0;newfile.contents[i];i++)
 		{
 			newfile.numlines++;
 			char * line= newfile.contents[i];
+			if(in_block_comment) {
+				char * end = strstr(line, "]]");
+				if(!end) {
+					*line = 0;
+					continue;
+				}
+				line = end+2;
+				in_block_comment = false;
+			}
 			char * comment = strqchr(line, ';');
-			if(comment) *comment = 0;
+			if(comment) {
+				if(comment[1] == '[' && comment[2] == '[') {
+					in_block_comment = true;
+					block_comment_start = i;
+					block_comment_start_line = line;
+				}
+				*comment = 0;
+			}
 			if (!confirmquotes(line)) { callstack_push cs_push(callstack_entry_type::LINE, line, i); asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
 			newfile.contents[i] = strip_whitespace(line);
+		}
+		if(in_block_comment) {
+			callstack_push cs_push(callstack_entry_type::LINE, block_comment_start_line, block_comment_start);
+			asar_throw_error(0, error_type_null, error_id_unclosed_block_comment);
 		}
 		for(int i=0;newfile.contents[i];i++)
 		{
