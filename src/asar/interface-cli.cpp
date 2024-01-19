@@ -163,7 +163,7 @@ int main(int argc, char * argv[])
 			" -wno<ID>          \n"
 			"                   Disable a specific warning.\n\n"
 			" --error-limit=<N> \n"
-			"                   Stop after encountering this many errors, instead of the default 20"
+			"                   Stop after encountering this many errors, instead of the default 20\n\n"
 			);
 		ignoretitleerrors=false;
 		string par;
