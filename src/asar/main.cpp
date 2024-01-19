@@ -95,8 +95,6 @@ bool setmapper()
 }
 
 
-// TODO: Make this accessible to the DLL interface.
-// Will require lib API addition.
 bool simple_callstacks = true;
 
 // Shortens target_path to a relative path, but only if it resides
