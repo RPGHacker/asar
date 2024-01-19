@@ -166,13 +166,13 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 			} else {
 				fail_reason << "Expected " + name + ": ";
 				for(size_t i = 0; i < expected.size(); i++) {
-					fail_reason << expected[i] << (i == expected.size()-1 ? ", " : "\n");
+					fail_reason << expected[i] << (i == expected.size()-1 ? "\n" : ", ");
 				}
 
 				fail_reason << "Actual " + name + ":   ";
 			}
 			for(size_t i = 0; i < output.size(); i++) {
-				fail_reason << output[i] << (i == output.size()-1 ? ", " : "\n");
+				fail_reason << output[i] << (i == output.size()-1 ? "\n" : ", ");
 			}
 		}
 	};
@@ -324,14 +324,15 @@ tests_directory.\n";
 		if(num_total % 40 == 0) std::cout << '\n';
 		std::cout << std::flush;
 	}
+	std::cout << "\n";
 
 	asar_close();
-	std::cout << "\n" << num_passed << "/" << (num_passed + num_failed)
+	for(auto& s : fail_msgs) {
+		std::cout << s << "\n";
+	}
+	std::cout << num_passed << "/" << (num_passed + num_failed)
 		<< " tests passed (" << num_skipped << " skipped)\n";
 	if(!fail_msgs.empty()) {
-		for(auto& s : fail_msgs) {
-			std::cout << s << "\n";
-		}
 		return 1;
 	} else {
 		return 0;
