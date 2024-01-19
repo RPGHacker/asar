@@ -2258,9 +2258,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		name=safedequote(par);
 		assemblefile(name);
 	}
-	else if (is1("incbin") || is3("incbin"))
+	else if (is1("incbin"))
 	{
-		if (numwords == 4 && strcmp(word[2], "->")) asar_throw_error(0, error_type_block, error_id_broken_incbin);
 		int len;
 		int start=0;
 		int end=0;
@@ -2296,60 +2295,9 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (!end) end=len;
 		if(start < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(start).data(), name.data());
 		if (end < start || end > len || end < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).data(), name.data());
-		if (numwords==4)
-		{
-			asar_throw_warning(0, warning_id_feature_deprecated, "incbin with target location", "put an org before the incbin");
-			if (!confirmname(word[3]))
-			{
-				int pos=(int)getnum(word[3]);
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-				int offset=snestopc(pos);
-				if (offset + end - start > 0xFFFFFF) asar_throw_error(0, error_type_block, error_id_16mb_rom_limit);
-				if (offset+end-start>romlen) romlen=offset+end-start;
-				if (pass==2)
-				{
-					writeromdata(offset, data+start, end-start);
-					add_addr_to_line(pos);
-				}
-				else if(pass == 1) addromwrite(offset, end-start);
-			}
-			else
-			{
-				int pos;
-				if (pass==0)
-				{
-					// TODO: this shouldn't allocate in pass 0 actually
-					// and needs an addromwrite probably......
-					// actually it should just use the freespace finder at the end of pass 1
-					if (end - start > 65536) asar_throw_error(0, error_type_block, error_id_incbin_64kb_limit);
-					pos=getpcfreespace(end-start, -1, true, false);
-					if (pos < 0) asar_throw_error(0, error_type_block, error_id_no_freespace, dec(end - start).data());
-					int foundfreespaceid=getfreespaceid();
-					freespaces[foundfreespaceid].dont_find = true;
-					freespaces[foundfreespaceid].pos = pctosnes(pos);
-					setlabel(word[3], freespaces[foundfreespaceid].pos, false, foundfreespaceid);
-					// is this necessary?
-					writeromdata_bytes(pos, 0xFF, end-start);
-				}
-				if (pass==1)
-				{
-					getfreespaceid();//nothing to do here, but we want to tick the counter
-				}
-				if (pass==2)
-				{
-					int foundfreespaceid =getfreespaceid();
-					if (freespaces[foundfreespaceid].leaked) asar_throw_warning(2, warning_id_freespace_leaked);
-					writeromdata(snestopc(freespaces[foundfreespaceid].pos&0xFFFFFF), data+start, end-start);
-					add_addr_to_line((freespaces[foundfreespaceid].pos&0xFFFFFF) - 8);
-					freespaceuse+=8+end-start;
-				}
-			}
-		}
-		else
-		{
-			for (int i=start;i<end;i++) write1((unsigned int)data[i]);
-			add_addr_to_line(addrToLinePos);
-		}
+
+		for (int i=start;i<end;i++) write1((unsigned int)data[i]);
+		add_addr_to_line(addrToLinePos);
 	}
 	else if (is("skip") || is("fill"))
 	{
