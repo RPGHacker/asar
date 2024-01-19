@@ -13,9 +13,9 @@ import sys
 from ctypes import c_int, c_char_p, POINTER
 c_int_ptr = POINTER(c_int)
 
-__all__ = ["errordata", "writtenblockdata", "mappertype", "version",
-           "apiversion", "init", "reset", "patch", "maxromsize", "close",
-           "geterrors", "getwarnings", "getprints", "getalllabels",
+__all__ = ["stackentry", "errordata", "writtenblockdata", "mappertype",
+           "version", "apiversion", "init", "reset", "patch", "maxromsize",
+           "close", "geterrors", "getwarnings", "getprints", "getalllabels",
            "getlabelval", "getdefine", "getalldefines", "resolvedefines",
            "math", "getwrittenblocks", "getmapper", "getsymbolsfile"]
 _target_api_ver = 400
@@ -25,6 +25,11 @@ _asar = None
 class AsarArithmeticError(ArithmeticError):
     pass
 
+class stackentry(ctypes.Structure):
+    _fields_ = [("fullpath", c_char_p),
+                ("prettypath", c_char_p),
+                ("lineno", c_int),
+                ("details", c_char_p)]
 
 class errordata(ctypes.Structure):
     _fields_ = [("fullerrdata", c_char_p),
@@ -32,9 +37,11 @@ class errordata(ctypes.Structure):
                 ("block", c_char_p),
                 ("filename", c_char_p),
                 ("line", c_int),
-                ("callerfilename", c_char_p),
-                ("callerline", c_int),
-                ("errid", c_int)]
+                # TODO: this isn't very pythonic and can lead to segfaults easily
+                # should make a better return type for getallerrors() i guess
+                ("callstack", POINTER(stackentry)),
+                ("callstacksize", c_int),
+                ("errname", c_char_p)]
 
     def __repr__(self):
         return "<asar error: {!r}>".format(self.fullerrdata.decode())
@@ -93,7 +100,8 @@ class _patchparams(ctypes.Structure):
                 ("memory_files", POINTER(_memoryfile)),
                 ("memory_file_count", c_int),
                 ("override_checksum_gen", ctypes.c_bool),
-                ("generate_checksum", ctypes.c_bool)]
+                ("generate_checksum", ctypes.c_bool),
+                ("full_call_stack", ctypes.c_bool)]
 
 
 class mappertype(enum.Enum):
@@ -203,9 +211,7 @@ def init(dll_path=None):
 
     if not _asar.dll.asar_init():
         _asar = None
-        return False
-    else:
-        return True
+        raise OSError("Asar DLL failed to initialize")
 
 
 def close():
@@ -249,7 +255,8 @@ def reset():
 
 def patch(patch_name, rom_data, includepaths=[],
           additional_defines={}, std_include_file=None, std_define_file=None,
-          warning_overrides={}, memory_files={}, override_checksum=None):
+          warning_overrides={}, memory_files={}, override_checksum=None,
+          full_call_stack=False):
     """Applies a patch.
 
     Returns (success, new_rom_data). If success is False you should call
@@ -273,6 +280,10 @@ def patch(patch_name, rom_data, includepaths=[],
     override_checksum specifies whether to override checksum generation. True
     forces Asar to update the ROM's checksum, False forces Asar to not update
     it.
+
+    full_call_stack specifies whether generated error and warning texts (i.e.
+    the "fullerrdata" string in a returned error) always contain their full
+    call stack.
     """
     romlen = c_int(len(rom_data))
     rom_ptr = ctypes.create_string_buffer(rom_data, maxromsize())
@@ -319,6 +330,8 @@ def patch(patch_name, rom_data, includepaths=[],
     else:
         pp.override_checksum_gen = False
         pp.generate_checksum = False
+
+    pp.full_call_stack = full_call_stack
 
     result = _asar.dll.asar_patch(ctypes.byref(pp))
     return result, rom_ptr.raw[:romlen.value]
