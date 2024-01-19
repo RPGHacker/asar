@@ -329,8 +329,6 @@ struct freespace_data {
 	bool write_rats;
 	// should rework this...
 	bool flag_align;
-	// hack for incbin -> label
-	bool dont_find;
 	// pinned freespaces: how much space is actually needed for this freespace
 	int total_len;
 	// pinned freespaces: how much of this block we've already used
@@ -803,7 +801,6 @@ void allocate_freespaces() {
 
 	for(int i = 1; i < freespaces.count; i++) {
 		freespace_data& fs = freespaces[i];
-		if(fs.dont_find) continue;
 		if(fs.is_static && fs.orgpos > 0) {
 			fs.pos = fs.orgpos;
 			continue;
@@ -825,7 +822,7 @@ void allocate_freespaces() {
 
 	// relocate all labels that were in freespace to point them to their real location
 	labels.each([](const char * key, snes_label & val) {
-		if(val.freespace_id != 0 && !freespaces[val.freespace_id].dont_find) {
+		if(val.freespace_id != 0) {
 			val.pos += freespaces[val.freespace_id].pos;
 		}
 	});
