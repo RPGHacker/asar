@@ -226,7 +226,7 @@ def close():
     _asar = None
 
 
-def version():
+def version() -> int:
     """Return the version, in the format major*10000+minor*100+bugfix*1.
 
     This means that 1.2.34 would be returned as 10234.
@@ -234,7 +234,7 @@ def version():
     return _asar.dll.asar_version()
 
 
-def apiversion():
+def apiversion() -> int:
     """Return the API version, in the format major*100+minor.
 
     Minor is incremented on backwards compatible changes; major is incremented
@@ -253,10 +253,10 @@ def reset():
     return _asar.dll.asar_reset()
 
 
-def patch(patch_name, rom_data, includepaths=[],
+def patch(patch_name: str, rom_data: bytes, includepaths=[],
           additional_defines={}, std_include_file=None, std_define_file=None,
           warning_overrides={}, memory_files={}, override_checksum=None,
-          full_call_stack=False):
+          full_call_stack=False) -> tuple[bool, bytes]:
     """Applies a patch.
 
     Returns (success, new_rom_data). If success is False you should call
@@ -342,45 +342,45 @@ def maxromsize():
     return _asar.dll.asar_maxromsize()
 
 
-def geterrors():
+def geterrors() -> list[errordata]:
     """Get a list of all errors."""
     return _getall(_asar.dll.asar_geterrors)
 
 
-def getwarnings():
+def getwarnings() -> list[errordata]:
     """Get a list of all warnings."""
     return _getall(_asar.dll.asar_getwarnings)
 
 
-def getprints():
+def getprints() -> list[str]:
     """Get a list of all printed data."""
     return [x.decode() for x in _getall(_asar.dll.asar_getprints)]
 
 
-def getalllabels():
+def getalllabels() -> dict[str, int]:
     """Get a dictionary of label name -> SNES address."""
     labeldatas = _getall(_asar.dll.asar_getalllabels)
     return {x.name.decode(): x.location for x in labeldatas}
 
 
-def getlabelval(name):
-    """Get the ROM location of one label. None means "not found"."""
+def getlabelval(name) -> int | None:
+    """Get the SNES address of one label. None means "not found"."""
     val = _asar.dll.asar_getlabelval(name.encode())
     return None if (val == -1) else val
 
 
-def getdefine(name):
+def getdefine(name) -> str:
     """Get the value of a define."""
     return _asar.dll.asar_getdefine(name.encode()).decode()
 
 
-def getalldefines():
+def getalldefines() -> dict[str, str]:
     """Get the names and values of all defines."""
     definedatas = _getall(_asar.dll.asar_getalldefines)
     return {x.name.decode(): x.contents.decode() for x in definedatas}
 
 
-def resolvedefines(data, learnnew):
+def resolvedefines(data, learnnew) -> str:
     """Parse all defines in the given data.
 
     Returns the data with all defines evaluated.
@@ -390,7 +390,7 @@ def resolvedefines(data, learnnew):
     return _asar.dll.asar_resolvedefines(data, learnnew)
 
 
-def math(to_calculate):
+def math(to_calculate) -> float:
     """Parse a string containing math.
 
     It automatically assumes global scope (no namespaces), and has access to
@@ -406,16 +406,16 @@ def math(to_calculate):
         raise AsarArithmeticError(error.value.decode())
 
 
-def getwrittenblocks():
+def getwrittenblocks() -> list[writtenblockdata]:
     """Get a list of all the blocks written to the ROM."""
     return _getall(_asar.dll.asar_getwrittenblocks)
 
 
-def getmapper():
+def getmapper() -> mappertype:
     """Get the ROM mapper currently used by Asar."""
     return mappertype(_asar.dll.asar_getmapper())
 
-def getsymbolsfile(fmt="wla"):
+def getsymbolsfile(fmt="wla") -> str:
     """Generates the contents of a symbols file for in a specific format.
 
     Returns the textual contents of the symbols file.
