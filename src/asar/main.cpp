@@ -797,12 +797,23 @@ void assemblefile(const char * filename)
 				line = end+2;
 				in_block_comment = false;
 			}
+redo_line:
 			char * comment = strqchr(line, ';');
 			if(comment) {
 				if(comment[1] == '[' && comment[2] == '[') {
 					in_block_comment = true;
 					block_comment_start = i;
 					block_comment_start_line = line;
+					// this is a little messy because a multiline comment could
+					// end right on the line where it started. so if we find
+					// the end, cut the comment out of the line and recheck for
+					// more comments.
+					char * end = strstr(line, "]]");
+					if(end) {
+						memmove(comment, end+2, strlen(end+2)+1);
+						in_block_comment = false;
+						goto redo_line;
+					}
 				}
 				*comment = 0;
 			}
