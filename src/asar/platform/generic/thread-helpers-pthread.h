@@ -69,9 +69,17 @@ void deinit_stack_use_check() {
 	stack_bottom = nullptr;
 }
 bool have_enough_stack_left() {
+#if defined(__clang__) || defined(__GNUC__)
+	// this is a GCC extension, but it's necessary for this function to work in ASan
+	// (regular local variables are banished to the shadow realm or some shit,
+	// so their addresses don't tell us anything about "real" stack usage)
+	void* stack_top = __builtin_frame_address(0);
+#else
 	// using a random local as a rough estimate for current top-of-stack
 	char stackvar;
-	size_t stack_left = &stackvar - (char*)stack_bottom;
+	void* stack_top = &stackvar;
+#endif
+	ssize_t stack_left = (char*)stack_top - (char*)stack_bottom;
 	return stack_bottom == nullptr || stack_left >= 32768;
 }
 #endif
