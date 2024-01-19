@@ -117,6 +117,8 @@ void reset_text_color(FILE* output_loc, string* in_out_str)
 #endif
 }
 
+static int max_num_errors = 20;
+
 void error_interface(int errid, int whichpass, const char * e_)
 {
 	errored = true;
@@ -136,7 +138,6 @@ void error_interface(int errid, int whichpass, const char * e_)
 		fputs(error_string, errloc);
 		reset_text_color(errloc, &details_string);
 		fputs(details_string, errloc);
-		static const int max_num_errors = 20;
 		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
 }
@@ -293,6 +294,8 @@ int main(int argc, const char * argv[])
 			"                   Disable a specific warning.\n\n"
 			" --full-error-stack\n"
 			"                   Enables detailed call stack information for warnings and errors.\n\n"
+			" --error-limit=<N> \n"
+			"                   Stop after encountering this many errors, instead of the default 20\n\n"
 			);
 		ignoretitleerrors=false;
 		string par;
@@ -321,6 +324,12 @@ int main(int argc, const char * argv[])
 			}
 			else if (checkstartmatch(par, "--symbols-path=")) {
 				symfilename=((const char*)par) + strlen("--symbols-path=");
+			}
+			else if (checkstartmatch(par, "--error-limit="))
+			{
+				char* out;
+				long lim = strtol((const char*)par + strlen("--error-limit="), &out, 10);
+				max_num_errors = lim;
 			}
 			else if (par=="--version")
 			{
