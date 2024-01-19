@@ -1,3 +1,4 @@
+;`skip
 ;`56 34 12
 org $008000
 if defined("cli_only")

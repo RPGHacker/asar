@@ -1,3 +1,4 @@
+;`skip
 ;`56 34 12
 ;This define is provided by a memory file via lib interface.
 org $008000

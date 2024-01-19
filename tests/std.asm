@@ -1,3 +1,4 @@
+;`skip
 ;`B0 A0 90 80 70 60 50 40 30 20 10 F0 E0
 
 incsrc "std/test.asm"

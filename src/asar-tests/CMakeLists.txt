@@ -108,8 +108,17 @@ if(ASAR_GEN_DLL_TEST)
 
 	set_asar_test_shared_properties(asar-dll-test)
 
+	add_executable(newtest
+		"${CMAKE_CURRENT_SOURCE_DIR}/newtest.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/asardll.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/asardll.h")
+	target_include_directories(newtest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/")
+	set_asar_test_shared_properties(newtest)
+
 	if(ASAR_USE_SANITIZER)
 		target_compile_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
 		target_link_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
+		target_compile_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
+		target_link_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
 	endif()
 endif()
