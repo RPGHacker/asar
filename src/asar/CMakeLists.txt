@@ -303,6 +303,11 @@ if(ASAR_GEN_DLL)
 
 	install(TARGETS asar)
 
+	if(ASAR_COVERAGE)
+		target_compile_options(asar PRIVATE --coverage)
+		target_link_options(asar PRIVATE --coverage)
+	endif()
+
 endif(ASAR_GEN_DLL)
 
 
