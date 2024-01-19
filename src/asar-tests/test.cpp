@@ -718,6 +718,7 @@ int main(int argc, char * argv[])
 		}
 		FILE * rom = fopen(out_rom_name, "wb");
 		if (!rom) dief("Error: '%s' could not be opened for writing: %s", out_rom_name, strerror(errno));
+		fclose(rom);
 
 		int numiter = 1;
 
