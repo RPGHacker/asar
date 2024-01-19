@@ -197,9 +197,9 @@ void write1_pick(unsigned int num)
 static bool asblock_pick(char** word, int numwords)
 {
 	recent_opcode_num = 1;
-
+	
+	if (arch==arch_spc700 || in_spcblock) return asblock_spc700(word, numwords);
 	if (arch==arch_65816) return asblock_65816(word, numwords);
-	if (arch==arch_spc700) return asblock_spc700(word, numwords);
 	if (arch==arch_spc700_inline) return asblock_spc700(word, numwords);
 	if (arch==arch_superfx) return asblock_superfx(word, numwords);
 	return true;
@@ -1709,7 +1709,6 @@ void assembleblock(const char * block, bool isspecialline)
 	else if(is("spcblock"))
 	{
 		//banned features when active: org, freespace(and variants), arch, mapper,namespace,pushns
-		if(arch != arch_spc700)  asar_throw_error(0, error_type_block, error_id_spcblock_bad_arch);
 		if(in_struct || in_sub_struct) asar_throw_error(0, error_type_block, error_id_spcblock_inside_struct);
 		if(numwords < 2)  asar_throw_error(0, error_type_block, error_id_spcblock_too_few_args);
 		if(numwords > 4)  asar_throw_error(0, error_type_block, error_id_spcblock_too_many_args);
