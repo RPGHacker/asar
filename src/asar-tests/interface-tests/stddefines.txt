@@ -1,0 +1,5 @@
+!def1 = a   
+def2
+def3 = " bcd "
+
+    !def4
