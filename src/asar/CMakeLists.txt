@@ -5,16 +5,41 @@ cmake_minimum_required(VERSION 3.9.0)
 
 option(ASAR_GEN_EXE "Build Asar standalone application" ON)
 option(ASAR_GEN_DLL "Build Asar shared library" ON)
+option(ASAR_GEN_LIB "Build Asar static library" ON)
 option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
+if (MSVC)
+	message(STATUS "In MSVC you can override MSVC_LIB_TYPE, valid values are D for dynamic and T for static")
+endif()
 
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 
 
-# This maro sets a number of properties required by both,
+# This macro sets a number of properties required by both,
 # stand-alone application and library interface
 
-macro(set_asar_shared_properties target)
+macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
+	# this is here because in CMake you can't modify macro parameters
+	# so we create a new variable
+	set(msvc_lib_type_var ${msvc_lib_type_param})
+	if (MSVC)
+		if (MSVC_LIB_TYPE)
+			set(msvc_lib_type_var ${MSVC_LIB_TYPE})
+		endif()
+		if ("${msvc_lib_type_var}" STREQUAL "D")
+			set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
+		elseif ("${msvc_lib_type_var}" STREQUAL "T")
+			set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+		else()
+			message(FATAL_ERROR "Invalid MSVC_LIB_TYPE, valid types are T and D instead of ${msvc_lib_type_var}")
+		endif()
+	endif()
+
+	if (enable_sanitizer)
+		target_compile_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
+		target_link_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
+	endif()
+
 	target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 	
 	if(MSVC)
@@ -56,7 +81,7 @@ macro(set_asar_shared_properties target)
 	# Enable maximum warning level
 	
 	if(MSVC)
-		target_compile_options(${target} PRIVATE /Wall /MT /EHa)
+		target_compile_options(${target} PRIVATE /W3 /EHa)
 		
 		# These certainly aren't worth a warning, though
 		target_compile_options(${target} PRIVATE
@@ -65,6 +90,8 @@ macro(set_asar_shared_properties target)
 			/wd4711 # function selected for automatic inline expansion
 			/wd4820 # 'bytes' bytes padding added after construct 'member_name'
 			/wd4464 # relativ include path contains '..'
+			/wd4244 # 'conversion' conversion from 'type1' to 'type2', possible loss of data
+			/wd5045 # compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
 		)
 		target_link_options(${target} PRIVATE /STACK:4194304)
 		if(MSVC_VERSION VERSION_LESS "1900")
@@ -140,6 +167,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/dll_helper.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.h"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
@@ -201,12 +229,23 @@ if(ASAR_GEN_EXE)
 		${ASAR_RESOURCE_FILES}
 		)
 
-	set_asar_shared_properties(asar-standalone)
+	set_asar_shared_properties(asar-standalone "T" TRUE)
 
 	if(ASAR_COVERAGE)
 		target_compile_options(asar-standalone PRIVATE -fprofile-arcs -ftest-coverage)
 		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov --coverage -fprofile-arcs")
 	endif()
+  
+	set_target_properties(asar-standalone
+		PROPERTIES
+		OUTPUT_NAME "asar"
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
+	)
+
+	install(TARGETS asar-standalone)
+
 endif(ASAR_GEN_EXE)
 
 
@@ -224,6 +263,45 @@ if(ASAR_GEN_DLL)
 		${ASAR_SHARED_SOURCE_FILES}
 		${ASAR_LIB_RESOURCE_FILES}
 	)
+
 	target_compile_definitions(asar PRIVATE "ASAR_SHARED")
-	set_asar_shared_properties(asar)
+	set_asar_shared_properties(asar "T" TRUE)
+
+	set_target_properties(asar
+		PROPERTIES
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+	)
+
+	install(TARGETS asar)
+
 endif(ASAR_GEN_DLL)
+
+
+
+
+
+# Define static library
+
+if (ASAR_GEN_LIB)
+	add_library(
+		asar-static STATIC
+		"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.cpp"
+
+		${ASAR_SHARED_SOURCE_FILES}
+		${ASAR_LIB_RESOURCE_FILES}
+	)
+	target_compile_definitions(asar-static PRIVATE "ASAR_STATIC")
+	set_asar_shared_properties(asar-static "D" FALSE)
+
+	set_target_properties(asar-static
+		PROPERTIES
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+	)
+
+	install(TARGETS asar-static)
+
+endif()

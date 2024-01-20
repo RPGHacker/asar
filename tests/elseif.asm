@@ -177,4 +177,4 @@ else
 	endif
 endif
 
-if !count == 4**2 : db 1
+if !count == 4**2 : db 1 : endif

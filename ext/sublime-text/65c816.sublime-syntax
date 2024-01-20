@@ -29,7 +29,7 @@ contexts:
     - include: strings
 
   keywords:
-    - match: '\b(?i:lorom|hirom|exlorom|exhirom|sa1rom|fullsa1rom|sfxrom|norom|macro|endmacro|incbin|incsrc|fillbyte|fillword|filllong|filldword|fill|pad|padbyte|padword|padlong|paddword|table|cleartable|skip|namespace|import|print|org|warnpc|base|on|off|freespaceuse|hex|freespace|freecode|freedata|ram|noram|align|cleaned|static|autoclean|autoclear|prot|pushpc|pullpc|function|if|else|elseif|endif|assert|arch|65816|spc700|spc700-inline|superfx|math|pri|round|warn|xkas|bank|noassume|auto|asar|include|includefrom|error|warn|skip|double|round|pushtable|pulltable|db|dw|dl|dd)\b'
+    - match: '\b(?i:lorom|hirom|exlorom|exhirom|sa1rom|fullsa1rom|sfxrom|norom|macro|endmacro|incbin|incsrc|fillbyte|fillword|filllong|filldword|fill|pad|padbyte|padword|padlong|paddword|table|cleartable|skip|namespace|import|print|org|warnpc|base|on|off|freespaceuse|hex|freespace|freecode|freedata|ram|noram|align|cleaned|static|autoclean|autoclear|prot|pushpc|pullpc|function|if|else|elseif|endif|while|endwhile|for|endfor|assert|arch|65816|spc700|spc700-inline|superfx|math|pri|round|warn|xkas|bank|noassume|auto|asar|include|includefrom|error|warn|skip|double|round|pushtable|pulltable|db|dw|dl|dd|global)\b'
       scope: keyword.control.asar
 
   operators:

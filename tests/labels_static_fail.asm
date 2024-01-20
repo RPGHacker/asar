@@ -1,13 +1,15 @@
-;`errE5107
-;`errE5107
-;`errE5107
-;`errE5107
-;`errE5107
-;`errE5124
-;`errE5124
-;`errE5063
-;`errE5124
-;`errE5091
+;`errElabel_in_conditional
+;`errElabel_in_conditional
+;`errElabel_in_conditional
+;`errElabel_in_conditional
+;`errElabel_in_conditional
+;`errEno_labels_here
+;`errEno_labels_here
+;`errElabel_cross_assignment
+;`errEno_labels_here
+;`warnWfeature_deprecated
+;`warnWfeature_deprecated
+;`errEdefine_label_math
 org $008000
 ANonStaticLabel:
 
@@ -42,14 +44,16 @@ if TestStruct.NewStruct[0].new == 3
 	; This should fail
 endif
 
-incbin "data/64kb.bin":(ANonStaticLabel)-(8002)
-incbin "data/64kb.bin":(8000)-(ANonStaticLabel+2)
+incbin "data/64kb.bin":ANonStaticLabel..$8002
+incbin "data/64kb.bin":$8000..ANonStaticLabel+2
 
 ANewLabel = ANonStaticLabel
 
-fillbyte $EE
+Here:
+fillbyte Here
 fill ANonStaticLabel
 
-!adefine #= ANonStaticLabel
+padbyte Here
+pad ANonStaticLabel
 
-; TODO: Test incbin and more.
+!adefine #= ANonStaticLabel

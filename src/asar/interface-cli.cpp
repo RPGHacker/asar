@@ -36,6 +36,8 @@ void print(const char * str)
 static FILE * errloc=stderr;
 static int errnum=0;
 
+static int max_num_errors = 20;
+
 void error_interface(int errid, int whichpass, const char * e_)
 {
 	errored = true;
@@ -44,8 +46,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 		errnum++;
 		// don't show current block if the error came from an error command
 		bool show_block = (thisblock && (errid != error_id_error_command));
-		fputs(STR getdecor() + "error: (E" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
-		static const int max_num_errors = 20;
+		fputs(STR getdecor() + "error: (" + get_error_name((asar_error_id)errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : STR "") + "\n", errloc);
 		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
 	}
 }
@@ -57,7 +58,7 @@ void warn(int errid, const char * e_)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (thisblock && (errid != warning_id_warn_command));
-	fputs(STR getdecor()+"warning: (W" + dec(errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : "") + "\n", errloc);
+	fputs(STR getdecor()+"warning: (" + get_warning_name((asar_warning_id)errid) + "): " + e_ + (show_block ? (STR" [" + thisblock + "]") : STR "") + "\n", errloc);
 	warned=true;
 }
 
@@ -157,10 +158,12 @@ int main(int argc, char * argv[])
 			"                   Add a define (optionally with a value) to Asar.\n\n"
 			" -werror           \n"
 			"                   Treat warnings as errors.\n\n"
-			" -w<ID>            \n"
+			" -w<name>          \n"
 			"                   Enable a specific warning.\n\n"
-			" -wno<ID>          \n"
+			" -wno<name>        \n"
 			"                   Disable a specific warning.\n\n"
+			" --error-limit=<N> \n"
+			"                   Stop after encountering this many errors, instead of the default 20\n\n"
 			);
 		ignoretitleerrors=false;
 		string par;
@@ -189,6 +192,12 @@ int main(int argc, char * argv[])
 			}
 			else if (checkstartmatch(par, "--symbols-path=")) {
 				symfilename=((const char*)par) + strlen("--symbols-path=");
+			}
+			else if (checkstartmatch(par, "--error-limit="))
+			{
+				char* out;
+				long lim = strtol((const char*)par + strlen("--error-limit="), &out, 10);
+				max_num_errors = lim;
 			}
 			else if (par=="--version")
 			{
@@ -390,9 +399,6 @@ int main(int argc, char * argv[])
 				}
 			}
 		}
-		romdata_r=(unsigned char*)malloc((size_t)romlen);
-		romlen_r=romlen;
-		memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
 
 		string stdincludespath = STR dir(argv[0]) + "stdincludes.txt";
 		parse_std_includes(stdincludespath, includepaths);
@@ -421,6 +427,7 @@ int main(int argc, char * argv[])
 			finishpass();
 		}
 
+		closecachedfiles(); // this needs the vfs so do it before destroying it
 		new_filesystem.destroy();
 		filesystem = nullptr;
 
@@ -465,9 +472,17 @@ int main(int argc, char * argv[])
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";
 			string contents = create_symbols_file(symbols, romCrc);
 			FILE * symfile = fopen(symfilename, "wt");
-			fputs(contents, symfile);
-			fclose(symfile);
-
+			if (!symfile)
+			{
+				puts(STR"Failed to create symbols file: \"" + symfilename + "\".");
+				pause(err);
+				return 1;
+			}
+			else
+			{
+				fputs(contents, symfile);
+				fclose(symfile);
+			}
 		}
 		reseteverything();
 	}

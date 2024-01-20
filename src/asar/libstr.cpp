@@ -156,7 +156,7 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 	return true;
 }
 
-#define dequote(var, next, error) if (var=='"') do { next; while (var!='"') { if (!var) error; next; } next; } while(0); else if (var=='\'') do { next; while (var!='\'') { if (!var) error; next; } next; } while(0)
+#define dequote(var, next, error) if (var=='"') do { next; while (var!='"' && var != '\0') { if (!var) error; next; }	if (var == '\0') error;	next; } while(0); else if (var=='\'') do { next; if (!var) error; /* ''' special case hack */ if (var=='\'') { next; if (var!='\'') error; next; } else { next; while (var!='\'' && var != '\0') { if (!var) error; next; } if (var == '\0') error; next; } } while(0)
 #define skippar(var, next, error) dequote(var, next, error); else if (var=='(') { int par=1; next; while (par) { dequote(var, next, error); else { \
 				if (var=='(') par++; if (var==')') par--; if (!var) error; next; } } } else if (var==')') error
 
@@ -527,6 +527,20 @@ char* strqpchr(const char* str, char key)
 	{
 		skippar(*str, str++, return nullptr);
 		else if (*str == key) return const_cast<char*>(str);
+		else if (!*str) return nullptr;
+		else str++;
+	}
+	return nullptr;
+}
+
+
+char* strqpstr(const char* str, const char* key)
+{
+	size_t keylen = strlen(key);
+	while (*str)
+	{
+		skippar(*str, str++, return nullptr);
+		else if (!strncmp(str, key, keylen)) return const_cast<char*>(str);
 		else if (!*str) return nullptr;
 		else str++;
 	}

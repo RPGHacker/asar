@@ -17,9 +17,19 @@
 #if defined(CPPCLI)
 #define EXPORT extern "C"
 #elif defined(_WIN32)
+#ifdef ASAR_SHARED
 #define EXPORT extern "C" __declspec(dllexport)
+#elif defined(ASAR_STATIC)
+#define EXPORT extern "C"
+#endif
 #else
 #define EXPORT extern "C" __attribute__ ((visibility ("default")))
+#endif
+
+// RPG Hacker: This is currently disabled for debug builds, because it causes random crashes
+// when used in combination with -fsanitize=address.
+#if defined(_WIN32) && defined(NDEBUG)
+#	define RUN_VIA_FIBER
 #endif
 
 static autoarray<const char *> prints;
@@ -80,9 +90,10 @@ static void fillerror(errordata& myerr, int errid, const char * type, const char
 	if (thisblock) myerr.block= duplicate_string(thisblock);
 	else myerr.block= duplicate_string("");
 	myerr.rawerrdata= duplicate_string(str);
-	myerr.fullerrdata= duplicate_string(STR getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):""));
+	myerr.fullerrdata= duplicate_string(STR getdecor()+type+str+((thisblock&&show_block)?(STR" ["+thisblock+"]"):STR ""));
 	myerr.callerline=callerline;
 	myerr.callerfilename=callerfilename ? duplicate_string(callerfilename) : nullptr;
+	// RPG Hacker: TODO: Rework this once we bump the DLL API version again.
 	myerr.errid = errid;
 }
 
@@ -96,7 +107,7 @@ void error_interface(int errid, int whichpass, const char * e_)
 	else if (pass == whichpass) {
 		// don't show current block if the error came from an error command
 		bool show_block = (errid != error_id_error_command);
-		fillerror(errors[numerror++], errid, STR "error: (E" + dec(errid) + "): ", e_, show_block);
+		fillerror(errors[numerror++], errid, STR "error: (" + get_error_name((asar_error_id)errid) + "): ", e_, show_block);
 	}
 	else {}//ignore anything else
 }
@@ -105,8 +116,13 @@ void warn(int errid, const char * str)
 {
 	// don't show current block if the warning came from a warn command
 	bool show_block = (errid != warning_id_warn_command);
-	fillerror(warnings[numwarn++], errid, STR "warning: (W" + dec(errid) + "): ", str, show_block);
+	fillerror(warnings[numwarn++], errid, STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
 }
+
+static autoarray<labeldata> ldata;
+static int labelsinldata = 0;
+static autoarray<definedata> ddata;
+static int definesinddata=0;
 
 static void resetdllstuff()
 {
@@ -139,6 +155,18 @@ static void resetdllstuff()
 	}
 	warnings.reset();
 	numwarn=0;
+
+	for (int i=0;i<labelsinldata;i++) free((void*)ldata[i].name);
+	ldata.reset();
+	labelsinldata=0;
+
+	for (int i=0;i<definesinddata;i++)
+	{
+		free((void*)ddata[i].name);
+		free((void*)ddata[i].contents);
+	}
+	ddata.reset();
+	definesinddata=0;
 #undef free_and_null
 
 	romCrc = 0;
@@ -150,8 +178,6 @@ static void resetdllstuff()
 
 #define maxromsize (16*1024*1024)
 
-static autoarray<labeldata> ldata;
-static int labelsinldata = 0;
 static bool expectsNewAPI = false;
 
 static void addlabel(const string & name, const snes_label & label_data)
@@ -299,7 +325,7 @@ EXPORT bool asar_patch(const char *patchloc, char *romdata_, int buflen, int *ro
 
 		return asar_patch_end(romdata_, buflen, romlen_);
 	};
-#if defined(_WIN32)
+#if defined(RUN_VIA_FIBER)
 	return run_as_fiber(execute_patch);
 #else
 	return execute_patch();
@@ -401,12 +427,13 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 
 		asar_patch_main(paramscurrent.patchloc);
 
+		closecachedfiles(); // this needs the vfs so do it before destroying it
 		new_filesystem.destroy();
 		filesystem = nullptr;
 
 		return asar_patch_end(paramscurrent.romdata, paramscurrent.buflen, paramscurrent.romlen);
 };
-#if defined(_WIN32)
+#if defined(RUN_VIA_FIBER)
 	return run_as_fiber(execute_patch);
 #else
 	return execute_patch();
@@ -448,7 +475,11 @@ EXPORT const labeldata * asar_getalllabels(int * count)
 EXPORT int asar_getlabelval(const char * name)
 {
 	if (!stricmp(name, ":$:opcodes:$:")) return numopcodes;//aaah, you found me
-	int i=(int)labelval(&name).pos;
+	int i;
+	try {
+		i=(int)labelval(&name).pos;
+	}
+	catch(errfatal&) { return -1; }
 	if (*name || i<0) return -1;
 	else return i&0xFFFFFF;
 }
@@ -469,9 +500,6 @@ EXPORT const char * asar_resolvedefines(const char * data)
 	catch(errfatal&){}
 	return out;
 }
-
-static autoarray<definedata> ddata;
-static int definesinddata=0;
 
 static void adddef(const string& name, string& value)
 {

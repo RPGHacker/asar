@@ -17,6 +17,7 @@ void asend_65816()
 }
 
 extern bool fastrom;
+extern int recent_opcode_num;
 
 bool asblock_65816(char** word, int numwords)
 {
@@ -29,7 +30,7 @@ bool asblock_65816(char** word, int numwords)
 	bool explicitlen = false;
 	bool hexconstant = false;
 	if(0);
-#define getvars(optbank) num=(pass!=0)?getnum(par):0; hexconstant=is_hex_constant(par); if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
+#define getvars(optbank) num=(pass==2)?getnum(par):0; hexconstant=is_hex_constant(par); if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
 #define match(left, right) (word[1] && stribegin(par, left) && striend(par, right))
 #define init(left, right) strip_suffix(par, right); strip_prefix(par, left); getvars(false)
 #define init_index(left, right) itrim(par, left, right); getvars(false)
@@ -47,7 +48,7 @@ bool asblock_65816(char** word, int numwords)
 																					 else { write1((unsigned int)byte); write2(num); } return true; }
 #define as_xy(  op, byte) if (is(op)) { if(!explicitlen && !hexconstant) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { write1(byte); write1(num); } \
 																					 else {  write1((unsigned int)byte); write2(num); } return true; }
-#define as_rep( op, byte) if (is(op)) { if (pass==0) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } return true; }
+#define as_rep( op, byte) if (is(op)) { if (pass<2) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } recent_opcode_num = num; return true; }
 #define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
 													if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 													return true; }
@@ -167,8 +168,8 @@ bool asblock_65816(char** word, int numwords)
 			if (numargs ==2)
 			{
 				write1(is("MVN")?(unsigned int)0x54:(unsigned int)0x44);
-				write1(getnum(param[0]));
-				write1(getnum(param[1]));
+				write1(pass==2?getnum(param[0]):0);
+				write1(pass==2?getnum(param[1]):0);
 				return true;
 			}
 		}

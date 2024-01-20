@@ -9,10 +9,10 @@ if len(sys.argv) != 2:
 
 zipf = zipfile.ZipFile("asar"+sys.argv[1]+".zip", 'x', compression=zipfile.ZIP_DEFLATED)
 
-build_server_prefix = "https://random.muncher.se/ftp/asar/windows/xp_compat/build/asar/MinSizeRel/"
-with urllib.request.urlopen(build_server_prefix + "asar-standalone.exe") as resp:
+build_server_prefix = lambda f, n: f"https://random.muncher.se/ftp/asar/windows/xp_compat/build/asar/{f}/MinSizeRel/{n}"
+with urllib.request.urlopen(build_server_prefix("bin", "asar.exe")) as resp:
 	exe_data = resp.read()
-with urllib.request.urlopen(build_server_prefix + "asar.dll") as resp:
+with urllib.request.urlopen(build_server_prefix("lib", "asar.dll")) as resp:
 	dll_data = resp.read()
 
 zipf.writestr("asar.exe", exe_data)

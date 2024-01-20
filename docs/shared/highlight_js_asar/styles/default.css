@@ -42,10 +42,13 @@ Original highlight.js style (c) Ivan Sagalaev <maniac@softwaremaniacs.org>
 .hljs-template-tag,
 .hljs-deletion {
   color: #FF8000;
+  font-weight: normal;
 }
 
 .hljs-string {
-  color: #737373
+  color: #737373;
+  font-weight: normal;
+  font-style: normal;
 }
 
 .hljs-title,
@@ -68,6 +71,8 @@ Original highlight.js style (c) Ivan Sagalaev <maniac@softwaremaniacs.org>
 
 .hljs-literal {
   color: #78A960;
+  font-weight: normal;
+  font-style: normal;
 }
 
 .hljs-bullet,
@@ -81,9 +86,10 @@ Original highlight.js style (c) Ivan Sagalaev <maniac@softwaremaniacs.org>
 .hljs-opcodes {
   color: #0000ff;
   font-weight: bold;
+  font-style: normal;
 }
 
-.hljs-built_in {
+.hljs-builtin {
   color: #800000;
   font-weight: bold;
   font-style: italic;
@@ -92,12 +98,15 @@ Original highlight.js style (c) Ivan Sagalaev <maniac@softwaremaniacs.org>
 .hljs-label,
 .hljs-special {
   color: #800000;
+  font-weight: normal;
+  font-style: normal;
 }
 
 .hljs-function,
 .hljs-define {
   color: #800000;
   font-weight: bold;
+  font-style: normal;
 }
 
 
@@ -105,6 +114,8 @@ Original highlight.js style (c) Ivan Sagalaev <maniac@softwaremaniacs.org>
 
 .hljs-keywords {
   color: #8080ff;
+  font-weight: normal;
+  font-style: normal;
 }
 
 .hljs-meta-string {
@@ -120,16 +131,4 @@ Original highlight.js style (c) Ivan Sagalaev <maniac@softwaremaniacs.org>
 
 .hljs-strong {
   font-weight: bold;
-}
-
-
-/* Custom styles for Asar manual */
-
-table, th, td {
-    border: 1px solid black;
-    border-collapse: collapse;
-}
-
-code {
-	white-space: pre;
 }

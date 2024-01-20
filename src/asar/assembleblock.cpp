@@ -187,6 +187,8 @@ inline void write1_65816(unsigned int num)
 	ratsmetastate=ratsmeta_ban;
 }
 
+int recent_opcode_num = 0;
+
 void write1_pick(unsigned int num)
 {
 	write1_65816(num);
@@ -194,8 +196,10 @@ void write1_pick(unsigned int num)
 
 static bool asblock_pick(char** word, int numwords)
 {
+	recent_opcode_num = 1;
+	
+	if (arch==arch_spc700 || in_spcblock) return asblock_spc700(word, numwords);
 	if (arch==arch_65816) return asblock_65816(word, numwords);
-	if (arch==arch_spc700) return asblock_spc700(word, numwords);
 	if (arch==arch_spc700_inline) return asblock_spc700(word, numwords);
 	if (arch==arch_superfx) return asblock_superfx(word, numwords);
 	return true;
@@ -476,7 +480,7 @@ inline bool labelvalcore(const char ** rawname, snes_label * rval, bool define, 
 	{
 		if (shouldthrow && pass)
 		{
-			asar_throw_error(1, error_type_block, error_id_label_not_found, name.data());
+			asar_throw_error(2, error_type_block, error_id_label_not_found, name.data());
 		}
 		if (rval) { rval->pos = (unsigned int)-1; rval->is_static = false; }
 		return false;
@@ -818,11 +822,18 @@ static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 	return false;
 }
 
+static void add_addr_to_line(int pos)
+{
+	if (pass == 2)
+		addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, pos);
+}
+
 static autoarray<bool> elsestatus;
 int numtrue=0;//if 1 -> increase both
 int numif = 0;  //if 0 or inside if 0 -> increase only numif
 
 autoarray<whiletracker> whilestatus;
+int single_line_for_tracker;
 
 static int freespaceuse=0;
 
@@ -987,9 +998,13 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		int fakeendif_prev = fakeendif;
 		int moreonlinecond_prev = moreonlinecond;
+		int calledmacros_prev = calledmacros;
+		int single_line_for_tracker_prev = single_line_for_tracker;
 		callmacro(strchr(block, '%')+1);
 		fakeendif = fakeendif_prev;
 		moreonlinecond = moreonlinecond_prev;
+		calledmacros = calledmacros_prev;
+		single_line_for_tracker = single_line_for_tracker_prev;
 		if (!macrorecursion)
 		{
 			callerfilename="";
@@ -997,7 +1012,7 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		return;
 	}
-	if (is("if") || is("elseif") || is("assert") || is("while"))
+	if (is("if") || is("elseif") || is("assert") || is("while") || is("for"))
 	{
 		if(is("if") && moreonline) fakeendif++;
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
@@ -1006,8 +1021,23 @@ void assembleblock(const char * block, bool isspecialline)
 		wstatus.startline = thisline;
 		wstatus.iswhile = false;
 		wstatus.cond = false;
+		wstatus.is_for = false;
+		wstatus.for_start = wstatus.for_end = wstatus.for_cur = 0;
+		wstatus.for_has_var_backup = false;
 		if (is("while")) wstatus.iswhile = true;
-		whiletracker& addedwstatus = (whilestatus[numif] = wstatus);
+		if (is("for")) wstatus.is_for = true;
+		// if we are a for loop and:
+		// 1) whilestatus has an entry at this level already
+		// 2) said entry represents an incomplete for loop
+		// then this loop must be meant "for us".
+		// check number 2 is necessary because otherwise, 2 for loops back-to-back (not nested) would try to use the same whilestatus entry
+		bool is_for_cont = false;
+		if (is("for") && whilestatus.count > numif && whilestatus[numif].is_for && whilestatus[numif].for_cur < whilestatus[numif].for_end)
+		{
+			// continuation of a for loop
+			is_for_cont = true;
+		}
+		whiletracker& addedwstatus = is_for_cont ? whilestatus[numif] : (whilestatus[numif] = wstatus);
 		if (is("assert"))
 		{
 			autoptr<char**> tokens = qpsplit(word[numwords - 1], ",");
@@ -1030,108 +1060,132 @@ void assembleblock(const char * block, bool isspecialline)
 		}
 		if (numtrue!=numif && !(is("elseif") && numtrue+1==numif))
 		{
-			if ((is("if") || is("while"))) numif++;
+			if ((is("if") || is("while") || is("for"))) numif++;
 			return;
 		}
-		if ((is("if") || is("while"))) numif++;
+		if ((is("if") || is("while") || is("for"))) numif++;
 		bool cond;
 
 		bool isassert = is("assert");
 
 		char ** nextword=word+1;
 		char * condstr= nullptr;
-		while (true)
-		{
-			if (!nextword[0]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-			bool thiscond = false;
-			if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
+		if(!is("for")) {
+			while (true)
 			{
-				if (nextword[0][0] == '!')
+				if (!nextword[0]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
+				bool thiscond = false;
+				if (!nextword[1] || !strcmp(nextword[1], "&&") || !strcmp(nextword[1], "||"))
 				{
-					asar_throw_warning(0, warning_id_feature_deprecated, "old style conditional negation (if !condition) ", "the not function");
-					double val = getnumdouble(nextword[0]+1);
-					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-					thiscond = !(val > 0);
+					if (nextword[0][0] == '!')
+					{
+						asar_throw_warning(0, warning_id_feature_deprecated, "old style conditional negation (if !condition) ", "the not function");
+						double val = getnumdouble(nextword[0]+1);
+						if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
+						thiscond = !(val > 0);
+					}
+					else
+					{
+						double val = getnumdouble(nextword[0]);
+						if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
+						thiscond = (val > 0);
+					}
+
+					if (condstr && nextword[1])
+					{
+						if (strcmp(condstr, nextword[1])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
+					}
+					else condstr=nextword[1];
+					nextword+=2;
 				}
 				else
 				{
-					double val = getnumdouble(nextword[0]);
+					if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
+					double par1=getnumdouble(nextword[0]);
 					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-					thiscond = (val > 0);
-				}
+					double par2=getnumdouble(nextword[2]);
+					if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
+					if(0);
+					else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
+					else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
+					else if (!strcmp(nextword[1], ">=")) thiscond=(par1>=par2);
+					else if (!strcmp(nextword[1], "<=")) thiscond=(par1<=par2);
+					else if (!strcmp(nextword[1], "="))
+					{
+						asar_throw_warning(0, warning_id_feature_deprecated, "if a = b", "use \"if a == b\" instead");
+						thiscond=(par1==par2);
+					}
+					else if (!strcmp(nextword[1], "==")) thiscond=(par1==par2);
+					else if (!strcmp(nextword[1], "!=")) thiscond=(par1!=par2);
+					//else if (!strcmp(nextword[1], "<>")) thiscond=(par1!=par2);
+					else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 
-				if (condstr && nextword[1])
-				{
-					if (strcmp(condstr, nextword[1])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
+					if (condstr && nextword[3])
+					{
+						if (strcmp(condstr, nextword[3])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
+					}
+					else condstr=nextword[3];
+					nextword+=4;
 				}
-				else condstr=nextword[1];
-				nextword+=2;
+				if (condstr)
+				{
+					if (!strcmp(condstr, "&&")) { if(thiscond) continue; }
+					else if (!strcmp(condstr, "||")) { if(!thiscond) continue; }
+					else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
+				}
+				cond=thiscond;
+				break;
+			}
+		}
+
+		if (is("for"))
+		{
+			// for loops as anything except the first block cause weirdness
+			// (while loops do too, but let's not talk about it)
+			if(single_line_for_tracker != 1) {
+				numif--;
+				asar_throw_error(0, error_type_line, error_id_bad_single_line_for);
+			}
+			// TODO: these errors could probably be a bit more descriptive
+			if(!is_for_cont)
+			{
+				// "for i = 0..16"
+				if(numwords != 4) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
+				if(strcmp(word[2], "=") != 0) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
+
+				char* range_sep = strqpstr(word[3], "..");
+				if(!range_sep)
+					asar_throw_error(0, error_type_block, error_id_broken_for_loop, "invalid loop range");
+
+				string for_start(word[3], range_sep - word[3]);
+				string for_end(range_sep+2);
+				addedwstatus.for_start = getnum(for_start);
+				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
+				addedwstatus.for_end = getnum(for_end);
+				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
+				string varname = word[1];
+				if(!validatedefinename(varname)) asar_throw_error(0, error_type_block, error_id_broken_for_loop);
+				addedwstatus.for_variable = varname;
+				addedwstatus.for_cur = addedwstatus.for_start;
 			}
 			else
 			{
-				if (!nextword[2]) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-				double par1=getnumdouble(nextword[0]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-				double par2=getnumdouble(nextword[2]);
-				if (foundlabel && !foundlabel_static && !isassert) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
-				if(0);
-				else if (!strcmp(nextword[1], ">"))  thiscond=(par1>par2);
-				else if (!strcmp(nextword[1], "<"))  thiscond=(par1<par2);
-				else if (!strcmp(nextword[1], ">=")) thiscond=(par1>=par2);
-				else if (!strcmp(nextword[1], "<=")) thiscond=(par1<=par2);
-				else if (!strcmp(nextword[1], "="))  thiscond=(par1==par2);
-				else if (!strcmp(nextword[1], "==")) thiscond=(par1==par2);
-				else if (!strcmp(nextword[1], "!=")) thiscond=(par1!=par2);
-				//else if (!strcmp(nextword[1], "<>")) thiscond=(par1!=par2);
-				else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
-
-				if (condstr && nextword[3])
-				{
-					if (strcmp(condstr, nextword[3])) asar_throw_error(1, error_type_block, error_id_invalid_condition);
-				}
-				else condstr=nextword[3];
-				nextword+=4;
+				addedwstatus.for_cur++;
 			}
-			if (condstr)
+			// this cond is actually also used to tell assemblefile whether to jump back to the beginning of the loop, so keep it updated
+			addedwstatus.cond = addedwstatus.for_cur < addedwstatus.for_end;
+			single_line_for_tracker = 2;
+			if(addedwstatus.cond)
 			{
-				if (!strcmp(condstr, "&&")) { if(thiscond) continue; }
-				else if (!strcmp(condstr, "||")) { if(!thiscond) continue; }
-				else asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
+				numtrue++;
+				if(defines.exists(addedwstatus.for_variable)) {
+					addedwstatus.for_has_var_backup = true;
+					addedwstatus.for_var_backup = defines.find(addedwstatus.for_variable);
+				}
+				defines.create(addedwstatus.for_variable) = ftostr(addedwstatus.for_cur);
 			}
-			cond=thiscond;
-			break;
 		}
-		//if (numwords==4)
-		//{
-		//	int par1=getnum(word[1]);
-		//	if (foundlabel && !foundlabel_static) error(0, S"Label in "+lower(word[0])+" command");
-		//	int par2=getnum(word[3]);
-		//	if (foundlabel && !foundlabel_static) error(0, S"Label in "+lower(word[0])+" command");
-		//	if(0);
-		//	else if (!strcmp(word[2], ">"))  cond=(par1>par2);
-		//	else if (!strcmp(word[2], "<"))  cond=(par1<par2);
-		//	else if (!strcmp(word[2], ">=")) cond=(par1>=par2);
-		//	else if (!strcmp(word[2], "<=")) cond=(par1<=par2);
-		//	else if (!strcmp(word[2], "="))  cond=(par1==par2);
-		//	else if (!strcmp(word[2], "==")) cond=(par1==par2);
-		//	else if (!strcmp(word[2], "!=")) cond=(par1!=par2);
-		//	//else if (!stricmp(word[2], "<>")) cond=(par1!=par2);
-		//	else error(0, S"Broken "+lower(word[0])+" command");
-		//}
-		//else if (*par=='!')
-		//{
-		//	int val=getnum(par+1);
-		//	if (foundlabel && !foundlabel_static) error(0, "Label in if or assert command");
-		//	cond=!(val>0);
-		//}
-		//else
-		//{
-		//	int val=getnum(par);
-		//	if (foundlabel && !foundlabel_static) error(0, "Label in if or assert command");
-		//	cond=(val>0);
-		//}
-
-		if (is("if") || is("while"))
+		else if (is("if") || is("while"))
 		{
 			if(0);
 			else if (cond)
@@ -1165,16 +1219,45 @@ void assembleblock(const char * block, bool isspecialline)
 			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
-	else if (is("endif") || is("endwhile"))
+	else if (is("endif") || is("endwhile") || is("endfor"))
 	{
 		if(fakeendif) fakeendif--;
 		if (numwords != 1) asar_throw_error(1, error_type_block, error_id_unknown_command);
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_endif);
 		if (numif==numtrue) numtrue--;
 		numif--;
-		if (whilestatus[numif].iswhile && is("endif") && warn_endwhile){
-			warn_endwhile = false;
-			asar_throw_warning(0, warning_id_feature_deprecated, "endif terminating while statements", "use endwhile instead");
+		if(whilestatus[numif].is_for) {
+			if(single_line_for_tracker == 2) single_line_for_tracker = 3;
+			if(moreonline) {
+				// sabotage the whilestatus to prevent the loop running again
+				// and spamming more of the same error
+				whilestatus[numif].for_cur = whilestatus[numif].for_end;
+				whilestatus[numif].cond = false;
+				asar_throw_error(0, error_type_block, error_id_bad_single_line_for);
+			}
+			if(whilestatus[numif].cond) {
+				if(whilestatus[numif].for_has_var_backup)
+					defines.create(whilestatus[numif].for_variable) = whilestatus[numif].for_var_backup;
+				else defines.remove(whilestatus[numif].for_variable);
+			}
+		}
+		if(warn_endwhile) {
+			if(whilestatus[numif].iswhile) {
+				if(!is("endwhile")) {
+					warn_endwhile = false;
+					asar_throw_warning(0, warning_id_feature_deprecated, "mismatched terminators", "use endwhile to terminate a while statement");
+				}
+			}
+			else if(whilestatus[numif].is_for) {
+				if(!is("endfor")) {
+					warn_endwhile = false;
+					asar_throw_warning(0, warning_id_feature_deprecated, "mismatched terminators", "use endfor to terminate a for statement");
+				}
+			}
+			else if(!is("endif")) {
+				warn_endwhile = false;
+				asar_throw_warning(0, warning_id_feature_deprecated, "mismatched terminators", "use endif to terminate an if statement");
+			}
 		}
 	}
 	else if (is("else"))
@@ -1182,7 +1265,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if(!moreonlinecond) moreonlinecond = true;
 		if (numwords != 1) asar_throw_error(1, error_type_block, error_id_unknown_command);
 		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_else);
-		if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
+		if (whilestatus[numif - 1].iswhile || whilestatus[numif - 1].is_for) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
 		else if (numif==numtrue) numtrue--;
 		else if (numif==numtrue+1 && !elsestatus[numif])
 		{
@@ -1193,12 +1276,8 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (numif!=numtrue) return;
 	else if (asblock_pick(word, numwords))
 	{
-		if (pass == 2)
-		{
-			extern AddressToLineMapping addressToLineMapping;
-			addressToLineMapping.includeMapping(thisfilename.data(), thisline + 1, addrToLinePos);
-		}
-		numopcodes++;
+		add_addr_to_line(addrToLinePos);
+		numopcodes += recent_opcode_num;
 	}
 	else if (is1("undef"))
 	{
@@ -1390,7 +1469,7 @@ void assembleblock(const char * block, bool isspecialline)
 			int tmpver=asarver_bug;
 			if (tmpver>9) tmpver=9;
 			if (asarver_min*10+tmpver<verminbug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
-			if(vermaj == 1 && verminbug >= 90) default_math_pri = true;
+			if(vermaj == 1 && verminbug >= 90) { default_math_pri = true; default_math_round_off = true; }
 		}
 		else
 		{
@@ -1398,7 +1477,7 @@ void assembleblock(const char * block, bool isspecialline)
 			if (vermin>asarver_min) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
 			int verbug=atoi(vers[2]);
 			if (vermin==asarver_min && verbug>asarver_bug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
-			if(vermaj == 1 && vermin >= 9) default_math_pri = true;
+			if(vermaj == 1 && vermin >= 9) { default_math_pri = true; default_math_round_off = true; }
 		}
 		specifiedasarver = true;
 	}
@@ -1457,13 +1536,14 @@ void assembleblock(const char * block, bool isspecialline)
 			{
 				const char * math=pars[i];
 				if (math[0]=='#') math++;
-				unsigned int num=(pass!=0)?getnum(math):0;
+				unsigned int num=(pass==2)?getnum(math):0;
 				if (len == 1) write1(num);
 				if (len == 2) write2(num);
 				if (len == 3) write3(num);
 				if (len == 4) write4(num);
 			}
 		}
+		add_addr_to_line(addrToLinePos);
 	}
 	else if (numwords==3 && !stricmp(word[1], "="))
 	{
@@ -1582,6 +1662,9 @@ void assembleblock(const char * block, bool isspecialline)
 		struct_base = snespos;
 		realsnespos = 0;
 		realstartpos = 0;
+
+		setlabel(struct_name, snespos, static_struct);
+
 #undef ret_error_cleanup
 #undef ret_error_params_cleanup
 	}
@@ -1629,7 +1712,6 @@ void assembleblock(const char * block, bool isspecialline)
 	else if(is("spcblock"))
 	{
 		//banned features when active: org, freespace(and variants), arch, mapper,namespace,pushns
-		if(arch != arch_spc700)  asar_throw_error(0, error_type_block, error_id_spcblock_bad_arch);
 		if(in_struct || in_sub_struct) asar_throw_error(0, error_type_block, error_id_spcblock_inside_struct);
 		if(numwords < 2)  asar_throw_error(0, error_type_block, error_id_spcblock_too_few_args);
 		if(numwords > 4)  asar_throw_error(0, error_type_block, error_id_spcblock_too_many_args);
@@ -1670,6 +1752,7 @@ void assembleblock(const char * block, bool isspecialline)
 				snespos=(int)spcblock.destination;
 				startpos=(int)spcblock.destination;
 				spcblock.execute_address = -1u;
+				add_addr_to_line(addrToLinePos);
 			break;
 			case spcblock_custom:
 				//this is a todo that probably won't be ready for 1.9
@@ -1881,6 +1964,9 @@ void assembleblock(const char * block, bool isspecialline)
 			if (fixedpos && freespaceorgpos[freespaceid]>0 && freespacelen[freespaceid]>freespaceorglen[freespaceid])
 				asar_throw_error(2, error_type_block, error_id_static_freespace_growing);
 			freespaceuse+=8+freespacelen[freespaceid];
+
+			// add a mapping for the start of the rats tag
+			add_addr_to_line(snespos-8);
 		}
 		freespacestatic[freespaceid]=fixedpos;
 		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(freespacelen[freespaceid]).data());
@@ -1923,6 +2009,8 @@ void assembleblock(const char * block, bool isspecialline)
 		write1('P');
 		write1(0);
 		ratsmetastate=ratsmeta_used;
+
+		add_addr_to_line(addrToLinePos);
 	}
 	else if (is1("autoclean") || is2("autoclean") || is1("autoclear") || is2("autoclear"))
 	{
@@ -1961,6 +2049,8 @@ void assembleblock(const char * block, bool isspecialline)
 					{
 						asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
 					}
+
+					add_addr_to_line(addrToLinePos);
 				}
 				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
 				freespaceorgpos[targetid]=ratsloc;
@@ -1981,6 +2071,8 @@ void assembleblock(const char * block, bool isspecialline)
 				write3((unsigned int)num);
 				freespaceorgpos[targetid]=ratsloc;
 				freespaceorglen[targetid]=read2(ratsloc-4)+1;
+
+				add_addr_to_line(addrToLinePos);
 			}
 			else asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 		}
@@ -2144,6 +2236,7 @@ void assembleblock(const char * block, bool isspecialline)
 				return;
 			}
 		}
+		asar_throw_warning(0, warning_id_feature_deprecated, "rep X : {command}", "Use while loops, unrolled loops, pseudo opcodes or for loops");
 		repeatnext=rep;
 	}
 #ifdef SANDBOX
@@ -2186,27 +2279,42 @@ void assembleblock(const char * block, bool isspecialline)
 			char * lengths=strqchr(par, ':');
 			*lengths=0;
 			lengths++;
-			if (strchr(lengths, '"')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			if(*lengths=='(') {
-				char* tmp = strqpchr(lengths, '-');
-				if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				start = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+			if(strqpstr(lengths, ".."))
+			{
+				// new style ranges
+				char* split = strqpstr(lengths, "..");
+				string start_str(lengths, split-lengths);
+				start = getnum(start_str);
 				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-				lengths = tmp;
-			} else {
-				start=(int)strtoul(lengths, &lengths, 16);
+				string end_str(split+2);
+				end = getnum(end_str);
+				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 			}
-			if (*lengths!='-') asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			lengths++;
-			if(*lengths=='(') {
-				char* tmp = strchr(lengths, '\0');
-				if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
-				end = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-				// no need to check end-of-string here
-			} else {
-				end=(int)strtoul(lengths, &lengths, 16);
-				if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			else
+			{
+				asar_throw_warning(0, warning_id_feature_deprecated, "old style incbin ranges", "use the :start..end syntax instead");
+				if (strchr(lengths, '"')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+				if(*lengths=='(') {
+					char* tmp = strqpchr(lengths, '-');
+					if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+					start = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+					if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+					lengths = tmp;
+				} else {
+					start=(int)strtoul(lengths, &lengths, 16);
+				}
+				if (*lengths!='-') asar_throw_error(0, error_type_block, error_id_broken_incbin);
+				lengths++;
+				if(*lengths=='(') {
+					char* tmp = strchr(lengths, '\0');
+					if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
+					end = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
+					if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+					// no need to check end-of-string here
+				} else {
+					end=(int)strtoul(lengths, &lengths, 16);
+					if (*lengths) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+				}
 			}
 		}
 		string name;
@@ -2236,6 +2344,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (end < start || end > len || end < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).data(), name.data());
 		if (numwords==4)
 		{
+			asar_throw_warning(0, warning_id_feature_deprecated, "incbin with target location", "put an org before the incbin");
 			if (!confirmname(word[3]))
 			{
 				int pos=(int)getnum(word[3]);
@@ -2243,7 +2352,11 @@ void assembleblock(const char * block, bool isspecialline)
 				int offset=snestopc(pos);
 				if (offset + end - start > 0xFFFFFF) asar_throw_error(0, error_type_block, error_id_16mb_rom_limit);
 				if (offset+end-start>romlen) romlen=offset+end-start;
-				if (pass==2) writeromdata(offset, data+start, end-start);
+				if (pass==2)
+				{
+					writeromdata(offset, data+start, end-start);
+					add_addr_to_line(pos);
+				}
 			}
 			else
 			{
@@ -2267,6 +2380,7 @@ void assembleblock(const char * block, bool isspecialline)
 					int foundfreespaceid =getfreespaceid();
 					if (freespaceleak[foundfreespaceid]) asar_throw_warning(2, warning_id_freespace_leaked);
 					writeromdata(snestopc(freespacepos[foundfreespaceid]&0xFFFFFF), data+start, end-start);
+					add_addr_to_line((freespacepos[foundfreespaceid]&0xFFFFFF) - 8);
 					freespaceuse+=8+end-start;
 				}
 			}
@@ -2274,6 +2388,7 @@ void assembleblock(const char * block, bool isspecialline)
 		else
 		{
 			for (int i=start;i<end;i++) write1((unsigned int)data[i]);
+			add_addr_to_line(addrToLinePos);
 		}
 	}
 	else if (is("skip") || is("fill"))
@@ -2304,7 +2419,11 @@ void assembleblock(const char * block, bool isspecialline)
 			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		}
 		if(is("skip")) step(amount);
-		else for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
+		else
+		{
+			for(int i=0; i < amount; i++) write1(fillbyte[i%12]);
+			add_addr_to_line(addrToLinePos);
+		}
 
 	}
 	else if (is0("cleartable"))
@@ -2323,6 +2442,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("table"))
 	{
+		asar_throw_warning(0, warning_id_feature_deprecated, "table command", "Use direct character assignments. For example: 'a' = $61");
 		bool fliporder=false;
 		if(0);
 		else if (striend(par, ",ltr")) { itrim(par, "", ",ltr"); }
@@ -2396,7 +2516,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("padlong")) len=3;
 		if (is("paddword")) len=4;
 		unsigned int val=getnum(par);
-		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in padbyte", "just... don't.");
+		if(foundlabel && !foundlabel_static) asar_throw_warning(1, warning_id_feature_deprecated, "labels in padbyte", "just... don't.");
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -2418,6 +2538,7 @@ void assembleblock(const char * block, bool isspecialline)
 			int start=snestopc(realsnespos);
 			int len=end-start;
 			for (int i=0;i<len;i++) write1(padbyte[i%12]);
+			add_addr_to_line(addrToLinePos);
 		}
 	}
 	else if (is1("fillbyte") || is1("fillword") || is1("filllong") || is1("filldword"))
@@ -2428,7 +2549,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("filllong")) len=3;
 		if (is("filldword")) len=4;
 		unsigned int val= getnum(par);
-		if(foundlabel) asar_throw_warning(1, warning_id_feature_deprecated, "labels in fillbyte", "just... don't");
+		if(foundlabel && !foundlabel_static) asar_throw_warning(1, warning_id_feature_deprecated, "labels in fillbyte", "just... don't");
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -2445,7 +2566,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
-		if (!stricmp(par, "spc700-inline")) { asar_throw_warning(1, warning_id_feature_deprecated, "spc700-inline", " Use spcblock and spcblockend"); arch=arch_spc700_inline; return; }
+		if (!stricmp(par, "spc700-inline")) { asar_throw_warning(1, warning_id_feature_deprecated, "spc700-inline", " Use spcblock and endspcblock"); arch=arch_spc700_inline; return; }
 		if (!stricmp(par, "spc700-raw")) {
 			asar_throw_warning(1, warning_id_feature_deprecated, "spc700-raw", " Use arch spc700 with norom");
 			arch=arch_spc700;
@@ -2465,8 +2586,8 @@ void assembleblock(const char * block, bool isspecialline)
 		else if (!stricmp(word[2], "off")) val=false;
 		else asar_throw_error(0, error_type_block, error_id_invalid_math);
 		if(0);
-		else if (!stricmp(word[1], "pri")){ math_pri=val; asar_throw_warning(2, warning_id_feature_deprecated, "math pri ", "use ;@asar1.9 to indicate proper math"); }
-		else if (!stricmp(word[1], "round")) math_round=val;
+		else if (!stricmp(word[1], "pri")){ math_pri=val; asar_throw_warning(2, warning_id_feature_deprecated, "math pri", "Rewrite your math statements using parentheses where needed and put \"asar 1.9\" in your patch to enable the future behavior of always enforcing math prioritization rules"); }
+		else if (!stricmp(word[1], "round")){ math_round=val; asar_throw_warning(2, warning_id_feature_deprecated, "math round", "Put \"asar 1.9\" in your patch to enable the future behavior of never rounding intermediate results. Call the round(), floor() or ceil() functions in places where intermediate rounding is required"); }
 		else asar_throw_error(0, error_type_block, error_id_invalid_math);
 	}
 	else if (is2("warn"))

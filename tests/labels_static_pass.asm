@@ -1,8 +1,11 @@
+;`+
 ;`56 78
 ;`BA
 ;`BA
 ;`EE EE EE
 ;`03
+;`42
+;`007FFE EE EE
 ;P>Test passed. (1)
 ;P>Test passed. (2)
 ;P>Test passed. (3)
@@ -46,7 +49,7 @@ endif
 IncbinStart = $008000
 IncbinEnd = $008002
 
-incbin "data/64kb.bin":(IncbinStart)-(IncbinEnd)
+incbin "data/64kb.bin":IncbinStart..IncbinEnd
 
 FunStuff = $BA
 'a' = FunStuff
@@ -56,14 +59,27 @@ OtherFunStuff = FunStuff
 db 'a'
 db OtherFunStuff
 
+FillByte = $EE
 FillCount = 3
 
-fillbyte $EE
+fillbyte FillByte
 fill FillCount
 
 !adefine #= FillCount
 
 db !adefine
 
-; TODO: Test incbin and more.
+ArgID = 2
+
+macro in_macro(...)
+	db <...[ArgID]>
+endmacro
+
+%in_macro($40, $41, $42)
+
+
+org $00FFFE
+
+padbyte FillByte
+pad $018000
 

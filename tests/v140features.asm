@@ -203,7 +203,7 @@
 ;`
 ;`0A
 ;`0B
-;`warnW1030
+;`warnWfeature_deprecated
 ;`
 ;P>
 ;P>;This is not a comment, so getconnectedlines() should ignore it and not remove it.
@@ -212,10 +212,7 @@
 ;P>Now the same number, but with a different precision: 10.3401734476
 ;P>Testing a few more numbers: 0, 0.1, -0.1, 1, -1
 ;P>
-@asar 1.40
-
-math round off
-lorom
+asar 1.90
 
 org $008000
 

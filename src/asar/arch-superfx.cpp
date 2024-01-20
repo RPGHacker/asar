@@ -15,6 +15,11 @@ void asend_superfx()
 {
 }
 
+static int64_t getnum_ck(const char* math)
+{
+	return pass == 2 ? getnum(math) : 0;
+}
+
 static void range(int min, int mid, int max)
 {
 	if (mid<min || mid>max) asar_throw_error(0, error_type_block, error_id_superfx_invalid_register, min, max);
@@ -194,14 +199,14 @@ bool asblock_superfx(char** word, int numwords)
 			{
 				ret=true;
 				int len=getlen(par);
-				unsigned int num=getnum(par);
+				unsigned int num=getnum_ck(par);
 				if (len==1)
 				{
 					write1((unsigned int)byte); write1(num);
 				}
 				else
 				{
-					int pos=(int)getnum64(par)-((snespos&0xFFFFFF)+2);
+					int pos=(int)getnum_ck(par)-((snespos&0xFFFFFF)+2);
 					write1((unsigned int)byte); write1((unsigned int)pos);
 					if (pass==2 && (pos<-128 || pos>127))
 					{
@@ -224,7 +229,7 @@ bool asblock_superfx(char** word, int numwords)
 				}
 				if (arg[1][0]=='#')
 				{
-					unsigned int num=getnum(arg[1]+1);
+					unsigned int num=getnum_ck(arg[1]+1);
 					num&=0xFFFF;
 					op("IBT") w(0xA0+reg1) w(num);
 					op("IWT") w(0xF0+reg1) w(num) w(num>>8);
@@ -254,7 +259,7 @@ bool asblock_superfx(char** word, int numwords)
 				{
 					char * endpar=strchr(arg[1], ')');
 					if (!endpar || endpar[1]) return false;
-					unsigned int num=getnum(arg[1]);
+					unsigned int num=getnum_ck(arg[1]);
 					op("LM") w(0x3D) w(0xF0+reg1) w(num) w(num>>8);
 
 					if (is("LMS")) {
@@ -276,7 +281,7 @@ bool asblock_superfx(char** word, int numwords)
 				}
 				if (is("LEA"))
 				{
-					unsigned int num=getnum(arg[1]);
+					unsigned int num=getnum_ck(arg[1]);
 					ok() w(0xF0+reg1) w(num) w(num>>8);
 				}
 			}

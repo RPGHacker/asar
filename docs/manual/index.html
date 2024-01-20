@@ -3,15 +3,18 @@
 	<head>
 		<title>Asar User Manual</title>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-		<link rel="stylesheet" href="../shared/highlight_js/styles/default.css">
-		<script src="../shared/highlight_js/highlight.pack.js"></script>
+		<link rel="stylesheet" href="../shared/highlight_js_asar/styles/default.css"/>
+		<script src="../shared/highlight_js/highlight.min.js"></script>
+		<script src="../shared/highlight_js_asar/highlight_js_asar.js"></script>
 		<script>
 				hljs.configure(
 					{
 						tabReplace: '    ',
 					}
 				);
-				hljs.initHighlightingOnLoad();
+				hljs.highlightAll();
+				
+				hljsAsar.init();
 				
 				function toggle_visibility(id)
 				{
@@ -105,6 +108,7 @@
 					<li><a href="#macro-labels">Macro Labels</a></li>
 					<li><a href="#structs">Structs</a></li>
 					<li><a href="#namespaces">Namespaces</a></li>
+					<li><a href="#pushns">pushns/pullns</a></li>
 					<li><a href="#global-labels">Global labels</a></li>
 				</ul>
 			</li>
@@ -127,6 +131,7 @@
 				<ul>
 					<li><a href="#if-else">if/elseif/else/endif</a></li>
 					<li><a href="#while">while</a></li>
+					<li><a href="#for">for</a></li>
 				</ul>
 			</li>
 			<li>
@@ -280,22 +285,28 @@
 	C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="powershell">-w{id}</code></td>
+				<td><code class="powershell">-w{name}</code></td>
 				<td>Input</td>
-				<td>Enables the warning with the specified ID. See section <a href="#warnings">Warnings</a> for details.</td>
-				<td><pre><code class="powershell">asar.exe -wW1023 C:/homebrew/my_game/main.asm</code></pre></td>
+				<td>Enables the warning with the specified name. See section <a href="#warnings">Warnings</a> for details.</td>
+				<td><pre><code class="powershell">asar.exe -wWmplicitly_sized_immediate C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
-				<td><code class="powershell">-wno{id}</code></td>
+				<td><code class="powershell">-wno{name}</code></td>
 				<td>Input</td>
-				<td>Disables the warning with the specified ID. See section <a href="#warnings">Warnings</a> for details.</td>
-				<td><pre><code class="powershell">asar.exe -wnoW1013 C:/homebrew/my_game/main.asm</code></pre></td>
+				<td>Disables the warning with the specified name. See section <a href="#warnings">Warnings</a> for details.</td>
+				<td><pre><code class="powershell">asar.exe -wnoWfreespace_leaked C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="powershell">--fix-checksum={on/off}</code></td>
 				<td>Input</td>
 				<td>Overrides Asar's default behavior of enabling or disabling checksum generation based on context. When set to <code class="powershell">on</code>, Asar always generates a checksum. When set to <code class="powershell">off</code>, Asar never generates a checksum.<br/>
 				<td><pre><code class="powershell">asar.exe --fix-checksum=on C:/homebrew/my_game/main.asm</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="powershell">--error-limit={n}</code></td>
+				<td>Input</td>
+				<td>Sets the maximum number of errors that Asar will print before stopping. The default is 20.</td>
+				<td><pre><code class="powershell">asar.exe --error-limit=500 C:/homebrew/my_game/main.asm</code></pre></td>
 			</tr>
 			<tr>
 				<td>&nbsp;</td>
@@ -356,7 +367,7 @@ stddefined5 = " $60,$50,$40 "</code></pre>
 				<td>
 					<a href="javascript:void(0);" onclick="toggle_visibility('65816-opcodes');" id="65816-opcodes-toggle">[+] Expand</a>
 					<div id="65816-opcodes" style="display:none;">
-						<code class="65c816_asar">ADC #$00
+						<pre><code class="65c816_asar">ADC #$00
 ADC #$0000
 ADC $00
 ADC $00,s
@@ -408,7 +419,7 @@ BPL $00
 BRA $00
 BRK
 BRK #$00
-BRL $00
+BRL $0000
 BVC $00
 BVS $00
 CLC
@@ -513,7 +524,11 @@ LSR $0000
 LSR $0000,x
 LSR A
 MVN $00,$00
+(Note: destination, source)
+MVN $0000
 MVP $00,$00
+(Note: destination, source))
+MVP $0000
 NOP
 ORA #$00
 ORA #$0000
@@ -626,7 +641,7 @@ WAI
 WDM
 WDM #$00
 XBA
-XCE</code>
+XCE</code></pre>
 					</div>
 				</td>
 				<td>Default setting. Compiles code for the 65c816 architecture.</td>
@@ -637,7 +652,7 @@ XCE</code>
 				<td>
 					<a href="javascript:void(0);" onclick="toggle_visibility('spc700-opcodes');" id="spc700-opcodes-toggle">[+] Expand</a>
 					<div id="spc700-opcodes" style="display:none;">
-						<code class="65c816_asar">ADC $00,#$00
+						<pre><code class="65c816_asar">ADC $00,#$00
 ADC $00,$00
 ADC (X),(Y)
 ADC A,#$00
@@ -892,7 +907,7 @@ TCALL 14
 TCALL 15
 TCLR $0000,a
 TSET $0000,a
-XCN A</code>
+XCN A</code></pre>
 					</div>
 				</td>
 				<td>Compiles code for the SPC700 architecture. Follows the format the SNES Dev Manual recommends, with the exception of mov (x)+,a and mov a,(x)+, which are moved to mov (x+),a and mov a,(x+).</td>
@@ -909,7 +924,7 @@ XCN A</code>
 				<td>
 					<a href="javascript:void(0);" onclick="toggle_visibility('superfx-opcodes');" id="superfx-opcodes-toggle">[+] Expand</a>
 					<div id="superfx-opcodes" style="display:none;">
-						<code class="65c816_asar">ADC #0
+						<pre><code class="65c816_asar">ADC #0
 ADC #0
 ADC #1
 ADC #2
@@ -1512,7 +1527,7 @@ XOR R11
 XOR R12
 XOR R13
 XOR R14
-XOR R15</code>
+XOR R15</code></pre>
 					</div>
 				</td>
 				<td>Compiles code for the Super FX architecture.</td>
@@ -1559,6 +1574,9 @@ inx
 inx</code></pre>
 		<h4 id="rep">rep</h4>
 		<pre><code class="65c816_asar">rep {num} : {code}</code></pre>
+
+		<p>Warning: this command is deprecated due to conflicting with the 65816 assembly <code>REP</code> instruction. In most cases, you can achieve the same effect with a <a href="#for">for loop</a>.</p>
+
 		The rep command lets you compile any bit of code <code>num</code> times. It functions similarly to <a href="#pseudo-opcodes">pseudo opcodes</a>, but without being limited to certain opcodes only. Instead, you can repeat almost any bit of code supported by Asar, even macro calls. Note that in xkas compatibility mode, <code>rep 0</code> will compile the following code once, whereas <code>rep -1</code> (or any number <code>&lt; 0</code>) won't compile the following code at all. This is to keep compatibility with old patches, which occasionally used the rep command as a replacement for conditionals. Also note that stacking multiple rep commands is not supported (only the most recent rep will take effect).
 		<pre><code class="65c816_asar">macro writeval(val)
 	db &lt;val&gt;
@@ -1573,7 +1591,7 @@ rep 16 : %memset($00, 16)</code></pre>
 		<hr />
 		<div id="mappers"><h3>Mapping Modes</h3>
 		Asar supports a number of different mapping modes. They control the address translation used by Asar during compilation (aka where in the output file Asar writes to). Historically, SNES cartridges used a number of different mappers to address data in ROM. Those mappers can be supported by using the respective mapping mode in Asar. It's possible, but not recommended, to use different mapping modes on the same ROM. Detailed explanations on each mapping mode are beyond the scope of this manual, so please check the SNES Dev Manual or other specialized resources for that.<br/>
-		NOTE: Changing the mapper after having previously set it will generate warning <code>W1029</code>.<br/><br/>
+		NOTE: Changing the mapper after having previously set it will generate warning <code>Wmapper_already_set</code>.<br/><br/>
 		<table>
 			<tr>
 				<th style="width:150px">Command</th>
@@ -1627,7 +1645,7 @@ db $FF		; Will write to PC address 0x008000</code></pre>
 		<div id="compatibility"><h3>Compatibility Settings</h3>
 		Compatibility settings determine how Asar operates in certain situations. They can be changed via a number of commands.
 		<h4 id="xkas">xkas</h4>
-		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patches that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used.
+		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patches that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used. xkas compatibility mode will be fully removed in Asar 2.0, along with the <code>;@</code> comments.
 		<pre><code class="65c816_asar">;@xkas
 
 !is_asar=0	
@@ -1648,7 +1666,7 @@ do_something()</code></pre>
 		<pre><code class="65c816_asar">asar {ver}</code></pre>
 		The <code class="65c816_asar">asar</code> command can be used to specify the minimum Asar version your patch is compatible with. The <code>ver</code> parameter specifies the minimum required Asar version. When a user tries to assemble the patch in an older version of Asar, an error will be thrown, stating that the used Asar version is too old. This should be the first command in your patch, otherwise an error will be thrown.
 		<pre><code class="65c816_asar">; This patch uses features from Asar 1.40, so it makes sense to require it as a minimum.
-@asar 1.40
+asar 1.40
 
 if readfile1(&quot;data.bin&quot;, 0) == 1
 	; Do something
@@ -1660,7 +1678,7 @@ endif</code></pre>
 		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>warn xkas on</code> to enable these warnings and <code>warn xkas off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
 		<h4 id="math-pri">math pri</h4>
 		<pre><code class="65c816_asar">math pri {on/off}</code></pre>
-		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">@asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. When writing patches specifially for Asar, it is recommended to always enable this flag.
+		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional order of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. This command will be removed in Asar 2.0, after which <code>math pri on</code> will be the only possible behavior.
 		<pre><code class="65c816_asar">math pri off
 db 1+(6/3)*5	; db 15
 
@@ -1668,7 +1686,7 @@ math pri on
 db 1+(6/3)*5	; db 11</code></pre>
 		<h4 id="math-round">math round</h4>
 		<pre><code class="65c816_asar">math round {on/off}</code></pre>
-		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag.
+		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag. If you specify a minimum supported Asar version using <code>asar 1.9</code> or higher, the default will be <code>math round off</code>. This command will be removed in Asar 2.0, after which <code>math round off</code> will be the only possible behavior.
 		<pre><code class="65c816_asar">math round on
 ; 1.75 is immediately truncated to 1, resulting in (3/4)+1
 ; 3/4 would result in 0.75, which is immediately truncated to 0, resulting in 0+1
@@ -1695,7 +1713,8 @@ db (3/4)+1.75
 		<h4 id="comments">Comments</h4>
 		You can use ; to add comments to your code, making it easier to read and understand for other people. Everything from the ; to the end of the line is silently ignored by Asar.
 		<pre><code class="65c816_asar">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
-		An exception from this rule are lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. The purpose of this is to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they will be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#compatibility">Compatibility Settings</a> for details on xkas compatibility.
+		Previously, there were exceptions to this rule in the form of lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. This functionality is deprecated, Asar 2.0 will treat these lines as regular comments. The purpose of this feature was to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they would be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. (This too is deprecated.) Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#compatibility">Compatibility Settings</a> for details on xkas compatibility.
+		<p>Also note that comments starting with <code>;[[</code> are reserved for multi-line comments in a future version of Asar. You should either change the beginning or make sure that there's a <code>]]</code> (the comment terminator) at the end of the line.</p>
 		<h4 id="brackets">Brackets</h4>
 		Brackets, { and }, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's entirely up to the coder whether, how and in what quantity brackets are used.<br />
 		<pre><code class="65c816_asar">	lda $00
@@ -1755,13 +1774,21 @@ base $7E0000
 base off
 	rtl</code></pre>
 		<h4 id="skip">skip</h4>
-		<pre><code class="65c816_asar">skip {num_bytes}</code></pre>
-		The skip command moves the pc by <code>num_bytes</code> bytes. By specifying a negative value, the pc can be moved backwards.
+		<pre><code class="65c816_asar">skip {num_bytes}
+skip align {alignment} [offset {offset}]</code></pre>
+		The skip command moves the pc by <code>num_bytes</code> bytes. By specifying a negative value, the pc can be moved backwards. When <code>alignment</code> is given, skips to the next multiple of <code>alignment</code>, plus <code>offset</code> if it is specified. Note that the alignment must be a power of 2, if specified. Offset can also be negative, in that case it's treated exactly like <code>alignment+offset</code>. The seeked-to position will always be after the current SNES position, but it might be before the next multiple of <code>alignment</code>: see the last example.
 		<pre><code class="65c816_asar">org $008000
 skip 5
 ; pc is now at $008005
 skip -1
-; pc is now at $008004</code></pre>
+; pc is now at $008004
+skip align 16
+; pc is now at $008010
+skip align 16 offset 5
+; pc is now at $008015
+skip align $20 offset $17
+; pc is now at $008017
+</code></pre>
 		<h4 id="warnpc">warnpc</h4>
 		<pre><code class="65c816_asar">warnpc {snes_address}</code></pre>
 		The warnpc command checks if the current pc is <code>&gt; snes_address</code>. If that's the case, it throws an error. This is useful for detecting overflow errors.
@@ -1891,7 +1918,7 @@ lda #5+6*2	; the same as &quot;lda #17&quot;
 lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 		Math statements in Asar support the following operators:<br/><br/>
 		
-		<code>+  : Addition (Also valid as prefix, but a no-op)
+		<pre><code class="no-highlight">+  : Addition (Also valid as prefix, but a no-op)
 -  : Subtraction (Or negation prefix)
 *  : Multiplication
 /  : Division
@@ -1902,8 +1929,8 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 |  : Bitwise OR
 ^  : Bitwise XOR (Note: not exponentials)
 ~  : Bitwise NOT (Prefix)
-&lt;:  : Bitshift right 16, shorthand for isolating address bank (Prefix)
-** : Exponentials (2**4 = 2*2*2*2 = pow(2, 4) in C)</code><br/><br/>
+&lt;: : Bitshift right 16, shorthand for isolating address bank (Prefix)
+** : Exponentials (2**4 = 2*2*2*2 = pow(2, 4) in C)</code></pre><br/>
 		
 		Note that whitespace is not supported inside math statements, but the <a href="#multiline">multi-line operator \</a> can be used to split them into multiple lines. Using math in labels can be useful when you want to apply an offset to the label:
 		<pre><code class="65c816_asar">lda .Data+3	; Will load $03 into A
@@ -2252,6 +2279,9 @@ dl Deep_Deeper_Deepest_Main     ; Deep_Deeper_Deepest_Main
 dl TheFirst_Main                ; TheFirst_Main
 dl TheSecond_Main               ; TheSecond_Main
 dl TheThird_Main                ; TheThird_Main</code></pre>
+		<h4 id="pushns">pushns/pullns</h4>
+		<code>pushns</code> saves the current namespace. <code>pullns</code> restores the last-pushed value of the namespace.
+
 		<h4 id="global-labels">Global labels</h4>
 		While in a namespace, you can use the keyword <code class="65c816_asar">global</code> to define labels outside all namespaces. The syntax is <code class="65c816_asar">global [#]{identifier}:</code>. For example:
 		<pre><code class="65c816_asar">
@@ -2293,7 +2323,7 @@ lda [!x],y	; Treated as &quot;lda [$00],y&quot;
 !y = $12
 !x = !y$34
 		
-lda !x		; Treated as &quot;lda $1234&quot;
+lda !x		; Treated as &quot;lda $12$34&quot; (will throw error)
 		
 !phr = &quot;pha : phx : phy&quot;
 		
@@ -2438,18 +2468,18 @@ endmacro
 </code></pre>
 
 In addition to named substitutions if the variadic token <code class="65c816_asar">...</code> is specified as the last parameter asar will allow an arbitrary number of parameters after all prior parameters have been satisfied.
-To access unnamed arguments of a variadic function they are declared numerically starting from 0 up to the number of provided parameters. To access the number of provided variadic arguments one may use <code class="65c816_asar">sizeof(...)</code>.
+To access unnamed parameters of a variadic macro, use the syntax <code class="65c816_asar">&lt;...[{math}]&gt;</code>, where <code class="65c816_asar">math</code> is any math expression evaluating to the index of a variadic parameter. These are declared numerically starting from 0 up to the number of provided parameters. To access the number of provided variadic arguments one may use <code class="65c816_asar">sizeof(...)</code>.
 Lastly, it is important to note that while traditionally macros do not parse defines at their creation variadic macros will.  This is to allow iteration of arguments by using defines.
 
 <pre><code class="65c816_asar">
 macro example0(...)
-	db sizeof(...), &lt;0&gt;	;04 01
+	db sizeof(...), &lt;...[0]&gt;	;04 01
 endmacro
 	
 macro example1(...)
 	!a #= 0
 	while !a &lt; sizeof(...)
-		db &lt;!a&gt;		;01 02 03
+		db &lt;...[!a]&gt;		;01 02 03
 		!a #= !a+1
 	endif
 endmacro
@@ -2457,7 +2487,7 @@ endmacro
 macro example2(named_parameter, ...)
 	!a #= 0
 	while !a &lt; sizeof(...)
-		db &lt;!a&gt;		;02 03 04 05 06 07
+		db &lt;...[!a]&gt;		;02 03 04 05 06 07
 		!a #= !a+1
 	endif
 	db &lt;named_parameter&gt;	;01
@@ -2466,7 +2496,7 @@ endmacro
 macro macro_with_optional_arguments(required, ...)
 	db &lt;required&gt;
 	if sizeof(...) &gt; 0
-		db &lt;0&gt;
+		db &lt;...[0]&gt;
 	end
 end
 
@@ -2741,6 +2771,10 @@ endif</code></pre></td>
 	warn "This patch was only tested in Asar and might not work correctly in your assembler."
 endif</code></pre></td>
 			</tr>
+			<tr>
+				<td><code class="65c816_asar">realbase()</code></td>
+				<td>Returns the current address in the ROM being written to. This is not the same as the value of a nearby label when the <code>base</code> command is active: it returns the actual address the code will end up at.</td>
+			</tr>
 		</table><br/>
 		All built-in functions can be overridden by user-defined functions. Prepending an underscore (for example: <code class="65c816_asar">_read1()</code>) leads to the original function, which can be used to make an overridden function call its original function.
 		<pre><code class="65c816_asar">function read1(x) = _read1(x+$010000)</code></pre>
@@ -2825,10 +2859,10 @@ else
 	error "Unsupported mode! Please choose 0, 1, 2 or 3!"
 endif</code></pre>
 		Alternatively, if conditionals can also be constructed on a single line via the following syntax:
-		<pre><code class="65c816_asar">if {condition} : {codeblock}[ : codeblock...]</code></pre>
-		Note that no endif needs to be used here and that else or elseif are unsupported when using this syntax.
+		<pre><code class="65c816_asar">if {condition} : {codeblock}[ : codeblock...] : endif</code></pre>
+		Note that else or elseif are unsupported when using this syntax. The <code>endif</code> used to be optional, but this functionality is deprecated. It's recommended to always add the endif at the end of the line.
 		<pre><code class="65c816_asar">PressedY:
-	if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball
+	if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball : endif
 	rtl
 		</code></pre>
 		If you plan to use labels in if commands, note that there's certain restrictions that apply. More specifically, only static labels can be used. That is, only labels whose address can't change between Asar's passes, as demonstrated by the following example:
@@ -2844,7 +2878,7 @@ SecondLabel:
 if FirstLabel == 0
 endif
 
-; Error E5107. The label could move between passes.
+; Error. The label could move between passes.
 if SecondLabel == 0
 endif</code></pre>
 		<h4 id="while">while</h4>
@@ -2858,8 +2892,19 @@ while !counter &lt; $10
 	db (!counter&lt;&lt;8)|$0C,(!counter&lt;&lt;8)|$0D,(!counter&lt;&lt;8)|$0E,(!counter&lt;&lt;8)|$0F
 			
 	!counter #= !counter+1
-endif</code></pre>
-		Note that for technical reasons, while loops end on an endif, just like if conditionals, but unlike the latter they do not support elseif or else branches. Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the compiler, as Asar won't attempt to detect those.<br/><br/>
+endwhile</code></pre>
+		Note that while loops can also end with <code>endif</code>, but this is deprecated. Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the compiler, as Asar won't attempt to detect those.<br/><br/>
+
+		<h4 id="for">for</h4>
+		For loops repeat the contents a specified number of times. In the for loop body, you have access to a loop counter as a define. The range is specified as start-inclusive and end-exclusive.
+
+		For example:
+		<pre><code class="65c816_asar">for i = 1..5
+	db !i
+	db 2*!i
+endfor</code></pre>
+		<p>This will write the bytes 01 02 02 04 03 06 04 08.</p>
+		<p>You can also put for loops on a single line, however in this case due to the order in which Asar parses defines, you will not be able to use the loop counter. E.g. <code>for i = 0..10 : nop : endfor</code>.</p>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="binary-data"><h3>Binary Data</h3>
@@ -2885,6 +2930,7 @@ dl $01,$0203,$04050607,Label,"ABC"
 dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 		By default, each character in an ASCII string used in in a table maps onto the respective ASCII value. This mapping can be customized via the table command:
 		<pre><code class="65c816_asar">table {filename}[,rtl/ltr]</code></pre>
+		<p>Note: this command is deprecated and will be removed in Asar 2.0, see below (direct character assignment syntax) for the replacement.</p>
 		Where <code>filename</code> specifies the path to a table file (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and ltr/rtl specifies whether that file is in left-to-right or right-to left format (default: left-to-right).<br />
 		Format of left-to-right table files:
 		<pre><code>{character}={value}
@@ -2894,7 +2940,7 @@ dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 [value=character...]</code></pre>
 		where <code>character</code> represents an ASCII character and <code>value</code> represents a hexadecimal number literal (without a prefix) to map to that ASCII character. Note that the table command initializes the mapping to garbage, so when using it, it's recommended to provide mappings for all ASCII characters. It's also possible to directly map characters inline without using a table file by using the syntax
 		<pre><code>'{character}' = {value}</code></pre>
-		where <code>value</code> can be any number literal or math statement.<br />
+		where <code>value</code> can be any number literal or math statement. This will be the only way to set the table in Asar 2.0.<br />
 		To reset the current table mapping to a direct ASCII mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push the current table mapping to the stack, whereas the <code>pulltable</code> command lets you restore the mapping from the stack.
 		<pre><code class="65c816_asar">; Contents of table1.txt:
 ;A=1A
@@ -2952,11 +2998,16 @@ db "\\!define"
 db "something ""cool"""</code></pre>
 		<h4 id="fill">fillbyte/fill</h4>
 		<pre><code class="65c816_asar">fillbyte {byte}</code></pre>
-		<pre><code class="65c816_asar">fill {num}</code></pre>
-		The fillbyte and fill commands let you write a specific byte value to the ROM multiple times. The <code>byte</code> parameter of fillbyte specifies which value to write, wheres fill writes that value to the output ROM <code>num</code> times.
+		<pre><code class="65c816_asar">fill {num}
+fill align {alignment} [offset {offset}]</code></pre>
+		The fillbyte and fill commands let you write a specific byte value to the ROM multiple times. The <code>byte</code> parameter of fillbyte specifies which value to write, wheres fill writes that value to the output ROM <code>num</code> times. If <code>alignment</code> is specified, the value will be written repeatedly until the SNES address has the specified alignment, similar to <code>skip align</code>.
 		<pre><code class="65c816_asar">fillbyte $FF
 ; This writes $FF $FF $FF $FF $FF $FF $FF $FF
-fill 8</code></pre>
+fill 8
+org $008005
+; this writes $FF until SNES address $00800A (=$8008 + 2)
+fill align 8 offset 2
+</code></pre>
 		It's also possible to write 16-bit, 24-bit or 32-bit values with the fill command by using <code>fillword</code>, <code>filllong</code> or <code>filldword</code> instead of fillbyte. Note that the <code>num</code> parameter of fill still specifies the number of bytes to write in those cases. Values might get truncated as needed to exactly reach the specified number of bytes to write.
 		<h4 id="pad">padbyte/pad</h4>
 		<pre><code class="65c816_asar">padbyte {byte}</code></pre>
@@ -2968,8 +3019,8 @@ padbyte $FF
 pad $008004</code></pre>
 		It's also possible to write 16-bit, 24-bit or 32-bit values with the pad command by using <code>padword</code>, <code>padlong</code> or <code>paddword</code> instead of padbyte. Note that the <code>snes_address</code> parameter of pad still specifies the end offset of the write in those cases. Values might get truncated as needed to exactly reach the specified end offset.
 		<h4 id="incbin">incbin</h4>
-		<pre><code class="65c816_asar">incbin {filename}[:range_start-range_end][ -> label_identifier_or_sness_address]</code></pre>
-		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are hexadecimal number literals (without a prefix) which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file). If you surround <code>range_start</code> or <code>range_end</code> in parentheses, Asar will interpret it as math, not a hex literal.
+		<pre><code class="65c816_asar">incbin {filename}[:range_start..range_end]</code></pre>
+		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are math expressions which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file). The older form of this command used <code>-</code> as the separator of start and end, which caused ambiguities and was thus deprecated.
 		<pre><code class="65c816_asar">; datafile.bin contains the following bytes:
 ; $00 $01 $02 $03 $04 $05 $06 $07 $08 $09 $0A $0B $0C $0D $0E $0F
 
@@ -2977,11 +3028,16 @@ pad $008004</code></pre>
 incbin "datafile.bin"
 
 ; This writes $09 $0A $0B $0C $0D $0E
+incbin "datafile.bin":$9..$F
+; Alternatively with the deprecated syntax:
 incbin "datafile.bin":9-F
 
 ; This writes $01 $02 $03 $04
-incbin "datafile.bin":($F-$E)-(2+3)</code></pre>
-		When <code>label_name_or_sness_address</code> is specified, the contents of the file are written to another location in the ROM. When set to a label identifier, this code behaves identically to
+incbin "datafile.bin":$F-$E..2+3
+; Old deprecated syntax:
+incbin "datafile.bin":($F-$E)-(2+3)
+</code></pre>
+		Another now-deprecated form is <code>incbin {filename}[range] -&gt; {location}</code>, where location is either a label or a SNES address. If it is specified, the contents of the file are written to another location in the ROM. When set to a label identifier, this code behaves identically to
 		<pre><code class="65c816_asar">pushpc
 freedata align
 
@@ -2992,7 +3048,7 @@ pullpc</code></pre>
 		with the exception that incbin gains special permission to cross bank borders. In this case, the size limit of the included file is 65536 bytes due to how <a href="#freespace">freespace</a> works. For files with a size of 32767 or lower, no alignment is enforced. When <code>label_name_or_sness_address</code> is set to an SNES address, the code behaves identically to		
 		<pre><code class="65c816_asar">pushpc
 
-org {snes_addres}
+org {snes_address}
 incbin {filename}
 
 pullpc</code></pre>
@@ -3038,7 +3094,7 @@ incsrc "routine.asm"
 		<pre><code class="65c816_asar">includefrom {filename}</code></pre>
 		The include and includefrom commands specify that a file is only to be included in another file and not to be assembled directly. When a user tries to assemble a file containing include or includefrom directly, an error is thrown. The includefrom command behaves identically to the include command with the exception that it is passed the name of the file it is meant to be included from (note that Asar doesn't verify whether it's actually included from that file, it only checks whether it's included from another file at all). When making use of include or includefrom, they must be the first command within their respective file and can't be used in combination with the <a href="#asar">asar</a> or <a href="#xkas">xkas</a> command in the same file.		
 		<pre><code class="65c816_asar">; Contents of shared.asm:
-;@includefrom main.asm
+;includefrom main.asm
 ;
 ;if read1($00FFD5) == $23
 ;	!is_sa1_rom = 1
@@ -3047,7 +3103,7 @@ incsrc "routine.asm"
 ;endif
 
 
-@asar 1.37
+asar 1.37
 
 incsrc &quot;shared.asm&quot;
 
@@ -3076,11 +3132,11 @@ jsl MyOtherRoutine
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="freespace"><h3>Freespace</h3>
-		Freespace is a concept that comes into play when extending an existing ROM. To insert new code or data into a ROM, the ROM must contain enough continuous unused space for everything to fit into. Space like that is referred to as freespace. Many tools attempt to find freespace in a ROM by looking for continuous blocks of a certain value (most commonly $00). This method on its own isn't reliable as freespace finders could erroneously detect binary data or code with a certain pattern as freespace. For this reason, the RATS format was invented to protect data inserted into a ROM (see <a href="http://old.smwiki.net/wiki/ROM_Allocation_Tag_System">SMW Wiki</a> for details on the RATS format). When placing RATS tags at the beginning of occupied memory blocks inside a ROM, freespace finders can search for them to know which parts of the ROM not to overwrite. Asar supports a number of commands for working with freespace directly, including freespace finders with automatic RATS tag generation.
+		Freespace is a concept that comes into play when extending an existing ROM. To insert new code or data into a ROM, the ROM must contain enough continuous unused space for everything to fit into. Space like that is referred to as freespace. Many tools attempt to find freespace in a ROM by looking for continuous blocks of a certain value (most commonly $00). This method on its own isn't reliable as freespace finders could erroneously detect binary data or code with a certain pattern as freespace. For this reason, the RATS format was invented to protect data inserted into a ROM (see <a href="https://web.archive.org/web/20180525193101/http://old.smwiki.net/wiki/ROM_Allocation_Tag_System">SMW Wiki</a> for details on the RATS format). When placing RATS tags at the beginning of occupied memory blocks inside a ROM, freespace finders can search for them to know which parts of the ROM not to overwrite. Asar supports a number of commands for working with freespace directly, including freespace finders with automatic RATS tag generation.
 		<h4 id="freecode">freespace/freecode/freedata</h4>
 		<pre><code class="65c816_asar">freespace {ram/noram}[,align][,cleaned][,static][,value]</code></pre>
-		<pre><code class="65c816_asar">freecode</code></pre>
-		<pre><code class="65c816_asar">freedata</code></pre>
+		<pre><code class="65c816_asar">freecode [align][,cleaned][,static][,value]</code></pre>
+		<pre><code class="65c816_asar">freedata [align][,cleaned][,static][,value]</code></pre>
 		The freespace command makes Asar search the output ROM for a freespace area large enough to contain the following section of code/data. If such an area is found, the pc is placed at its beginning and a RATS tag automatically written. If no such area is found, an error is thrown. The parameters control what kind of freespace to look for.
 		<br/><br/>
 		<table>
@@ -3295,8 +3351,8 @@ org $009053
 org $009068
 	nop #3</code></pre>
 		<h4 id="check-bankcross">check bankcross</h4>
-		<pre><code class="65c816_asar">check bankcross {on/off}</code></pre>
-		The <code class="65c816_asar">check bankcross</code> command enables (<code class="65c816_asar">on</code>) or disables (<code class="65c816_asar">off</code>) throwing errors when a bank border is crossed while assembling a file. The default is <code class="65c816_asar">on</code>. Use this with caution as some features may not behave correctly with bank border checking disabled and some places may still check for bank borders, anyways.
+		<pre><code class="65c816_asar">check bankcross {off/half/full}</code></pre>
+		The <code class="65c816_asar">check bankcross</code> command enables (<code class="65c816_asar">full</code> or <code class="65c816_asar">half</code>) or disables (<code class="65c816_asar">off</code>) throwing errors when a bank border is crossed while assembling a file. The default is <code class="65c816_asar">full</code>, which checks whether the code crosses from pc $FFFF to $0000 in the next bank, and throws an error if that happens. With <code class="65c816_asar">half</code>, Asar will additionally check crossings from $7FFF to $8000. Use <code>off</code> with caution as some features may not behave correctly with bank border checking disabled and some places may still check for bank borders, anyways.
 		<pre><code class="65c816_asar">check bankcross off
 
 org $80FFFF
@@ -3309,22 +3365,22 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="warnings"><h3>Warnings</h3>
-		Warnings are messages that Asar outputs to inform the user about potentially unintended or risky code that isn't critical and thus doesn't cause assembly to fail on its own. These messages can be useful for detecting potential problems in the code, but in some situations may be undesirable. For this reason, Asar supports a few methods of explicitly enabling or disabling certain warnings (see section <a href="#usage">Usage</a> for details on how to configure warnings via the command line). Additionally, there are warnings which may be useful in some situations, but would be intrusive in most other situations. They are disabled by default and have to be enabled explicitly to be used. Commands that enable or disable warnings refer to them via their ID. This ID is in the format <code>WXXXX</code>, where <code>XXXX</code> is a number uniquely identifying a warning. The easiest way of finding the ID for a specific warning is to look at the console output of a patch producing it. Asar will always output the warning ID along with the respective warning.
-		<h4 id="warnings-list">List of warnings</h4>
+        Warnings are messages that Asar outputs to inform the user about potentially unintended or risky code that isn't critical and thus doesn't cause assembly to fail on its own. These messages can be useful for detecting potential problems in the code, but in some situations may be undesirable. For this reason, Asar supports a few methods of explicitly enabling or disabling certain warnings (see section <a href="#usage">Usage</a> for details on how to configure warnings via the command line). Additionally, there are warnings which may be useful in some situations, but would be intrusive in most other situations. They are disabled by default and have to be enabled explicitly to be used. Commands that enable or disable warnings refer to them via their names. The easiest way of finding the name of a specific warning is to look at the console output of a patch producing it. Asar will always output the warning name along with the respective warning. Warnings also have ID numbers, but those are deprecated and will be removed in Asar 2.0. It is recommended to use the warning names instead (which are more descriptive anyways).
+        <h4 id="warnings-list">List of warnings</h4>
         <a href="warnings-list.html">This</a> is a list of all warnings along with their IDs.
-        <h4 id="disabled-warnings">Disabled Warnings</h4>
+		<h4 id="disabled-warnings">Disabled Warnings</h4>
 		This is a list of all warnings that are disabled by default and have to be enabled explicitly.<br/><br/>
 		<table>
 			<tr>
-				<th style="width:150px">Warning ID</th>
+				<th style="width:150px">Warning name</th>
 				<th>Details</th>
 			</tr>
 			<tr>
-				<td><code>W1013</code></td>
+				<td><code>Wimplicitly_sized_immediate</code></td>
 				<td>Thrown when opcodes are sized implicitly and Asar has to assume a size. An opcode is considered to be sized explicitly when either a length specifier is used or a simple hex constant that can be assumed to be of a specific size (that is, a hex constant with either two or four digits). Opcodes that don't support multiple sizes are always considered to be sized explicitly. Everything else is considered to be sized implicitly and will throw this warning when enabled.</td>
 			</tr>
 			<tr>
-				<td><code>W1024</code></td>
+				<td><code>Wcheck_memory_file</code></td>
 				<td>Only relevant for the DLL API. Thrown when a file is accessed that was either not provided as a memory file or that isn't found in memory. Mainly intended for debugging purposes and can be used to assure that files are actually read from the correct location.</td>
 			</tr>
 		</table>
@@ -3333,7 +3389,7 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 		The <code class="65c816_asar">warnings push</code> command pushes the current state of enabled and disabled warnings to the stack. The <code class="65c816_asar">warnings pull</code> command pulls it back from the stack.
 		<pre><code class="65c816_asar">warnings push
 ; Disable "freespace leaked" warning
-warnings disable W1011
+warnings disable Wfreespace_leaked
 		
 freecode
 
@@ -3341,13 +3397,15 @@ freecode
 		
 warnings pull</code></pre>
 		<h4 id="warnings-enable-disable">warnings {enable/disable}</h4>
-		<pre><code class="65c816_asar">warnings {enable/disable} {id}</code></pre>
-		The <code class="65c816_asar">warnings enable</code> command enables the warning with the specified ID, the <code class="65c816_asar">warnings disable</code> command disables it. Warnings enabled or disabled via this command override warnings enabled or disabled via the command line (see section <a href="#usage">Usage</a> for details). When using these commands inside shared code, it's recommended to do so in conjunction with <a href="#warnings-push-pull">warnings {push/pull}</a> to prevent the modified settings from leaking into other files.
-		<pre><code class="65c816_asar">warnings disable W1012
+		<pre><code class="65c816_asar">warnings {enable/disable} {name}</code></pre>
+		The <code class="65c816_asar">warnings enable</code> command enables the warning with the specified name, the <code class="65c816_asar">warnings disable</code> command disables it. Warnings enabled or disabled via this command override warnings enabled or disabled via the command line (see section <a href="#usage">Usage</a> for details). When using these commands inside shared code, it's recommended to do so in conjunction with <a href="#warnings-push-pull">warnings {push/pull}</a> to prevent the modified settings from leaking into other files.
+		<pre><code class="65c816_asar">warnings disable Wwarn_command
 		
 warn "This text in invisible!"
 
-warn enable W1012</code></pre>
+warn enable Wwarn_command
+		
+warn "This text in visible!"</code></pre>
 		<a href="#contents">Return to top</a></div>
         <div id="errors>"><h3>Errors</h3>
         <h4 id="errors-list">List of errors</h4>

@@ -1,4 +1,4 @@
-;`errE5183
+;`errEinvalid_global_label
 lorom
 org $008000
 

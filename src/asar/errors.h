@@ -259,6 +259,14 @@ enum asar_error_id : int
 	error_id_pullns_without_pushns,
 
 	error_id_label_forward,
+	
+	error_id_unclosed_vararg,
+	error_id_invalid_vararg,
+
+	error_id_macro_param_outside_macro,
+
+	error_id_broken_for_loop,
+	error_id_bad_single_line_for,
 
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
@@ -278,3 +286,4 @@ struct errblock : public errline {};
 struct errnull : public errblock {};
 
 void asar_throw_error(int whichpass, asar_error_type type, asar_error_id errid, ...);
+const char* get_error_name(asar_error_id errid);

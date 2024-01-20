@@ -1,7 +1,7 @@
 # Asar
 [![Windows builds (AppVeyor)](https://ci.appveyor.com/api/projects/status/github/RPGHacker/asar?svg=true)](https://ci.appveyor.com/project/RPGHacker/asar) ![Ubuntu build (GitHub Actions)](https://github.com/RPGHacker/asar/actions/workflows/cmake.yml/badge.svg)
 
-Asar is an SNES assembler designed for applying patches to existing ROM images, or creating new ROM images from scratch. It supports 65c816, SPC700, and Super FX architextures. It was originally created by Alcaro, modelled after [xkas v0.06](https://www.romhacking.net/utilities/269/) by byuu.
+Asar is an SNES assembler designed for applying patches to existing ROM images, or creating new ROM images from scratch. It supports 65c816, SPC700, and Super FX architectures. It was originally created by Alcaro, modelled after [xkas v0.06](https://www.romhacking.net/utilities/269/) by byuu.
 
 For a guide on using Asar (including how to write patches), see [`README.txt`](https://github.com/RPGHacker/asar/blob/master/README.txt). This readme was made with tool programmers and contributors in mind.
 
@@ -12,6 +12,20 @@ If you'd rather not build from source, check out the [Releases](https://github.c
 
 ## Asar DLL
 Asar can also be built as a DLL. This makes it easier and faster to use in other programs (such as a sprite insertion tool). You can find documentation on the DLL API in the respective bindings (asardll.h, asar.cs, asar.py).
+
+## Asar as a static library
+Asar can also be built as a static library. All "out-facing" functions are in interface-lib.h. This is useful for embedding Asar in other programs which don't want to use DLLs. The easiest way to add asar as a static library to your project is to add it as a git submodule 
+
+`git submodule add https://github.com/RPGHacker/asar <path-to-subdir>`
+
+then add the following to your CMakeLists.txt:
+```CMake
+add_subdirectory(<path-to-subdir>/src)
+get_target_property(ASAR_INCLUDE_DIR asar-static INCLUDE_DIRECTORIES)
+include_directories(${ASAR_INCLUDE_DIR})
+target_link_libraries(YourTarget PUBLIC asar-static)
+```
+to be able to include the header files. It is also recommended to turn off every build in target in asar except the static one using the appropriate CMake options. You will need to make sure that your project has an Asar compatible license.
 
 ## Folder layout
 * `docs` contains the source of the manual and changelog.
@@ -39,7 +53,7 @@ These two characters should precede each test line, so that Asar sees them as co
 * 2 hex digits - a byte for it to check for 
   * You can specify more than one, like in the examples below, and it will automatically increment the offset.
 * A line starting with `+` tells the testing app to patch the SMW ROM instead of creating a new ROM
-* `errEXXXX` and `warnWXXXX` (where `XXXX` is an ID number) means that the test is expected to throw that specific error or warning while patching. The test will succeed only if the number and order of errors and warnings thrown exactly matches what's specified here. Be wary that Asar uses multiple passes and throws errors and warnings across multiple of them. This can make the actual order in which errors and warnings are thrown a bit unintuitive.
+* `errE{name}` and `warnW{name}` (where `{name}` is the name of an error or warning) means that the test is expected to throw that specific error or warning while patching. The test will succeed only if the number and order of errors and warnings thrown exactly matches what's specified here. Be wary that Asar uses multiple passes and throws errors and warnings across multiple of them. This can make the actual order in which errors and warnings are thrown a bit unintuitive.
 
 In addition to the format mentioned above, it's also possible to check for user prints a patch is expected to output (by `print`, `error`, `warn` or `assert` commands). This is done by starting the line with one of the following sequences:
 ```
@@ -61,17 +75,17 @@ This line tests that `22`, `20`, `80` and `90` were written to the ROM offset `0
 ;`007606 22 20 80 90
 ```
 
-This line tests that assembling the patch throws error `5117` twice and warning `1030` once.
+This line tests that assembling the patch throws error `Eunknown_command` twice and warning `Wfeature_deprecated` once.
 ```
-;`errE5117
-;`errE5117
-;`warnW1030
+;`errEunknown_command
+;`errEunknown_command
+;`warnWfeature_deprecated
 ```
 
-This line tests that the byte `FF` was written to the start of the ROM, that the string `This is a print.` was printed and that the string `This is a user error.` was output via the error command (which itself also causes error `E5159`to be thrown once).
+This line tests that the byte `FF` was written to the start of the ROM, that the string `This is a print.` was printed and that the string `This is a user error.` was output via the error command (which itself also causes error `Eerror_command` to be thrown once).
 ```
 ;`FF
 ;P>This is a print.
 ;E>This is a user error.
-;`errE5159
+;`errEerror_command
 ```

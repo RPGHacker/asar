@@ -49,3 +49,4 @@ private:
 	autoarray<AddrToLineInfo> m_addrToLineInfo;
 };
 
+extern AddressToLineMapping addressToLineMapping;
