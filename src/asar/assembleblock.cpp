@@ -485,7 +485,6 @@ static string labelname(const char ** rawname, bool define=false)
 		while (*deref_rawname && *deref_rawname != ']') deref_rawname++;
 		if(*deref_rawname != ']') asar_throw_error(2, error_type_block, error_id_invalid_label_missing_closer);
 		deref_rawname++;
-		if(*deref_rawname != '.') asar_throw_error(2, error_type_block, error_id_invalid_label_name);
 	}
 
 	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')

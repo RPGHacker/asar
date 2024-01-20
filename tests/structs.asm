@@ -2,6 +2,7 @@
 ;`02 03 05 07 03 05
 ;`02 40
 ;`00 40
+;`10 40
 
 struct struct_without_org $4000
 	.first: skip 2
@@ -68,3 +69,4 @@ db objectsize(test.test3)
 
 dw struct_without_org.second
 dw struct_without_org
+dw struct_without_org[4]
