@@ -3356,12 +3356,12 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="warnings"><h3>Warnings</h3>
-		Warnings are messages that Asar outputs to inform the user about potentially unintended or risky code that isn't critical and thus doesn't cause assembly to fail on its own. These messages can be useful for detecting potential problems in the code, but in some situations may be undesirable. For this reason, Asar supports a few methods of explicitly enabling or disabling certain warnings (see section <a href="#usage">Usage</a> for details on how to configure warnings via the command line). Additionally, there are warnings which may be useful in some situations, but would be intrusive in most other situations. They are disabled by default and have to be enabled explicitly to be used. Commands that enable or disable warnings refer to them via their names. The easiest way of finding the name of a specific warning is to look at the console output of a patch producing it. Asar will always output the warning name along with the respective warning.
+		Warnings are messages that Asar outputs to inform the user about potentially unintended or risky code that isn't critical and thus doesn't cause assembly to fail on its own. These messages can be useful for detecting potential problems in the code, but in some situations may be undesirable. For this reason, Asar supports a few methods of explicitly enabling or disabling certain warnings (see section <a href="#usage">Usage</a> for details on how to configure warnings via the command line). Additionally, there are warnings which may be useful in some situations, but would be intrusive in most other situations. They are disabled by default and have to be enabled explicitly to be used. Commands that enable or disable warnings refer to them via their names. The easiest way of finding the name of a specific warning is to look at the console output of a patch producing it. Asar will always output the warning name along with the respective warning. Warnings also have ID numbers, but those are deprecated and will be removed in Asar 2.0. It is recommended to use the warning names instead (which are more descriptive anyways).
 		<h4 id="disabled-warnings">Disabled Warnings</h4>
 		This is a list of all warnings that are disabled by default and have to be enabled explicitly.<br/><br/>
 		<table>
 			<tr>
-				<th style="width:150px">Warning ID</th>
+				<th style="width:150px">Warning name</th>
 				<th>Details</th>
 			</tr>
 			<tr>
