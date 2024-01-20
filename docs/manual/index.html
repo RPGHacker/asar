@@ -1638,7 +1638,7 @@ db $FF		; Will write to PC address 0x008000</code></pre>
 		<div id="compatibility"><h3>Compatibility Settings</h3>
 		Compatibility settings determine how Asar operates in certain situations. They can be changed via a number of commands.
 		<h4 id="xkas">xkas</h4>
-		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patches that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used.
+		The <code class="65c816_asar">xkas</code> command enables Asar's xkas compatibility mode. In this mode, Asar tries to replicate the behavior of xkas as much as possible and throws warnings whenever it detects the usage of Asar-specific features that are not compatible with xkas. This command has to be used before any other command in the same patch. The intended purpose of the xkas command is to use it in conjunction with <code class="65c816_asar">;@</code> to write patches that can be assembled with both, Asar and xkas. See section <a href="#comments">Comments</a> for details. Note that as of Asar version 1.40, xkas backwards compatibility is officially deprecated and is no longer guaranteed to work as expected. New features introduced into Asar since then might not throw warnings when attempted to use in xkas compatibility mode and old xkas patches might not assemble correctly with Asar anymore, even when xkas compatibility mode is used. xkas compatibility mode will be fully removed in Asar 2.0, along with the <code>;@</code> comments.
 		<pre><code class="65c816_asar">;@xkas
 
 !is_asar=0	
@@ -1659,7 +1659,7 @@ do_something()</code></pre>
 		<pre><code class="65c816_asar">asar {ver}</code></pre>
 		The <code class="65c816_asar">asar</code> command can be used to specify the minimum Asar version your patch is compatible with. The <code>ver</code> parameter specifies the minimum required Asar version. When a user tries to assemble the patch in an older version of Asar, an error will be thrown, stating that the used Asar version is too old. This should be the first command in your patch, otherwise an error will be thrown.
 		<pre><code class="65c816_asar">; This patch uses features from Asar 1.40, so it makes sense to require it as a minimum.
-@asar 1.40
+asar 1.40
 
 if readfile1(&quot;data.bin&quot;, 0) == 1
 	; Do something
@@ -1671,7 +1671,7 @@ endif</code></pre>
 		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>warn xkas on</code> to enable these warnings and <code>warn xkas off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
 		<h4 id="math-pri">math pri</h4>
 		<pre><code class="65c816_asar">math pri {on/off}</code></pre>
-		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional order of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">@asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. When writing patches specifially for Asar, it is recommended to always enable this flag.
+		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional order of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. This command will be removed in Asar 2.0, after which <code>math pri on</code> will be the only possible behavior.
 		<pre><code class="65c816_asar">math pri off
 db 1+(6/3)*5	; db 15
 
@@ -1679,7 +1679,7 @@ math pri on
 db 1+(6/3)*5	; db 11</code></pre>
 		<h4 id="math-round">math round</h4>
 		<pre><code class="65c816_asar">math round {on/off}</code></pre>
-		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag.
+		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag. If you specify a minimum supported Asar version using <code>asar 1.9</code> or higher, the default will be <code>math round off</code>. This command will be removed in Asar 2.0, after which <code>math round off</code> will be the only possible behavior.
 		<pre><code class="65c816_asar">math round on
 ; 1.75 is immediately truncated to 1, resulting in (3/4)+1
 ; 3/4 would result in 0.75, which is immediately truncated to 0, resulting in 0+1
@@ -1706,7 +1706,8 @@ db (3/4)+1.75
 		<h4 id="comments">Comments</h4>
 		You can use ; to add comments to your code, making it easier to read and understand for other people. Everything from the ; to the end of the line is silently ignored by Asar.
 		<pre><code class="65c816_asar">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
-		An exception from this rule are lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. The purpose of this is to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they will be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#compatibility">Compatibility Settings</a> for details on xkas compatibility.
+		Previously, there were exceptions to this rule in the form of lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. This functionality is deprecated, Asar 2.0 will treat these lines as regular comments. The purpose of this feature was to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they would be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. (This too is deprecated.) Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#compatibility">Compatibility Settings</a> for details on xkas compatibility.
+		<p>Also note that comments starting with <code>;[[</code> are reserved for multi-line comments in a future version of Asar. You should either change the beginning or make sure that there's a <code>]]</code> (the comment terminator) at the end of the line.</p>
 		<h4 id="brackets">Brackets</h4>
 		Brackets, { and }, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's entirely up to the coder whether, how and in what quantity brackets are used.<br />
 		<pre><code class="65c816_asar">	lda $00
@@ -2851,10 +2852,10 @@ else
 	error "Unsupported mode! Please choose 0, 1, 2 or 3!"
 endif</code></pre>
 		Alternatively, if conditionals can also be constructed on a single line via the following syntax:
-		<pre><code class="65c816_asar">if {condition} : {codeblock}[ : codeblock...]</code></pre>
-		Note that no endif needs to be used here and that else or elseif are unsupported when using this syntax.
+		<pre><code class="65c816_asar">if {condition} : {codeblock}[ : codeblock...] : endif</code></pre>
+		Note that else or elseif are unsupported when using this syntax. The <code>endif</code> used to be optional, but this functionality is deprecated. It's recommended to always add the endif at the end of the line.
 		<pre><code class="65c816_asar">PressedY:
-	if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball
+	if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball : endif
 	rtl
 		</code></pre>
 		If you plan to use labels in if commands, note that there's certain restrictions that apply. More specifically, only static labels can be used. That is, only labels whose address can't change between Asar's passes, as demonstrated by the following example:
@@ -2922,6 +2923,7 @@ dl $01,$0203,$04050607,Label,"ABC"
 dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 		By default, each character in an ASCII string used in in a table maps onto the respective ASCII value. This mapping can be customized via the table command:
 		<pre><code class="65c816_asar">table {filename}[,rtl/ltr]</code></pre>
+		<p>Note: this command is deprecated and will be removed in Asar 2.0, see below (direct character assignment syntax) for the replacement.</p>
 		Where <code>filename</code> specifies the path to a table file (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and ltr/rtl specifies whether that file is in left-to-right or right-to left format (default: left-to-right).<br />
 		Format of left-to-right table files:
 		<pre><code>{character}={value}
@@ -2931,7 +2933,7 @@ dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 [value=character...]</code></pre>
 		where <code>character</code> represents an ASCII character and <code>value</code> represents a hexadecimal number literal (without a prefix) to map to that ASCII character. Note that the table command initializes the mapping to garbage, so when using it, it's recommended to provide mappings for all ASCII characters. It's also possible to directly map characters inline without using a table file by using the syntax
 		<pre><code>'{character}' = {value}</code></pre>
-		where <code>value</code> can be any number literal or math statement.<br />
+		where <code>value</code> can be any number literal or math statement. This will be the only way to set the table in Asar 2.0.<br />
 		To reset the current table mapping to a direct ASCII mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push the current table mapping to the stack, whereas the <code>pulltable</code> command lets you restore the mapping from the stack.
 		<pre><code class="65c816_asar">; Contents of table1.txt:
 ;A=1A
@@ -3085,7 +3087,7 @@ incsrc "routine.asm"
 		<pre><code class="65c816_asar">includefrom {filename}</code></pre>
 		The include and includefrom commands specify that a file is only to be included in another file and not to be assembled directly. When a user tries to assemble a file containing include or includefrom directly, an error is thrown. The includefrom command behaves identically to the include command with the exception that it is passed the name of the file it is meant to be included from (note that Asar doesn't verify whether it's actually included from that file, it only checks whether it's included from another file at all). When making use of include or includefrom, they must be the first command within their respective file and can't be used in combination with the <a href="#asar">asar</a> or <a href="#xkas">xkas</a> command in the same file.		
 		<pre><code class="65c816_asar">; Contents of shared.asm:
-;@includefrom main.asm
+;includefrom main.asm
 ;
 ;if read1($00FFD5) == $23
 ;	!is_sa1_rom = 1
@@ -3094,7 +3096,7 @@ incsrc "routine.asm"
 ;endif
 
 
-@asar 1.37
+asar 1.37
 
 incsrc &quot;shared.asm&quot;
 
