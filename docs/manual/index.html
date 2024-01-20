@@ -1668,7 +1668,7 @@ endif</code></pre>
 		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>warn xkas on</code> to enable these warnings and <code>warn xkas off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
 		<h4 id="math-pri">math pri</h4>
 		<pre><code class="65c816_asar">math pri {on/off}</code></pre>
-		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional oder of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">@asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. When writing patches specifially for Asar, it is recommended to always enable this flag.
+		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional order of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">@asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. When writing patches specifially for Asar, it is recommended to always enable this flag.
 		<pre><code class="65c816_asar">math pri off
 db 1+(6/3)*5	; db 15
 
@@ -2892,7 +2892,8 @@ endwhile</code></pre>
 	db !i
 	db 2*!i
 endfor</code></pre>
-		This will write the bytes 01 02 02 04 03 06 04 08.
+		<p>This will write the bytes 01 02 02 04 03 06 04 08.</p>
+		<p>You can also put for loops on a single line, however in this case due to the order in which Asar parses defines, you will not be able to use the loop counter. E.g. <code>for i = 0..10 : nop : endfor</code>.</p>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="binary-data"><h3>Binary Data</h3>
@@ -3006,8 +3007,8 @@ padbyte $FF
 pad $008004</code></pre>
 		It's also possible to write 16-bit, 24-bit or 32-bit values with the pad command by using <code>padword</code>, <code>padlong</code> or <code>paddword</code> instead of padbyte. Note that the <code>snes_address</code> parameter of pad still specifies the end offset of the write in those cases. Values might get truncated as needed to exactly reach the specified end offset.
 		<h4 id="incbin">incbin</h4>
-		<pre><code class="65c816_asar">incbin {filename}[:range_start..range_end][ -> label_identifier_or_sness_address]</code></pre>
-		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are hexadecimal number literals (without a prefix) which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file). If you surround <code>range_start</code> or <code>range_end</code> in parentheses, Asar will interpret it as math, not a hex literal.
+		<pre><code class="65c816_asar">incbin {filename}[:range_start..range_end]</code></pre>
+		The incbin command copies a binary file directly into the output ROM. The <code>filename</code> parameter specifies which file to copy (enclose in double quotes to use file names with spaces, see section <a href="#includes">Includes</a> for details on Asar's handling of file names) and the optional <code>range_start</code> and <code>range_end</code> parameters are math expressions which specify a range of data to copy from the file (a range_end of 0 copies data until the end of the file; not specifying a range copies the entire file). The older form of this command used <code>-</code> as the separator of start and end, which caused ambiguities and was thus deprecated.
 		<pre><code class="65c816_asar">; datafile.bin contains the following bytes:
 ; $00 $01 $02 $03 $04 $05 $06 $07 $08 $09 $0A $0B $0C $0D $0E $0F
 
@@ -3015,11 +3016,16 @@ pad $008004</code></pre>
 incbin "datafile.bin"
 
 ; This writes $09 $0A $0B $0C $0D $0E
+incbin "datafile.bin":$9..$F
+; Alternatively with the deprecated syntax:
 incbin "datafile.bin":9-F
 
 ; This writes $01 $02 $03 $04
-incbin "datafile.bin":($F-$E)-(2+3)</code></pre>
-		When <code>label_name_or_sness_address</code> is specified, the contents of the file are written to another location in the ROM. When set to a label identifier, this code behaves identically to
+incbin "datafile.bin":$F-$E..2+3
+; Old deprecated syntax:
+incbin "datafile.bin":($F-$E)-(2+3)
+</code></pre>
+		Another now-deprecated form is <code>incbin {filename}[range] -&gt; {location}</code>, where location is either a label or a SNES address. If it is specified, the contents of the file are written to another location in the ROM. When set to a label identifier, this code behaves identically to
 		<pre><code class="65c816_asar">pushpc
 freedata align
 
@@ -3030,7 +3036,7 @@ pullpc</code></pre>
 		with the exception that incbin gains special permission to cross bank borders. In this case, the size limit of the included file is 65536 bytes due to how <a href="#freespace">freespace</a> works. For files with a size of 32767 or lower, no alignment is enforced. When <code>label_name_or_sness_address</code> is set to an SNES address, the code behaves identically to		
 		<pre><code class="65c816_asar">pushpc
 
-org {snes_addres}
+org {snes_address}
 incbin {filename}
 
 pullpc</code></pre>
