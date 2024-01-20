@@ -1567,6 +1567,9 @@ inx
 inx</code></pre>
 		<h4 id="rep">rep</h4>
 		<pre><code class="65c816_asar">rep {num} : {code}</code></pre>
+
+		<p>Warning: this command is deprecated due to conflicting with the 65816 assembly <code>REP</code> instruction. In most cases, you can achieve the same effect with a <a href="#for">for loop</a>.</p>
+
 		The rep command lets you compile any bit of code <code>num</code> times. It functions similarly to <a href="#pseudo-opcodes">pseudo opcodes</a>, but without being limited to certain opcodes only. Instead, you can repeat almost any bit of code supported by Asar, even macro calls. Note that in xkas compatibility mode, <code>rep 0</code> will compile the following code once, whereas <code>rep -1</code> (or any number <code>&lt; 0</code>) won't compile the following code at all. This is to keep compatibility with old patches, which occasionally used the rep command as a replacement for conditionals. Also note that stacking multiple rep commands is not supported (only the most recent rep will take effect).
 		<pre><code class="65c816_asar">macro writeval(val)
 	db &lt;val&gt;
