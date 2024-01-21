@@ -292,8 +292,8 @@ tests_directory.\n";
 		std::stringstream test_file_contents;
 		test_file_contents << test_file.rdbuf();
 		tests.push_back(Testcase {
-			file.filename().generic_string(),
-			fs::absolute(file).generic_string(),
+			file.filename().generic_u8string(),
+			fs::absolute(file).generic_u8string(),
 			test_file_contents.str()
 		});
 	}
