@@ -80,7 +80,8 @@ if(ASAR_GEN_EXE_TEST)
 	set_asar_test_shared_properties(asar-app-test)
 
 	add_custom_target(run-app-test
-		asar-app-test $<TARGET_FILE:asar-standalone> ${CMAKE_CURRENT_SOURCE_DIR}/../../tests ${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc ${CMAKE_CURRENT_BINARY_DIR}/tests-tmp)
+		asar-app-test "$<TARGET_FILE:asar-standalone>" "${CMAKE_CURRENT_SOURCE_DIR}/../../tests" "${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc" "${CMAKE_CURRENT_BINARY_DIR}/tests-tmp-app"
+		VERBATIM)
 	add_dependencies(run-tests run-app-test)
 endif()
 
@@ -103,6 +104,7 @@ if(ASAR_GEN_DLL_TEST)
 	set(CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 
 	add_custom_target(run-dll-test
-		asar-dll-test $<TARGET_FILE:asar> ${CMAKE_CURRENT_SOURCE_DIR}/../../tests ${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc ${CMAKE_CURRENT_BINARY_DIR}/tests-tmp)
+		asar-dll-test "$<TARGET_FILE:asar>" "${CMAKE_CURRENT_SOURCE_DIR}/../../tests" "${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc" "${CMAKE_CURRENT_BINARY_DIR}/tests-tmp-dll"
+		VERBATIM)
 	add_dependencies(run-tests run-dll-test)
 endif()
