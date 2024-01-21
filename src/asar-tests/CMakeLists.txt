@@ -69,6 +69,7 @@ endmacro()
 set(CXX_EXTENSIONS OFF)
 
 add_custom_target(run-tests)
+set_property(TARGET run-tests PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
 if(ASAR_GEN_EXE_TEST)
 	add_executable(
@@ -83,6 +84,7 @@ if(ASAR_GEN_EXE_TEST)
 		asar-app-test "$<TARGET_FILE:asar-standalone>" "${CMAKE_CURRENT_SOURCE_DIR}/../../tests" "${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc" "${CMAKE_CURRENT_BINARY_DIR}/tests-tmp-app"
 		VERBATIM)
 	add_dependencies(run-tests run-app-test)
+	set_property(TARGET run-app-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 endif()
 
 if(ASAR_GEN_DLL_TEST)
@@ -107,4 +109,5 @@ if(ASAR_GEN_DLL_TEST)
 		asar-dll-test "$<TARGET_FILE:asar>" "${CMAKE_CURRENT_SOURCE_DIR}/../../tests" "${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc" "${CMAKE_CURRENT_BINARY_DIR}/tests-tmp-dll"
 		VERBATIM)
 	add_dependencies(run-tests run-dll-test)
+	set_property(TARGET run-dll-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 endif()
