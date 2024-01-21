@@ -128,7 +128,8 @@ if(ASAR_GEN_DLL_TEST)
 	set_asar_test_shared_properties(newtest)
 
 	add_custom_target(run-newtest
-		newtest $<TARGET_FILE:asar> ${CMAKE_CURRENT_SOURCE_DIR}/../../tests ${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc)
+		newtest "$<TARGET_FILE:asar>" "${CMAKE_CURRENT_SOURCE_DIR}/../../tests" "${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc"
+		VERBATIM)
 	add_dependencies(run-tests run-newtest)
 
 	if(ASAR_USE_SANITIZER)
@@ -143,9 +144,8 @@ if(ASAR_GEN_DLL_TEST)
 		# well, we can, but it has some memory leaks which ASan considers an
 		# error) so disable the interface tests in this case.
 		add_custom_target(run-interface-test
-			"${CMAKE_COMMAND}" -E env "ASARDLL=$<TARGET_FILE:asar>" python3 interface-tests/main.py
-			VERBATIM
-			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+			"${CMAKE_COMMAND}" -E env "ASARDLL=$<TARGET_FILE:asar>" python3 "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/main.py"
+			VERBATIM)
 		add_dependencies(run-tests run-interface-test)
 	endif()
 endif()
