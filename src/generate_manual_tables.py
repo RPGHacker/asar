@@ -53,32 +53,11 @@ pre_text = """
 <html lang="en">
   <head>
     <title>Asar User Manual - #TITLE#</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <link rel="stylesheet" href="../shared/highlight_js/styles/default.css" />
-    <script src="../shared/highlight_js/highlight.pack.js"></script>
-    <script>
-      hljs.configure({
-        tabReplace: "    ",
-      });
-      hljs.initHighlightingOnLoad();
-      function toggle_visibility(id) {
-        var e = document.getElementById(id);
-        var label = document.getElementById(id.concat("-toggle"));
-        if (e.style.display == "none") {
-          label.innerHTML = label.innerHTML.replace(
-            "[+] Expand",
-            "[-] Collapse"
-          );
-          e.style.display = "block";
-        } else {
-          label.innerHTML = label.innerHTML.replace(
-            "[-] Collapse",
-            "[+] Expand"
-          );
-          e.style.display = "none";
-        }
-      }
-    </script>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="../shared/highlight_js_asar/styles/default.css"/>
+    <script src="../shared/highlight_js/highlight.min.js"></script>
+    <script src="../shared/highlight_js_asar/highlight_js_asar.js"></script>
+    <script src="../shared/common.js"></script>
   </head>
   <body>
     <table>
