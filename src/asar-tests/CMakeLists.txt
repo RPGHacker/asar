@@ -143,8 +143,9 @@ if(ASAR_GEN_DLL_TEST)
 		# the interface tests run python, and we can't run ASan in python (or
 		# well, we can, but it has some memory leaks which ASan considers an
 		# error) so disable the interface tests in this case.
+		find_package(Python)
 		add_custom_target(run-interface-test
-			"${CMAKE_COMMAND}" -E env "ASARDLL=$<TARGET_FILE:asar>" python3 "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/main.py"
+			"${CMAKE_COMMAND}" -E env "ASARDLL=$<TARGET_FILE:asar>" "${Python_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/main.py"
 			VERBATIM)
 		add_dependencies(run-tests run-interface-test)
 	endif()
