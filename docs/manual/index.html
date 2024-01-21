@@ -2859,7 +2859,7 @@ dl $01,$0203,$04050607,Label,"ABC"
 dd $01,$0203,$04050607,Label,"ABC"</code></pre>
 		By default, each character in a Unicode string used in a table maps onto the respective Unicode code points it's composed of. This mapping can be customized via character literal assignments:
 		<pre><code class="65c816_asar">'{character}' = {value}</code></pre>
-		Where <code>character</code> is a Unicode code point and <code>value</code> is any math expression, specifying what value that code point will be remapped to. Only single code points can be remappe at this time - e.g., a precomposed &quot;Ä&quot; will work, while a split &quot;¨&quot; and an &quot;A&quot; will throw an error.<br />
+		Where <code>character</code> is a Unicode code point and <code>value</code> is any math expression, specifying what value that code point will be remapped to. Only single code points can be remapped at this time - e.g., a precomposed &quot;Ä&quot; will work, while a split &quot;¨&quot; and an &quot;A&quot; will throw an error.<br />
 		To reset all mappings to a direct Unicode code point mapping, use the command <code>cleartable</code>. Additionally, the <code>pushtable</code> command lets you push all current mappings onto a stack, whereas the <code>pulltable</code> command lets you restore the mappings from that stack.
 		<pre><code class="65c816_asar">; Contents of table1.asm:
 ;'A' = $1A
