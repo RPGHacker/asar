@@ -60,3 +60,5 @@ build/
 .cmake
 .vscode
 .cache
+
+__pycache__/
