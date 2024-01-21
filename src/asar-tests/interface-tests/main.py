@@ -1,5 +1,8 @@
 import unittest
 import os
+import sys
+
+sys.path += [os.path.dirname(__file__) + "/../../asar-dll-bindings/python"]
 import asar
 
 asar_dll_path = None
