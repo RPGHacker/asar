@@ -125,10 +125,25 @@ if(ASAR_GEN_DLL_TEST)
 	target_include_directories(newtest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/")
 	set_asar_test_shared_properties(newtest)
 
+	add_custom_target(run-newtest
+		newtest $<TARGET_FILE:asar> ${CMAKE_CURRENT_SOURCE_DIR}/../../tests ${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc)
+	add_dependencies(run-tests run-newtest)
+
 	if(ASAR_USE_SANITIZER)
 		target_compile_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
 		target_link_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
 		target_compile_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
 		target_link_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
+	endif()
+
+	if(NOT ASAR_USE_SANITIZER)
+		# the interface tests run python, and we can't run ASan in python (or
+		# well, we can, but it has some memory leaks which ASan considers an
+		# error) so disable the interface tests in this case.
+		add_custom_target(run-interface-test
+			"${CMAKE_COMMAND}" -E env "ASARDLL=$<TARGET_FILE:asar>" python3 interface-tests/main.py
+			VERBATIM
+			WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
+		add_dependencies(run-tests run-interface-test)
 	endif()
 endif()
