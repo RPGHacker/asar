@@ -10,7 +10,7 @@ environment:
     - JOB_NAME: "win64"
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "x64"
-      CMAKE_ARCH: "-A x64"
+      CMAKE_ARCH: "-A x64 -DPython_ROOT_DIR=C:\\Python311-x64"
     - JOB_NAME: "clang"
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "Win32"
