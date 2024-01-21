@@ -66,7 +66,7 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 	}
 	for(std::string line; std::getline(asm_ss, line); ) {
 		// remove trailing \r, artifact of windows newlines here
-		if(line.back() == '\r') line.erase(line.end()-1);
+		if(!line.empty() && line.back() == '\r') line.erase(line.end()-1);
 		if(line.substr(0, 2) == ";`") {
 			auto words = split_spaces(line.substr(2));
 			for(std::string& w : words) {
