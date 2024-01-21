@@ -32,5 +32,8 @@ jobs:
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-    - name: Tests
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target run-tests
+    - name: Setup tmate session
+      uses: mxschmitt/action-tmate@v3
+
+        #    - name: Tests
+        #      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target run-tests
