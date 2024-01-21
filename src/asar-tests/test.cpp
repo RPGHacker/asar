@@ -242,6 +242,15 @@ static void delete_file(const char * filename)
 #endif
 }
 
+static void create_directory(const char * dirname)
+{
+#ifdef _WIN32
+	CreateDirectory(dirname, NULL);
+#else
+	mkdir(dirname, 0777);
+#endif
+}
+
 
 #if !defined(ASAR_TEST_DLL)
 // RPG Hacker: Original test application used system(), but
@@ -494,6 +503,8 @@ int main(int argc, char * argv[])
 	{
 		has_path_seperator = true;
 	}
+	// make sure output directory exists
+	create_directory(output_directory);
 
 
 	int numfailed = 0;
