@@ -1002,11 +1002,13 @@ void parse_std_defines(const char* textfile)
 			string define_val;
 
 			while (*pos != '=' && *pos != '\n') {
+				if(*pos == '\r') { pos++; continue; }
 				define_name += *pos;
 				pos++;
 			}
-			if (*pos != 0 && *pos != '\n') pos++; // skip =
+			if (*pos != 0 && *pos != '\r' && *pos != '\n') pos++; // skip =
 			while (*pos != 0 && *pos != '\n') {
+				if(*pos == '\r') { pos++; continue; }
 				define_val += *pos;
 				pos++;
 			}
