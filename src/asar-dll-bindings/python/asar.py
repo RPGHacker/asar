@@ -7,6 +7,7 @@ Usage: import asar, call asar.init, call asar.patch, then use the various
 functions to get info about the patch
 """
 
+from __future__ import annotations
 import ctypes
 import enum
 import sys
@@ -177,7 +178,7 @@ class _AsarDLL:
         func.restype = restype
 
 
-def init(dll_path=None):
+def init(dll_path=None) -> None:
     """Load the Asar DLL.
 
     You must call this before calling any other Asar functions. Raises OSError
@@ -214,7 +215,7 @@ def init(dll_path=None):
         raise OSError("Asar DLL failed to initialize")
 
 
-def close():
+def close() -> None:
     """Free all of Asar's structures and unload the module.
 
     Only asar.init() may be called after calling this.
@@ -245,7 +246,7 @@ def apiversion() -> int:
     return _asar.dll.asar_apiversion()
 
 
-def reset():
+def reset() -> bool:
     """Clear out errors, warnings, printed statements and the file cache.
 
     Not really useful, since asar.patch() already does this.
@@ -337,7 +338,7 @@ def patch(patch_name: str, rom_data: bytes, includepaths=[],
     return result, rom_ptr.raw[:romlen.value]
 
 
-def maxromsize():
+def maxromsize() -> int:
     """Return the maximum possible size of the output ROM."""
     return _asar.dll.asar_maxromsize()
 
