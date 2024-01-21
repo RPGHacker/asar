@@ -413,7 +413,7 @@ static void delete_file(const char * filename)
 static void create_directory(const char * dirname)
 {
 #ifdef _WIN32
-	CreateDirectory(dirname, NULL);
+	CreateDirectoryA(dirname, NULL);
 #else
 	mkdir(dirname, 0777);
 #endif
