@@ -47,7 +47,7 @@ configuration: MinSizeRel
 
 test_script:
   - cmd: >-
-      cmake --build . --target run-tests
+      cmake --build . --config MinSizeRel --target run-tests
 
 deploy:
   provider: FTP
