@@ -136,8 +136,7 @@ std::pair<addr_kind, string> parse_addr_kind(insn_context& arg) {
 	asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
 #undef RETURN_IF_ALLOWED
 	// clang doesn't know that asar_throw_error is noreturn in this case... :(
-	// we don't really have anything good to return either tho
-	__builtin_unreachable();
+	return {};
 }
 
 const char* format_valid_widths(int min, int max) {
