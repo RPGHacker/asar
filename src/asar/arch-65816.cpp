@@ -12,7 +12,6 @@ void asend_65816()
 {
 }
 
-extern bool fastrom;
 extern int recent_opcode_num;
 
 bool asblock_65816(char** word, int numwords)

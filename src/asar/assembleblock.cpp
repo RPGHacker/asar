@@ -289,8 +289,6 @@ string ns;
 string ns_backup;
 autoarray<string> namespace_list;
 
-//bool fastrom=false;
-
 autoarray<string> includeonce;
 
 autoarray<freespace_data> freespaces;
@@ -679,7 +677,6 @@ void initstuff()
 	realsnespos= (int)0xFFFFFFFF;
 	startpos= (int)0xFFFFFFFF;
 	realstartpos= (int)0xFFFFFFFF;
-	//fastrom=false;
 	freespaceidnext=1;
 	freespaceid=0;
 	numopcodes=0;
@@ -1517,7 +1514,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
 		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex(num, 6).data());
 		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) asar_throw_warning(0, warning_id_set_middle_byte);
-		//if (fastrom) num|=0x800000;
 		snespos=(int)num;
 		realsnespos=(int)num;
 		startpos=(int)num;
@@ -2431,24 +2427,20 @@ bool assemblemapper(char** word, int numwords)
 	else if (is0("sfxrom"))
 	{
 		mapper=sfxrom;
-		//fastrom=false;
 	}
 	else if (is0("norom"))
 	{
 		//$000000 would be the best snespos for this, but I don't care
 		mapper=norom;
-		//fastrom=false;
 		if(!force_checksum_fix)
 			checksum_fix_enabled = false;//we don't know where the header is, so don't set the checksum
 	}
 	else if (is0("fullsa1rom"))
 	{
 		mapper=bigsa1rom;
-		//fastrom=false;
 	}
 	else if (is("sa1rom"))
 	{
-		//fastrom=false;
 		if (par)
 		{
 			if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
