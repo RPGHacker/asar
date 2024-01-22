@@ -49,6 +49,7 @@ static asar_warning_mapping asar_warnings[] =
 	{ WRN(65816_yy_x_does_not_exist), "($yy),x does not exist, assuming $yy,x." },
 	{ WRN(65816_xx_y_assume_16_bit), "%s $xx,y is not valid with 8-bit parameters, assuming 16-bit." },
 	{ WRN(spc700_assuming_8_bit), "This opcode does not exist with 16-bit parameters, assuming 8-bit." },
+	{ WRN(assuming_address_mode), "The addressing mode %s is not valid for this instruction, assuming %s.%s" },
 
 	{ WRN(cross_platform_path), "This patch may not assemble cleanly on all platforms. Please use / instead." },
 

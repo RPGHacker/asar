@@ -307,6 +307,9 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(missing_org), "Missing org or freespace command." },
 
 	{ ERR(unclosed_block_comment), "Unclosed block comment." },
+
+	{ ERR(bad_addr_mode), "This addressing mode is not valid for this instruction." },
+	{ ERR(bad_access_width), "This addressing mode can accept %s arguments, but the provided argument is %d-bit." },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_error
 // matches with the number of constants in asar_error_id. This is important, because

@@ -8,8 +8,8 @@
 org $008000
 main:
 
-lda #datasize(my_table)		;3
-lda #datasize(other_label)	;0xFFFFFF
+lda.w #datasize(my_table)		;3
+lda.w #datasize(other_label)	;0xFFFFFF
 autoclean jsl my_table
 freecode
 my_table:

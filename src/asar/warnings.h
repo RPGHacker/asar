@@ -18,6 +18,7 @@ enum asar_warning_id : int
 	warning_id_65816_yy_x_does_not_exist,
 	warning_id_65816_xx_y_assume_16_bit,
 	warning_id_spc700_assuming_8_bit,
+	warning_id_assuming_address_mode,
 
 	warning_id_cross_platform_path,
 

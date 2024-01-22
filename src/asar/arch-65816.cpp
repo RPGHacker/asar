@@ -1,8 +1,10 @@
+#include <string>
 #include "asar.h"
 #include "assembleblock.h"
 #include "asar_math.h"
 
 #define write1 write1_pick
+extern int recent_opcode_num;
 
 void asinit_65816()
 {
@@ -12,213 +14,572 @@ void asend_65816()
 {
 }
 
-extern int recent_opcode_num;
+// like an address mode, but without a specific width
+enum class addr_kind {
+	abs, // $00
+	x, // $00,x
+	y, // $00,y
+	ind, // ($00)
+	lind, // [$00]
+	xind, // ($00,x)
+	indy, // ($00),y
+	lindy, // [$00],y
+	s, // $00,s
+	sy, // ($00,s),y
+	imp, // implied (no argument)
+	a, // 'A' as argument
+	imm, // #$00
+};
+
+struct insn_context {
+	string arg;
+	char orig_insn[3]; // oops i didn't end up using this... could be useful in some error messages maybe
+	char modifier;
+};
+
+// checks for matching characters at the start of haystack, ignoring spaces.
+// returns index into haystack right after the match
+template<char... chars>
+ssize_t startmatch(const string& haystack) {
+	static const char needle[] = {chars...};
+	size_t haystack_i = 0;
+	for(size_t i = 0; i < sizeof...(chars); i++) {
+		while(haystack[haystack_i] == ' ') haystack_i++;
+		if(needle[i] != to_lower(haystack[haystack_i++])) return -1;
+	}
+	return haystack_i;
+}
+
+// checks for matching characters at the end of haystack, ignoring spaces.
+// returns index into haystack right before the match
+template<char... chars>
+ssize_t endmatch(const string& haystack) {
+	static const char needle[] = {chars...};
+	ssize_t haystack_i = haystack.length()-1;
+	for(ssize_t i = sizeof...(chars)-1; i >= 0; i--) {
+		while(haystack_i >= 0 && haystack[haystack_i] == ' ') haystack_i--;
+		if(haystack_i < 0 || needle[i] != to_lower(haystack[haystack_i--])) return -1;
+	}
+	return haystack_i+1;
+}
+
+/*
+* Parses the address kind from an argument, given a list of allowed address kinds.
+* Throws "invalid address mode" if the argument does not match any kinds.
+*/
+// i still don't like this function...
+template<addr_kind... allowed_kinds>
+std::pair<addr_kind, string> parse_addr_kind(insn_context& arg) {
+	ssize_t start_i = 0, end_i = arg.arg.length();
+// If this addressing kind is allowed, return it, along with a trimmed version of the string.
+#define RETURN_IF_ALLOWED(kind) \
+		if constexpr(((allowed_kinds == addr_kind::kind) || ...)) { \
+			string out(arg.arg.data() + start_i, end_i - start_i); \
+			return std::make_pair(addr_kind::kind, out); \
+		}
+	if((start_i = startmatch<'#'>(arg.arg)) >= 0) {
+		RETURN_IF_ALLOWED(imm);
+		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+	}
+	if((start_i = startmatch<'('>(arg.arg)) >= 0) {
+		if((end_i = endmatch<',', 's', ')', ',', 'y'>(arg.arg)) >= 0) {
+			RETURN_IF_ALLOWED(sy);
+			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		}
+		if((end_i = endmatch<')', ',', 'y'>(arg.arg)) >= 0) {
+			RETURN_IF_ALLOWED(indy);
+			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		}
+		if((end_i = endmatch<',', 'x', ')'>(arg.arg)) >= 0) {
+			RETURN_IF_ALLOWED(xind);
+			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		}
+		if((end_i = endmatch<')'>(arg.arg)) >= 0) {
+			RETURN_IF_ALLOWED(ind);
+			asar_throw_warning(1, warning_id_assuming_address_mode, "($00)", "$00", " (if this was intentional, add a +0 after the parentheses.)");
+		}
+	}
+	if((start_i = startmatch<'['>(arg.arg)) >= 0) {
+		if((end_i = endmatch<']', ',', 'y'>(arg.arg)) >= 0) {
+			RETURN_IF_ALLOWED(lindy);
+			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		}
+		if((end_i = endmatch<']'>(arg.arg)) >= 0) {
+			RETURN_IF_ALLOWED(lind);
+			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		}
+	}
+	start_i = 0;
+	if((end_i = endmatch<',', 'x'>(arg.arg)) >= 0) {
+		RETURN_IF_ALLOWED(x);
+		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+	}
+	if((end_i = endmatch<',', 'y'>(arg.arg)) >= 0) {
+		RETURN_IF_ALLOWED(y);
+		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+	}
+	if((end_i = endmatch<',', 's'>(arg.arg)) >= 0) {
+		RETURN_IF_ALLOWED(s);
+		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+	}
+	// hoping that by now, something would have stripped whitespace lol
+	if(arg.arg.length() == 0) {
+		RETURN_IF_ALLOWED(imp);
+		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+	}
+	if(arg.arg == "a" || arg.arg == "A") {
+		RETURN_IF_ALLOWED(a);
+		// todo: some hint for "don't name your label "a" "?
+		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+	}
+	if constexpr(((allowed_kinds == addr_kind::abs) || ...)) {
+		return std::make_pair(addr_kind::abs, arg.arg);
+	}
+	asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+#undef RETURN_IF_ALLOWED
+	// clang doesn't know that asar_throw_error is noreturn in this case... :(
+	// we don't really have anything good to return either tho
+	__builtin_unreachable();
+}
+
+const char* format_valid_widths(int min, int max) {
+	if(min == 1) {
+		if(max == 1) return "only 8-bit";
+		if(max == 2) return "only 8-bit or 16-bit";
+		if(max == 3) return "any width"; // shouldn't actually happen lol
+	} else if(min == 2) {
+		if(max == 2) return "only 16-bit";
+		if(max == 3) return "only 16-bit or 24-bit";
+	} else if(min == 3) {
+		return "only 24-bit";
+	}
+	return "???";
+}
+
+int get_real_len(int min_len, int max_len, char modifier, int arg_min_len) {
+	if(modifier != 0) {
+		int given_len = getlenfromchar(modifier);
+		if(given_len < min_len || given_len > max_len)
+			asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(min_len, max_len), given_len*8);
+		return given_len;
+	} else {
+		if(arg_min_len > max_len) {
+			asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(min_len, max_len), arg_min_len*8);
+		}
+		// todo warn about widening when dpbase != 0
+		return std::max(arg_min_len, min_len);
+	}
+}
+
+void check_implicit_immediate(char modifier, const string& target) {
+	if(modifier != 0) return;
+	if(is_hex_constant(target.data())) return;
+	asar_throw_warning(2, warning_id_implicitly_sized_immediate);
+}
+
+template<int base, bool allow_imm = true>
+void the8(insn_context& arg) {
+	using K = addr_kind;
+	auto parse_result = parse_addr_kind<K::xind, K::s, K::abs, K::lind, K::imm, K::indy, K::ind, K::sy, K::x, K::y, K::lindy>(arg);
+	addr_kind kind = parse_result.first;
+	int min_len = 0, max_len = 4;
+	int64_t the_num = pass == 2 ? getnum(parse_result.second) : 0;
+	int arg_min_len = getlen(parse_result.second, kind == K::imm);
+	if(kind == K::xind || kind == K::s || kind == K::sy || kind == K::indy || kind == K::ind || kind == K::lind || kind == K::lindy) min_len = max_len = 1;
+	else if(kind == K::abs) min_len = 1, max_len = 3;
+	else if(kind == K::x) min_len = 1, max_len = 3;
+	else if(kind == K::y) min_len = max_len = 2;
+	else if(kind == K::imm) min_len = 1, max_len = 2;
+	if(kind == K::imm) check_implicit_immediate(arg.modifier, parse_result.second);
+	int real_len = get_real_len(min_len, max_len, arg.modifier, arg_min_len);
+	int opcode_offset = 0;
+	if(real_len == 1) {
+		if(kind == K::xind) opcode_offset = 0x1;
+		if(kind == K::s) opcode_offset = 0x3;
+		if(kind == K::abs) opcode_offset = 0x5;
+		if(kind == K::lind) opcode_offset = 0x7;
+		if(kind == K::imm) opcode_offset = 0x9;
+		if(kind == K::indy) opcode_offset = 0x11;
+		if(kind == K::ind) opcode_offset = 0x12;
+		if(kind == K::sy) opcode_offset = 0x13;
+		if(kind == K::x) opcode_offset = 0x15;
+		if(kind == K::lindy) opcode_offset = 0x17;
+	} else if(real_len == 2) {
+		if(kind == K::imm) opcode_offset = 0x9;
+		if(kind == K::abs) opcode_offset = 0xd;
+		if(kind == K::y) opcode_offset = 0x19;
+		if(kind == K::x) opcode_offset = 0x1d;
+	} else if(real_len == 3) {
+		if(kind == K::abs) opcode_offset = 0xf;
+		if(kind == K::x) opcode_offset = 0x1f;
+	}
+	write1(opcode_offset + base);
+	if(real_len == 1) write1(the_num);
+	else if(real_len == 2) write2(the_num);
+	else if(real_len == 3) write3(the_num);
+}
+
+template<int base, int accum_opc, bool is_bit = false>
+void thenext8(insn_context& arg) {
+	using K = addr_kind;
+	addr_kind kind;
+	string parsed_str;
+	if constexpr(is_bit) {
+		auto parse_result = parse_addr_kind<K::x, K::abs, K::imm>(arg);
+		kind = parse_result.first;
+		parsed_str = parse_result.second;
+	} else {
+		auto parse_result = parse_addr_kind<K::x, K::abs, K::imm, K::a, K::imp>(arg);
+		kind = parse_result.first;
+		parsed_str = parse_result.second;
+		// todo: some checks on arg.modifier here
+		if(kind == K::imm) {
+			// implied rep
+			int64_t rep_count = getnum(parsed_str);
+			if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			for (int64_t i=0;i<rep_count;i++) { write1(accum_opc); }
+			recent_opcode_num = accum_opc;
+			return;
+		}
+		if(kind == K::a || kind == K::imp) {
+			write1(accum_opc);
+			return;
+		}
+	}
+	int64_t the_num = pass == 2 ? getnum(parsed_str) : 0;
+	int arg_min_len = getlen(parsed_str, kind == K::imm);
+	int real_len = get_real_len(1, 2, arg.modifier, arg_min_len);
+	int opcode = 0;
+	if(kind == K::imm) {
+		check_implicit_immediate(arg.modifier, parsed_str);
+		opcode = accum_opc;
+	} else if(real_len == 1) {
+		if(kind == K::abs) opcode = base+0x6;
+		if(kind == K::x) opcode = base+0x16;
+	} else if(real_len == 2) {
+		if(kind == K::abs) opcode = base+0xe;
+		if(kind == K::x) opcode = base+0x1e;
+	}
+	write1(opcode);
+	if(real_len == 1) write1(the_num);
+	else if(real_len == 2) write2(the_num);
+}
+
+template<int base>
+void tsb_trb(insn_context& arg) {
+	using K = addr_kind;
+	auto parse_result = parse_addr_kind<K::abs>(arg);
+	int64_t the_num = pass == 2 ? getnum(parse_result.second) : 0;
+	int arg_min_len = getlen(parse_result.second, false);
+	int real_len = get_real_len(1, 2, arg.modifier, arg_min_len);
+	int opcode_offset = real_len == 1 ? 0x04 : 0x0c;
+	write1(opcode_offset + base);
+	if(real_len == 1) write1(the_num);
+	else if(real_len == 2) write2(the_num);
+}
+
+template<int opc, int width = 1>
+void branch(insn_context& arg) {
+	using K = addr_kind;
+	auto parse_result = parse_addr_kind<K::abs>(arg);
+	int64_t num = 0;
+	if(pass == 2) {
+		num = getnum(parse_result.second);
+		if(foundlabel) {
+			int64_t delta = num - (snespos + width + 1);
+			if((num & ~0xffff) != (snespos & ~0xffff)) {
+				// todo: should throw error "can't branch to different bank"
+				asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(delta).data());
+			}
+			if(width==1 && (delta < -128 || delta > 127)) {
+				asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(delta).data());
+			}
+			num = delta;
+		} else {
+			if(num & ~(width==2 ? 0xffff : 0xff)) {
+				asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(num).data());
+			}
+			num = (int16_t)(width==2 ? num : (int8_t)num);
+		}
+	}
+
+	write1(opc);
+	if(width == 1) write1(num);
+	else if(width == 2) write2(num);
+}
+
+template<int opc>
+void implied(insn_context& arg) {
+	if(arg.arg != "") {
+		// todo: some kind of "this instruction doesn't take an argument" message?
+		asar_throw_error(0, error_type_block, error_id_bad_addr_mode);
+	}
+	write1(opc);
+}
+
+template<int opc>
+void implied_rep(insn_context& arg) {
+	using K = addr_kind;
+	auto parse_result = parse_addr_kind<K::imm, K::imp>(arg);
+	if(parse_result.first == K::imp) {
+		write1(opc);
+	} else {
+		int64_t rep_count = getnum(parse_result.second);
+		if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+		for (int64_t i=0;i<rep_count;i++) { write1(opc); }
+		recent_opcode_num = rep_count;
+	}
+}
+
+template<int base, char op, char xy>
+void xy_ops(insn_context& arg) {
+	using K = addr_kind;
+	std::pair<addr_kind, string> parse_result;
+	if(op == 'S') { // stx
+		parse_result = parse_addr_kind<K::abs, (xy == 'X' ? K::y : K::x)>(arg);
+	} else if(op == 'L') { // ldx
+		parse_result = parse_addr_kind<K::abs, K::imm, (xy == 'X' ? K::y : K::x)>(arg);
+	} else { // cpx
+		parse_result = parse_addr_kind<K::abs, K::imm>(arg);
+	}
+	int64_t the_num = pass == 2 ? getnum(parse_result.second) : 0;
+	int arg_min_len = getlen(parse_result.second, false);
+	int real_len = get_real_len(1, 2, arg.modifier, arg_min_len);
+	int opcode = 0;
+	if(parse_result.first == K::imm) {
+		check_implicit_immediate(arg.modifier, parse_result.second);
+		opcode = base;
+	} else if(parse_result.first == K::abs) {
+		if(real_len == 1) opcode = base + 0x4;
+		else opcode = base + 0xc;
+	} else { // ,x or ,y
+		if(real_len == 1) opcode = base + 0x14;
+		else opcode = base + 0x1c;
+	}
+	write1(opcode);
+	if(real_len == 1) write1(the_num);
+	else if(real_len == 2) write2(the_num);
+}
+
+template<int opc>
+void interrupt(insn_context& arg) {
+	using K = addr_kind;
+	auto parse_result = parse_addr_kind<K::imm, K::imp>(arg);
+	if(parse_result.first == K::imp) {
+		write1(opc);
+		write1(0);
+	} else {
+		int64_t num = pass == 2 ? getnum(parse_result.second) : 0;
+		// this is kinda hacky
+		if(num < 0 || num > 255) asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(1, 1), num > 65535 ? 24 : 16);
+		write1(opc);
+		write1(num);
+	}
+}
+
+template<int opc, addr_kind k, int width>
+void oneoff(insn_context& arg) {
+	auto parse_result = parse_addr_kind<k>(arg);
+	int64_t the_num = pass == 2 ? getnum(parse_result.second) : 0;
+	int arg_min_len = getlen(parse_result.second, false);
+	// only for error checking, we know the answer anyways
+	get_real_len(width, width, arg.modifier, arg_min_len);
+	write1(opc);
+	if(width == 1) write1(the_num);
+	else if(width == 2) write2(the_num);
+	else if(width == 3) write3(the_num);
+}
+
+void stz(insn_context& arg) {
+	using K = addr_kind;
+	auto parse_result = parse_addr_kind<K::abs, K::x>(arg);
+	int64_t the_num = pass == 2 ? getnum(parse_result.second) : 0;
+	int arg_min_len = getlen(parse_result.second, false);
+	int real_len = get_real_len(1, 2, arg.modifier, arg_min_len);
+	if(real_len == 1) {
+		if(parse_result.first == K::abs) write1(0x64);
+		else if(parse_result.first == K::x) write1(0x74);
+		write1(the_num);
+	} else {
+		if(parse_result.first == K::abs) write1(0x9c);
+		else if(parse_result.first == K::x) write1(0x9e);
+		write2(the_num);
+	}
+}
+
+template<char which>
+void jmp_jsr_jml(insn_context& arg) {
+	using K = addr_kind;
+	auto parse_result = which == 'R' ? parse_addr_kind<K::abs, K::xind>(arg)
+		: which == 'P' ? parse_addr_kind<K::abs, K::xind, K::ind, K::lind>(arg)
+			: /* 'L' */ parse_addr_kind<K::abs, K::lind>(arg);
+	int64_t the_num = pass == 2 ? getnum(parse_result.second) : 0;
+	// set optimizeforbank to -1 (i.e. auto, assume DBR = current bank)
+	// because jmp and jsr's arguments are relative to the program bank anyways
+	int old_optimize = optimizeforbank;
+	if(parse_result.first == K::lind || parse_result.first == K::ind) {
+		// these ones for Some Reason always read the pointer from bank 0 lol
+		optimizeforbank = 0;
+	} else {
+		// the rest use bank K
+		optimizeforbank = -1;
+	}
+	int arg_min_len = getlen(parse_result.second, false);
+	optimizeforbank = old_optimize;
+	get_real_len(2, (which == 'L' && parse_result.first == K::abs) ? 3 : 2, arg.modifier, arg_min_len);
+	if(which == 'R') {
+		if(parse_result.first == K::abs) write1(0x20);
+		else if(parse_result.first == K::xind) write1(0xfc);
+	} else if(which == 'L') {
+		if(parse_result.first == K::abs) {
+			write1(0x5c);
+			write3(the_num);
+			return;
+		} else if(parse_result.first == K::lind) {
+			write1(0xdc);
+		}
+	} else {
+		if(parse_result.first == K::abs) write1(0x4c);
+		else if(parse_result.first == K::ind) write1(0x6c);
+		else if(parse_result.first == K::xind) write1(0x7c);
+		else if(parse_result.first == K::lind) write1(0xdc);
+	}
+	write2(the_num);
+}
+
+template<int opc>
+void mvn_mvp(insn_context& arg) {
+	int count;
+	autoptr<char**> parts = qpsplit(arg.arg.raw(), ',', &count);
+	if(count != 2) asar_throw_error(2, error_type_block, error_id_bad_addr_mode);
+	// todo length checks ???
+	write1(opc);
+	if(pass == 2) {
+		write1(getnum(parts[0]));
+		write1(getnum(parts[1]));
+	} else {
+		write2(0);
+	}
+}
+
+assocarr<void(*)(insn_context&)> mnemonics = {
+	{ "ora", the8<0x00> },
+	{ "and", the8<0x20> },
+	{ "eor", the8<0x40> },
+	{ "adc", the8<0x60> },
+	{ "sta", the8<0x80, false> },
+	{ "lda", the8<0xa0> },
+	{ "cmp", the8<0xc0> },
+	{ "sbc", the8<0xe0> },
+	{ "asl", thenext8<0x00, 0x0a> },
+	{ "bit", thenext8<0x1e, 0x89, true> },
+	{ "rol", thenext8<0x20, 0x2a> },
+	{ "lsr", thenext8<0x40, 0x4a> },
+	{ "ror", thenext8<0x60, 0x6a> },
+	{ "dec", thenext8<0xc0, 0x3a> },
+	{ "inc", thenext8<0xe0, 0x1a> },
+	{ "bcc", branch<0x90> },
+	{ "bcs", branch<0xb0> },
+	{ "beq", branch<0xf0> },
+	{ "bmi", branch<0x30> },
+	{ "bne", branch<0xd0> },
+	{ "bpl", branch<0x10> },
+	{ "bra", branch<0x80> },
+	{ "bvc", branch<0x50> },
+	{ "bvs", branch<0x70> },
+	{ "brl", branch<0x82, 2> },
+	{ "clc", implied<0x18> },
+	{ "cld", implied<0xd8> },
+	{ "cli", implied<0x58> },
+	{ "clv", implied<0xb8> },
+	{ "dex", implied_rep<0xca> },
+	{ "dey", implied_rep<0x88> },
+	{ "inx", implied_rep<0xe8> },
+	{ "iny", implied_rep<0xc8> },
+	{ "nop", implied_rep<0xea> },
+	{ "pha", implied<0x48> },
+	{ "phb", implied<0x8b> },
+	{ "phd", implied<0x0b> },
+	{ "phk", implied<0x4b> },
+	{ "php", implied<0x08> },
+	{ "phx", implied<0xda> },
+	{ "phy", implied<0x5a> },
+	{ "pla", implied<0x68> },
+	{ "plb", implied<0xab> },
+	{ "pld", implied<0x2b> },
+	{ "plp", implied<0x28> },
+	{ "plx", implied<0xfa> },
+	{ "ply", implied<0x7a> },
+	{ "rti", implied<0x40> },
+	{ "rtl", implied<0x6b> },
+	{ "rts", implied<0x60> },
+	{ "sec", implied<0x38> },
+	{ "sed", implied<0xf8> },
+	{ "sei", implied<0x78> },
+	{ "stp", implied<0xdb> },
+	{ "tax", implied<0xaa> },
+	{ "tay", implied<0xa8> },
+	{ "tcd", implied<0x5b> },
+	{ "tcs", implied<0x1b> },
+	{ "tdc", implied<0x7b> },
+	{ "tsc", implied<0x3b> },
+	{ "tsx", implied<0xba> },
+	{ "txa", implied<0x8a> },
+	{ "txs", implied<0x9a> },
+	{ "txy", implied<0x9b> },
+	{ "tya", implied<0x98> },
+	{ "tyx", implied<0xbb> },
+	{ "wai", implied<0xcb> },
+	{ "xba", implied<0xeb> },
+	{ "xce", implied<0xfb> },
+	{ "ldy", xy_ops<0xa0, 'L', 'Y'> },
+	{ "ldx", xy_ops<0xa2, 'L', 'X'> },
+	{ "cpy", xy_ops<0xc0, 'C', 'Y'> },
+	{ "cpx", xy_ops<0xe0, 'C', 'X'> },
+	{ "stx", xy_ops<0x82, 'S', 'X'> },
+	{ "sty", xy_ops<0x80, 'S', 'Y'> },
+	{ "cop", interrupt<0x02> },
+	{ "wdm", interrupt<0x42> },
+	{ "brk", interrupt<0x00> },
+	{ "tsb", tsb_trb<0x00> },
+	{ "trb", tsb_trb<0x10> },
+	{ "rep", oneoff<0xc2, addr_kind::imm, 1> },
+	{ "sep", oneoff<0xe2, addr_kind::imm, 1> },
+	{ "pei", oneoff<0xd4, addr_kind::ind, 1> },
+	{ "pea", oneoff<0xf4, addr_kind::abs, 2> },
+	{ "mvn", mvn_mvp<0x54> },
+	{ "mvp", mvn_mvp<0x44> },
+	{ "jsl", oneoff<0x22, addr_kind::abs, 3> },
+	{ "per", branch<0x62, 2> },
+	{ "stz", stz },
+	{ "jmp", jmp_jsr_jml<'P'> },
+	{ "jsr", jmp_jsr_jml<'R'> },
+	{ "jml", jmp_jsr_jml<'L'> },
+};
+
 
 bool asblock_65816(char** word, int numwords)
 {
 #define is(test) (!stricmpwithupper(word[0], test))
-//#define par word[1]
 	if(word[0][0] == '\'') return false;
 	string par;
 	for(int i = 1; i < numwords; i++){
 		if(i > 1) par += " ";
 		par += word[i];
 	}
-	unsigned int num;
-	int len=0;//declared here for A->generic fallback
-	bool explicitlen = false;
-	bool hexconstant = false;
-	if(0);
-#define getvars(optbank) num=(pass==2)?getnum(par):0; hexconstant=is_hex_constant(par); if (word[0][3]=='.') { len=getlenfromchar(word[0][4]); explicitlen=true; word[0][3]='\0'; } else {len=getlen(par, optbank); explicitlen=false;}
-#define match(left, right) (word[1] && stribegin(par, left) && striend(par, right))
-#define matchr(right) (word[1] && striend(par, right))
-#define matchl(left) (word[1] && stribegin(par, left))
-#define init(left, right) par.strip_suffix(right); par.strip_prefix(left); getvars(false)
-#define init_index(left, right) itrim(par, left, right); getvars(false)
-#define bankoptinit(left) par.strip_prefix(left); getvars(true)
-#define blankinit() len=1; explicitlen=false; num=0
-#define end() return false
-#define as0(    op, byte) if (is(op)          ) { write1((unsigned int)byte);              return true; }
-#define as1(    op, byte) if (len==1 && is(op)) { write1((unsigned int)byte); write1(num); return true; }
-#define as2(    op, byte) if (len==2 && is(op)) { write1((unsigned int)byte); write2(num); return true; }
-#define as3(    op, byte) if (len==3 && is(op)) { write1((unsigned int)byte); write3(num); return true; }
-//#define as23(   op, byte) if (is(op) && (len==2 || len==3)) { write1(byte); write2(num); return true; }
-#define as32(   op, byte) if (is(op) && ((len==2 && !explicitlen) || len==3)) { write1((unsigned int)byte); write3(num); return true; }
-#define as_a(   op, byte) if (is(op)) { if(!explicitlen && !hexconstant) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { write1(byte); write1(num); } \
-																					 else { write1((unsigned int)byte); write2(num); } return true; }
-#define as_xy(  op, byte) if (is(op)) { if(!explicitlen && !hexconstant) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { write1(byte); write1(num); } \
-																					 else {  write1((unsigned int)byte); write2(num); } return true; }
-#define as_rep( op, byte) if (is(op)) { if (pass<2) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } recent_opcode_num = num; return true; }
-#define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
-													if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
-													return true; }
-#define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+3); write1((unsigned int)byte); write2((unsigned int)pos);\
-											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
-											return true; }
-#define the8(offset, len) as##len("ORA", offset+0x00); as##len("AND", offset+0x20); as##len("EOR", offset+0x40); as##len("ADC", offset+0x60); \
-													as##len("STA", offset+0x80); as##len("LDA", offset+0xA0); as##len("CMP", offset+0xC0); as##len("SBC", offset+0xE0)
-#define thenext8(offset, len) as##len("ASL", offset+0x00); as##len("BIT", offset+0x1E); as##len("ROL", offset+0x20); as##len("LSR", offset+0x40); \
-															as##len("ROR", offset+0x60); as##len("LDY", offset+0x9E); as##len("DEC", offset+0xC0); as##len("INC", offset+0xE0)
-#define thefinal7(offset, len) as##len("TSB", offset+0x00); as##len("TRB", offset+0x10); as##len("STY", offset+0x80); as##len("STX", offset+0x82); \
-															 as##len("LDX", offset+0xA2); as##len("CPY", offset+0xC0); as##len("CPX", offset+0xE0)
-#define onlythe8(left, right, offset) else if (match(left, right)) do { init_index(left, right); the8(offset, 1); end(); } while(0)
-	else if ((strlen(word[0])!=3 && (strlen(word[0])!=5 || word[0][3]!='.'))) return false;
-	else if (numwords == 1)
-	{
-		blankinit();
-		as0("PHP", 0x08); as0("ASL", 0x0A); as0("PHD", 0x0B); as0("CLC", 0x18);
-		as0("INC", 0x1A); as0("TCS", 0x1B); as0("PLP", 0x28); as0("ROL", 0x2A);
-		as0("PLD", 0x2B); as0("SEC", 0x38); as0("DEC", 0x3A); as0("TSC", 0x3B);
-		as0("RTI", 0x40); as0("PHA", 0x48); as0("LSR", 0x4A); as0("PHK", 0x4B);
-		as0("CLI", 0x58); as0("PHY", 0x5A); as0("TCD", 0x5B); as0("RTS", 0x60);
-		as0("PLA", 0x68); as0("ROR", 0x6A); as0("RTL", 0x6B); as0("SEI", 0x78);
-		as0("PLY", 0x7A); as0("TDC", 0x7B); as0("DEY", 0x88); as0("TXA", 0x8A);//these tables are blatantly stolen from xkas
-		as0("PHB", 0x8B); as0("TYA", 0x98); as0("TXS", 0x9A); as0("TXY", 0x9B);
-		as0("TAY", 0xA8); as0("TAX", 0xAA); as0("PLB", 0xAB); as0("CLV", 0xB8);
-		as0("TSX", 0xBA); as0("TYX", 0xBB); as0("INY", 0xC8); as0("DEX", 0xCA);
-		as0("WAI", 0xCB); as0("CLD", 0xD8); as0("PHX", 0xDA); as0("STP", 0xDB);
-		as0("INX", 0xE8); as0("NOP", 0xEA); as0("XBA", 0xEB); as0("SED", 0xF8);
-		as0("PLX", 0xFA); as0("XCE", 0xFB);
-		as1("BRK", 0x00); as1("COP", 0x02); as1("WDM", 0x42);
-		//as0("DEA", 0x3A); as0("INA", 0x1A); as0("TAD", 0x5B); as0("TDA", 0x7B);//nobody cares about these, but keeping them does no harm
-		//as0("TAS", 0x1B); as0("TSA", 0x3B); as0("SWA", 0xEB);                  //actually, it does: it may make some users think it's correct.
-		end();
+	// todo handle code like `nop = $1234`
+	string opc = word[0];
+	for(int i = 0; i < opc.length(); i++) opc.raw()[i] = to_lower(opc[i]);
+	char mod = 0;
+	if(opc.length() >= 2 && opc[opc.length()-2] == '.') {
+		mod = opc[opc.length()-1];
+		opc.truncate(opc.length()-2);
 	}
-	else if (!stricmp(word[1], "A"))
-	{
-		blankinit();
-		as0("ASL", 0x0A); as0("LSR", 0x4A); as0("ROL", 0x2A); as0("ROR", 0x6A);
-		as0("INC", 0x1A); as0("DEC", 0x3A);
-		goto opAFallback;//yay goto
-	}
-	else if (matchl("#"))
-	{
-		bankoptinit('#');
-		as_a("ORA", 0x09); as_a("AND", 0x29); as_a("EOR", 0x49); as_a("ADC", 0x69);
-		as_a("BIT", 0x89); as_a("LDA", 0xA9); as_a("CMP", 0xC9); as_a("SBC", 0xE9);
-		as_xy("CPX", 0xE0); as_xy("CPY", 0xC0); as_xy("LDX", 0xA2); as_xy("LDY", 0xA0);
-		as_rep("ASL", 0x0A); as_rep("LSR", 0x4A); as_rep("ROL", 0x2A); as_rep("ROR", 0x6A);
-		as_rep("INC", 0x1A); as_rep("DEC", 0x3A); as_rep("INX", 0xE8); as_rep("DEX", 0xCA);
-		as_rep("INY", 0xC8); as_rep("DEY", 0x88); as_rep("NOP", 0xEA);
-		as1("REP", 0xC2); as1("SEP", 0xE2);
-		as1("BRK", 0x00); as1("COP", 0x02); as1("WDM", 0x42);
-		end();
-	}
-	onlythe8("(", ",s),y", 0x13);
-	onlythe8("[", "],y", 0x17);
-	onlythe8("(", "),y", 0x11);
-	onlythe8("", ",s", 0x03);
-	else if (match("[", "]"))
-	{
-		init('[', ']');
-		the8(0x07, 1);
-		as2("JMP", 0xDC); as2("JML", 0xDC);
-		end();
-	}
-	else if (match("(", ",x)"))
-	{
-		init_index("(", ",x)");
-		the8(0x01, 1);
-		as2("JMP", 0x7C); as2("JSR", 0xFC);
-		end();
-	}
-	else if (match("(", ")"))
-	{
-		init('(', ')');
-		the8(0x12, 1);
-		as1("PEI", 0xD4);
-		as2("JMP", 0x6C);
-		end();
-	}
-	else if (matchr(",x"))
-	{
-		init_index("", ",x");
-		if (match("(", ")")) asar_throw_warning(0, warning_id_65816_yy_x_does_not_exist);
-		the8(0x1F, 3);
-		the8(0x1D, 2);
-		the8(0x15, 1);
-		thenext8(0x16, 1);
-		thenext8(0x1E, 2);
-		as1("STZ", 0x74);
-		as1("STY", 0x94);
-		as2("STZ", 0x9E);
-		end();
-	}
-	else if (matchr(",y"))
-	{
-		init_index("", ",y");
-		as1("LDX", 0xB6);
-		as1("STX", 0x96);
-		as2("LDX", 0xBE);
-		if (len==1 && (is("ORA") || is("AND") || is("EOR") || is("ADC") || is("STA") || is("LDA") || is("CMP") || is("SBC")))
-		{
-			asar_throw_warning(0, warning_id_65816_xx_y_assume_16_bit, word[0]);
-			len=2;
-		}
-		the8(0x19, 2);
-		end();
-	}
-	else
-	{
-		if ((is("MVN") || is("MVP")))
-		{
-			int numargs;
-			autoptr<char**>param=qpsplit(par.temp_raw(), ',', &numargs);
-			if (numargs ==2)
-			{
-				write1(is("MVN")?(unsigned int)0x54:(unsigned int)0x44);
-				write1(pass==2?getnum(param[0]):0);
-				write1(pass==2?getnum(param[1]):0);
-				return true;
-			}
-		}
-		if (false)
-		{
-opAFallback:
-			snes_label tmp;
-			if (pass && !labelval(par, &tmp)) return false;
-			len=getlen(par);
-			num=tmp.pos;
-		}
-		if (is("JSR") || is("JMP"))
-		{
-			int tmp=optimizeforbank;
-			optimizeforbank=-1;
-			getvars(false)
-			optimizeforbank=tmp;
-		}
-		else
-		{
-			getvars(false)
-		}
-		the8(0x0F, 3);
-		the8(0x0D, 2);
-		the8(0x05, 1);
-		thenext8(0x06, 1);
-		thenext8(0x0E, 2);
-		thefinal7(0x04, 1);
-		thefinal7(0x0C, 2);
-		as1("STZ", 0x64);
-		as2("STZ", 0x9C);
-		as2("JMP", 0x4C);
-		as2("JSR", 0x20);
-		as32("JML", 0x5C);
-		as32("JSL", 0x22);
-		as2("MVN", 0x54);
-		as2("MVP", 0x44);
-		as2("PEA", 0xF4);
-		as_rel1("BRA", 0x80);
-		as_rel1("BCC", 0x90);
-		as_rel1("BCS", 0xB0);
-		as_rel1("BEQ", 0xF0);
-		as_rel1("BNE", 0xD0);
-		as_rel1("BMI", 0x30);
-		as_rel1("BPL", 0x10);
-		as_rel1("BVC", 0x50);
-		as_rel1("BVS", 0x70);
-		as_rel2("BRL", 0x82);
-		as_rel2("PER", 0x62);
-		end();
-	}
-	return false;
+	if(!mnemonics.exists(opc.data())) return false;
+	insn_context ctx{par, {}, mod};
+	ctx.orig_insn[0] = opc[0];
+	ctx.orig_insn[1] = opc[1];
+	ctx.orig_insn[2] = opc[2];
+	mnemonics.find(opc.data())(ctx);
+	return true;
 }

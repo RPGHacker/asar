@@ -282,6 +282,9 @@ enum asar_error_id : int
 	error_id_missing_org,
 	error_id_unclosed_block_comment,
 
+	error_id_bad_addr_mode,
+	error_id_bad_access_width,
+
 	error_id_end,
 	error_id_count = error_id_end - error_id_start - 1,
 };
