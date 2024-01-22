@@ -1,9 +1,21 @@
+;`+
 ;`AD 00 00 AF 00 00 7E
 ;`AD 00 00 A5 00
 ;`A5 00
 ;`AD 00 00 A5 00
 ;`AF 00 10 01 AD 00 10
-;`AD 00 10
+;`AD 00 10 AD 00 80 AF 00 80 01
+;`
+;`80000 53 54 41 52 26 00 D9 FF
+;`  AD 08 80  AF 00 00 00  AF 00 60 02
+;`  AD 00 00  AF 00 10 01  AF 00 60 02
+;`  AD 00 00  AD 00 10  AD 00 60  AF 00 80 00
+;`  AF 37 80 90
+;`53 54 41 52 16 00 E9 FF
+;`  AF 08 80 90  AD 37 80  AF 00 00 00
+;`  AF 00 00 7E
+;`  AF 00 00 7E  AF 00 60 02
+;`FFFFF 00
 
 ;1 line above = 1 block of code below
 ;namespace optimize_dp_flag {
@@ -54,6 +66,10 @@ struct test_7E
 	
 endstruct
 
+mirror = $026000
+nonmirror = $008000
+nonmirror01 = $018000
+
 base off
 ;test default asar optimization (bank only)
 lda test_00.test
@@ -80,3 +96,40 @@ lda test_7E.word
 
 optimize address mirrors
 lda test_word.up
+lda nonmirror
+lda nonmirror01
+
+freecode cleaned
+optimize dp none
+optimize address default
+freec:
+lda freec
+lda test_00.test
+lda mirror
+
+optimize address ram
+lda test_7E.test
+lda test_word.up
+lda mirror
+
+optimize address mirrors
+lda test_7E.test
+lda test_word.up
+lda mirror
+lda nonmirror
+
+lda freed
+
+freedata cleaned
+freed:
+optimize address default
+lda freec
+lda freed
+lda test_00.test
+
+optimize address ram
+lda test_7E.test
+
+optimize address mirrors
+lda test_7E.test
+lda mirror

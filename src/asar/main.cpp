@@ -158,7 +158,17 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 		asar_throw_warning(1, warning_id_xkas_label_access);
 	unsigned int bank = thislabel>>16;
 	unsigned int word = thislabel&0xFFFF;
-	unsigned int relaxed_bank = optimizeforbank < 0 ? 0 : optimizeforbank;
+	unsigned int relaxed_bank;
+	if(optimizeforbank >= 0) {
+		relaxed_bank = optimizeforbank;
+	} else {
+		if((insnespos & 0xff000000) == 0) {
+			relaxed_bank = insnespos >> 16;
+		} else {
+			if(freespace_is_freecode) relaxed_bank = 0;
+			else relaxed_bank = 0x40;
+		}
+	}
 	if (!exists)
 	{
 		if (!freespaced) freespaceextra++;
@@ -173,26 +183,37 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists)
 	{
 		return 1;
 	}
-	else if (optimize_address == optimize_address_flag::RAM && bank == 0x7E && word < 0x2000)
+	else if (
+		// if we should optimize ram accesses...
+		(optimize_address == optimize_address_flag::RAM || optimize_address == optimize_address_flag::MIRRORS)
+		// and we're in a bank with ram mirrors... (optimizeforbank=0x7E is checked later)
+		&& !(relaxed_bank & 0x40)
+		// and the label is in low RAM
+		&& bank == 0x7E && word < 0x2000)
 	{
 		return 2;
 	}
-	else if (optimize_address == optimize_address_flag::MIRRORS && (bank == relaxed_bank || (!(bank & 0x40) && !(relaxed_bank & 0x40))) && word < 0x2000)
-	{
-		return 2;
-	}
-	else if (optimize_address == optimize_address_flag::MIRRORS && !(bank & 0x40) && !(relaxed_bank & 0x40) && word < 0x8000)
+	else if (
+		// if we should optimize mirrors...
+		optimize_address == optimize_address_flag::MIRRORS
+		// we're in a bank with ram mirrors...
+		&& !(relaxed_bank & 0x40)
+		// and the label is in a mirrored section
+		&& !(bank & 0x40) && word < 0x8000)
 	{
 		return 2;
 	}
 	else if (optimizeforbank>=0)
 	{
+		// if optimizing for a specific bank:
+		// if the label is in freespace, never optimize
 		if ((unsigned int)thislabel&0xFF000000) return 3;
 		else if (bank==(unsigned int)optimizeforbank) return 2;
 		else return 3;
 	}
 	else if ((unsigned int)(thislabel|insnespos)&0xFF000000)
 	{
+		// optimize only if the label is in the same freespace
 		if ((unsigned int)(thislabel^insnespos)&0xFF000000) return 3;
 		else return 2;
 	}

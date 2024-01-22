@@ -106,6 +106,7 @@ extern int numtrue;
 extern bool emulatexkas;
 
 extern int freespaceextra;
+extern bool freespace_is_freecode;
 
 extern assocarr<snes_label> labels;
 

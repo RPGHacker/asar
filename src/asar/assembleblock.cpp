@@ -582,6 +582,7 @@ static int freespaceidnext;
 static int freespaceid;
 static int freespacestart;
 int freespaceextra;
+bool freespace_is_freecode;
 
 static bool freespaceleak[256];
 static string freespacefile[256];
@@ -1943,6 +1944,7 @@ void assembleblock(const char * block, bool isspecialline)
 		freespaceend();
 		freespaceid=getfreespaceid();
 		freespacebyte[freespaceid] = fsbyte;
+		freespace_is_freecode = (useram != 0);
 		if (pass==0) snespos=(freespaceid<<24)|0x8000;
 		if (pass==1)
 		{
