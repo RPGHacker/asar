@@ -1808,7 +1808,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		if (!stricmp(par, "noassume"))
 		{
-			optimizeforbank=0x100;
+			optimizeforbank=0x140;
 			return;
 		}
 		unsigned int num=getnum(par);

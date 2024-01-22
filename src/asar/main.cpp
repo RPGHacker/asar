@@ -358,6 +358,7 @@ static int getlenforlabel(snes_label thislabel, bool exists)
 {
 	unsigned int bank = thislabel.pos>>16;
 	unsigned int word = thislabel.pos&0xFFFF;
+	bool lblfreespace = thislabel.freespace_id > 0;
 	unsigned int relaxed_bank;
 	if(optimizeforbank >= 0) {
 		relaxed_bank = optimizeforbank;
@@ -389,7 +390,7 @@ static int getlenforlabel(snes_label thislabel, bool exists)
 		// and we're in a bank with ram mirrors... (optimizeforbank=0x7E is checked later)
 		&& !(relaxed_bank & 0x40)
 		// and the label is in low RAM
-		&& bank == 0x7E && word < 0x2000)
+		&& bank == 0x7E && word < 0x2000 && !lblfreespace)
 	{
 		return 2;
 	}
@@ -399,7 +400,7 @@ static int getlenforlabel(snes_label thislabel, bool exists)
 		// we're in a bank with ram mirrors...
 		&& !(relaxed_bank & 0x40)
 		// and the label is in a mirrored section
-		&& !(bank & 0x40) && word < 0x8000)
+		&& !(bank & 0x40) && word < 0x8000 && !lblfreespace)
 	{
 		return 2;
 	}
