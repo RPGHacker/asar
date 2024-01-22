@@ -358,7 +358,19 @@ static int getlenforlabel(snes_label thislabel, bool exists)
 {
 	unsigned int bank = thislabel.pos>>16;
 	unsigned int word = thislabel.pos&0xFFFF;
-	unsigned int relaxed_bank = optimizeforbank < 0 ? 0 : optimizeforbank;
+	unsigned int relaxed_bank;
+	if(optimizeforbank >= 0) {
+		relaxed_bank = optimizeforbank;
+	} else {
+		if(freespaceid == 0) {
+			relaxed_bank = snespos >> 16;
+		} else {
+			int target_bank = freespaces[freespaceid].bank;
+			if(target_bank == -2) relaxed_bank = 0;
+			else if(target_bank == -1) relaxed_bank = 0x40;
+			else relaxed_bank = target_bank;
+		}
+	}
 	if (!exists)
 	{
 		return 2;
@@ -371,26 +383,37 @@ static int getlenforlabel(snes_label thislabel, bool exists)
 	{
 		return 1;
 	}
-	else if (optimize_address == optimize_address_flag::RAM && bank == 0x7E && word < 0x2000)
+	else if (
+		// if we should optimize ram accesses...
+		(optimize_address == optimize_address_flag::RAM || optimize_address == optimize_address_flag::MIRRORS)
+		// and we're in a bank with ram mirrors... (optimizeforbank=0x7E is checked later)
+		&& !(relaxed_bank & 0x40)
+		// and the label is in low RAM
+		&& bank == 0x7E && word < 0x2000)
 	{
 		return 2;
 	}
-	else if (optimize_address == optimize_address_flag::MIRRORS && (bank == relaxed_bank || (!(bank & 0x40) && !(relaxed_bank & 0x40))) && word < 0x2000)
-	{
-		return 2;
-	}
-	else if (optimize_address == optimize_address_flag::MIRRORS && !(bank & 0x40) && !(relaxed_bank & 0x40) && word < 0x8000)
+	else if (
+		// if we should optimize mirrors...
+		optimize_address == optimize_address_flag::MIRRORS
+		// we're in a bank with ram mirrors...
+		&& !(relaxed_bank & 0x40)
+		// and the label is in a mirrored section
+		&& !(bank & 0x40) && word < 0x8000)
 	{
 		return 2;
 	}
 	else if (optimizeforbank>=0)
 	{
+		// if optimizing for a specific bank:
+		// if the label is in freespace, never optimize
 		if (thislabel.freespace_id > 0) return 3;
 		else if (bank==(unsigned int)optimizeforbank) return 2;
 		else return 3;
 	}
 	else if (thislabel.freespace_id > 0 || freespaceid > 0)
 	{
+		// optimize only if the label is in the same freespace
 		// TODO: check whether they're pinned to the same bank
 		if (thislabel.freespace_id != freespaceid) return 3;
 		else return 2;

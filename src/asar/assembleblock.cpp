@@ -293,48 +293,7 @@ autoarray<string> namespace_list;
 
 autoarray<string> includeonce;
 
-// data necessary for one freespace block
-struct freespace_data {
-	// snespos of the start of the freespace block. set to the found freespace
-	// block during the `freespace` command in pass 1.
-	int pos;
-	// length of the freespace block
-	int len;
-	// whether this freespace is leaked (no autocleans pointing at it)
-	bool leaked;
-	// position of the previous version of this freespace
-	int orgpos;
-	// length of previous version
-	int orglen;
-	// whether this freespace is static, i.e. can't be relocated when reinserting
-	bool is_static;
-	// what byte to use when searching for freespace, and clearing out previous rats tags
-	unsigned char cleanbyte;
-
-	// options only used for finding freespace:
-
-	// if this freespace is pinned to another one, this holds the name of the label of the target.
-	// we can't resolve this into a freespace number earlier since it could be a forward reference.
-	// we also need to keep the current namespace around since this is necessary for resolving label references.
-	string pin_target;
-	string pin_target_ns;
-	// computed at the end of pass 0. this is the freespace id of the final pin
-	// target, in case of multiple "nested" pins or whatnot.
-	int pin_target_id;
-	// what address to start searching for freespace at
-	int search_start;
-	// what bank to search for freespace in: -1 for any bank, -2 for banks with
-	// code mirrors, positive for specific bank
-	int bank;
-	bool write_rats;
-	// should rework this...
-	bool flag_align;
-	// pinned freespaces: how much space is actually needed for this freespace
-	int total_len;
-	// pinned freespaces: how much of this block we've already used
-	int used_len;
-};
-static autoarray<freespace_data> freespaces;
+autoarray<freespace_data> freespaces;
 
 // id of the next unused freespace.
 static int freespaceidnext;
