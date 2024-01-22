@@ -1,4 +1,3 @@
-#include <string>
 #include "asar.h"
 #include "assembleblock.h"
 #include "asar_math.h"
@@ -39,7 +38,7 @@ struct insn_context {
 // checks for matching characters at the start of haystack, ignoring spaces.
 // returns index into haystack right after the match
 template<char... chars>
-ssize_t startmatch(const string& haystack) {
+int64_t startmatch(const string& haystack) {
 	static const char needle[] = {chars...};
 	size_t haystack_i = 0;
 	for(size_t i = 0; i < sizeof...(chars); i++) {
@@ -52,10 +51,10 @@ ssize_t startmatch(const string& haystack) {
 // checks for matching characters at the end of haystack, ignoring spaces.
 // returns index into haystack right before the match
 template<char... chars>
-ssize_t endmatch(const string& haystack) {
+int64_t endmatch(const string& haystack) {
 	static const char needle[] = {chars...};
-	ssize_t haystack_i = haystack.length()-1;
-	for(ssize_t i = sizeof...(chars)-1; i >= 0; i--) {
+	int64_t haystack_i = haystack.length()-1;
+	for(int64_t i = sizeof...(chars)-1; i >= 0; i--) {
 		while(haystack_i >= 0 && haystack[haystack_i] == ' ') haystack_i--;
 		if(haystack_i < 0 || needle[i] != to_lower(haystack[haystack_i--])) return -1;
 	}
@@ -69,7 +68,7 @@ ssize_t endmatch(const string& haystack) {
 // i still don't like this function...
 template<addr_kind... allowed_kinds>
 std::pair<addr_kind, string> parse_addr_kind(insn_context& arg) {
-	ssize_t start_i = 0, end_i = arg.arg.length();
+	int64_t start_i = 0, end_i = arg.arg.length();
 // If this addressing kind is allowed, return it, along with a trimmed version of the string.
 #define RETURN_IF_ALLOWED(kind) \
 		if constexpr(((allowed_kinds == addr_kind::kind) || ...)) { \
