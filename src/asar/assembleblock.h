@@ -139,8 +139,6 @@ extern int realstartpos;
 
 extern int bytes;
 
-extern int numopcodes;
-
 extern int numif;
 extern int numtrue;
 

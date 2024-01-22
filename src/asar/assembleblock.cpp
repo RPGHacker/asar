@@ -193,8 +193,6 @@ inline void write1_65816(unsigned int num)
 	ratsmetastate=ratsmeta_ban;
 }
 
-int recent_opcode_num = 0;
-
 void write1_pick(unsigned int num)
 {
 	write1_65816(num);
@@ -202,8 +200,6 @@ void write1_pick(unsigned int num)
 
 static bool asblock_pick(char** word, int numwords)
 {
-	recent_opcode_num = 1;
-
 	if (arch==arch_spc700 || in_spcblock) return asblock_spc700(word, numwords);
 	if (arch==arch_65816) return asblock_65816(word, numwords);
 	if (arch==arch_superfx) return asblock_superfx(word, numwords);
@@ -630,8 +626,6 @@ static void freespaceend()
 	freespaceid = 0;
 }
 
-int numopcodes;
-
 static void adddefine(const string & key, string & value)
 {
 	if (!defines.exists(key)) defines.create(key) = value;
@@ -679,7 +673,6 @@ void initstuff()
 	realstartpos= (int)0xFFFFFFFF;
 	freespaceidnext=1;
 	freespaceid=0;
-	numopcodes=0;
 	incsrcdepth = 0;
 
 	optimizeforbank = -1;
@@ -1203,7 +1196,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (asblock_pick(word, numwords))
 	{
 		add_addr_to_line(addrToLinePos);
-		numopcodes += recent_opcode_num;
 	}
 	else if (numwords > 1 && (is("db") || is("dw") || is("dl") || is("dd")))
 	{

@@ -4,7 +4,6 @@
 #include "asar_math.h"
 
 #define write1 write1_pick
-extern int recent_opcode_num;
 
 void asinit_65816()
 {
@@ -238,7 +237,6 @@ void thenext8(insn_context& arg) {
 			int64_t rep_count = getnum(parsed_str);
 			if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 			for (int64_t i=0;i<rep_count;i++) { write1(accum_opc); }
-			recent_opcode_num = accum_opc;
 			return;
 		}
 		if(kind == K::a || kind == K::imp) {
@@ -327,7 +325,6 @@ void implied_rep(insn_context& arg) {
 		int64_t rep_count = getnum(parse_result.second);
 		if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		for (int64_t i=0;i<rep_count;i++) { write1(opc); }
-		recent_opcode_num = rep_count;
 	}
 }
 
