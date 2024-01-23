@@ -67,6 +67,7 @@
 			<li>Fixed some phantom errors when using forward labels. (randomdude999)</li>
 			<li>Asar should now allow as much recursion as system resources allow, and then throw a nice error instead of crashing. (Atari2.0, randomdude999, p4plus2)</li>
 			<li><code>optimize address</code> now works a bit more consistently (new behavior also properly documented in manual). (randomdude999)</li>
+			<li><code>freespacebyte</code> command to set the byte value used for searching for freespace and expanding the ROM. (randomdude999)</li>
 		</ul></div>
 
 		<h3>Deprecated features:</h3>
@@ -100,6 +101,7 @@
 			<li>Comments starting with <code>;[[</code> : These mark the start of block comments in Asar 2.0, so either remove the <code>[[</code> for the time being, or make the commented line end with a <code>]]</code>.</li>
 			<li>Using <code>A</code> as a label name ambiguously, e.g. <code>lda a</code>: in Asar 2 this will be interpreted as trying to use the "A" addressing mode, and will give an error. You can use <code>A+0</code> if you really must refer to the label as is.</li>
 			<li>The <code class="65c816_asar">startpos</code> command of the <code>spc700-inline</code> architecture: use the optional <code>execute</code> argument to <code>endspcblock</code> instead.</li>
+			<li>Specifying the byte to use for freespace like <code>freecode $ff</code>. Use the new separate <code>freespacebyte</code> command for it.</li>
 		</ul></div>
 
 		<hr />

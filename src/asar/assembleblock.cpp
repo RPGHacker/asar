@@ -181,7 +181,10 @@ inline void write1_65816(unsigned int num)
 			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)realsnespos).data());
 		}
 		writeromdata_byte(pcpos, (unsigned char)num);
-		if (pcpos>=romlen) romlen=pcpos+1;
+		if (pcpos>=romlen) {
+			if(pcpos - romlen > 0) writeromdata_bytes(romlen, default_freespacebyte, pcpos - romlen);
+			romlen=pcpos+1;
+		}
 	}
 	step(1);
 	ratsmetastate=ratsmeta_ban;
@@ -719,6 +722,7 @@ void initstuff()
 	freespaceidnext=1;
 	freespaceid=1;
 	freespaceextra=0;
+	default_freespacebyte=0x00;
 	numopcodes=0;
 	specifiedasarver = false;
 	incsrcdepth = 0;
@@ -1913,7 +1917,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("freecode")) parstr=STR"ram,"+parstr;
 		if (is("freedata")) parstr=STR"noram,"+parstr;
 		autoptr<char**> pars=split(parstr.temp_raw(), ",");
-		unsigned char fsbyte = 0x00;
+		unsigned char fsbyte = default_freespacebyte;
 		int useram=-1;
 		bool fixedpos=false;
 		bool align=false;
@@ -1949,6 +1953,7 @@ void assembleblock(const char * block, bool isspecialline)
 			}
 			else
 			{
+				asar_throw_warning(0, warning_id_feature_deprecated, "specifying the freespacebyte in the freespace command", "use the separate freespacebyte command");
 				fsbyte = (unsigned char)getnum(pars[i]);
 			}
 		}
@@ -2091,7 +2096,12 @@ void assembleblock(const char * block, bool isspecialline)
 			}
 			else asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 		}
-		else if (pass==0) removerats((int)getnum(word[1]), 0x00);
+		else if (pass==0) removerats((int)getnum(word[1]), default_freespacebyte);
+	}
+	else if (is1("freespacebyte"))
+	{
+		default_freespacebyte = getnum(word[1]);
+		if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 	}
 	else if (is0("pushpc"))
 	{

@@ -12,6 +12,7 @@ const unsigned char * romdata= nullptr; // NOTE: Changed into const to prevent d
 int romlen;
 static bool header;
 static FILE * thisfile;
+unsigned char default_freespacebyte;
 
 asar_error_id openromerror;
 
@@ -264,16 +265,19 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 			else if (romlen==0x080000)
 			{
 				romlen=0x100000;
+				writeromdata_bytes(0x080000, default_freespacebyte, 0x80000);
 				writeromdata_byte(snestopc(0x00FFD7), 0x0A);
 			}
 			else if (romlen==0x100000)
 			{
 				romlen=0x200000;
+				writeromdata_bytes(0x080000, default_freespacebyte, 0x100000);
 				writeromdata_byte(snestopc(0x00FFD7), 0x0B);
 			}
 			else if (isforcode) return -1;//no point creating freespace that can't be used
 			else if (romlen==0x200000 || romlen==0x300000)
 			{
+				writeromdata_bytes(romlen, default_freespacebyte, 0x400000 - romlen);
 				romlen=0x400000;
 				writeromdata_byte(snestopc(0x00FFD7), 0x0C);
 			}
@@ -340,6 +344,7 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 		if (autoexpand && nextbank>=0)
 		{
 			unsigned char x7FD7[]={0, 0x0A, 0x0B, 0x0C, 0x0C, 0x0D, 0x0D, 0x0D, 0x0D};
+			writeromdata_bytes(romlen, default_freespacebyte, nextbank + 0x100000 - romlen);
 			romlen=nextbank+0x100000;
 			writeromdata_byte(0x7FD7, x7FD7[romlen>>20]);
 			autoexpand=false;
