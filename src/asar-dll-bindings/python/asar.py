@@ -69,6 +69,11 @@ class writtenblockdata(ctypes.Structure):
         return "<written block ${:06x} 0x{:x} size:{}>".format(
             self.snesoffset, self.pcoffset, self.numbytes)
 
+    def __eq__(self, other):
+        return (self.pcoffset == other.pcoffset
+                and self.snesoffset == other.snesoffset
+                and self.numbytes == other.numbytes)
+
 
 # internal use only. patch() accepts a dict.
 class _memoryfile(ctypes.Structure):

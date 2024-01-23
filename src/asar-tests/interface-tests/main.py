@@ -157,11 +157,19 @@ class TestAsarDLL(unittest.TestCase):
                     org $018000 : db 1,2,3
                     """)
         self.assertTrue(out[0])
-        blocks = []
-        for blk in asar.getwrittenblocks():
-            blocks.append((blk.pcoffset, blk.snesoffset, blk.numbytes))
-        self.assertEqual(blocks, [(0, 0x808000, 8), (0x20, 0x808020, 3),
-                    (0x7fdc, 0x80ffdc, 4), (0x7fff, 0x80ffff, 1), (0x8000, 0x818000, 3)])
+        wb = asar.writtenblockdata
+        self.assertEqual(asar.getwrittenblocks(), [wb(0, 0x808000, 8), wb(0x20, 0x808020, 3),
+                    wb(0x7fdc, 0x80ffdc, 4), wb(0x7fff, 0x80ffff, 1), wb(0x8000, 0x818000, 3)])
+
+    def testWrittenBlocks2(self):
+        out = self.patchSingle(b"""
+            hirom
+            org $40ffff : db $01
+            org $410000 : db $02
+            """, override_checksum=False)
+        self.assertTrue(out[0])
+        wb = asar.writtenblockdata
+        self.assertEqual(asar.getwrittenblocks(), [wb(0xffff, 0xc0ffff, 1), wb(0x10000, 0xc10000, 1)])
 
     def testErrFormat(self):
         out = self.patchSingle(b"error \"err or! \", hex(1+1)\nblah")
