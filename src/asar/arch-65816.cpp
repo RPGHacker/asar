@@ -282,7 +282,8 @@ void branch(insn_context& ctx) {
 	if(pass == 2) {
 		num = getnum(parsed.arg);
 		if(foundlabel) {
-			int64_t delta = num - (snespos + width + 1);
+			// cast delta to signed 16-bit, this makes it possible to handle bank-border-wrapping automatically
+			int16_t delta = num - (snespos + width + 1);
 			if((num & ~0xffff) != (snespos & ~0xffff)) {
 				// todo: should throw error "can't branch to different bank"
 				asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(delta).data());
