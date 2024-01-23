@@ -34,6 +34,8 @@
 			<li>Freespaces have a bunch of new features which make them more useful outside of SMW hacking - new options for disabling RATS tags, looking for code in a specific bank or a specific part of ROM. Along with this, freespace allocation should now be a bit more efficient, and the 125 freespace limit has been lifted. (randomdude999)</li>
 			<li>Allowed spaces in math. (p4plus2)</li>
 			<li>A struct can now be used directly like a regular label. (p4plus2)</li>
+			<li>Greatly improved "invalid instruction" errors, which now tell you when an addressing mode doesn't exist for the current instruction, instead of saying "unknown command" for everything. (randomdude999)</li>
+			<li><code>autoclean</code> can now be used with more instructions, allowing such contraptions as <code>autoclean cmp label,x</code> if desired. (randomdude999)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
@@ -42,6 +44,7 @@
 			<li>Using <code>org $xxxxxx : db $00</code> to expand the ROM to a specific size will now allow the freespace finder to use the newly created space. (randomdude999)</li>
 			<!-- too minor to include? <li>Fixed a bug with macro calls that would sometimes ignore trailing garbage on the line with the call. (randomdude999)</li> -->
 			<li>In <code>norom</code>, using <code>base</code> will now no longer give bank cross errors for the "real" position, since there are no real banks in norom. (randomdude999)</li>
+			<li>Better branch instruction handling: some legal but previously rejected branches (especially wrapping around bank borders) are now accepted, and some illegal branches are now properly rejected. (binary1230)</li>
 			<li>A bunch more bugfixes and crash fixes that are too minor to list here</li>
 		</ul>
 
