@@ -130,6 +130,7 @@
 				<a href="#freespace">Freespace</a>
 				<ul>
 					<li><a href="#freecode">freespace/freecode/freedata</a></li>
+					<li><a href="#freespacebyte">freespacebyte</a></li>
 					<li><a href="#autoclean">autoclean</a></li>
 					<li><a href="#prot">prot</a></li>
 				</ul>
@@ -3095,7 +3096,7 @@ jsl MyOtherRoutine
 			</tr>
 			<tr>
 				<td><code>value</code></td>
-				<td>A number literal or math statement specifying the byte value to look for when searching for freespace (default: $00). To find freespace, Asar will look for continuous areas of this value. When using autoclean on this freespace, this is also the value the area will be cleaned to.</td>
+				<td>A number literal or math statement specifying the byte value to look for when searching for freespace (default: $00). To find freespace, Asar will look for continuous areas of this value. When using autoclean on this freespace, this is also the value the area will be cleaned to. Note that specifying the byte like this is deprecated. You should use the separate <code>freespacebyte</code> command instead.</td>
 			</tr>
 		</table><br/>
 		The freecode command is an alias of <code>freespace ram</code>, whreas the freedata command is an alias of <code>freespace noram</code>. There are a few things to note when working with freespace in Asar. First of all, if Asar places two freespace areas within the same bank, it will use 24-bit addressing in cases where they reference each other, despite 16-bit addressing being possible in theory. This can be worked around by only using a single freespace area instead. It's not recommended to explicitly use 16-bit addressing in these cases as the two freespace areas are not guaranteed to always end up in the same bank for all users. Secondly, when Asar places two freespace areas close to each other, a few bytes will be wasted between them for technical reasons. In most practical scenarios, the amount of wasted space should be reasonably small (&lt; 1% of the code size), nevertheless this once again can be worked around by only using a single freespace area instead. Lastly, the number of freespace areas a single Asar patch can place is limited to a maximum of 125.
@@ -3117,6 +3118,9 @@ MyNewCode:
 	sta $1F
 	
 	rtl</code></pre>
+		<h4 id="freespacebyte">freespacebyte</h4>
+		<pre><code class="65c816_asar">freespacebyte {value}</code></pre>
+		This command sets the byte which Asar considers to be free space. This value will be used for searching for freespace, as padding when resizing the ROM, or when cleaning up old freespaces.
 		<h4 id="autoclean">autoclean</h4>
 		<pre><code class="65c816_asar">autoclean jml/jsl/lda/cmp/.../dl {label}</code></pre>
 		<pre><code class="65c816_asar">autoclean {snes_address}</code></pre>

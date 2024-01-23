@@ -61,7 +61,7 @@ struct spcblock_data{
 	spcblock_type type;
 	string macro_name;
 
-	unsigned int execute_address;
+	unsigned int execute_address;	// Can be removed in Asar 2.0
 	unsigned int size_address;
 	mapper_t old_mapper;
 }spcblock;
@@ -181,7 +181,10 @@ inline void write1_65816(unsigned int num)
 			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
 		}
 		writeromdata_byte(pcpos, (unsigned char)num, freespaceid != 0);
-		if (pcpos>=romlen) romlen=pcpos+1;
+		if (pcpos>=romlen) {
+			if(pcpos - romlen > 0) writeromdata_bytes(romlen, default_freespacebyte, pcpos - romlen);
+			romlen=pcpos+1;
+		}
 	}
 	if(pass == 1 && freespaceid == 0) {
 		int pcpos = snestopc(realsnespos & 0xFFFFFF);
@@ -673,6 +676,7 @@ void initstuff()
 	realstartpos= (int)0xFFFFFFFF;
 	freespaceidnext=1;
 	freespaceid=0;
+	default_freespacebyte=0x00;
 	incsrcdepth = 0;
 
 	optimizeforbank = -1;
@@ -1714,7 +1718,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		ns = STR":SPCBLOCK:_" + ns_backup;
 		in_spcblock = true;
 	}
-	else if(is0("endspcblock"))
+	else if(is("endspcblock"))
 	{
 		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_endspcblock_without_spcblock);
 
@@ -1729,8 +1733,19 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 					writeromdata_byte(pcpos, (unsigned char)num);
 					writeromdata_byte(pcpos+1, (unsigned char)(num >> 8));
 				}
-				if(spcblock.execute_address != -1u)
+				if (numwords == 3)
 				{
+					if (strcmp(par, "execute")) asar_throw_error(0, error_type_block, error_id_invalid_endspcblock_arg, par);
+					write2(0x0000);
+					write2((unsigned int)getnum(word[2]));
+				}
+				else if (numwords != 1)
+				{
+					asar_throw_error(0, error_type_block, error_id_unknown_endspcblock_format);
+				}
+				else if(spcblock.execute_address != -1u)
+				{
+					// Legacy case, will be removed with Asar 2.0.
 					write2(0x0000);
 					write2((unsigned int)spcblock.execute_address);
 				}
@@ -1745,6 +1760,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		ns = ns_backup;
 		in_spcblock = false;
 	}
+	// Remember to also remove execute_address entirely from spcblock once removing this deprecated command.
 	else if (is1("startpos"))
 	{
 		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_startpos_without_spcblock);
@@ -1845,7 +1861,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (is("freedata")) parstr=STR"noram,"+parstr;
 		if (is("segment")) parstr = STR "norats," + parstr;
 		autoptr<char**> pars=split(parstr.temp_raw(), ',');
-		unsigned char fsbyte = 0x00;
+		unsigned char fsbyte = default_freespacebyte;
 		bool fixedpos=false;
 		bool align=false;
 		bool leakwarn=true;
@@ -2024,8 +2040,12 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 			}
 		}
-		// weird gotcha: we don't know the freespace id here, so we don't know what clean_byte to use
-		else if (pass==0) removerats((int)getnum(word[1]), 0x00);
+		else if (pass==0) removerats((int)getnum(word[1]), default_freespacebyte);
+	}
+	else if (is1("freespacebyte"))
+	{
+		default_freespacebyte = getnum(word[1]);
+		if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 	}
 	else if (is0("pushpc"))
 	{
