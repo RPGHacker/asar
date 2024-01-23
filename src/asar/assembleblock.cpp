@@ -182,7 +182,7 @@ inline void write1_65816(unsigned int num)
 		}
 		writeromdata_byte(pcpos, (unsigned char)num);
 		if (pcpos>=romlen) {
-			if(pcpos - romlen > 0) writeromdata_bytes(romlen, default_freespacebyte, pcpos - romlen);
+			if(pcpos - romlen > 0) writeromdata_bytes(romlen, default_freespacebyte, pcpos - romlen, false);
 			romlen=pcpos+1;
 		}
 	}

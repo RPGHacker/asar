@@ -27,7 +27,7 @@ extern int sa1banks[8];//only 0, 1, 4, 5 are used
 
 void writeromdata(int pcoffset, const void * indata, int numbytes);
 void writeromdata_byte(int pcoffset, unsigned char indata);
-void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes);
+void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes, bool add_write = true);
 
 struct writtenblockdata {
 	int pcoffset;
