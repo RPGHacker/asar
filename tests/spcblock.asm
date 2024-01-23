@@ -20,6 +20,6 @@ start:
 	jmp lab
 lab:
 	mov $11,#$22
-endspcblock start
+endspcblock execute start
 
 lda #$BB

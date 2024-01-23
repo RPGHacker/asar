@@ -253,6 +253,8 @@ enum asar_error_id : int
 	error_id_spcblock_macro_invalid_static_args,
 	error_id_spcblock_custom_types_incomplete,
 	error_id_startpos_without_spcblock,
+	error_id_invalid_endspcblock_arg,
+	error_id_unknown_endspcblock_format,
 	error_id_internal_error,
 
 	error_id_pushns_without_pullns,
