@@ -3118,13 +3118,13 @@ MyNewCode:
 	
 	rtl</code></pre>
 		<h4 id="autoclean">autoclean</h4>
-		<pre><code class="65c816_asar">autoclean jml/jsl/dl {label}</code></pre>
+		<pre><code class="65c816_asar">autoclean jml/jsl/lda/cmp/.../dl {label}</code></pre>
 		<pre><code class="65c816_asar">autoclean {snes_address}</code></pre>
 		The autoclean command makes it possible for Asar to automatically clean up and reuse all of the freespace allocated by a patch when applying that patch again. The purpose of this is to prevent freespace leaks. Normally, applying a patch including a freespace (or similar) command to the same ROM multiple times would allocate a new freespace area each time. Since Asar automatically protects allocated freespace via RATS tags, all freespace areas previously allocated by the same patch would leak and become unusable, making the output ROM run out of freespace eventually. The autoclean command can prevent this by freeing up freespace areas previously allocated by the patch before allocating new ones. How it accomplishes this depends on how it is used:
 		<ul>
 			<li>
-				<b>When used with a <code>jml</code> or <code>jsl</code>:</b><br/>
-				The <code>label</code> parameter must be a label pointing to inside a freespace area. When the patch is applied and the autoclean is encountered, Asar checks whether the output ROM contains a jml/jsl at the current pc. If it does, Asar checks whether the jml/jsl points to the expanded area of the ROM (banks $10+). If it does, Asar checks whether the jml/jsl points to an area protected by a RATS tag (including the RATS tag itself). If it does, Asar cleans up that area and removes the RATS tag.
+				<b>When used with an assembly instruction (most commonly <code>jml</code> or <code>jsl</code>):</b><br/>
+				The <code>label</code> parameter must be a label pointing to inside a freespace area. The instruction can be any instruction that supports long (24-bit) addressing. When the patch is applied and the autoclean is encountered, Asar checks whether the output ROM contains the same instruction at the current pc. If it does, and the instruction points into a freespace area with a valid RATS tag, the RATS tag is removed along with its contents.
 			</li>
 			<li>
 				<b>When used with a <code>dl</code>:</b><br/>
@@ -3135,7 +3135,7 @@ MyNewCode:
 				The <code>snes_address</code> parameter must be any label, number literal or math statement evaluating to an SNES address pointing to inside a freespace area. When the patch is applied and the autoclean is encountered, Asar checks whether that address points to the expanded area of the ROM (banks $10+). If it does, Asar checks whether it points to an area protected by a RATS tag (including the RATS tag itself). If it does, Asar cleans up that area and removes the RATS tag.
 			</li>
 		</ul>
-		When using autoclean with a jml, jsl or dl, Asar will also assemble the respective line of code at the current pc. For simplicity, you can treat the autoclean command like a modifier in those cases. A few more things to note when using the autoclean command:
+		When using autoclean with an instruction or dl, Asar will also assemble the respective line of code at the current pc. For simplicity, you can treat the autoclean command like a modifier in those cases. A few more things to note when using the autoclean command:
 		<ul>
 			<li>The autoclean command itself may not be used inside a freespace area. To automatically clean up freespace that is only referenced within another freespace area, you can use the <a href="#prot">prot</a> command.</li>
 			<li>It is safe to have multiple autoclean commands pointing to the same freespace area.</li>
