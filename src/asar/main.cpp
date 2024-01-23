@@ -733,7 +733,6 @@ void assembleline(const char * fname, int linenum, const char * line, int& singl
 	try
 	{
 		string out=line;
-		out.qreplace(": :", ":  :");
 		autoptr<char**> blocks=qsplitstr(out.temp_raw(), " : ");
 		moreonline=true;
 		for (int block=0;moreonline;block++)
@@ -741,11 +740,31 @@ void assembleline(const char * fname, int linenum, const char * line, int& singl
 			moreonline=(blocks[block+1] != nullptr);
 			try
 			{
+				// it's possible that our input looks something like:
+				// nop : : nop
+				// nop : : : : : nop
+				// also, it's possible that there were empty blocks at the start or end of the line:
+				// : nop :
+				// after qsplit, we still need to deal with possibly a single ": " from a preceding empty block,
+				// and if it's the last block, possibly a following " :".
 				string stripped_block = strip_whitespace(blocks[block]);
+				int i = 0;
+				// if the block starts with ": "
+				if(stripped_block[i] == ':' && stripped_block[i+1] == ' ') {
+					i++;
+					while(stripped_block[i] == ' ') i++;
+				}
+				// if the block is a single :, skip that too.
+				if(stripped_block[i] == ':' && stripped_block[i+1] == 0) i++;
 
-				callstack_push cs_push(callstack_entry_type::BLOCK, stripped_block);
+				// last block - strip trailing " :" if present.
+				if(!moreonline && stripped_block[stripped_block.length()-2] == ' ' && stripped_block[stripped_block.length()-1] == ':') {
+					stripped_block.truncate(stripped_block.length()-2);
+				}
 
-				assembleblock(stripped_block, single_line_for_tracker);
+				callstack_push cs_push(callstack_entry_type::BLOCK, stripped_block.data() + i);
+
+				assembleblock(stripped_block.data() + i, single_line_for_tracker);
 				checkbankcross();
 			}
 			catch (errblock&) {}
