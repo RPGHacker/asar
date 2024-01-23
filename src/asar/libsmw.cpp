@@ -265,14 +265,14 @@ int getpcfreespace(int size, bool isforcode, bool autoexpand, bool respectbankbo
 			if(0);
 			else if (romlen==0x080000)
 			{
+				writeromdata_bytes(romlen, default_freespacebyte, 0x100000 - romlen, false);
 				romlen=0x100000;
-				writeromdata_bytes(0x080000, default_freespacebyte, 0x80000, false);
 				writeromdata_byte(snestopc(0x00FFD7), 0x0A);
 			}
 			else if (romlen==0x100000)
 			{
+				writeromdata_bytes(romlen, default_freespacebyte, 0x200000 - romlen, false);
 				romlen=0x200000;
-				writeromdata_bytes(0x080000, default_freespacebyte, 0x100000, false);
 				writeromdata_byte(snestopc(0x00FFD7), 0x0B);
 			}
 			else if (isforcode) return -1;//no point creating freespace that can't be used
