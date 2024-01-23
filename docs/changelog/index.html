@@ -99,6 +99,7 @@
 			<li><code class="65c816_asar">if a = b</code>: use <code class="65c816_asar">if a == b</code> instead.</li>
 			<li>Comments starting with <code>;[[</code> : These mark the start of block comments in Asar 2.0, so either remove the <code>[[</code> for the time being, or make the commented line end with a <code>]]</code>.</li>
 			<li>Using <code>A</code> as a label name ambiguously, e.g. <code>lda a</code>: in Asar 2 this will be interpreted as trying to use the "A" addressing mode, and will give an error. You can use <code>A+0</code> if you really must refer to the label as is.</li>
+			<li>The <code class="65c816_asar">startpos</code> command of the <code>spc700-inline</code> architecture: use the optional argument to <code>endspcblock</code> instead.</li>
 		</ul></div>
 
 		<hr />

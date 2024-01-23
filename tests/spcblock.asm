@@ -1,4 +1,6 @@
 ;`A9 AA
+;`03 00 00 60
+;`8F 44 33
 ;`06 00 00 50
 ;`5F 03 50
 ;`8F 22 11
@@ -9,12 +11,15 @@ org $008000
 
 lda #$AA
 
+spcblock $6000
+	mov $33,#$44
+endspcblock
+
 spcblock $5000
-	startpos start
 start:
 	jmp lab
 lab:
 	mov $11,#$22
-endspcblock
+endspcblock start
 
 lda #$BB

@@ -62,7 +62,7 @@ struct spcblock_data{
 	spcblock_type type;
 	string macro_name;
 
-	unsigned int execute_address;
+	unsigned int execute_address;	// Can be removed in Asar 2.0
 	unsigned int size_address;
 	mapper_t old_mapper;
 }spcblock;
@@ -1771,7 +1771,7 @@ void assembleblock(const char * block, bool isspecialline)
 		ns = STR":SPCBLOCK:_" + ns_backup;
 		in_spcblock = true;
 	}
-	else if(is0("endspcblock"))
+	else if(is0("endspcblock") || is1("endspcblock"))
 	{
 		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_endspcblock_without_spcblock);
 
@@ -1786,8 +1786,14 @@ void assembleblock(const char * block, bool isspecialline)
 					writeromdata_byte(pcpos, (unsigned char)num);
 					writeromdata_byte(pcpos+1, (unsigned char)(num >> 8));
 				}
-				if(spcblock.execute_address != -1u)
+				if (numwords > 1)
 				{
+					write2(0x0000);
+					write2((unsigned int)getnum64(par));
+				}
+				else if(spcblock.execute_address != -1u)
+				{
+					// Legacy case, will be removed with Asar 2.0.
 					write2(0x0000);
 					write2((unsigned int)spcblock.execute_address);
 				}
@@ -1802,9 +1808,11 @@ void assembleblock(const char * block, bool isspecialline)
 		ns = ns_backup;
 		in_spcblock = false;
 	}
+	// Remember to also remove execute_address entirely from spcblock once removing this deprecated command.
 	else if (is1("startpos"))
 	{
-		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_startpos_without_spcblock);
+		asar_throw_warning(0, warning_id_feature_deprecated, "startpos", "Use the optional argument to \"endspcblock\"");
+		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_startpos_without_spcblock);		
 		spcblock.execute_address=getnum64(par);
 	}
 	else if (is1("base"))
