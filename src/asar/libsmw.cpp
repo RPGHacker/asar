@@ -136,10 +136,11 @@ void writeromdata_byte(int pcoffset, unsigned char indata, bool add_write)
 		addromwrite(pcoffset, 1);
 }
 
-void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes)
+void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes, bool add_write)
 {
 	memset(const_cast<unsigned char*>(romdata) + pcoffset, indata, (size_t)numbytes);
-	addromwrite(pcoffset, numbytes);
+	if(add_write)
+		addromwrite(pcoffset, numbytes);
 }
 
 int ratsstart(int snesaddr)
@@ -381,19 +382,19 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 			else if (romlen==0x080000)
 			{
 				romlen=0x100000;
-				writeromdata_bytes(0x080000, default_freespacebyte, 0x80000);
+				writeromdata_bytes(0x080000, default_freespacebyte, 0x80000, false);
 				writeromdata_byte(snestopc(0x00FFD7), 0x0A);
 			}
 			else if (romlen==0x100000)
 			{
 				romlen=0x200000;
-				writeromdata_bytes(0x080000, default_freespacebyte, 0x100000);
+				writeromdata_bytes(0x080000, default_freespacebyte, 0x100000, false);
 				writeromdata_byte(snestopc(0x00FFD7), 0x0B);
 			}
 			else if (isforcode) return -1;//no point creating freespace that can't be used
 			else if (romlen==0x200000 || romlen==0x300000)
 			{
-				writeromdata_bytes(romlen, default_freespacebyte, 0x400000 - romlen);
+				writeromdata_bytes(romlen, default_freespacebyte, 0x400000 - romlen, false);
 				romlen=0x400000;
 				writeromdata_byte(snestopc(0x00FFD7), 0x0C);
 			}
@@ -465,7 +466,7 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 		if (autoexpand && nextbank>=0)
 		{
 			unsigned char x7FD7[]={0, 0x0A, 0x0B, 0x0C, 0x0C, 0x0D, 0x0D, 0x0D, 0x0D};
-			writeromdata_bytes(romlen, default_freespacebyte, nextbank + 0x100000 - romlen);
+			writeromdata_bytes(romlen, default_freespacebyte, nextbank + 0x100000 - romlen, false);
 			romlen=nextbank+0x100000;
 			writeromdata_byte(0x7FD7, x7FD7[romlen>>20]);
 			autoexpand=false;

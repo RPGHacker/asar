@@ -29,8 +29,9 @@ extern int sa1banks[8];//only 0, 1, 4, 5 are used
 void addromwrite(int pcoffset, int numbytes);
 void writeromdata(int pcoffset, const void * indata, int numbytes);
 // optionally don't add the romwrite, because sometimes we did that in an earlier pass already
+// (or sometimes the bytes are just rom size padding)
 void writeromdata_byte(int pcoffset, unsigned char indata, bool add_write = true);
-void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes);
+void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes, bool add_write = true);
 
 struct writtenblockdata {
 	int pcoffset;
