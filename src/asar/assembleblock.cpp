@@ -180,7 +180,7 @@ inline void write1_65816(unsigned int num)
 			movinglabelspossible=true;
 			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
 		}
-		writeromdata_byte(pcpos, (unsigned char)num);
+		writeromdata_byte(pcpos, (unsigned char)num, freespaceid != 0);
 		if (pcpos>=romlen) romlen=pcpos+1;
 	}
 	if(pass == 1 && freespaceid == 0) {

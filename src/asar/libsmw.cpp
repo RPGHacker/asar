@@ -14,6 +14,7 @@ static FileHandleType thisfile = InvalidFileHandle;
 asar_error_id openromerror;
 
 autoarray<writtenblockdata> writtenblocks;
+int last_writtenblock_ind = 0;
 // not immediately put into writtenblocks to allow the freespace finder to use
 // the reclaimed space.
 autoarray<writtenblockdata> cleared_rats_tag_blocks;
@@ -41,6 +42,19 @@ static int findromwritepos(int snesoffset, int searchstartpos, int searchendpos)
 
 static void addromwriteforbank(int snesoffset, int numbytes)
 {
+	// common case: this rom write is immediately after the last one.
+	if(last_writtenblock_ind < writtenblocks.count) {
+		auto& blk = writtenblocks[last_writtenblock_ind];
+		if(blk.snesoffset + blk.numbytes == snesoffset && (blk.snesoffset&0xff0000)==(snesoffset&0xff0000)) {
+			// check if we overlap with next block
+			if(last_writtenblock_ind+1 >= writtenblocks.count
+					|| writtenblocks[last_writtenblock_ind+1].snesoffset > snesoffset+numbytes) {
+				// if not, merge with previous written block
+				blk.numbytes += numbytes;
+				return;
+			}
+		}
+	}
 	int currentbank = (snesoffset & 0xFF0000);
 
 	int insertpos = findromwritepos(snesoffset, 0, writtenblocks.count);
@@ -82,6 +96,7 @@ static void addromwriteforbank(int snesoffset, int numbytes)
 	blockdata.numbytes = numbytes;
 
 	writtenblocks.insert(insertpos, blockdata);
+	last_writtenblock_ind = insertpos;
 }
 
 
@@ -113,10 +128,11 @@ void writeromdata(int pcoffset, const void * indata, int numbytes)
 	addromwrite(pcoffset, numbytes);
 }
 
-void writeromdata_byte(int pcoffset, unsigned char indata)
+void writeromdata_byte(int pcoffset, unsigned char indata, bool add_write)
 {
 	memcpy(const_cast<unsigned char*>(romdata) + pcoffset, &indata, 1);
-	addromwrite(pcoffset, 1);
+	if(add_write)
+		addromwrite(pcoffset, 1);
 }
 
 void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes)
