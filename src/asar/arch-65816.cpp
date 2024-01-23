@@ -33,6 +33,10 @@ struct insn_context {
 	string arg;
 	char orig_insn[3]; // oops i didn't end up using this... could be useful in some error messages maybe
 	char modifier;
+	// right now these 2 are only used for autoclean, so not set for some weird opcodes
+	string parsed_arg;
+	int written_len;
+	uint8_t written_opcode;
 };
 
 struct parse_result {
@@ -78,6 +82,7 @@ parse_result parse_addr_kind(insn_context& ctx) {
 #define RETURN_IF_ALLOWED(kind) \
 		if constexpr(((allowed_kinds == addr_kind::kind) || ...)) { \
 			string out(ctx.arg.data() + start_i, end_i - start_i); \
+			ctx.parsed_arg = out; \
 			return parse_result{addr_kind::kind, out}; \
 		}
 	if((start_i = startmatch<'#'>(ctx.arg)) >= 0) {
@@ -125,6 +130,7 @@ parse_result parse_addr_kind(insn_context& ctx) {
 		RETURN_IF_ALLOWED(s);
 		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
 	}
+	end_i = ctx.arg.length();
 	// hoping that by now, something would have stripped whitespace lol
 	if(ctx.arg.length() == 0) {
 		RETURN_IF_ALLOWED(imp);
@@ -135,9 +141,7 @@ parse_result parse_addr_kind(insn_context& ctx) {
 		// todo: some hint for "don't name your label "a" "?
 		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
 	}
-	if constexpr(((allowed_kinds == addr_kind::abs) || ...)) {
-		return parse_result{addr_kind::abs, ctx.arg};
-	}
+	RETURN_IF_ALLOWED(abs);
 	asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
 #undef RETURN_IF_ALLOWED
 	// clang doesn't know that asar_throw_error is noreturn in this case... :(
@@ -158,14 +162,14 @@ const char* format_valid_widths(int min, int max) {
 	return "???";
 }
 
-int get_real_len(int min_len, int max_len, const insn_context& ctx, const parse_result& parsed) {
+int get_real_len(int min_len, int max_len, insn_context& ctx, const parse_result& parsed) {
 	// we can theoretically give min_len to getlen now :o
 	int arg_min_len = getlen(parsed.arg, parsed.kind == addr_kind::imm);
+	int out_len;
 	if(ctx.modifier != 0) {
-		int given_len = getlenfromchar(ctx.modifier);
-		if(given_len < min_len || given_len > max_len)
-			asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(min_len, max_len), given_len*8);
-		return given_len;
+		out_len = getlenfromchar(ctx.modifier);
+		if(out_len < min_len || out_len > max_len)
+			asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(min_len, max_len), out_len*8);
 	} else {
 		if(parsed.kind == addr_kind::imm) {
 			if(!is_hex_constant(parsed.arg.data()))
@@ -173,6 +177,7 @@ int get_real_len(int min_len, int max_len, const insn_context& ctx, const parse_
 			if(arg_min_len == 3 && max_len == 2) {
 				// lda #label
 				// todo: throw pedantic warning
+				ctx.written_len = max_len;
 				return max_len;
 			}
 		}
@@ -180,14 +185,33 @@ int get_real_len(int min_len, int max_len, const insn_context& ctx, const parse_
 			asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(min_len, max_len), arg_min_len*8);
 		}
 		// todo warn about widening when dpbase != 0
-		return std::max(arg_min_len, min_len);
+		out_len = std::max(arg_min_len, min_len);
 	}
+	ctx.written_len = out_len;
+	return out_len;
 }
 
 void handle_implicit_rep(string& arg, int opcode) {
 	int64_t rep_count = getnum(arg);
 	if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 	for (int64_t i=0;i<rep_count;i++) { write1(opcode); }
+}
+
+void opcode0(insn_context& ctx, uint8_t opcode) {
+	ctx.written_opcode = opcode;
+	write1(opcode);
+}
+void opcode1(insn_context& ctx, uint8_t opcode, int num) {
+	opcode0(ctx, opcode);
+	write1(num);
+}
+void opcode2(insn_context& ctx, uint8_t opcode, int num) {
+	opcode0(ctx, opcode);
+	write2(num);
+}
+void opcode3(insn_context& ctx, uint8_t opcode, int num) {
+	opcode0(ctx, opcode);
+	write3(num);
 }
 
 template<int base, bool allow_imm = true>
@@ -215,19 +239,18 @@ void the8(insn_context& ctx) {
 		if(kind == K::sy) opcode_offset = 0x13;
 		if(kind == K::x) opcode_offset = 0x15;
 		if(kind == K::lindy) opcode_offset = 0x17;
+		opcode1(ctx, base + opcode_offset, the_num);
 	} else if(real_len == 2) {
 		if(kind == K::imm) opcode_offset = 0x9;
 		if(kind == K::abs) opcode_offset = 0xd;
 		if(kind == K::y) opcode_offset = 0x19;
 		if(kind == K::x) opcode_offset = 0x1d;
+		opcode2(ctx, base + opcode_offset, the_num);
 	} else if(real_len == 3) {
 		if(kind == K::abs) opcode_offset = 0xf;
 		if(kind == K::x) opcode_offset = 0x1f;
+		opcode3(ctx, base + opcode_offset, the_num);
 	}
-	write1(opcode_offset + base);
-	if(real_len == 1) write1(the_num);
-	else if(real_len == 2) write2(the_num);
-	else if(real_len == 3) write3(the_num);
 }
 
 template<int base, int accum_opc, bool is_bit = false>
@@ -241,7 +264,7 @@ void thenext8(insn_context& ctx) {
 		// todo: some checks on ctx.modifier here
 		if(parsed.kind == K::imm) return handle_implicit_rep(parsed.arg, accum_opc);
 		if(parsed.kind == K::a || parsed.kind == K::imp) {
-			write1(accum_opc);
+			opcode0(ctx, accum_opc);
 			return;
 		}
 	}
@@ -250,16 +273,16 @@ void thenext8(insn_context& ctx) {
 	int opcode = 0;
 	if(parsed.kind == K::imm) {
 		opcode = accum_opc;
-	} else if(real_len == 1) {
+	}
+	if(real_len == 1) {
 		if(parsed.kind == K::abs) opcode = base+0x6;
 		if(parsed.kind == K::x) opcode = base+0x16;
+		opcode1(ctx, opcode, the_num);
 	} else if(real_len == 2) {
 		if(parsed.kind == K::abs) opcode = base+0xe;
 		if(parsed.kind == K::x) opcode = base+0x1e;
+		opcode2(ctx, opcode, the_num);
 	}
-	write1(opcode);
-	if(real_len == 1) write1(the_num);
-	else if(real_len == 2) write2(the_num);
 }
 
 template<int base>
@@ -268,10 +291,8 @@ void tsb_trb(insn_context& ctx) {
 	auto parsed = parse_addr_kind<K::abs>(ctx);
 	int64_t the_num = pass == 2 ? getnum(parsed.arg) : 0;
 	int real_len = get_real_len(1, 2, ctx, parsed);
-	int opcode_offset = real_len == 1 ? 0x04 : 0x0c;
-	write1(opcode_offset + base);
-	if(real_len == 1) write1(the_num);
-	else if(real_len == 2) write2(the_num);
+	if(real_len == 1) opcode1(ctx, base + 0x04, the_num);
+	else opcode2(ctx, base + 0x0c, the_num);
 }
 
 template<int opc, int width = 1>
@@ -299,10 +320,8 @@ void branch(insn_context& ctx) {
 			num = (int16_t)(width==2 ? num : (int8_t)num);
 		}
 	}
-
-	write1(opc);
-	if(width == 1) write1(num);
-	else if(width == 2) write2(num);
+	if(width == 1) opcode1(ctx, opc, num);
+	else if(width == 2) opcode2(ctx, opc, num);
 }
 
 template<int opc>
@@ -312,7 +331,7 @@ void implied(insn_context& ctx) {
 		asar_throw_error(0, error_type_block, error_id_bad_addr_mode);
 	}
 	// also should check that ctx.modifier == 0
-	write1(opc);
+	opcode0(ctx, opc);
 }
 
 template<int opc>
@@ -320,7 +339,7 @@ void implied_rep(insn_context& ctx) {
 	using K = addr_kind;
 	auto parsed = parse_addr_kind<K::imm, K::imp>(ctx);
 	if(parsed.kind == K::imp) {
-		write1(opc);
+		opcode0(ctx, opc);
 	} else {
 		handle_implicit_rep(parsed.arg, opc);
 	}
@@ -349,9 +368,8 @@ void xy_ops(insn_context& ctx) {
 		if(real_len == 1) opcode = base + 0x14;
 		else opcode = base + 0x1c;
 	}
-	write1(opcode);
-	if(real_len == 1) write1(the_num);
-	else if(real_len == 2) write2(the_num);
+	if(real_len == 1) opcode1(ctx, opcode, the_num);
+	else if(real_len == 2) opcode2(ctx, opcode, the_num);
 }
 
 template<int opc>
@@ -359,14 +377,12 @@ void interrupt(insn_context& ctx) {
 	using K = addr_kind;
 	auto parsed = parse_addr_kind<K::imm, K::imp>(ctx);
 	if(parsed.kind == K::imp) {
-		write1(opc);
-		write1(0);
+		opcode1(ctx, opc, 0);
 	} else {
 		int64_t num = pass == 2 ? getnum(parsed.arg) : 0;
 		// this is kinda hacky
 		if(num < 0 || num > 255) asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(1, 1), num > 65535 ? 24 : 16);
-		write1(opc);
-		write1(num);
+		opcode1(ctx, opc, num);
 	}
 }
 
@@ -376,10 +392,9 @@ void oneoff(insn_context& ctx) {
 	int64_t the_num = pass == 2 ? getnum(parsed.arg) : 0;
 	// only for error checking, we know the answer anyways
 	get_real_len(width, width, ctx, parsed);
-	write1(opc);
-	if(width == 1) write1(the_num);
-	else if(width == 2) write2(the_num);
-	else if(width == 3) write3(the_num);
+	if(width == 1) opcode1(ctx, opc, the_num);
+	else if(width == 2) opcode2(ctx, opc, the_num);
+	else if(width == 3) opcode3(ctx, opc, the_num);
 }
 
 void stz(insn_context& ctx) {
@@ -388,13 +403,11 @@ void stz(insn_context& ctx) {
 	int64_t the_num = pass == 2 ? getnum(parsed.arg) : 0;
 	int real_len = get_real_len(1, 2, ctx, parsed);
 	if(real_len == 1) {
-		if(parsed.kind == K::abs) write1(0x64);
-		else if(parsed.kind == K::x) write1(0x74);
-		write1(the_num);
+		if(parsed.kind == K::abs) opcode1(ctx, 0x64, the_num);
+		else if(parsed.kind == K::x) opcode1(ctx, 0x74, the_num);
 	} else {
-		if(parsed.kind == K::abs) write1(0x9c);
-		else if(parsed.kind == K::x) write1(0x9e);
-		write2(the_num);
+		if(parsed.kind == K::abs) opcode2(ctx, 0x9c, the_num);
+		else if(parsed.kind == K::x) opcode2(ctx, 0x9e, the_num);
 	}
 }
 
@@ -420,23 +433,17 @@ void jmp_jsr_jml(insn_context& ctx) {
 	get_real_len(the_width, the_width, ctx, parsed);
 	optimizeforbank = old_optimize;
 	if(which == 'R') {
-		if(parsed.kind == K::abs) write1(0x20);
-		else if(parsed.kind == K::xind) write1(0xfc);
+		if(parsed.kind == K::abs) opcode2(ctx, 0x20, the_num);
+		else if(parsed.kind == K::xind) opcode2(ctx, 0xfc, the_num);
 	} else if(which == 'L') {
-		if(parsed.kind == K::abs) {
-			write1(0x5c);
-			write3(the_num);
-			return;
-		} else if(parsed.kind == K::lind) {
-			write1(0xdc);
-		}
+		if(parsed.kind == K::abs) opcode3(ctx, 0x5c, the_num);
+		else if(parsed.kind == K::lind) opcode2(ctx, 0xdc, the_num);
 	} else {
-		if(parsed.kind == K::abs) write1(0x4c);
-		else if(parsed.kind == K::ind) write1(0x6c);
-		else if(parsed.kind == K::xind) write1(0x7c);
-		else if(parsed.kind == K::lind) write1(0xdc);
+		if(parsed.kind == K::abs) opcode2(ctx, 0x4c, the_num);
+		else if(parsed.kind == K::ind) opcode2(ctx, 0x6c, the_num);
+		else if(parsed.kind == K::xind) opcode2(ctx, 0x7c, the_num);
+		else if(parsed.kind == K::lind) opcode2(ctx, 0xdc, the_num);
 	}
-	write2(the_num);
 }
 
 template<int opc>
@@ -445,7 +452,7 @@ void mvn_mvp(insn_context& ctx) {
 	autoptr<char**> parts = qpsplit(ctx.arg.raw(), ',', &count);
 	if(count != 2) asar_throw_error(2, error_type_block, error_id_bad_addr_mode);
 	// todo length checks ???
-	write1(opc);
+	opcode0(ctx, opc);
 	if(pass == 2) {
 		write1(getnum(parts[0]));
 		write1(getnum(parts[1]));
@@ -553,13 +560,18 @@ assocarr<void(*)(insn_context&)> mnemonics = {
 bool asblock_65816(char** word, int numwords)
 {
 	if(word[0][0] == '\'') return false;
+	int word_i = 0;
+	bool autoclean = false;
+	if(!stricmpwithlower(word[0], "autoclean")) {
+		word_i++;
+		autoclean = true;
+	}
+	string opc = word[word_i++];
 	string par;
-	for(int i = 1; i < numwords; i++){
-		if(i > 1) par += " ";
+	for(int i = word_i; i < numwords; i++){
+		if(i > word_i) par += " ";
 		par += word[i];
 	}
-	// todo handle code like `nop = $1234`
-	string opc = word[0];
 	for(int i = 0; i < opc.length(); i++) opc.raw()[i] = to_lower(opc[i]);
 	char mod = 0;
 	if(opc.length() >= 2 && opc[opc.length()-2] == '.') {
@@ -567,10 +579,15 @@ bool asblock_65816(char** word, int numwords)
 		opc.truncate(opc.length()-2);
 	}
 	if(!mnemonics.exists(opc.data())) return false;
-	insn_context ctx{par, {}, mod};
+	insn_context ctx{par, {}, mod, 0};
 	ctx.orig_insn[0] = opc[0];
 	ctx.orig_insn[1] = opc[1];
 	ctx.orig_insn[2] = opc[2];
 	mnemonics.find(opc.data())(ctx);
+	if(autoclean && pass > 0) {
+		// should be changed to "can't use autoclean on this instruction"?
+		if(ctx.written_len != 3) asar_throw_error(2, error_type_block, error_id_broken_autoclean);
+		handle_autoclean(ctx.parsed_arg, ctx.written_opcode, snespos - 4);
+	}
 	return true;
 }

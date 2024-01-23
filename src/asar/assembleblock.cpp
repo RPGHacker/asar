@@ -968,6 +968,35 @@ string handle_print(char* input)
 	return out;
 }
 
+void handle_autoclean(string& arg, int checkbyte, int write_pos)
+{
+	if(freespaceid > 0) asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
+
+	const char* labeltest = arg.data();
+	snes_label lblval = labelval(&labeltest);
+	if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, arg.data());
+	int num = lblval.pos;
+	auto& targetfs = freespaces[lblval.freespace_id];
+
+	if (pass == 1) {
+		targetfs.leaked = false;
+		int orig_pos = read3(checkbyte != -1 ? write_pos+1 : write_pos);
+		int write_pos_pc = snestopc(write_pos);
+		targetfs.orgpos = targetfs.orglen = -1;
+		if(write_pos_pc >= 0 && write_pos_pc < romlen_r && (checkbyte == -1 || romdata_r[write_pos_pc] == checkbyte)) {
+			int rats_loc = ratsstart(orig_pos);
+			if(rats_loc != -1) {
+				targetfs.orgpos = rats_loc + 8;
+				targetfs.orglen = read2(rats_loc + 4) + 1;
+				if(!targetfs.is_static) removerats(rats_loc + 8, targetfs.cleanbyte);
+			}
+		}
+	} else if(pass == 2) {
+		int start = ratsstart(num);
+		if(start >= num || start < 0) asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
+	}
+}
+
 // single_line_for_tracker is:
 // 0 if not in first block of line, not in (single-line) for loop
 // 1 if first block of line
@@ -1909,7 +1938,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (pass==0) snespos=0;
 		if (pass==1)
 		{
-			if (fixedpos && thisfs.orgpos<0)
+			if (fixedpos && thisfs.orgpos == -2)
 			{
 				thisfs.pos = 0;
 				thisfs.leaked = false;//mute some other errors
@@ -1919,7 +1948,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		if (pass==2)
 		{
-			if (fixedpos && thisfs.orgpos == -1) return;//to kill some errors
+			if (fixedpos && thisfs.orgpos == -2) return;//to kill some errors (supposedly????)
 			snespos=thisfs.pos;
 			if (thisfs.leaked && leakwarn) asar_throw_warning(2, warning_id_freespace_leaked);
 			freespaceuse += (write_rats ? 8 : 0) + thisfs.len;
@@ -1984,63 +2013,16 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		if (numwords==3)
 		{
-			if(freespaceid > 0)
-				asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
 			const char * labeltest = word[2];
 			string testlabel = labeltest;
-			snes_label lblval = labelval(&labeltest);
-			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
-			int targetid= lblval.freespace_id;
-			if (pass==1) freespaces[targetid].leaked = false;
-			int num = lblval.pos;
-			if (strlen(par)>3 && !stricmp(par+3, ".l")) par[3]=0;
-			if (!stricmp(par, "JSL") || !stricmp(par, "JML"))
-			{
-				int orgpos=read3(snespos+1);
-				int ratsloc=freespaces[targetid].orgpos;
-				int firstbyte = ((!stricmp(par, "JSL")) ? 0x22 : 0x5C);
-				int pcpos=snestopc(snespos);
-				if (/*pass==1 && */pcpos>=0 && pcpos<romlen_r && romdata_r[pcpos]==firstbyte)
-				{
-					ratsloc=ratsstart(orgpos)+8;
-					freespaces[targetid].orglen=read2(ratsloc-4)+1;
-					if (!freespaces[targetid].is_static && pass==1) removerats(orgpos, freespaces[targetid].cleanbyte);
-				}
-				else if (ratsloc<0) ratsloc=0;
-				write1((unsigned int)firstbyte);
-				write3((unsigned int)num);
-				if (pass==2)
-				{
-					int start=ratsstart(num);
-					if (start>=num || start<0)
-					{
-						asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
-					}
-
-					add_addr_to_line(addrToLinePos);
-				}
-				//freespaceorglen[targetid]=read2(ratsloc-4)+1;
-				freespaces[targetid].orgpos = ratsloc;
-			}
-			else if (!stricmp(par, "dl"))
-			{
-				int orgpos=read3(snespos);
-				int ratsloc=freespaces[targetid].orgpos;
-				int start=ratsstart(num);
-				if (pass==1 && num>=0)
-				{
-					ratsloc=ratsstart(orgpos)+8;
-					if (!freespaces[targetid].is_static) removerats(orgpos, freespaces[targetid].cleanbyte);
-				}
-				else if (!ratsloc) ratsloc=0;
-				if ((start==num || start<0) && pass==2)
-					asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
-				write3((unsigned int)num);
-				freespaces[targetid].orgpos = ratsloc;
-				freespaces[targetid].orglen = read2(ratsloc-4)+1;
+			if(!stricmpwithlower(word[1], "dl")) {
+				handle_autoclean(testlabel, -1, snespos);
+				write3(pass==2 ? getnum(testlabel.data()) : 0);
 				add_addr_to_line(addrToLinePos);
+			} else {
+				// other ones are handled in arch-65816
+				asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 			}
-			else asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 		}
 		// weird gotcha: we don't know the freespace id here, so we don't know what clean_byte to use
 		else if (pass==0) removerats((int)getnum(word[1]), 0x00);

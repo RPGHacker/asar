@@ -10,11 +10,11 @@
 ;`EA
 ;`FFFFF 00
 org $00F606
-autoclean JSL a
+autoclean JSL aa
 
 freecode
 prot b
-a:
+aa:
 NOP
 
 freedata

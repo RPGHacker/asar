@@ -42,6 +42,8 @@ struct freespace_data {
 	// whether this freespace is leaked (no autocleans pointing at it)
 	bool leaked;
 	// position of the previous version of this freespace
+	// -2 means "never searched", -1 is "searched but didn't find anything",
+	// nonnegative is previous location
 	int orgpos;
 	// length of previous version
 	int orglen;
@@ -129,6 +131,8 @@ void checkbankcross();
 
 void initstuff();
 void finishpass();
+
+void handle_autoclean(string& arg, int checkbyte, int orgpos);
 
 void assembleblock(const char * block, int& single_line_for_tracker);
 
