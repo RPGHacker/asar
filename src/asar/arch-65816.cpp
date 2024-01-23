@@ -178,6 +178,7 @@ bool asblock_65816(char** word, int numwords)
 opAFallback:
 			snes_label tmp;
 			if (pass && !labelval(par, &tmp)) return false;
+			asar_throw_warning(1, warning_id_feature_deprecated, "using A as a label name", "rename your label to _a or something, or use a+0 to disambiguate the addressing mode");
 			len=getlen(par);
 			num=tmp.pos;
 		}
