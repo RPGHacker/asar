@@ -1555,12 +1555,11 @@ rep 16 : %memset($00, 16)</code></pre>
 
 		<h4 id="spcblock">spcblock</h4>
 		SPC blocks are a convenient way of defining command data meant to be sent to the SPC700 in games using well-known SPC engines (though at this time, only the <code>N-SPC</code> engine is supported). The general format looks like this:
-		<pre><code class="65c816_asar">
-spcblock {target_address} [{engine_type}]
+		<pre><code class="65c816_asar">spcblock {target_address} [{engine_type}]
 	[spc700_instruction...]
-endspcblock [execute {execution_address}]
-		</code></pre>
-		The <code>target_address</code> parameter specifies the target address (in ARAM) for the command data. The optional <code>execute</code> parameter tells Asar to generate a &quot;start execution&quot; command immediately after this SPC block, with <code>execution_address</code> as the ARAM address to start execution at. The <code>engine_type</code> parameter specifies which SPC engine to use. When emitted, the default value of <code>nspc</code> is used. The following engine types are supported:
+endspcblock [execute {execution_address}]</code></pre>
+		Inside an <code>spcblock</code>, <code class="65c816_asar">arch spc700</code> is automatically active (see section <a href="#archs">Architectures</a> for details).
+		The <code>target_address</code> parameter specifies the target address (in ARAM) for the command data. The optional <code>execute</code> parameter tells Asar to generate a &quot;start execution&quot; command immediately after this SPC block, with <code>execution_address</code> as the ARAM address to start execution at. The <code>engine_type</code> parameter specifies which SPC engine to use. When omitted, the default value of <code>nspc</code> is used. The following engine types are supported:
 		<table>
 			<tr>
 				<th style="width:150px">Parameter</th>
@@ -1580,20 +1579,19 @@ dw &lt;target_address&gt;
 [dw $0000, &lt;execution_address&gt;]</code></pre></td>
 				<td><pre><code class="65c816_asar">spcblock $6000 nspc
 	db $00,$01,$02,$03
-	execution_start:
+	exec_start:
 	mov $33,#$44
-endspcblock execute execution_start</code></pre>
+endspcblock execute exec_start</code></pre>
 			<td><pre><code class="65c816_asar">
-dw $0007		; block_length (4 bytes for db + 3 bytes for mov)
-dw $6000		; target_address (argument passed to spcblock)
-db $00,$01,$02,$03	; db $00,$01,$02,$03
-db $8F,$44,$33		; mov $33,#$44
+dw $0007            ; block_length (4 bytes for db + 3 bytes for mov)
+dw $6000            ; target_address (argument passed to spcblock)
+db $00,$01,$02,$03  ; db $00,$01,$02,$03
+db $8F,$44,$33      ; mov $33,#$44
 
-dw $0000,$6004		; execution_address (execution_start label position)
+dw $0000,$6004      ; execution_address (exec_start label position)
 </code></pre></td></td>
 			</tr>
 		</table><br/>
-		Inside an <code>spcblock</code>, <code class="65c816_asar">arch spc700</code> is automatically active (see section <a href="#archs">Architectures</a> for details).<br/>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="mappers"><h3>Mapping Modes</h3>
