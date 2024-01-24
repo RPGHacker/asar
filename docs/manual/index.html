@@ -31,6 +31,7 @@
 					<li><a href="#number-literals">Number Literals</a></li>
 					<li><a href="#opcode-length">Opcode Length Specification</a></li>
 					<li><a href="#pseudo-opcodes">Pseudo Opcodes</a></li>
+					<li><a href="#spcblock">spcblock</a></li>
 				</ul>
 			</li>
 			<li><a href="#mappers">Mapping Modes</a></li>
@@ -64,7 +65,6 @@
 					<li><a href="#optimize-address">optimize address</a></li>
 					<li><a href="#pushpc">pushpc/pullpc</a></li>
 					<li><a href="#pushbase">pushbase/pullbase</a></li>
-					<li><a href="#arch-spc700-inline">The spc700-inline architecture</a></li>
 				</ul>
 			</li>
 			<li><a href="#math">Math</a></li>
@@ -889,13 +889,7 @@ TSET $0000,a
 XCN A</code></pre>
 					</div>
 				</td>
-				<td>Compiles code for the SPC700 architecture. Follows the format the SNES Dev Manual recommends, with the exception of mov (x)+,a and mov a,(x)+, which are moved to mov (x+),a and mov a,(x+).</td>
-			</tr>
-			<tr>
-				<td>SPC700</td>
-				<td><code class="65c816_asar">arch&nbsp;spc700-inline</code></td>
-				<td></td>
-				<td>Same as above, but implements the standard upload system (16bit length, then location, with a terminator at the end) automatically. See the <a href="#arch-spc700-inline">spc700-inline</a> section for more information.</td>
+				<td>Compiles code for the SPC700 architecture. Follows the format the SNES Dev Manual recommends, with the exception of mov (x)+,a and mov a,(x)+, which are moved to mov (x+),a and mov a,(x+). See the <a href="#spcblock">spcblock</a> section for an alternative way of assembling SPC700 code.</td>
 			</tr>
 			<tr>
 				<td>Super FX</td>
@@ -1553,6 +1547,46 @@ nop
 
 inx
 inx</code></pre>
+		<h4 id="spcblock">spcblock</h4>
+		SPC blocks are a convenient way of defining command data meant to be sent to the SPC700 in games using well-known SPC engines (though at this time, only the <code>N-SPC</code> engine is supported). The general format looks like this:
+		<pre><code class="65c816_asar">spcblock {target_address} [{engine_type}]
+	[spc700_instruction...]
+endspcblock [execute {execution_address}]</code></pre>
+		Inside an <code>spcblock</code>, <code class="65c816_asar">arch spc700</code> is automatically active (see section <a href="#archs">Architectures</a> for details).
+		The <code>target_address</code> parameter specifies the target address (in ARAM) for the command data. The optional <code>execute</code> parameter tells Asar to generate a &quot;start execution&quot; command immediately after this SPC block, with <code>execution_address</code> as the ARAM address to start execution at. The <code>engine_type</code> parameter specifies which SPC engine to use. When omitted, the default value of <code>nspc</code> is used. The following engine types are supported:
+		<table>
+			<tr>
+				<th style="width:150px">Parameter</th>
+				<th style="width:150px">Engine Type</th>
+				<th style="width:300px">Description</th>
+				<th>Output Format</th>
+				<th>Example Code</th>
+				<th>Example Output</th>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">nspc</code></td>
+				<td>N-SPC</td>
+				<td>Implements the format used by the N-SPC engine found in most Nintendo games, as well as by the SPC700's initial program loader.</td>
+				<td><pre><code class="65c816_asar">dw &lt;block_length&gt;
+dw &lt;target_address&gt;
+&lt;instructions...&gt;
+[dw $0000, &lt;execution_address&gt;]</code></pre></td>
+				<td><pre><code class="65c816_asar">spcblock $6000 nspc
+	db $00,$01,$02,$03
+	exec_start:
+	mov $33,#$44
+endspcblock execute exec_start</code></pre>
+			<td><pre><code class="65c816_asar">
+dw $0007            ; block_length (4 bytes for db + 3 bytes for mov)
+dw $6000            ; target_address (argument passed to spcblock)
+db $00,$01,$02,$03  ; db $00,$01,$02,$03
+db $8F,$44,$33      ; mov $33,#$44
+
+dw $0000,$6004      ; execution_address (exec_start label position)
+</code></pre></td></td>
+			</tr>
+		</table><br/>
+>>>>>>> asar_19
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="mappers"><h3>Mapping Modes</h3>
@@ -1796,27 +1830,6 @@ InRamAgain:
 	rtl
 
 base off</code></pre>
-
-		<h4 id="arch-spc700-inline">The spc700-inline architecture</h4>
-		Using <code>arch spc700-inline</code> changes the way most program-counter-related commands work. It is meant for use with the default program loader on the SPC700. In this mode, data is always written sequentially to the ROM. The <code>org</code> command causes Asar to write out a command instructing the loader program to start writing to the specified address in the SPC700's memory. There is also a special <code>startpos</code> command which writes out a command that tells the SPC to jump to this address after all of the code has been uploaded. Asar also writes the necessary header and terminator for the data, so it's possible to just upload the entire written block of data to the SPC. Here is a basic usage example:
-		<pre><code class="65c816_asar">
-spcdata_start:
-arch spc700-inline
-org $0400 ; position in APU RAM to copy block to
-startpos main ; label (or address in APU RAM) to jump to after uploading
-main:
-; any spc code here
-mov a,$00
-ret
-org $0600
-; this label will end up at $0600 in APU RAM
-data:
-db $00,$01,$02
-arch 65816
-spcdata_end:
-; now, you can copy each byte from spcdata_start to spcdata_end to $2141
-		</code></pre>
-		A few notes: <code>skip</code> will act like <code>org</code> in that it starts a new block and has the effect that the uploader program will leave the jumped-over part of APU RAM unchanged. The <code>base</code> command is disabled in this mode.<br>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="math"><h3>Math</h3>
@@ -3303,7 +3316,7 @@ print pc	; Will print 818001 when using LoROM mapper</code></pre>
 		This is a list of all warnings that are disabled by default and have to be enabled explicitly.<br/><br/>
 		<table>
 			<tr>
-				<th style="width:150px">Warning name</th>
+				<th style="width:150px">Warning Name</th>
 				<th>Details</th>
 			</tr>
 			<tr>

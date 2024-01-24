@@ -1735,13 +1735,16 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				}
 				if (numwords == 3)
 				{
-					if (strcmp(par, "execute")) asar_throw_error(0, error_type_block, error_id_invalid_endspcblock_arg, par);
-					write2(0x0000);
-					write2((unsigned int)getnum(word[2]));
+					if (strcmp(par, "execute")) asar_throw_error(0, error_type_null, error_id_invalid_endspcblock_arg, par);
+					else
+					{
+						write2(0x0000);
+						write2((unsigned int)getnum(word[2]));
+					}
 				}
 				else if (numwords != 1)
 				{
-					asar_throw_error(0, error_type_block, error_id_unknown_endspcblock_format);
+					asar_throw_error(0, error_type_null, error_id_unknown_endspcblock_format);
 				}
 				else if(spcblock.execute_address != -1u)
 				{
