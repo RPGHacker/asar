@@ -1,0 +1,12 @@
+[book]
+authors = ["RPG Hacker", "trillian"]
+language = "en"
+multilingual = false
+src = "src"
+title = "Asar Manual"
+
+[output.html]
+additional-js = ["sectionhack.js"]
+
+[preprocessor.myindex]
+command = "python3 generate-index.py"

@@ -62,3 +62,6 @@ build/
 .cache
 
 __pycache__/
+
+# mdbook's output directory
+/docs/newbook/book/
