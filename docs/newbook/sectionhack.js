@@ -1,6 +1,6 @@
 (function() {
     let thispage = document.querySelector("#sidebar .active");
-    if(thispage) {
+    if(thispage && document.querySelector("h2 .header")) {
         let the_list = document.createElement("ol");
         the_list.classList.add("section");
         for(let section of document.querySelectorAll("h2 .header")) {
@@ -10,6 +10,7 @@
             the_list.append(list_el);
         }
         let list_wrap = document.createElement("li");
+        list_wrap.className = "chapter-item expanded";
         list_wrap.append(the_list);
         thispage.parentElement.insertAdjacentElement("afterend", list_wrap);
     }
