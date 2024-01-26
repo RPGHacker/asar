@@ -682,6 +682,7 @@ void initstuff()
 	{
 		for (int i=0;i<256;i++)
 		{
+			freespacepos[i]=-1;
 			freespaceleak[i]=true;
 			freespaceorgpos[i]=-2;
 			freespaceorglen[i]=-1;
@@ -2048,6 +2049,16 @@ void assembleblock(const char * block, bool isspecialline)
 			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
 			unsigned char targetid=(unsigned char)(num>>24);
 			if (pass==1) freespaceleak[targetid]=false;
+			auto is_freespace_reused = [](int ratsloc) -> bool
+			{
+				for (int i = 0; i < freespaceidnext; i++)
+				{
+					if (freespacepos[i] != -1 && (freespacepos[i] & 0xFFFFFF) == ratsloc) {
+						return true;
+					}
+				}
+				return false;
+			};
 			num&=0xFFFFFF;
 			if (strlen(par)>3 && !stricmp(par+3, ".l")) par[3]=0;
 			if (!stricmp(par, "JSL") || !stricmp(par, "JML"))
@@ -2060,7 +2071,10 @@ void assembleblock(const char * block, bool isspecialline)
 				{
 					ratsloc=ratsstart(orgpos)+8;
 					freespaceorglen[targetid]=read2(ratsloc-4)+1;
-					if (!freespacestatic[targetid] && pass==1) removerats(orgpos, freespacebyte[targetid]);
+					if (!freespacestatic[targetid] && pass == 1)
+					{
+						if (!is_freespace_reused(ratsloc)) removerats(orgpos, freespacebyte[targetid]);
+					}
 				}
 				else if (ratsloc<0) ratsloc=0;
 				write1((unsigned int)firstbyte);
@@ -2086,7 +2100,7 @@ void assembleblock(const char * block, bool isspecialline)
 				if (pass==1 && num>=0)
 				{
 					ratsloc=ratsstart(orgpos)+8;
-					if (!freespacestatic[targetid]) removerats(orgpos, freespacebyte[targetid]);
+					if (!freespacestatic[targetid] && !is_freespace_reused(ratsloc)) removerats(orgpos, freespacebyte[targetid]);
 				}
 				else if (!ratsloc) ratsloc=0;
 				if ((start==num || start<0) && pass==2)
