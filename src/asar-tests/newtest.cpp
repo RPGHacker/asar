@@ -122,7 +122,9 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 	pp.generate_checksum = false;
 
 	std::vector<std::string> output_errors;
+	std::vector<std::string> output_error_strs;
 	std::vector<std::string> output_warns;
+	std::vector<std::string> output_warn_strs;
 	std::vector<std::string> output_prints;
 
 	bool asar_errored = false;
@@ -134,6 +136,7 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 		auto errors = asar_geterrors(&numerr);
 		for(int i = 0; i < numerr; i++) {
 			output_errors.push_back(errors[i].errname);
+			output_error_strs.push_back(errors[i].fullerrdata);
 			asar_errored = true;
 			// if we wanted to support ;E> then this would be the place to
 			// check for Eassertion_failed and Eerror_command
@@ -143,6 +146,7 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 		auto warnings = asar_getwarnings(&numwarn);
 		for(int i = 0; i < numwarn; i++) {
 			output_warns.push_back(warnings[i].errname);
+			output_warn_strs.push_back(warnings[i].fullerrdata);
 		}
 
 		int numprint;
@@ -160,28 +164,34 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 	auto check_expect_lists =
 		[&](std::vector<std::string> output,
 			std::vector<std::string> expected,
-			std::string name) {
+			std::vector<std::string> fullmsgs,
+			std::string name,
+			bool expected_with_commas) {
 		if(output != expected) {
 			ok = false;
 			if(expected.empty()) {
-				fail_reason << "Expected no " + name + ", got " + name + ": ";
+				fail_reason << "Expected no " + name + ", got " + name + ":\n";
 			} else {
-				fail_reason << "Expected " + name + ": ";
-				for(size_t i = 0; i < expected.size(); i++) {
-					fail_reason << expected[i] << (i == expected.size()-1 ? "\n" : ", ");
+				fail_reason << "Expected " + name + (expected_with_commas ? ": " : ":\n");
+				if(expected_with_commas) {
+					for(size_t i = 0; i < expected.size(); i++) {
+						fail_reason << expected[i] << (i == expected.size()-1 ? "\n" : ", ");
+					}
+				} else {
+					for(auto& msg : expected) fail_reason << msg << "\n";
 				}
 
-				fail_reason << "Actual " + name + ":   ";
+				fail_reason << "Actual " + name + ":\n";
 			}
-			for(size_t i = 0; i < output.size(); i++) {
-				fail_reason << output[i] << (i == output.size()-1 ? "\n" : ", ");
+			for(auto& msg : fullmsgs) {
+				fail_reason << msg << "\n";
 			}
 		}
 	};
 
-	check_expect_lists(output_errors, expected_errors, "errors");
-	check_expect_lists(output_warns, expected_warnings, "warnings");
-	check_expect_lists(output_prints, expected_prints, "prints");
+	check_expect_lists(output_errors, expected_errors, output_error_strs, "errors", true);
+	check_expect_lists(output_warns, expected_warnings, output_warn_strs, "warnings", true);
+	check_expect_lists(output_prints, expected_prints, output_prints, "prints", false);
 
 	// don't check this if we already have errors,
 	// as in that case the output rom is blank anyways
