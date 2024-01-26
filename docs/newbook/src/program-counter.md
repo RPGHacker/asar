@@ -58,18 +58,6 @@ skip align $20 offset $17
 ; pc is now at $008017
 ```
 
-## `warnpc`
-
-{{# syn: warnpc {snes_address} #}}
-
-The warnpc command checks if the current pc is `> snes_address`. If that's the case, it throws an error. This is useful for detecting overflow errors.
-
-```asar
-org $008000
-incbin datafile.bin
-warnpc $008100      ; Throws an error if datafile.bin is larger than $100 bytes.
-```
-
 ## `bank`
 
 {{# syn: bank {data_bank/noassume/auto} #}}

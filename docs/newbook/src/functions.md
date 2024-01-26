@@ -302,6 +302,9 @@ Aside from user-defined functions mentioned above, Asar also supports a number o
       warn "This patch was only tested in Asar and might not work correctly in your assembler."
   endif
   ```
+- `pc()`
+
+  Returns the current SNES address. This is a shorthand for placing a label right before the current command.
   
 - `realbase()`
   

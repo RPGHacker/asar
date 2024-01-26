@@ -63,7 +63,7 @@
 -   Variadic macro parameters now use the syntax `<...[math]>`, which makes them less ambiguous and helps prevent syntax parsing bugs. (RPG Hacker)
 -   HiROM, ExHiROM, and ExLoROM mappers can now use `freecode`. (p4plus2)
 -   `check bankcross` now allows disabling checking for half-bank crossings (going from $7FFF to $8000). (p4plus2)
--   New `realbase()` function: returns the current SNES address that is being written to. (p4plus2)
+-   New `pc()` and `realbase()` functions: return the current SNES address that is being written to. (p4plus2, randomdude999)
 -   Namespaces can now be saved using `pushns` and `pullns`. (p4plus2)
 -   It's now possible to use macro arguments and macro labels in files that are `incsrc`'d from macros. (randomdude999)
 -   Added `for` loops, used like `for i = 1..10`. These are more convenient than while loops in most cases and are the main replacement for `rep`. (randomdude999)
@@ -121,6 +121,7 @@
 -   Using `A` as a label name ambiguously, e.g. `lda a`: in Asar 2 this will be interpreted as trying to use the "A" addressing mode, and will give an error. You can use `A+0` if you really must refer to the label as is.
 -   The `startpos` command of the `spc700-inline` architecture: use the optional `execute` argument to `endspcblock` instead.
 -   Specifying the byte to use for freespace like `freecode $ff`. Use the new separate `freespacebyte` command for it.
+-   The `warnpc` command: use `assert pc() <= $xxxxxx` instead.
 
 - - -
 
