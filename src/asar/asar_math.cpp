@@ -351,6 +351,14 @@ double asar_realbase_wrapper()
 	return realsnespos;
 }
 
+double asar_pc_wrapper()
+{
+	// while this really should set foundlabel, not doing it right now for symmetry with realbase.
+	// we should rework the way foundlabel works anyways.
+	//foundlabel = true;
+	return snespos;
+}
+
 template <int count> double asar_read()
 {
 	int target = get_double_argument();
@@ -605,7 +613,8 @@ assocarr<double (*)()> builtin_functions =
 	{"snestopc", asar_snestopc_wrapper},
 	{"pctosnes", asar_pctosnes_wrapper},
 	{"realbase", asar_realbase_wrapper},
-	
+	{"pc", asar_pc_wrapper},
+
 	{"max", asar_binary_wrapper<asar_max>},
 	{"min", asar_binary_wrapper<asar_min>},
 	{"clamp", asar_clamp},
