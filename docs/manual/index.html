@@ -1796,6 +1796,7 @@ skip align $20 offset $17
 </code></pre>
 		<h4 id="warnpc">warnpc</h4>
 		<pre><code class="65c816_asar">warnpc {snes_address}</code></pre>
+		DEPRECATED: you can achieve the exact same thing with <code>assert pc() &lt;= {snes_address}</code>.<be></be>
 		The warnpc command checks if the current pc is <code>&gt; snes_address</code>. If that's the case, it throws an error. This is useful for detecting overflow errors.
 		<pre><code class="65c816_asar">org $008000
 incbin datafile.bin
@@ -2754,6 +2755,11 @@ endif</code></pre></td>
 				<td><pre><code class="65c816_asar">if not(stringsequalnocase("!assembler", "ASAR"))
 	warn "This patch was only tested in Asar and might not work correctly in your assembler."
 endif</code></pre></td>
+			</tr>
+			<tr>
+				<td><code class="65c816_asar">pc()</code></td>
+				<td>Returns the current SNES address. This is a shorthand for placing a label right before the current command.</td>
+				<td><pre><code class="65c816_asar">assert pc() &lt;= $008123</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">realbase()</code></td>

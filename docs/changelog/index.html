@@ -41,7 +41,7 @@
 			<li>Variadic macro parameters now use the syntax <code class="65c816_asar">&lt;...[math]&gt;</code>, which makes them less ambiguous and helps prevent syntax parsing bugs. (RPG Hacker)</li>
 			<li>HiROM, ExHiROM, and ExLoROM mappers can now use <code>freecode</code>. (p4plus2)</li>
 			<li><code>check bankcross</code> now allows disabling checking for half-bank crossings (going from $7FFF to $8000). (p4plus2)</li>
-			<li>New <code>realbase()</code> function: returns the current SNES address that is being written to. (p4plus2)</li>
+			<li>New <code>pc()</code> and <code>realbase()</code> functions: returns the current SNES address that is being written to. (p4plus2, randomdude999)</li>
 			<li>Namespaces can now be saved using <code>pushns</code> and <code>pullns</code>. (p4plus2)</li>
 			<li>It's now possible to use macro arguments and macro labels in files that are <code>incsrc</code>'d from macros. (randomdude999)</li>
 			<li>Added <code>for</code> loops, used like <code>for i = 1..10</code>. These are more convenient than while loops in most cases and are the main replacement for <code>rep</code>. (randomdude999)</li>
@@ -102,6 +102,7 @@
 			<li>Using <code>A</code> as a label name ambiguously, e.g. <code>lda a</code>: in Asar 2 this will be interpreted as trying to use the "A" addressing mode, and will give an error. You can use <code>A+0</code> if you really must refer to the label as is.</li>
 			<li>The <code class="65c816_asar">startpos</code> command of the <code>spc700-inline</code> architecture: use the optional <code>execute</code> argument to <code>endspcblock</code> instead.</li>
 			<li>Specifying the byte to use for freespace like <code>freecode $ff</code>. Use the new separate <code>freespacebyte</code> command for it.</li>
+			<li>The <code>warnpc</code> command: use <code>assert pc() &lt;= $xxxxxx</code> instead.</li>
 		</ul></div>
 
 		<hr />
