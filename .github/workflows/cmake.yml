@@ -3,6 +3,9 @@ name: CMake
 on:
   push:
     branches: [ master, asar_19, asar_2_beta ]
+    paths-ignore:
+      - 'docs/**'
+      - 'ext/**'
   pull_request:
     branches: [ master, asar_19, asar_2_beta ]
 
@@ -24,7 +27,9 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Configure CMake
       run: cmake -S ${{github.workspace}}/src -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{ matrix.generator }} ${{ matrix.toolset }}
