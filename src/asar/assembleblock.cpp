@@ -594,6 +594,7 @@ static int getfreespaceid()
 	if (freespaceidnext > max_num_freespaces) asar_throw_error(pass, error_type_fatal, error_id_freespace_limit_reached, max_num_freespaces);*/
 	int newid = freespaceidnext++;
 	if(newid >= freespaces.count) {
+		freespaces[newid].pos = -1;
 		freespaces[newid].leaked = true;
 		freespaces[newid].orgpos = -2;
 		freespaces[newid].orglen = -1;
