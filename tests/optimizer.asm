@@ -112,7 +112,7 @@ lda asdf
 lda nonmirror
 lda nonmirror01
 
-warnpc $009000
+assert pc() <= $009000
 
 freecode cleaned
 optimize dp none
