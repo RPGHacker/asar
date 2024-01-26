@@ -2239,6 +2239,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("warnpc"))
 	{
+		asar_throw_warning(0, warning_id_feature_deprecated, "warnpc", "use \"assert pc() <= $xxxxxx\" instead");
 		unsigned int maxpos=getnum(par);
 		if ((unsigned int)snespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
 		if ((unsigned int)maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);

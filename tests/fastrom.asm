@@ -18,7 +18,6 @@ fastrom ; this is a null operation. it gives too much trouble.
 
 org $8000
 db $01
-warnpc $8001
 
 Test:
 BRA Test
