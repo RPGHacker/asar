@@ -2180,14 +2180,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			ns += "_";
 		}
 	}
-	else if (is1("warnpc"))
-	{
-		asar_throw_warning(0, warning_id_feature_deprecated, "warnpc", "use \"assert pc() <= $xxxxxx\" instead");
-		unsigned int maxpos=getnum(par);
-		if (freespaceid > 0) asar_throw_error(0, error_type_block, error_id_warnpc_in_freespace);
-		if ((unsigned int)maxpos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_warnpc_broken_param);
-		if ((unsigned int)snespos > maxpos) asar_throw_error(0, error_type_block, error_id_warnpc_failed, hex((unsigned int)snespos).data(), hex((unsigned int)maxpos, 6).data());
-	}
 #ifdef SANDBOX
 	else if (is("incsrc") || is("incbin") || is("table"))
 	{
