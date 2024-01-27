@@ -2,28 +2,32 @@
 
 Freespace is a concept that comes into play when extending an existing ROM. To insert new code or data into a ROM, the ROM must contain enough continuous unused space for everything to fit into. Space like that is referred to as freespace. Many tools attempt to find freespace in a ROM by looking for continuous blocks of a certain value (most commonly `$00`). This method on its own isn't reliable as freespace finders could erroneously detect binary data or code with a certain pattern as freespace. For this reason, the RATS format was invented to protect data inserted into a ROM (see [SMW Wiki](https://web.archive.org/web/20180525193101/http://old.smwiki.net/wiki/ROM_Allocation_Tag_System) for details on the RATS format). When placing RATS tags at the beginning of occupied memory blocks inside a ROM, freespace finders can search for them to know which parts of the ROM not to overwrite. Asar supports a number of commands for working with freespace directly, including freespace finders with automatic RATS tag generation.
 
-## `freespace` / `freecode` / `freedata`
+## `freespace` / `freecode` / `freedata` / `segment`
 
 {{# syn:
-freespace {ram/noram}[,align][,cleaned][,static][,value]
-freecode [align][,cleaned][,static][,value]
-freedata [align][,cleaned][,static][,value]
+freespace {ram/noram}[,norats][,align][,cleaned][,static][,bank={num}][,start={num}][,pin={label}]
+freecode [options...]
+freedata [options...]
+segment [ram/noram][,align][,bank={num}][,start={num}][,pin={label}]
 #}}
 
-The freespace command makes Asar search the output ROM for a freespace area large enough to contain the following section of code/data. If such an area is found, the pc is placed at its beginning and a RATS tag automatically written. If no such area is found, an error is thrown. The parameters control what kind of freespace to look for.  
+The freespace command makes Asar search the output ROM for a freespace area large enough to contain the following section of code/data. If such an area is found, the pc is placed at its beginning and a RATS tag automatically written. If no such area is found, an error is thrown. The parameters control what kind of freespace to look for.
+
+The `freecode` command is an alias of `freespace ram`, whereas `freedata` is an alias of `freespace noram`. The `segment` command is an alias for `freespace norats`.
   
 | Parameter | Details |
 | --- | --- |
 | `ram` | The freespace finder searches for an area where RAM mirrors are available (banks $10 to $3F). Recommended when inserting code. |
 | `noram` | The freespace finder searches for an area where RAM mirrors aren't available (banks $40 to $6F and $F0 to $FF). If no such area is found, it searches in the remaining banks ($10 to $3F). Recommended when inserting data. |
+| `norats` | Do not write a RATS tag. This is mostly useful for homebrews, or other setups where the ROM is rebuilt from scratch. Using this option makes the `ram`/`noram` options optional, defaulting to `noram`. It also cannot be used with `cleaned` or `static`, which are specfic to the RATS system. |
 | `align` | The freespace finder searches for an area at the beginning of a bank. |
 | `cleaned` | Suppresses the warning about freespace leaking. Useful when Asar's leak detection misbehaves on an autoclean with a complicated math statement or similar. |
 | `static` | Prevents the freespace area from moving once assigned. This also prevents it from growing (an error is thrown if the area would need to grow). Useful in situations where data needs to remain in a certain location (for example: when another tool or another patch needs to access it). |
-| `value` | A number literal or math statement specifying the byte value to look for when searching for freespace (default: $00). To find freespace, Asar will look for continuous areas of this value. When using autoclean on this freespace, this is also the value the area will be cleaned to. Note that specifying the byte like this is deprecated. You should use the separate `freespacebyte` command instead. |
+| `bank=` | Only search for freespace in the given bank. Mostly useful when using `norats`. |
+| `start=` | Search for freespace starting at the specified position in ROM. Useful for hacking non-SMW games, where the original ROM might be bigger or smaller. Note that technically, this limits the freespace finder to positions that are after the location of `start` in the ROM file: For example, when using `$C00000` as the start position in `hirom`, the entire ROM will be searched, since `$C00000` is at the start of the ROM file. |
+| `pin=` | Pin this freespace to another one, forcing them to be placed in the same bank. |
 
-TODO: document `segment`
-  
-The `freecode` command is an alias of `freespace ram`, whreas the `freedata` command is an alias of `freespace noram`. One thing to note about freespaces is that if Asar places two freespace areas within the same bank, it will use 24-bit addressing in cases where they reference each other, despite 16-bit addressing being possible in theory. This can be worked around by only using a single freespace area instead. It's not recommended to explicitly use 16-bit addressing in these cases as the two freespace areas are not guaranteed to always end up in the same bank for all users.
+One thing to note about freespaces is that if Asar places two freespace areas within the same bank, it will use 24-bit addressing in cases where they reference each other, despite 16-bit addressing being possible in theory. This can be worked around by only using a single freespace area instead. It's not recommended to explicitly use 16-bit addressing in these cases as the two freespace areas are not guaranteed to always end up in the same bank for all users.
 
 ```asar
 ; Let's assume this to be some location in the ROM originally containing
