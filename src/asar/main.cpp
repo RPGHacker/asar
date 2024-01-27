@@ -525,7 +525,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 	try
 	{
 		string tmp;
-		if(inmacro) tmp = replace_macro_args(line);
+		if(inmacro && numif == numtrue) tmp = replace_macro_args(line);
 		else tmp = line;
 		clean(tmp);
 		string out;
