@@ -1050,6 +1050,7 @@ void assembleblock(const char * block, bool isspecialline)
 		if (is("assert"))
 		{
 			autoptr<char**> tokens = qpsplit(word[numwords - 1], ",");
+			if (tokens == nullptr) asar_throw_error(0, error_type_block, error_id_broken_conditional, word[0]);
 			if (tokens[0] != NULL && tokens[1] != NULL)
 			{
 				string rawerrmsg;
