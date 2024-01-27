@@ -398,7 +398,7 @@ int main(int argc, const char * argv[])
 					}
 					else
 					{
-						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, name_start, "-wno");
+						asar_throw_warning(pass, warning_id_invalid_warning_id, name_start, "-wno");
 					}
 				}
 				else
@@ -411,7 +411,7 @@ int main(int argc, const char * argv[])
 					}
 					else
 					{
-						asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, w_param, "-w");
+						asar_throw_warning(pass, warning_id_invalid_warning_id, w_param, "-w");
 					}
 				}
 

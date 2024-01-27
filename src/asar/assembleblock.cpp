@@ -1333,7 +1333,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			}
 			else
 			{
-				asar_throw_error(0, error_type_block, error_id_invalid_warning_id, word[2], "warnings enable");
+				asar_throw_warning(0, warning_id_invalid_warning_id, word[2], "warnings enable");
 			}
 		}
 		else if (stricmp(word[1], "disable") == 0)
@@ -1346,7 +1346,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			}
 			else
 			{
-				asar_throw_error(0, error_type_block, error_id_invalid_warning_id, word[2], "warnings disable");
+				asar_throw_warning(0, warning_id_invalid_warning_id, word[2], "warnings disable");
 			}
 		}
 		else

@@ -1,4 +1,6 @@
-;`errEinvalid_warning_id
+;`warnWinvalid_warning_id
+;`01
+; what is the point of this test????
 
 org $008000
 warnings push

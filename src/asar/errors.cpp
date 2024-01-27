@@ -195,8 +195,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(invalid_print_function_syntax), "Invalid printable string syntax." },
 	{ ERR(unknown_variable), "Unknown variable." },
 
-	{ ERR(invalid_warning_id), "Warning '%s' (passed to %s) doesn't exist." },
-
 	{ ERR(pushwarnings_without_pullwarnings), "warnings push without matching warnings pull." },
 	{ ERR(pullwarnings_without_pushwarnings), "warnings pull without matching warnings push." },
 

@@ -1,8 +1,8 @@
 ;`errEfile_not_found
 ;`errEfailed_to_open_not_regular_file
 ;`errEdefine_not_found
-;`errEinvalid_warning_id
-;`errEinvalid_warning_id
+;`warnWinvalid_warning_id
+;`warnWinvalid_warning_id
 ;`errEstart_of_file
 incsrc "jkhkjh"
 incbin ".."

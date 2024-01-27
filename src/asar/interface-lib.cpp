@@ -497,7 +497,7 @@ EXPORT bool asar_patch(const struct patchparams_base *params)
 			}
 			else
 			{
-				asar_throw_error(pass, error_type_null, error_id_invalid_warning_id, paramscurrent.warning_settings[i].warnid, "asar_patch_ex() warning_settings");
+				asar_throw_warning(pass, warning_id_invalid_warning_id, paramscurrent.warning_settings[i].warnid, "asar_patch_ex() warning_settings");
 			}
 		}
 
