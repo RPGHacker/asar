@@ -534,14 +534,14 @@ static void setlabel(string name, int loc=-1, bool is_static=false, int freespac
 	else if (pass==2)
 	{
 		//all label locations are known at this point, add a sanity check
-		if (!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_on_third_pass);
+		if (!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_internal_error, "label created on 3rd pass");
 		labelpos = labels.find(name).pos;
 		if ((int)labelpos != loc && !movinglabelspossible)
 		{
 			if((unsigned int)loc>>16 != labelpos>>16)  asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
 			else if(labelpos == (dp_base + 0xFFu))   asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
 			else if(errored) return;
-			else asar_throw_error(2, error_type_block, error_id_label_moving);
+			else asar_throw_error(2, error_type_block, error_id_internal_error, "moving label");
 		}
 	}
 }

@@ -103,8 +103,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(broken_label_definition), "Broken label definition." },
 	{ ERR(label_cross_assignment), "Setting labels to other non-static labels is not valid." },
 	{ ERR(macro_label_outside_of_macro), "Macro label outside of a macro." },
-	{ ERR(label_on_third_pass), "Internal error: A label was created on the third pass. Please create an issue on the official GitHub repository and attach a patch which reproduces the error." },
-	{ ERR(label_moving), "Internal error: A label is moving around. Please create an issue on the official GitHub repository and attach a patch which reproduces the error." },
 
 	{ ERR(invalid_namespace_name), "Invalid namespace name." },
 	{ ERR(invalid_namespace_use), "Invalid use of namespace command." },
@@ -242,7 +240,7 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(startpos_without_spcblock), "The startpos command is only valid in spcblocks" },
 	{ ERR(invalid_endspcblock_arg), "Invalid argument to endspcblock: \"%s\"" },
 	{ ERR(unknown_endspcblock_format), "Unsupported endspcblock format. Currently supported formats are \"endspcblock\" and \"endspcblock execute [label]\"" },
-	{ ERR(internal_error), "An internal asar error occured (%s). Send help." },
+	{ ERR(internal_error), "An internal error occured (%s). This is a bug in Asar, please report it at https://github.com/RPGHacker/asar/issues, along with a patch that reproduces it if possible." },
 
 	{ ERR(pushns_without_pullns), "pushns without matching pullns." },
 	{ ERR(pullns_without_pushns), "pullns without matching pushns." },
@@ -254,7 +252,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(cmdl_utf16_to_utf8_failed), "UTF-16 to UTF-8 string conversion failed: %s." },
 
 	{ ERR(broken_command), "Broken %s command. %s" },
-	{ ERR(phantom_error), "A phantom error occurred. This is an Asar bug, please report it: https://github.com/RPGHacker/asar/issues" },
 
 	{ ERR(oob), "Operation out of bounds: Requested index %d for object of size %d" },
 

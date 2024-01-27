@@ -334,7 +334,7 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 	if (errored)
 	{
 		if (numerror==0)
-			asar_throw_error(pass, error_type_null, error_id_phantom_error);
+			asar_throw_error(pass, error_type_null, error_id_internal_error, "phantom error");
 		free(const_cast<unsigned char*>(romdata));
 		return false;
 	}

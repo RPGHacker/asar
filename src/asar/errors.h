@@ -78,8 +78,6 @@ enum asar_error_id : int
 	error_id_broken_label_definition,
 	error_id_label_cross_assignment,
 	error_id_macro_label_outside_of_macro,
-	error_id_label_on_third_pass,
-	error_id_label_moving,
 
 	error_id_invalid_namespace_name,
 	error_id_invalid_namespace_use,
@@ -229,7 +227,6 @@ enum asar_error_id : int
 	error_id_cmdl_utf16_to_utf8_failed,
 
 	error_id_broken_command,
-	error_id_phantom_error,
 
 	error_id_oob,
 	
