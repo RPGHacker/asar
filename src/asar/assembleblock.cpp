@@ -182,7 +182,7 @@ inline void write1_65816(unsigned int num)
 		}
 		writeromdata_byte(pcpos, (unsigned char)num, freespaceid != 0);
 		if (pcpos>=romlen) {
-			if(pcpos - romlen > 0) writeromdata_bytes(romlen, default_freespacebyte, pcpos - romlen, false);
+			if(pcpos - romlen > 0) writeromdata_bytes(romlen, freespacebyte, pcpos - romlen, false);
 			romlen=pcpos+1;
 		}
 	}
@@ -598,7 +598,6 @@ static int getfreespaceid()
 		freespaces[newid].leaked = true;
 		freespaces[newid].orgpos = -2;
 		freespaces[newid].orglen = -1;
-		freespaces[newid].cleanbyte = 0x00;
 	}
 	return newid;
 }
@@ -677,7 +676,7 @@ void initstuff()
 	realstartpos= (int)0xFFFFFFFF;
 	freespaceidnext=1;
 	freespaceid=0;
-	default_freespacebyte=0x00;
+	freespacebyte=0x00;
 	incsrcdepth = 0;
 
 	optimizeforbank = -1;
@@ -761,7 +760,7 @@ void allocate_freespaces() {
 		// if this freespace is pinned to another one, set it later
 		if(fs.pin_target_id != i) continue;
 		// TODO: possibly fancier align
-		fs.pos = getsnesfreespace(fs.total_len, fs.bank, true, true, fs.flag_align, fs.cleanbyte, fs.write_rats, fs.search_start);
+		fs.pos = getsnesfreespace(fs.total_len, fs.bank, true, true, fs.flag_align, fs.write_rats, fs.search_start);
 		fs.used_len = fs.len;
 	}
 	// set pos for all pinned freespaces
@@ -993,7 +992,7 @@ void handle_autoclean(string& arg, int checkbyte, int write_pos)
 			if(rats_loc != -1) {
 				targetfs.orgpos = rats_loc + 8;
 				targetfs.orglen = read2(rats_loc + 4) + 1;
-				if(!targetfs.is_static) removerats(rats_loc + 8, targetfs.cleanbyte);
+				if(!targetfs.is_static) removerats(rats_loc + 8, freespacebyte);
 			}
 		}
 	} else if(pass == 2) {
@@ -1865,7 +1864,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (is("freedata")) parstr=STR"noram,"+parstr;
 		if (is("segment")) parstr = STR "norats," + parstr;
 		autoptr<char**> pars=split(parstr.temp_raw(), ',');
-		unsigned char fsbyte = default_freespacebyte;
 		bool fixedpos=false;
 		bool align=false;
 		bool leakwarn=true;
@@ -1927,16 +1925,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				// this is to throw an "undefined label" error with the proper callstack
 				if(pass) labelval(pin_to);
 			}
-			else if (stribegin(pars[i], "cleanbyte="))
-			{
-				fsbyte = getnum(pars[i] + strlen("cleanbyte="));
-				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-			}
-			else
-			{
-				// for backwards compat i guess
-				fsbyte = (unsigned char)getnum(pars[i]);
-			}
+			else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 		}
 		if(target_bank == -3 && !write_rats) target_bank = -1;
 		if(target_bank == -3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
@@ -1946,7 +1935,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		freespaceend();
 		freespaceid=getfreespaceid();
 		freespace_data& thisfs = freespaces[freespaceid];
-		thisfs.cleanbyte = fsbyte;
 
 		thisfs.pin_target = pin_to_freespace;
 		if(pin_to_freespace) thisfs.pin_target_ns = ns;
@@ -2044,11 +2032,11 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 			}
 		}
-		else if (pass==0) removerats((int)getnum(word[1]), default_freespacebyte);
+		else if (pass==0) removerats((int)getnum(word[1]), freespacebyte);
 	}
 	else if (is1("freespacebyte"))
 	{
-		default_freespacebyte = getnum(word[1]);
+		freespacebyte = getnum(word[1]);
 		if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 	}
 	else if (is0("pushpc"))

@@ -9,7 +9,7 @@ int sa1banks[8]={0<<20, 1<<20, -1, -1, 2<<20, 3<<20, -1, -1};
 const unsigned char * romdata= nullptr; // NOTE: Changed into const to prevent direct write access - use writeromdata() functions below
 int romlen;
 static bool header;
-unsigned char default_freespacebyte;
+unsigned char freespacebyte;
 static FileHandleType thisfile = InvalidFileHandle;
 
 asar_error_id openromerror;
@@ -342,7 +342,7 @@ static inline int trypcfreespace(int start, int alt_start, int end, int size, in
 //isforcode=false tells it to favor banks 40+, true tells it to avoid them entirely.
 //It automatically adds a RATS tag.
 
-int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte, bool write_rats, int search_start)
+int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, bool write_rats, int search_start)
 {
 	// TODO: probably should error if specifying target_bank and align, or target_bank and respectbankborders
 	if (!size) {
@@ -381,20 +381,20 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 			if(0);
 			else if (romlen==0x080000)
 			{
-				writeromdata_bytes(romlen, default_freespacebyte, 0x100000 - romlen, false);
+				writeromdata_bytes(romlen, freespacebyte, 0x100000 - romlen, false);
 				romlen=0x100000;
 				writeromdata_byte(snestopc(0x00FFD7), 0x0A);
 			}
 			else if (romlen==0x100000)
 			{
-				writeromdata_bytes(romlen, default_freespacebyte, 0x200000 - romlen, false);
+				writeromdata_bytes(romlen, freespacebyte, 0x200000 - romlen, false);
 				romlen=0x200000;
 				writeromdata_byte(snestopc(0x00FFD7), 0x0B);
 			}
 			else if (isforcode) return -1;//no point creating freespace that can't be used
 			else if (romlen==0x200000 || romlen==0x300000)
 			{
-				writeromdata_bytes(romlen, default_freespacebyte, 0x400000 - romlen, false);
+				writeromdata_bytes(romlen, freespacebyte, 0x400000 - romlen, false);
 				romlen=0x400000;
 				writeromdata_byte(snestopc(0x00FFD7), 0x0C);
 			}
@@ -466,7 +466,7 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 		if (autoexpand && nextbank>=0)
 		{
 			unsigned char x7FD7[]={0, 0x0A, 0x0B, 0x0C, 0x0C, 0x0D, 0x0D, 0x0D, 0x0D};
-			writeromdata_bytes(romlen, default_freespacebyte, nextbank + 0x100000 - romlen, false);
+			writeromdata_bytes(romlen, freespacebyte, nextbank + 0x100000 - romlen, false);
 			romlen=nextbank+0x100000;
 			writeromdata_byte(0x7FD7, x7FD7[romlen>>20]);
 			autoexpand=false;
@@ -512,9 +512,9 @@ void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsi
 	}
 }
 
-int getsnesfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, unsigned char freespacebyte, bool write_rats, int search_start)
+int getsnesfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, bool write_rats, int search_start)
 {
-	return pctosnes(getpcfreespace(size, target_bank, autoexpand, respectbankborders, align, freespacebyte, write_rats, snestopc(search_start)));
+	return pctosnes(getpcfreespace(size, target_bank, autoexpand, respectbankborders, align, write_rats, snestopc(search_start)));
 }
 
 bool openrom(const char * filename, bool confirm)

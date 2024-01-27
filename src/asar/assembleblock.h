@@ -49,8 +49,6 @@ struct freespace_data {
 	int orglen;
 	// whether this freespace is static, i.e. can't be relocated when reinserting
 	bool is_static;
-	// what byte to use when searching for freespace, and clearing out previous rats tags
-	unsigned char cleanbyte;
 
 	// options only used for finding freespace:
 

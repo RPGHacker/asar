@@ -7,7 +7,7 @@
 
 extern const unsigned char * romdata;
 extern int romlen;
-extern unsigned char default_freespacebyte;
+extern unsigned char freespacebyte;
 extern asar_error_id openromerror;
 bool openrom(const char * filename, bool confirm=true);
 uint32_t closerom(bool save = true);
@@ -201,8 +201,8 @@ inline int pctosnes(int addr)
 	return -1;
 }
 
-int getpcfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00, bool write_rats=true, int search_start=-1);
-int getsnesfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, unsigned char freespacebyte=0x00, bool write_rats=true, int search_start=-1);
+int getpcfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, bool write_rats=true, int search_start=-1);
+int getsnesfreespace(int size, int target_bank, bool autoexpand=true, bool respectbankborders=true, bool align=false, bool write_rats=true, int search_start=-1);
 
 void removerats(int snesaddr, unsigned char clean_byte);
 void handle_cleared_rats_tags();
