@@ -2,9 +2,6 @@
 
 #define ASAR_WARNING_RANGE_START	1000
 
-// NOTE: Don't reorder these. That would change their ID.
-// If you need to remove one, stub it out.
-// If you need to add one, add it at the end (before warning_id_end).
 // Keep in sync with asar_warnings.
 enum asar_warning_id : int
 {

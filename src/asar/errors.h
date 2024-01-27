@@ -2,9 +2,6 @@
 
 #define ASAR_ERROR_RANGE_START	5000
 
-// NOTE: Don't reorder these. That would change their ID.
-// If you need to remove one, stub it out.
-// If you need to add one, add it at the end (before error_id_end).
 // Keep in sync with asar_errors.
 enum asar_error_id : int
 {
