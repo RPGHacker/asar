@@ -70,6 +70,7 @@
 -   `incbin` now has a new syntax for including a range of the target file which looks like the for loop range syntax and is less ambiguous. (randomdude999)
 -   Added `spcblock` feature as a replacement for `spc-inline`, which allows defining blocks of SPC data, but in a more flexible way that can easily be extended in the future. (p4plus2)
 -   Added the `--error-limit` option, which allows raising the limit on the number of errors that Asar will print before stopping. (randomdude999)
+-   `freespacebyte` command to set the byte value used for searching for freespace and expanding the ROM. (randomdude999)
 
 ### Bug fixes:
 
@@ -88,7 +89,7 @@
 -   Fixed some phantom errors when using forward labels. (randomdude999)
 -   Asar should now allow as much recursion as system resources allow, and then throw a nice error instead of crashing. (Atari2.0, randomdude999, p4plus2)
 -   `optimize address` now works a bit more consistently (new behavior also properly documented in manual). (randomdude999)
--   `freespacebyte` command to set the byte value used for searching for freespace and expanding the ROM. (randomdude999)
+-   Fixed bug where pointing multiple autocleans at the same freespace would sometimes eat some of the data in it. (spooonsss)
 
 ### Deprecated features:
 
