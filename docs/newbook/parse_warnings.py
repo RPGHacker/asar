@@ -4,7 +4,7 @@ import re
 import string
 
 warning_pattern = re.compile(r'WRN\((.*?)\),\s*"(.*)"\s*,?\s*(true|false)?\s*}')
-error_pattern = re.compile(r'ERR\((.*?)\),\s*"(.*)"\s*}')
+error_pattern = re.compile(r'ERR\((.*?),\s*"(.*)"\)\s*\\')
 escaping = str.maketrans({x: '\\'+x for x in string.punctuation})
 
 def escape(s):
@@ -14,7 +14,7 @@ def escape(s):
 def get_errors():
     yield "| Error name | Message |"
     yield "| ---------- | ------- |"
-    with open("../../src/asar/errors.cpp") as f:
+    with open("../../src/asar/errors.h") as f:
         for line in f:
             if 'ERR(' in line and not line.startswith('#define'):
                 name, description = re.findall(error_pattern, line)[0]

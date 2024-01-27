@@ -225,10 +225,12 @@ struct errblock : public errline {};
 struct errnull : public errblock {};
 
 #ifdef __clang__
-// let's see if this causes msvc to explode...
+// okay so this ## thing isn't very nice of me, but it works on all compilers
+// for now. i'll refactor all use sites of asar_throw_error at some point so i
+// can do a different hack to always pass at least 1 variadic argument
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
 [[gnu::format(printf, 4, 5)]]
 void asar_throw_error_impl(int whichpass, asar_error_type type, asar_error_id errid, const char* fmt, ...);
-#define asar_throw_error(whichpass, type, errid, ...) asar_throw_error_impl(whichpass, type, errid, get_error_fmt(errid) __VA_OPT__(,) __VA_ARGS__)
+#define asar_throw_error(whichpass, type, errid, ...) asar_throw_error_impl(whichpass, type, errid, get_error_fmt(errid), ## __VA_ARGS__)
 const char* get_error_name(asar_error_id errid);
