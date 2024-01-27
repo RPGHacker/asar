@@ -13,7 +13,6 @@ enum asar_error_id : int
 	error_id_limit_reached,
 	error_id_werror,
 
-	error_id_16mb_rom_limit,
 	error_id_buffer_too_small,
 	error_id_params_null,
 	error_id_params_invalid_size,
@@ -28,10 +27,7 @@ enum asar_error_id : int
 
 	error_id_failed_to_open_file,
 	error_id_file_not_found,
-	error_id_readfile_1_to_4_bytes,
-	error_id_canreadfile_0_bytes,
 	error_id_file_offset_out_of_bounds,
-	error_id_rep_at_file_end,
 
 	error_id_mismatched_parentheses,
 	error_id_invalid_hex_value,
@@ -49,7 +45,6 @@ enum asar_error_id : int
 	error_id_bank_border_crossed,
 
 	error_id_start_of_file,
-	error_id_xkas_asar_conflict,
 	error_id_invalid_version_number,
 	error_id_asar_too_old,
 
@@ -76,7 +71,6 @@ enum asar_error_id : int
 	error_id_broken_function_declaration,
 	error_id_wrong_num_parameters,
 	error_id_invalid_param_name,
-	error_id_math_invalid_type,
 
 	error_id_invalid_label_name,
 	error_id_label_not_found,
@@ -95,10 +89,8 @@ enum asar_error_id : int
 	error_id_struct_redefined,
 	error_id_struct_invalid_parent_name,
 	error_id_invalid_label_missing_closer,
-	error_id_multiple_subscript_operators,
 	error_id_invalid_subscript,
 	error_id_label_missing_parent,
-	error_id_array_invalid_inside_structs,
 	error_id_struct_without_endstruct,
 	error_id_nested_struct,
 	error_id_missing_struct_params,
@@ -125,41 +117,29 @@ enum asar_error_id : int
 	error_id_macro_param_redefined,
 	error_id_broken_macro_usage,
 	error_id_macro_wrong_num_params,
-	error_id_broken_macro_contents,
-	error_id_rep_at_macro_end,
-	error_id_nested_macro_definition,
 	error_id_misplaced_endmacro,
 	error_id_unclosed_macro,
 
 	error_id_label_in_conditional,
-	error_id_broken_conditional,
-	error_id_invalid_condition,
 	error_id_misplaced_elseif,
 	error_id_elseif_in_while,
-	error_id_elseif_in_singleline,
 	error_id_misplaced_endif,
 	error_id_misplaced_else,
 	error_id_else_in_while_loop,
 	error_id_unclosed_if,
 
 	error_id_unknown_command,
-	error_id_command_disabled,
 
 	error_id_broken_incbin,
-	error_id_incbin_64kb_limit,
 	error_id_recursion_limit,
-	error_id_command_in_non_root_file,
 	error_id_cant_be_main_file,
 	error_id_no_labels_here,
 
 	error_id_invalid_freespace_request,
-	error_id_no_banks_with_ram_mirrors,
-	error_id_no_freespace_norom,
 	error_id_static_freespace_autoclean,
 	error_id_static_freespace_growing,
 	error_id_no_freespace_in_mapped_banks,
 	error_id_no_freespace,
-	error_id_freespace_limit_reached,
 
 	error_id_prot_not_at_freespace_start,
 	error_id_prot_too_many_entries,
@@ -169,33 +149,19 @@ enum asar_error_id : int
 	error_id_broken_autoclean,
 
 	error_id_pulltable_without_table,
-	error_id_invalid_table_file,
 
 	error_id_pad_in_freespace,
 
-	error_id_org_label_invalid,
 	error_id_org_label_forward,
 
-	error_id_skip_label_invalid,
-
-	error_id_spc700_inline_no_base,
 	error_id_base_label_invalid,
-
-	error_id_rep_label,
 
 	error_id_pushpc_without_pullpc,
 	error_id_pullpc_without_pushpc,
 	error_id_pullpc_different_arch,
 	error_id_pullbase_without_pushbase,
 
-	error_id_invalid_math,
-	error_id_invalid_warn,
 	error_id_invalid_check,
-
-	error_id_warnpc_in_freespace,
-	error_id_warnpc_broken_param,
-	error_id_warnpc_failed,
-	error_id_warnpc_failed_equal,
 
 	error_id_assertion_failed,
 
@@ -241,7 +207,6 @@ enum asar_error_id : int
 	error_id_feature_unavaliable_in_spcblock,
 	error_id_endspcblock_without_spcblock,
 	error_id_missing_endspcblock,
-	error_id_spcblock_bad_arch,
 	error_id_spcblock_inside_struct,
 	error_id_spcblock_too_few_args,
 	error_id_spcblock_too_many_args,
@@ -273,7 +238,6 @@ enum asar_error_id : int
 	error_id_unclosed_vararg,
 	error_id_invalid_vararg,
 
-	error_id_macro_param_outside_macro,
 	error_id_invalid_depth_resolve,
 
 	error_id_platform_paths,

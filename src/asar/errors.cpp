@@ -38,7 +38,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(limit_reached), "Over %d errors detected. Aborting." },
 	{ ERR(werror), "One or more warnings was detected with werror on." },
 
-	{ ERR(16mb_rom_limit), "Can't create ROMs larger than 16MB." },
 	{ ERR(buffer_too_small), "The given buffer is too small to contain the resulting ROM." },
 	{ ERR(params_null), "params passed to asar_patch_ex() is null." },
 	{ ERR(params_invalid_size), "Size of params passed to asar_patch_ex() is invalid." },
@@ -53,10 +52,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ ERR(failed_to_open_file), "Failed to open file '%s'." },
 	{ ERR(file_not_found), "File '%s' wasn't found." },
-	{ ERR(readfile_1_to_4_bytes), "Can only read chunks of 1 to 4 bytes." },
-	{ ERR(canreadfile_0_bytes), "Number of bytes to check must be > 0." },
 	{ ERR(file_offset_out_of_bounds), "File offset %s out of bounds for file '%s'." },
-	{ ERR(rep_at_file_end), "rep at the end of a file" },
 
 	{ ERR(mismatched_parentheses), "Mismatched parentheses." },
 	{ ERR(invalid_hex_value), "Invalid hex value." },
@@ -74,7 +70,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(bank_border_crossed), "A bank border was crossed, SNES address $%06X." },
 
 	{ ERR(start_of_file), "This command may only be used at the start of a file." },
-	{ ERR(xkas_asar_conflict), "Using @xkas and @asar in the same patch is not supported." },
 	{ ERR(invalid_version_number), "Invalid version number." },
 	{ ERR(asar_too_old), "This version of Asar is too old for this patch." },
 
@@ -101,7 +96,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(broken_function_declaration), "Broken function declaration." },
 	{ ERR(wrong_num_parameters), "Wrong number of parameters to function." },
 	{ ERR(invalid_param_name), "Invalid parameter name." },
-	{ ERR(math_invalid_type), "Wrong type for parameter %s, expected %s." },
 
 	{ ERR(invalid_label_name), "Invalid label name." },
 	{ ERR(label_not_found), "Label '%s' wasn't found." },
@@ -120,10 +114,8 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(struct_redefined), "Struct '%s' redefined." },
 	{ ERR(struct_invalid_parent_name), "Invalid parent name." },
 	{ ERR(invalid_label_missing_closer), "Invalid label name, missing array closer." },
-	{ ERR(multiple_subscript_operators), "Multiple subscript operators is invalid." },
 	{ ERR(invalid_subscript), "Invalid array subscript after first scope resolution." },
 	{ ERR(label_missing_parent), "This label has no parent." },
-	{ ERR(array_invalid_inside_structs), "Array syntax invalid inside structs." },
 	{ ERR(struct_without_endstruct), "struct without matching endstruct." },
 	{ ERR(nested_struct), "Can not nest structs." },
 	{ ERR(missing_struct_params), "Missing struct parameters." },
@@ -150,41 +142,29 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(macro_param_redefined), "Macro parameter '%s' redefined" },
 	{ ERR(broken_macro_usage), "Broken macro usage." },
 	{ ERR(macro_wrong_num_params), "Wrong number of parameters to macro." },
-	{ ERR(broken_macro_contents), "Broken macro contents." },
-	{ ERR(rep_at_macro_end), "rep or if at the end of a macro." },
-	{ ERR(nested_macro_definition), "Nested macro definition: Trying to define a macro inside '%s', which is not supported." },
 	{ ERR(misplaced_endmacro), "Misplaced endmacro." },
 	{ ERR(unclosed_macro), "Unclosed macro: '%s'." },
 
 	{ ERR(label_in_conditional), "Non-static label in %s command." },
-	{ ERR(broken_conditional), "Broken %s command." },
-	{ ERR(invalid_condition), "Invalid condition." },
 	{ ERR(misplaced_elseif), "Misplaced elseif." },
 	{ ERR(elseif_in_while), "Can't use elseif in a while loop." },
-	{ ERR(elseif_in_singleline), "Can't use elseif on single-line statements." },
 	{ ERR(misplaced_endif), "Misplaced endif." },
 	{ ERR(misplaced_else), "Misplaced else." },
 	{ ERR(else_in_while_loop), "Can't use else in a while loop." },
 	{ ERR(unclosed_if), "Unclosed if statement." },
 
 	{ ERR(unknown_command), "Unknown command." },
-	{ ERR(command_disabled), "This command is disabled." },
 
 	{ ERR(broken_incbin), "Broken incbin command." },
-	{ ERR(incbin_64kb_limit), "Can't include more than 64 kilobytes at once." },
 	{ ERR(recursion_limit), "Recursion limit reached." },
-	{ ERR(command_in_non_root_file), "This command may only be used in the root file." },
 	{ ERR(cant_be_main_file), "This file may not be used as the main file.%s" },
 	{ ERR(no_labels_here), "Can't use non-static labels here." },
 
 	{ ERR(invalid_freespace_request), "Invalid freespace request." },
-	{ ERR(no_banks_with_ram_mirrors), "No banks contain the RAM mirrors in hirom or exhirom." },
-	{ ERR(no_freespace_norom), "Can't find freespace in norom." },
 	{ ERR(static_freespace_autoclean), "A static freespace must be targeted by at least one autoclean." },
 	{ ERR(static_freespace_growing), "A static freespace may not grow." },
 	{ ERR(no_freespace_in_mapped_banks), "No freespace found in the mapped banks. (Requested size: %s)" },
 	{ ERR(no_freespace), "No freespace found. (Requested size: %s)" },
-	{ ERR(freespace_limit_reached), "A patch may not contain more than %d freespaces." },
 
 	{ ERR(prot_not_at_freespace_start), "PROT must be used at the start of a freespace block." },
 	{ ERR(prot_too_many_entries), "Too many entries to PROT." },
@@ -194,33 +174,19 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(broken_autoclean), "Broken autoclean command." },
 
 	{ ERR(pulltable_without_table), "Using pulltable when there is no table on the stack yet." },
-	{ ERR(invalid_table_file), "Invalid table file. Invalid entry on line: %i" },
 
 	{ ERR(pad_in_freespace), "pad does not make sense in a freespaced code." },
 
-	{ ERR(org_label_invalid), "org Label is not valid." },
 	{ ERR(org_label_forward), "org Label is only valid for labels earlier in the patch." },
 
-	{ ERR(skip_label_invalid), "skip Label is not valid." },
-
-	{ ERR(spc700_inline_no_base), "base is not implemented for architecture spc700-inline." },
 	{ ERR(base_label_invalid), "base Label is not valid." },
-
-	{ ERR(rep_label), "rep Label is not valid." },
 
 	{ ERR(pushpc_without_pullpc), "pushpc without matching pullpc." },
 	{ ERR(pullpc_without_pushpc), "pullpc without matching pushpc." },
 	{ ERR(pullpc_different_arch), "pullpc in another architecture than the pushpc." },
 	{ ERR(pullbase_without_pushbase), "pullbase without matching pushbase." },
 
-	{ ERR(invalid_math), "Invalid math command." },
-	{ ERR(invalid_warn), "Invalid warn command." },
 	{ ERR(invalid_check), "Invalid check command." },
-
-	{ ERR(warnpc_in_freespace), "warnpc used in freespace." },
-	{ ERR(warnpc_broken_param), "Broken warnpc parameter." },
-	{ ERR(warnpc_failed), "warnpc failed: Current position (%s) is after end position (%s)." },
-	{ ERR(warnpc_failed_equal), "warnpc failed: Current position (%s) is equal to end position (%s)." },
 
 	{ ERR(assertion_failed), "Assertion failed%s" },
 
@@ -265,7 +231,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(feature_unavaliable_in_spcblock), "This feature may not be used while an spcblock is active" },
 	{ ERR(endspcblock_without_spcblock), "Use of endspcblock without matching spcblock" },
 	{ ERR(missing_endspcblock), "Use of endspcblock without matching spcblock" },
-	{ ERR(spcblock_bad_arch), "spcblock only valid inside spc700 arch" },
 	{ ERR(spcblock_inside_struct), "Can not start an spcblock while a struct is still open" },
 	{ ERR(spcblock_too_few_args), "Too few args passed to spcblock" },
 	{ ERR(spcblock_too_many_args), "Too many args passed to spcblock" },
@@ -298,7 +263,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(unclosed_vararg), "Variadic macro parameter wasn't closed properly." },
 	{ ERR(invalid_vararg), "Trying to use variadic macro parameter syntax to resolve a non variadic argument." },
 
-	{ ERR(macro_param_outside_macro), "Reference to macro parameter outside of macro" },
 	{ ERR(invalid_depth_resolve), "Invalid %s resolution depth: Trying to backwards-resolve a %s using %i '^', but current scope only supports up to %i '^'." },
 	
 	{ ERR(platform_paths), "Platform-specific paths aren'supported. Please use platform-independent paths (use / instead of \\)." },
