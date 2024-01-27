@@ -1,10 +1,11 @@
-;`+
-;`01
+;`warnWwarn_command
+;W>hhhh
 
-org $008000
 warnings push
-warnings disable Wmissing_org
+warnings disable Wwarn_command
 
-db $01
+warn "h"
 
 warnings pull
+
+warn "hhhh"

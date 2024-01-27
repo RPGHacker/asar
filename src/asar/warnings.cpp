@@ -46,17 +46,10 @@ static asar_warning_mapping asar_warnings[] =
 	{ WRN(rom_too_short), "ROM is too short to have a title. (Expected '%s')" },
 	{ WRN(rom_title_incorrect), "ROM title is incorrect. Expected '%s', got '%s'." },
 
-	{ WRN(65816_yy_x_does_not_exist), "($yy),x does not exist, assuming $yy,x." },
-	{ WRN(65816_xx_y_assume_16_bit), "%s $xx,y is not valid with 8-bit parameters, assuming 16-bit." },
 	{ WRN(spc700_assuming_8_bit), "This opcode does not exist with 16-bit parameters, assuming 8-bit." },
 	{ WRN(assuming_address_mode), "The addressing mode %s is not valid for this instruction, assuming %s.%s" },
 
-	{ WRN(cross_platform_path), "This patch may not assemble cleanly on all platforms. Please use / instead." },
-
-	{ WRN(missing_org), "Missing org or freespace command." },
 	{ WRN(set_middle_byte), "It would be wise to set the 008000 bit of this address." },
-
-	{ WRN(unrecognized_special_command), "Unrecognized special command - your version of Asar might be outdated." },
 
 	{ WRN(freespace_leaked), "This freespace appears to be leaked." },
 
@@ -64,24 +57,7 @@ static asar_warning_mapping asar_warnings[] =
 
 	{ WRN(implicitly_sized_immediate), "Implicitly sized immediate.", false },
 
-	{ WRN(xkas_deprecated), "xkas support is being deprecated and will be removed in a future version of Asar. Please use an older version of Asar (<=1.50) if you need it." },
-	{ WRN(xkas_eat_parentheses), "xkas compatibility warning: Unlike xkas, Asar does not eat parentheses after defines." },
-	{ WRN(xkas_label_access), "xkas compatibility warning: Label access is always 24bit in emulation mode, but may be 16bit in native mode." },
-	{ WRN(xkas_warnpc_relaxed), "xkas conversion warning : warnpc is relaxed one byte in Asar." },
-	{ WRN(xkas_style_conditional), "xkas-style conditional compilation detected. Please use the if command instead." },
-	{ WRN(xkas_patch), "If you want to assemble an xkas patch, add ;@xkas at the top or you may run into a couple of problems." },
-	{ WRN(xkas_incsrc_relative), "xkas compatibility warning: incsrc and incbin look for files relative to the patch in Asar, but xkas looks relative to the assembler." },
-	{ WRN(convert_to_asar), "Convert the patch to native Asar format instead of making an Asar-only xkas patch." },
-
-	{ WRN(fixed_deprecated), "the 'fixed' parameter on freespace/freecode/freedata is deprecated - please use 'static' instead." },
-
-	{ WRN(autoclear_deprecated), "'autoclear' is deprecated - please use 'autoclean' instead." },
-
 	{ WRN(check_memory_file), "Accessing file '%s' which is not in memory while W%d is enabled.", false },
-
-	{ WRN(if_not_condition_deprecated), "'if !condition' is deprecated - please use 'if not(condition)' instead." },
-
-	{ WRN(function_redefined), "Function '%s' redefined." },
 
 	{ WRN(datasize_last_label), "Datasize used on last detected label '%s'." },
 	{ WRN(datasize_exceeds_size), "Datasize exceeds 0xFFFF for label '%s'." },
