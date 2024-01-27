@@ -63,8 +63,6 @@ Alternatively, if statements can also be constructed on a single line via the fo
 if {condition} : {codeblock}[ : codeblock...] : endif
 ```
 
-Note that else or elseif are unsupported when using this syntax.
-
 ```asar
 PressedY:
     if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball : endif
