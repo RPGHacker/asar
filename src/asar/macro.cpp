@@ -42,7 +42,14 @@ void startmacro(const char * line_)
 		if (c==',' && is_digit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	}
 	if (*startpar==',' || is_digit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
-	if (macros.exists(defining_macro_name)) asar_throw_error(0, error_type_block, error_id_macro_redefined, defining_macro_name.data());
+	if (macros.exists(defining_macro_name))
+	{
+		const auto macro = macros[defining_macro_name];
+		// i think theoretically it would be "more correct" to print the entire
+		// callstack here, but this should be good enough for an error message.
+		// needs +1 because startline is 0-indexed
+		asar_throw_error(0, error_type_block, error_id_macro_redefined, defining_macro_name.data(), macro->fname, macro->startline + 1);
+	}
 	thisone=(macrodata*)malloc(sizeof(macrodata));
 	new(thisone) macrodata;
 	if (*startpar)
