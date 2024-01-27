@@ -39,9 +39,7 @@ endif
 
 The `error` command lets you output an error message to the user. Usage:
 
-```asar
-error [text_or_function...]
-```
+{{# syn: error [text_or_function...] #}}
 
 where `custom_error_text` can be a custom error text and uses the same format as the `print` command. An error causes compilation to fail, so it should be used to inform the user about irrecoverable error states. Error messages are printed to stderr.
 
