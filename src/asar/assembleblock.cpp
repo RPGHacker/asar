@@ -1086,7 +1086,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if(!is("for"))
 		{
 			cond = getnum(word[1]);
-			if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(1, error_type_block, error_id_label_in_conditional, word[0]);
+			if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 		}
 
 		if (is("for"))
@@ -1582,6 +1582,10 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			base = getnum(word[2]);
 
 			if (foundlabel && !foundlabel_static) static_struct = false;
+			if (pass > 0) {
+				// foundlabel_static isn't accurate anymore
+				static_struct &= structs.find(word[1]).is_static;
+			}
 		}
 
 		bool old_in_struct = in_struct;

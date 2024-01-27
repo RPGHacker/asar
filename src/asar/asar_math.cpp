@@ -22,7 +22,10 @@ static double eval(int depth);
 //userfunction
 
 bool foundlabel;
+// WARNING: this flag is only correctly set in pass 0, as forward labels are
+// always non-static but we don't know when we hit forward-labels past pass 0
 bool foundlabel_static;
+// only set in pass 0
 bool forwardlabel;
 
 struct cachedfile {
@@ -821,7 +824,10 @@ static double getnumcore()
 			}
 
 			str=start;
-			if (i==-1) forwardlabel=true;
+			if (i==-1) {
+				foundlabel_static = false;
+				forwardlabel=true;
+			}
 			return (int)i&0xFFFFFF;
 		}
 	}

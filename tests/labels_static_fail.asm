@@ -1,3 +1,8 @@
+;`errElabel_in_conditional
+;`errElabel_in_conditional
+;`errElabel_in_conditional
+;`errElabel_in_conditional
+;`errElabel_in_conditional
 ;`errEno_labels_here
 ;`errEno_labels_here
 ;`errElabel_cross_assignment
@@ -5,11 +10,6 @@
 ;`errEno_labels_here
 ;`errEno_labels_here
 ;`errEdefine_label_math
-;`errElabel_in_conditional
-;`errElabel_in_conditional
-;`errElabel_in_conditional
-;`errElabel_in_conditional
-;`errElabel_in_conditional
 org $008000
 ANonStaticLabel:
 
