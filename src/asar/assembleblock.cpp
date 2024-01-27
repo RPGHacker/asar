@@ -891,6 +891,8 @@ static void pop_pc()
 
 string handle_print(char* input)
 {
+	// evaluating this math can be unsafe in pass 0
+	if(pass != 2) return "";
 	string out;
 	autoptr<char**> pars = qpsplit(input, ',');
 	verify_paren(pars);
@@ -909,13 +911,13 @@ string handle_print(char* input)
 			char * arg1pos = strchr(pars[i], '(') + 1;
 			char * endpos = strchr(arg1pos, '\0');
 			while (*endpos == ' ' || *endpos == '\0') endpos--;
-			if (*endpos != ')') asar_throw_error(0, error_type_block, error_id_invalid_print_function_syntax);
+			if (*endpos != ')') asar_throw_error(2, error_type_block, error_id_invalid_print_function_syntax);
 			string paramstr = string(arg1pos, (int)(endpos - arg1pos));
 
 			int numargs;
 			autoptr<char**> params = qpsplit(paramstr.temp_raw(), ',', &numargs);
 			verify_paren(params);
-			if (numargs > 2) asar_throw_error(0, error_type_block, error_id_wrong_num_parameters);
+			if (numargs > 2) asar_throw_error(2, error_type_block, error_id_wrong_num_parameters);
 			int precision = 0;
 			bool hasprec = numargs == 2;
 			if (hasprec)
