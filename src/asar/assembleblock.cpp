@@ -61,7 +61,6 @@ struct spcblock_data{
 	spcblock_type type;
 	string macro_name;
 
-	unsigned int execute_address;	// Can be removed in Asar 2.0
 	unsigned int size_address;
 	mapper_t old_mapper;
 }spcblock;
@@ -1699,7 +1698,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				write2(spcblock.destination);
 				snespos=(int)spcblock.destination;
 				startpos=(int)spcblock.destination;
-				spcblock.execute_address = -1u;
 				add_addr_to_line(addrToLinePos);
 			break;
 			case spcblock_custom:
@@ -1746,12 +1744,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				{
 					asar_throw_error(0, error_type_null, error_id_unknown_endspcblock_format);
 				}
-				else if(spcblock.execute_address != -1u)
-				{
-					// Legacy case, will be removed with Asar 2.0.
-					write2(0x0000);
-					write2((unsigned int)spcblock.execute_address);
-				}
 			break;
 			case spcblock_custom:
 				mapper = spcblock.old_mapper;
@@ -1762,12 +1754,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		ns = ns_backup;
 		in_spcblock = false;
-	}
-	// Remember to also remove execute_address entirely from spcblock once removing this deprecated command.
-	else if (is1("startpos"))
-	{
-		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_startpos_without_spcblock);
-		spcblock.execute_address=getnum(par);
 	}
 	else if (is1("base"))
 	{

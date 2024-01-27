@@ -237,7 +237,6 @@ static asar_error_mapping asar_errors[] =
 	{ ERR(spcblock_macro_must_be_varadic), "Custom spcblock macros must be variadic" },
 	{ ERR(spcblock_macro_invalid_static_args), "Custom spcblock macros must have three static arguments" },
 	{ ERR(spcblock_custom_types_incomplete), "Custom spcblock types are not yet supported. One day." },
-	{ ERR(startpos_without_spcblock), "The startpos command is only valid in spcblocks" },
 	{ ERR(invalid_endspcblock_arg), "Invalid argument to endspcblock: \"%s\"" },
 	{ ERR(unknown_endspcblock_format), "Unsupported endspcblock format. Currently supported formats are \"endspcblock\" and \"endspcblock execute [label]\"" },
 	{ ERR(internal_error), "An internal error occured (%s). This is a bug in Asar, please report it at https://github.com/RPGHacker/asar/issues, along with a patch that reproduces it if possible." },
