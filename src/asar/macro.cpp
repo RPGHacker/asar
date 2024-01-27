@@ -42,7 +42,11 @@ void startmacro(const char * line_)
 		if (c==',' && is_digit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
 	}
 	if (*startpar==',' || is_digit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
-	if (macros.exists(defining_macro_name)) asar_throw_error(0, error_type_block, error_id_macro_redefined, defining_macro_name.data());
+	if (macros.exists(thisname))
+	{
+		const auto macro = macros[thisname];
+		asar_throw_error(0, error_type_block, error_id_macro_redefined, thisname.data(), macro->fname, macro->startline);
+	}
 	thisone=(macrodata*)malloc(sizeof(macrodata));
 	new(thisone) macrodata;
 	if (*startpar)
