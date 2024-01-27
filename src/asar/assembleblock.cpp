@@ -150,8 +150,9 @@ inline void step(int num)
 {
 	if (disable_bank_cross_errors)
 	{
-		snespos = fixsnespos(snespos, num);
-		realsnespos = fixsnespos(realsnespos, num);
+		// need to keep freespace id the same...
+		snespos = (snespos&0xff000000) | fixsnespos(snespos&0xffffff, num);
+		realsnespos = (realsnespos&0xff000000) | fixsnespos(realsnespos&0xffffff, num);
 
 		// RPG Hacker: Not adjusting startpos here will eventually throw
 		// an error in checkbankcross() if we set warn bankcross on again.
