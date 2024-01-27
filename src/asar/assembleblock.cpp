@@ -2169,12 +2169,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			ns += "_";
 		}
 	}
-#ifdef SANDBOX
-	else if (is("incsrc") || is("incbin") || is("table"))
-	{
-		asar_throw_error(0, error_type_block, error_id_command_disabled);
-	}
-#endif
 	else if (is1("incsrc"))
 	{
 		string name;
