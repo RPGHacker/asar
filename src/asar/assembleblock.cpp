@@ -1026,11 +1026,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	// we want to write out the snespos we had before writing opcodes
 	int addrToLinePos = realsnespos & 0xFFFFFF;
 
-	while (numif==numtrue && word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
-	{
-		word++;
-		numwords--;
-	}
 	if (!word[0] || !word[0][0]) return;
 	if (is("if") || is("elseif") || is("assert") || is("while") || is("for"))
 	{
@@ -1179,6 +1174,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).data());
 			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
+		return;
 	}
 	else if (is0("endif") || is0("endwhile") || is0("endfor"))
 	{
@@ -1214,6 +1210,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 					defines.remove(thisws.for_variable);
 			}
 		}
+		return;
 	}
 	else if (is0("else"))
 	{
@@ -1225,8 +1222,23 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			numtrue++;
 			elsestatus[numif]=true;
 		}
+		return;
 	}
 	else if (numif!=numtrue) return;
+
+	while (word[0] && (!word[1] || strcmp(word[1], "=")) && addlabel(word[0]))
+	{
+		word++;
+		numwords--;
+	}
+	if (!word[0] || !word[0][0]) return;
+
+	// recheck for any of the conditionals tested above
+	if(is("if") || is("elseif") || is("assert") || is("while") || is("for")
+		|| is0("endif") || is0("endwhile") || is0("endfor") || is0("else"))
+	{
+		asar_throw_error(0, error_type_block, error_id_label_before_if, word[0]);
+	}
 	else if (asblock_pick(word, numwords))
 	{
 		add_addr_to_line(addrToLinePos);

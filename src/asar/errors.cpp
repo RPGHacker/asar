@@ -270,6 +270,7 @@ static asar_error_mapping asar_errors[] =
 
 	{ ERR(bad_addr_mode), "This addressing mode is not valid for this instruction." },
 	{ ERR(bad_access_width), "This addressing mode can accept %s arguments, but the provided argument is %d-bit." },
+	{ ERR(label_before_if), "Labels are not allowed before \"%s\" commands. Suggestion: move the label to a separate line." },
 };
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_error
 // matches with the number of constants in asar_error_id. This is important, because
