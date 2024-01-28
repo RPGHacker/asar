@@ -269,7 +269,6 @@ int getlenfromchar(char c)
 	if (c=='w') return 2;
 	if (c=='l') return 3;
 	asar_throw_error(0, error_type_block, error_id_invalid_opcode_length);
-	return -1;
 }
 
 assocarr<snes_label> labels;

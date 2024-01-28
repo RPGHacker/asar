@@ -172,7 +172,6 @@ string get_string_argument()
 		return tempname;
 	}//todo make this error a better one later
 	asar_throw_error(2, error_type_block, error_id_string_literal_not_terminated);
-	return ""; //never actually called, but I don't feel like figuring out __attribute__ ((noreturn)) on MSVC
 }
 
 //only returns alphanumeric (and _) starting with alpha or _
@@ -874,7 +873,6 @@ static double getnumcore()
 		return atof(number);
 	}
 	asar_throw_error(2, error_type_block, error_id_invalid_number);
-	return 0.0;
 }
 
 inline double sanitize(double val)
@@ -916,10 +914,9 @@ double getnumdouble(const char * instr)
 }
 
 
-static double oper_wrapped_throw(asar_error_id errid)
+template<asar_error_id errid> static double oper_wrapped_throw()
 {
 	asar_throw_error(2, error_type_block, errid);
-	return 0.0;
 }
 
 static double eval(int depth)
@@ -961,12 +958,12 @@ notposneglabel:
 			}
 		oper("**", 6, pow((double)left, (double)right));
 		oper("*", 5, left*right);
-		oper("/", 5, right != 0.0 ? left / right : oper_wrapped_throw(error_id_division_by_zero));
-		oper("%", 5, right != 0.0 ? fmod((double)left, (double)right) : oper_wrapped_throw(error_id_modulo_by_zero));
+		oper("/", 5, right != 0.0 ? left / right : oper_wrapped_throw<error_id_division_by_zero>());
+		oper("%", 5, right != 0.0 ? fmod((double)left, (double)right) : oper_wrapped_throw<error_id_modulo_by_zero>());
 		oper("+", 4, left+right);
 		oper("-", 4, left-right);
-		oper("<<", 3, right >= 0.0 ? (int64_t)left<<(uint64_t)right : oper_wrapped_throw(error_id_negative_shift));
-		oper(">>", 3, right >= 0.0 ? (int64_t)left>>(uint64_t)right : oper_wrapped_throw(error_id_negative_shift));
+		oper("<<", 3, right >= 0.0 ? (int64_t)left<<(uint64_t)right : oper_wrapped_throw<error_id_negative_shift>());
+		oper(">>", 3, right >= 0.0 ? (int64_t)left>>(uint64_t)right : oper_wrapped_throw<error_id_negative_shift>());
 
 		//these two needed checked early to avoid bitwise from eating a operator
 		oper("&&", 0, (int64_t)left&&(int64_t)right);

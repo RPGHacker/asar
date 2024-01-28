@@ -231,8 +231,24 @@ struct errnull : public errblock {};
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
 #if defined(__clang__) || defined(__GNUC__)
-[[gnu::format(printf, 4, 5)]]
+#define FORMAT [[gnu::format(printf, 3, 4)]]
+#else
+// msvc only has format string checking in enterprise edition lmao
+// ehh who tf even develops on windows anyways
+#define FORMAT
 #endif
-void asar_throw_error_impl(int whichpass, asar_error_type type, asar_error_id errid, const char* fmt, ...);
-#define asar_throw_error(whichpass, type, errid, ...) asar_throw_error_impl(whichpass, type, errid, get_error_fmt(errid), ## __VA_ARGS__)
+
+// "Magic Trick" to get noreturn on all but the null throw functions: use
+// preprocessor macros as makeshift template specializations
+
+// i would do this with explicit template specializations, but there's a 6 year
+// old open Clang bug report about [[noreturn]] not working with function
+// specializations.
+
+FORMAT void asar_throw_error_impl_error_type_null(int whichpass, asar_error_id errid, const char* fmt, ...);
+FORMAT [[noreturn]] void asar_throw_error_impl_error_type_block(int whichpass, asar_error_id errid, const char* fmt, ...);
+FORMAT [[noreturn]] void asar_throw_error_impl_error_type_line(int whichpass, asar_error_id errid, const char* fmt, ...);
+FORMAT [[noreturn]] void asar_throw_error_impl_error_type_fatal(int whichpass, asar_error_id errid, const char* fmt, ...);
+#undef FORMAT
+#define asar_throw_error(whichpass, type, errid, ...) asar_throw_error_impl_ ## type(whichpass, errid, get_error_fmt(errid), ## __VA_ARGS__)
 const char* get_error_name(asar_error_id errid);

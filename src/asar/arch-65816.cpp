@@ -144,8 +144,6 @@ parse_result parse_addr_kind(insn_context& ctx) {
 	RETURN_IF_ALLOWED(abs);
 	asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
 #undef RETURN_IF_ALLOWED
-	// clang doesn't know that asar_throw_error is noreturn in this case... :(
-	return {};
 }
 
 const char* format_valid_widths(int min, int max) {
