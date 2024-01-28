@@ -228,6 +228,8 @@ struct errnull : public errblock {};
 // okay so this ## thing isn't very nice of me, but it works on all compilers
 // for now. i'll refactor all use sites of asar_throw_error at some point so i
 // can do a different hack to always pass at least 1 variadic argument
+//edit: lol nevermind, different hack didn't work either, guess we're stuck
+// with this shit until we upgrade to c++20
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
 #if defined(__clang__) || defined(__GNUC__)
