@@ -6,88 +6,26 @@
 
 #include "interface-shared.h"
 
-static int asar_num_warnings = 0;
-
-struct asar_warning_mapping
+struct warnings_state
 {
-	asar_warning_id warnid;
-	const char* name;
-	const char* message;
-	bool enabled;
-	bool enabled_default;
-
-	asar_warning_mapping(asar_warning_id inwarnid, const char *iname, const char* inmessage, bool inenabled = true)
-	{
-		++asar_num_warnings;
-
-		warnid = inwarnid;
-		name = iname;
-		message = inmessage;
-		enabled = inenabled;
-		enabled_default = inenabled;
-
-		// RPG Hacker: Sanity check. This makes sure that the order
-		// of entries in asar_warnings matches with the order of
-		// constants in asar_warning_id. This is important because
-		// we access asar_warnings as an array.
-		// Would love to do this via static_assert(), but can't
-		// think of a way to do so.
-		assert(warnid - warning_id_start == asar_num_warnings);
-	}
+	bool enabled[warning_id_end];
 };
 
-// Keep in sync with asar_warning_id.
-// Both, enum mapping and order, must match.
-#define WRN(name) warning_id_ ## name, "W" #name
-static asar_warning_mapping asar_warnings[] =
-{
-	{ WRN(relative_path_used), "Relative %s path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!" },
+static warnings_state current_warnings_state;
+static autoarray<warnings_state> warnings_state_stack;
+static warnings_state main_warnings_state;
 
-	{ WRN(rom_too_short), "ROM is too short to have a title. (Expected '%s')" },
-	{ WRN(rom_title_incorrect), "ROM title is incorrect. Expected '%s', got '%s'." },
-
-	{ WRN(spc700_assuming_8_bit), "This opcode does not exist with 16-bit parameters, assuming 8-bit." },
-	{ WRN(assuming_address_mode), "The addressing mode %s is not valid for this instruction, assuming %s.%s" },
-
-	{ WRN(set_middle_byte), "It would be wise to set the 008000 bit of this address." },
-
-	{ WRN(freespace_leaked), "This freespace appears to be leaked." },
-
-	{ WRN(warn_command), "warn command%s" },
-
-	{ WRN(implicitly_sized_immediate), "Implicitly sized immediate.", false },
-
-	{ WRN(check_memory_file), "Accessing file '%s' which is not in memory while W%d is enabled.", false },
-
-	{ WRN(datasize_last_label), "Datasize used on last detected label '%s'." },
-	{ WRN(datasize_exceeds_size), "Datasize exceeds 0xFFFF for label '%s'." },
-
-	{ WRN(mapper_already_set), "A mapper has already been selected." },
-	{ WRN(feature_deprecated), "DEPRECATION NOTIFICATION: Feature \"%s\" is deprecated and will be REMOVED in the future. Please update your code to conform to newer styles. Suggested work around: %s." },
-
-	{ WRN(invalid_warning_id), "Warning '%s' (passed to %s) doesn't exist." },
-
-	{ WRN(byte_order_mark_utf8), "UTF-8 byte order mark detected and skipped." },
-};
-
-// RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
-// matches with the number of constants in asar_warning_id. This is important, because
-// we are going to access asar_warnings as an array.
-static_assert(sizeof(asar_warnings) / sizeof(asar_warnings[0]) == warning_id_count, "asar_warnings and asar_warning_id are not in sync");
-
-void asar_throw_warning(int whichpass, asar_warning_id warnid, ...)
+void asar_throw_warning_impl(int whichpass, asar_warning_id warnid, const char* fmt, ...)
 {
 	if (pass == whichpass)
 	{
-		assert(warnid > warning_id_start && warnid < warning_id_end);
+		assert(warnid >= 0 && warnid < warning_id_end);
 
-		const asar_warning_mapping& warning = asar_warnings[warnid - warning_id_start - 1];
-
-		if (warning.enabled)
+		if (current_warnings_state.enabled[warnid])
 		{
 			char warning_buffer[1024];
 			va_list args;
-			va_start(args, warnid);
+			va_start(args, fmt);
 
 #if defined(__clang__)
 #	pragma clang diagnostic push
@@ -97,7 +35,7 @@ void asar_throw_warning(int whichpass, asar_warning_id warnid, ...)
 #	pragma clang diagnostic ignored "-Wformat-nonliteral"
 #endif
 
-			vsnprintf(warning_buffer, sizeof(warning_buffer), warning.message, args);
+			vsnprintf(warning_buffer, sizeof(warning_buffer), fmt, args);
 
 #if defined(__clang__)
 #	pragma clang diagnostic pop
@@ -111,9 +49,9 @@ void asar_throw_warning(int whichpass, asar_warning_id warnid, ...)
 
 const char* get_warning_name(asar_warning_id warnid)
 {
-	assert(warnid > warning_id_start && warnid < warning_id_end);
+	assert(warnid >= 0 && warnid < warning_id_end);
 
-	const asar_warning_mapping& warning = asar_warnings[warnid - warning_id_start - 1];
+	const asar_warning_mapping& warning = asar_all_warnings[warnid];
 
 	return warning.name;
 }
@@ -122,11 +60,9 @@ const char* get_warning_name(asar_warning_id warnid)
 
 void set_warning_enabled(asar_warning_id warnid, bool enabled)
 {
-	assert(warnid > warning_id_start && warnid < warning_id_end);
+	assert(warnid >= 0 && warnid < warning_id_end);
 
-	asar_warning_mapping& warning = asar_warnings[warnid - warning_id_start - 1];
-
-	warning.enabled = enabled;
+	current_warnings_state.enabled[warnid] = enabled;
 }
 
 asar_warning_id parse_warning_id_from_string(const char* string)
@@ -143,11 +79,11 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 	{
 		++pos;
 	}
-	for(int i = 0; i < warning_id_end-warning_id_start-1; i++)
+	for(int i = 0; i < warning_id_end; i++)
 	{
-		if(!stricmpwithlower(pos, asar_warnings[i].name+1))
+		if(!stricmpwithlower(pos, asar_all_warnings[i].name+1))
 		{
-			return asar_warnings[i].warnid;
+			return asar_warning_id(i);
 		}
 	}
 
@@ -156,38 +92,23 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 
 void reset_warnings_to_default()
 {
-	for (int i = (int)(warning_id_start + 1); i < (int)warning_id_end; ++i)
+	for (int i = 0; i < (int)warning_id_end; ++i)
 	{
-		asar_warning_mapping& warning = asar_warnings[i - (int)warning_id_start - 1];
+		const asar_warning_mapping& warning = asar_all_warnings[i];
 
-		warning.enabled = warning.enabled_default;
+		current_warnings_state.enabled[i] = warning.default_enabled;
 	}
 }
 
-struct warnings_state
-{
-	bool enabled[warning_id_count];
-};
-
-static autoarray<warnings_state> warnings_state_stack;
-static warnings_state main_warnings_state;
-
 void push_warnings(bool warnings_command)
 {
-	warnings_state current_state;
-
-	for (int i = 0; i < (int)warning_id_count; ++i)
-	{
-		current_state.enabled[i] = asar_warnings[i].enabled;
-	}
-
 	if (warnings_command)
 	{
-		warnings_state_stack.append(current_state);
+		warnings_state_stack.append(current_warnings_state);
 	}
 	else
 	{
-		main_warnings_state = current_state;
+		main_warnings_state = current_warnings_state;
 	}
 }
 
@@ -206,10 +127,7 @@ void pull_warnings(bool warnings_command)
 			prev_state = main_warnings_state;
 		}
 
-		for (int i = 0; i < (int)warning_id_count; ++i)
-		{
-			asar_warnings[i].enabled = prev_state.enabled[i];
-		}
+		current_warnings_state = prev_state;
 
 		if (warnings_command)
 		{

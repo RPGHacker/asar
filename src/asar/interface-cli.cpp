@@ -305,6 +305,8 @@ int main(int argc, const char * argv[])
 
 		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;
+		// need to do this before option processing since the option parser already does set_warning_enabled
+		reset_warnings_to_default();
 
 		while ((par=libcon_option()))
 		{

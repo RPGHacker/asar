@@ -1,45 +1,56 @@
 #pragma once
 
-#define ASAR_WARNING_RANGE_START	1000
+#define ALL_WARNINGS(WRN) \
+	WRN(relative_path_used, "Relative %s path passed to asar_patch_ex() - please use absolute paths only to prevent undefined behavior!") \
+	WRN(rom_too_short, "ROM is too short to have a title. (Expected '%s')") \
+	WRN(rom_title_incorrect, "ROM title is incorrect. Expected '%s', got '%s'.") \
+	WRN(spc700_assuming_8_bit, "This opcode does not exist with 16-bit parameters, assuming 8-bit.") \
+	WRN(assuming_address_mode, "The addressing mode %s is not valid for this instruction, assuming %s.%s") \
+	WRN(set_middle_byte, "It would be wise to set the 008000 bit of this address.") \
+	WRN(freespace_leaked, "This freespace appears to be leaked.") \
+	WRN(warn_command, "warn command%s") \
+	WRN(implicitly_sized_immediate, "Implicitly sized immediate.", false) \
+	WRN(check_memory_file, "Accessing file '%s' which is not in memory while W%d is enabled.", false) \
+	WRN(datasize_last_label, "Datasize used on last detected label '%s'.") \
+	WRN(datasize_exceeds_size, "Datasize exceeds 0xFFFF for label '%s'.") \
+	WRN(mapper_already_set, "A mapper has already been selected.") \
+	WRN(feature_deprecated, "DEPRECATION NOTIFICATION: Feature \"%s\" is deprecated and will be REMOVED in the future. Please update your code to conform to newer styles. Suggested work around: %s.") \
+	WRN(invalid_warning_id, "Warning '%s' (passed to %s) doesn't exist.") \
+	WRN(byte_order_mark_utf8, "UTF-8 byte order mark detected and skipped.") \
+// this line intentionally left blank
 
-// Keep in sync with asar_warnings.
-enum asar_warning_id : int
-{
-	warning_id_start = ASAR_WARNING_RANGE_START,
-
-	warning_id_relative_path_used,
-
-	warning_id_rom_too_short,
-	warning_id_rom_title_incorrect,
-
-	warning_id_spc700_assuming_8_bit,
-	warning_id_assuming_address_mode,
-
-	warning_id_set_middle_byte,
-
-	warning_id_freespace_leaked,
-
-	warning_id_warn_command,
-
-	warning_id_implicitly_sized_immediate,
-
-	warning_id_check_memory_file,
-
-	warning_id_datasize_last_label,
-	warning_id_datasize_exceeds_size,
-	
-	warning_id_mapper_already_set,
-	warning_id_feature_deprecated,
-
-	warning_id_invalid_warning_id,
-
-	warning_id_byte_order_mark_utf8,
-
+enum asar_warning_id : int {
+#define DO(id, ...) warning_id_ ## id,
+	ALL_WARNINGS(DO)
+#undef DO
 	warning_id_end,
-	warning_id_count = warning_id_end - warning_id_start - 1
 };
 
-void asar_throw_warning(int whichpass, asar_warning_id warnid, ...);
+struct asar_warning_mapping {
+	const char* name;
+	const char* fmt_string;
+	bool default_enabled = true;
+};
+
+inline constexpr asar_warning_mapping asar_all_warnings[] = {
+#define DO(id, ...) { "W" #id, __VA_ARGS__ },
+	ALL_WARNINGS(DO)
+#undef DO
+};
+
+constexpr const char* get_warning_fmt(asar_warning_id warnid) {
+	return asar_all_warnings[warnid].fmt_string;
+}
+
+// see errors.h for some explanation of this whole mess
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
+#endif
+#if defined(__clang__) || defined(__GNUC__)
+[[gnu::format(printf, 3, 4)]]
+#endif
+void asar_throw_warning_impl(int whichpass, asar_warning_id warnid, const char* fmt, ...);
+#define asar_throw_warning(whichpass, warnid, ...) asar_throw_warning_impl(whichpass, warnid, get_warning_fmt(warnid), ## __VA_ARGS__)
 const char* get_warning_name(asar_warning_id warnid);
 
 void set_warning_enabled(asar_warning_id warnid, bool enabled);

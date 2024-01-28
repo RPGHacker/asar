@@ -201,7 +201,7 @@ struct asar_error_mapping {
 	const char* fmt_string;
 };
 
-inline constexpr const asar_error_mapping asar_all_errors[] = {
+inline constexpr asar_error_mapping asar_all_errors[] = {
 #define DO(id, fmt) { "E" #id, fmt },
 	ALL_ERRORS(DO)
 #undef DO
@@ -230,7 +230,9 @@ struct errnull : public errblock {};
 // can do a different hack to always pass at least 1 variadic argument
 #pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
 #endif
+#if defined(__clang__) || defined(__GNUC__)
 [[gnu::format(printf, 4, 5)]]
+#endif
 void asar_throw_error_impl(int whichpass, asar_error_type type, asar_error_id errid, const char* fmt, ...);
 #define asar_throw_error(whichpass, type, errid, ...) asar_throw_error_impl(whichpass, type, errid, get_error_fmt(errid), ## __VA_ARGS__)
 const char* get_error_name(asar_error_id errid);
