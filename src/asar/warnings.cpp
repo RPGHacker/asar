@@ -27,19 +27,7 @@ void asar_throw_warning_impl(int whichpass, asar_warning_id warnid, const char* 
 			va_list args;
 			va_start(args, fmt);
 
-#if defined(__clang__)
-#	pragma clang diagnostic push
-// "format string is not a literal".
-// The pointer we're passing here should always point to a string literal,
-// thus, I think, we can safely ignore this here.
-#	pragma clang diagnostic ignored "-Wformat-nonliteral"
-#endif
-
 			vsnprintf(warning_buffer, sizeof(warning_buffer), fmt, args);
-
-#if defined(__clang__)
-#	pragma clang diagnostic pop
-#endif
 
 			va_end(args);
 			warn((int)warnid, warning_buffer);

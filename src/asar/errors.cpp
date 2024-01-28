@@ -4,14 +4,15 @@
 
 #include "interface-shared.h"
 
-static void fmt_error(int whichpass, asar_error_id errid, const char* fmt, ...) {
+#if defined(__clang__) || defined(__GNUC__)
+// silences the Wformat-nonliteral
+[[gnu::format(printf, 3, 0)]]
+#endif
+static void fmt_error(int whichpass, asar_error_id errid, const char* fmt, va_list args) {
 	assert(errid >= 0 && errid < error_id_end);
 
 	char error_buffer[1024];
-	va_list args;
-	va_start(args, fmt);
 	vsnprintf(error_buffer, sizeof(error_buffer), fmt, args);
-	va_end(args);
 
 	error_interface((int)errid, whichpass, error_buffer);
 }
