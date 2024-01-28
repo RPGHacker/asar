@@ -28,9 +28,9 @@ int romlen_r;
 int pass;
 
 int optimizeforbank=-1;
-int optimize_dp = optimize_dp_flag::NONE;
+int optimize_dp = optimize_dp_flag::ALWAYS;
 int dp_base = 0;
-int optimize_address = optimize_address_flag::DEFAULT;
+int optimize_address = optimize_address_flag::MIRRORS;
 
 autoarray<callstack_entry> callstack;
 
@@ -376,11 +376,11 @@ static int getlenforlabel(snes_label thislabel, bool exists)
 	{
 		return 2;
 	}
-	else if((optimize_dp == optimize_dp_flag::RAM) && bank == 0x7E && (word-dp_base < 0x100))
+	else if((optimize_dp == optimize_dp_flag::RAM) && bank == 0x7E && (word-dp_base < 0x100) && !lblfreespace)
 	{
 		return 1;
 	}
-	else if(optimize_dp == optimize_dp_flag::ALWAYS && (bank == 0x7E || !(bank & 0x40)) && (word-dp_base < 0x100))
+	else if(optimize_dp == optimize_dp_flag::ALWAYS && (bank == 0x7E || !(bank & 0x40)) && (word-dp_base < 0x100) && !lblfreespace)
 	{
 		return 1;
 	}
@@ -1278,9 +1278,9 @@ void reseteverything()
 	writtenblocks.reset();
 
 	optimizeforbank=-1;
-	optimize_dp = optimize_dp_flag::NONE;
+	optimize_dp = optimize_dp_flag::ALWAYS;
 	dp_base = 0;
-	optimize_address = optimize_address_flag::DEFAULT;
+	optimize_address = optimize_address_flag::MIRRORS;
 
 	closecachedfiles();
 

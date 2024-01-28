@@ -509,7 +509,9 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 	{
 		verifysnespos();
 		loc = snespos;
-		lbl_fs_id = freespaceid;
+		// if base is not active:
+		if(snespos == realsnespos) lbl_fs_id = freespaceid;
+		// if base is active, always treat the label as freespace 0, i.e. not freespace.
 	}
 
 	snes_label label_data;
@@ -622,7 +624,7 @@ static void freespaceend()
 {
 	if (freespaceid > 0)
 	{
-		freespaces[freespaceid].len = snespos-freespacestart;
+		freespaces[freespaceid].len = realsnespos-freespacestart;
 		snespos=(int)0xFFFFFFFF;
 		snespos_valid = false;
 	}
@@ -680,9 +682,9 @@ void initstuff()
 	incsrcdepth = 0;
 
 	optimizeforbank = -1;
-	optimize_dp = optimize_dp_flag::NONE;
+	optimize_dp = optimize_dp_flag::ALWAYS;
 	dp_base = 0;
-	optimize_address = optimize_address_flag::DEFAULT;
+	optimize_address = optimize_address_flag::MIRRORS;
 
 	in_struct = false;
 	in_sub_struct = false;
