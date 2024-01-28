@@ -4,6 +4,7 @@
 ;`warnWfeature_deprecated
 ;`02 40
 ;`00 40
+;`04 40
 
 struct struct_without_org $4000
 	.first: skip 2
@@ -22,6 +23,9 @@ endstruct
 
 struct test3 extends test
 	.lol: skip 5
+endstruct
+
+struct test2 extends struct_without_org
 endstruct
 
 lda test[1].size
@@ -74,3 +78,4 @@ db objectsize("test.test3")
 
 dw struct_without_org.second
 dw struct_without_org
+dw struct_without_org.test2
