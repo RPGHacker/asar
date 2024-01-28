@@ -502,18 +502,20 @@ bool labelval(string name, snes_label * rval, bool define)
 	return labelvalcore(&str, rval, define, false);
 }
 
-static void setlabel(string name, int loc=-1, bool is_static=false, int freespace_id = -1)
+static void setlabel(string name, int loc=-1, bool is_static=false)
 {
+	int lbl_fs_id = 0;
 	if (loc==-1)
 	{
 		verifysnespos();
-		loc=snespos;
+		loc = snespos;
+		lbl_fs_id = freespaceid;
 	}
 
 	snes_label label_data;
 	label_data.pos = (unsigned int)loc;
 	label_data.is_static = is_static;
-	label_data.freespace_id = freespace_id == -1 ? freespaceid : freespace_id;
+	label_data.freespace_id = lbl_fs_id;
 
 	unsigned int labelpos;
 	if (pass==0)
