@@ -2641,8 +2641,8 @@ void assembleblock(const char * block, bool isspecialline)
 		else if (!stricmp(word[2], "off")) val=false;
 		else asar_throw_error(0, error_type_block, error_id_invalid_math);
 		if(0);
-		else if (!stricmp(word[1], "pri")){ math_pri=val; asar_throw_warning(2, warning_id_feature_deprecated, "math pri", "Rewrite your math statements using parentheses where needed and put \"asar 1.9\" in your patch to enable the future behavior of always enforcing math prioritization rules"); }
-		else if (!stricmp(word[1], "round")){ math_round=val; asar_throw_warning(2, warning_id_feature_deprecated, "math round", "Put \"asar 1.9\" in your patch to enable the future behavior of never rounding intermediate results. Call the round(), floor() or ceil() functions in places where intermediate rounding is required"); }
+		else if (!stricmp(word[1], "pri")){ math_pri=val; asar_throw_warning(2, warning_id_feature_deprecated, "math pri", "Rewrite your math statements using parentheses where needed and put \"asar 1.90\" in your patch to enable the future behavior of always enforcing math prioritization rules"); }
+		else if (!stricmp(word[1], "round")){ math_round=val; asar_throw_warning(2, warning_id_feature_deprecated, "math round", "Put \"asar 1.90\" in your patch to enable the future behavior of never rounding intermediate results. Call the round(), floor() or ceil() functions in places where intermediate rounding is required"); }
 		else asar_throw_error(0, error_type_block, error_id_invalid_math);
 	}
 	else if (is2("warn"))
