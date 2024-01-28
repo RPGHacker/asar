@@ -731,8 +731,10 @@ void initstuff()
 
 	optimizeforbank = -1;
 	optimize_dp = optimize_dp_flag::NONE;
+	set_optimize_dp = false;
 	dp_base = 0;
 	optimize_address = optimize_address_flag::DEFAULT;
+	set_optimize_address = false;
 
 	in_struct = false;
 	in_sub_struct = false;
@@ -1869,16 +1871,19 @@ void assembleblock(const char * block, bool isspecialline)
 			if (!stricmp(word[2], "none"))
 			{
 				optimize_dp = optimize_dp_flag::NONE;
+				set_optimize_dp = true;
 				return;
 			}
 			if (!stricmp(word[2], "ram"))
 			{
 				optimize_dp = optimize_dp_flag::RAM;
+				set_optimize_dp = true;
 				return;
 			}
 			if (!stricmp(word[2], "always"))
 			{
 				optimize_dp = optimize_dp_flag::ALWAYS;
+				set_optimize_dp = true;
 				return;
 			}
 			asar_throw_error(1, error_type_block, error_id_bad_dp_optimize, word[2]);
@@ -1888,16 +1893,19 @@ void assembleblock(const char * block, bool isspecialline)
 			if (!stricmp(word[2], "default"))
 			{
 				optimize_address = optimize_address_flag::DEFAULT;
+				set_optimize_address = true;
 				return;
 			}
 			if (!stricmp(word[2], "ram"))
 			{
 				optimize_address = optimize_address_flag::RAM;
+				set_optimize_address = true;
 				return;
 			}
 			if (!stricmp(word[2], "mirrors"))
 			{
 				optimize_address = optimize_address_flag::MIRRORS;
+				set_optimize_address = true;
 				return;
 			}
 			asar_throw_error(1, error_type_block, error_id_bad_address_optimize, word[2]);

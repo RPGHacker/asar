@@ -112,6 +112,8 @@ namespace optimize_dp_flag {
 
 extern int optimize_dp;
 extern int dp_base;
+extern bool set_optimize_dp;
+extern bool set_optimize_address;
 
 namespace optimize_address_flag {
 	enum : int {

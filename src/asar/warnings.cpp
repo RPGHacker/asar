@@ -90,6 +90,7 @@ static asar_warning_mapping asar_warnings[] =
 	{ WRN(feature_deprecated), "DEPRECATION NOTIFICATION: Feature \"%s\" is deprecated and will be REMOVED in the future. Please update your code to conform to newer styles. Suggested work around: %s." },
 
 	{ WRN(byte_order_mark_utf8), "UTF-8 byte order mark detected and skipped." },
+	{ WRN(optimization_settings), "In Asar 2.0, the default optimization settings will change to `optimize dp always` and `optimize address mirrors`, which changes this instruction's argument from %d to %d bytes. Either specify the desired settings manually or use explicit length suffixes to silence this warning." },
 };
 
 // RPG Hacker: Sanity check. This makes sure that the element count of asar_warnings
