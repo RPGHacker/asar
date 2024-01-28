@@ -1626,7 +1626,12 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		realstartpos = 0;
 		snespos_valid = true;
 
-		setlabel(ns + struct_name, snespos, static_struct);
+		if(in_sub_struct) {
+			string labelname = struct_parent + "." + struct_name;
+			setlabel(ns + labelname, snespos, static_struct);
+		} else {
+			setlabel(ns + struct_name, snespos, static_struct);
+		}
 
 #undef ret_error_cleanup
 #undef ret_error_params_cleanup
