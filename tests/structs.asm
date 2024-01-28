@@ -28,6 +28,9 @@ endstruct
 struct test2 extends struct_without_org
 endstruct
 
+optimize address default
+optimize dp none
+
 lda test[1].size
 ;lda test.size
 lda test.test2.lol

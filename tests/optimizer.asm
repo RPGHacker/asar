@@ -71,6 +71,8 @@ nonmirror = $008000
 nonmirror01 = $018000
 
 base off
+optimize address default
+optimize dp none
 ;test default asar optimization (bank only)
 lda test_00.test
 lda test_7E.test
