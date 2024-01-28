@@ -699,7 +699,9 @@ void assemblefile(const char * filename, bool toplevel)
 			istoplevel=toplevel;
 			if (stribegin(file.contents[i], "macro ") && numif==numtrue)
 			{
-				if (in_macro_def || inmacro) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
+				// RPG Hacker: Commented out for Asar 1.81 backwards-compatibility.
+				// (From Asar 2.0 onwards, nested macro definitions will be well-defined).
+				if (in_macro_def /*|| inmacro*/) asar_throw_error(0, error_type_line, error_id_nested_macro_definition);
 				in_macro_def=true;
 				if (!pass) startmacro(file.contents[i]+6);
 			}
