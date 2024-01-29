@@ -335,6 +335,16 @@ namespace AsarCLR
                     Marshal.FreeCoTaskMem(define.name);
                     Marshal.FreeCoTaskMem(define.contents);
                 }
+
+                foreach (var warning in warnings)
+                {
+                    Marshal.FreeCoTaskMem((IntPtr)warning.warnid);
+                }
+
+                foreach (var memFile in memFiles)
+                {
+                    Marshal.FreeCoTaskMem((IntPtr)memFile.path);
+                }
             }
         }
 
