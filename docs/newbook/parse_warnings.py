@@ -1,9 +1,8 @@
 # actually parses errors too
-import sys
 import re
 import string
 
-warning_pattern = re.compile(r'WRN\((.*?)\),\s*"(.*)"\s*,?\s*(true|false)?\s*}')
+warning_pattern = re.compile(r'WRN\((.*?),\s*"(.*)"\s*,?\s*(true|false)?\)\s*\\')
 error_pattern = re.compile(r'ERR\((.*?),\s*"(.*)"\)\s*\\')
 escaping = str.maketrans({x: '\\'+x for x in string.punctuation})
 
@@ -23,7 +22,7 @@ def get_errors():
 def get_warnings():
     yield "| Warning name | Message | Enabled by default |"
     yield "| ------------ | ------- | ------------------ |"
-    with open("../../src/asar/warnings.cpp") as f:
+    with open("../../src/asar/warnings.h") as f:
         for line in f:
             if 'WRN(' in line and not line.startswith('#define'):
                 name, description, enabled = re.findall(warning_pattern, line)[0]
