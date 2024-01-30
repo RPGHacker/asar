@@ -19,7 +19,7 @@ void asend_65816()
 extern bool fastrom;
 extern int recent_opcode_num;
 
-bool asblock_65816(char** word, int numwords)
+bool asblock_65816(char** word, int numwords, bool fake, int& outlen)
 {
 #define is(test) (!stricmpwithupper(word[0], test))
 //#define par word[1]
@@ -37,22 +37,23 @@ bool asblock_65816(char** word, int numwords)
 #define bankoptinit(left) strip_prefix(par, left); getvars(true)
 #define blankinit() len=1; explicitlen=false; num=0
 #define end() return false
-#define as0(    op, byte) if (is(op)          ) { write1((unsigned int)byte);              return true; }
-#define as1(    op, byte) if (is(op) && len==1) { write1((unsigned int)byte); write1(num); return true; }
-#define as2(    op, byte) if (is(op) && len==2) { write1((unsigned int)byte); write2(num); return true; } \
+#define withlen(n) outlen=n; if(fake) return true
+#define as0(    op, byte) if (is(op)          ) { withlen(0); write1((unsigned int)byte);              return true; }
+#define as1(    op, byte) if (is(op) && len==1) { withlen(1); write1((unsigned int)byte); write1(num); return true; }
+#define as2(    op, byte) if (is(op) && (len==2 || (!explicitlen && len<2))) { withlen(2); write1((unsigned int)byte); write2(num); return true; } \
 													/*if (is(op) && len==3 && emulate) { write1(byte); write2(num); return true; }*/
-#define as3(    op, byte) if (is(op) && len==3) { write1((unsigned int)byte); write3(num); return true; }
+#define as3(    op, byte) if (is(op) && (len==3 || (!explicitlen && len<3))) { withlen(3); write1((unsigned int)byte); write3(num); return true; }
 //#define as23(   op, byte) if (is(op) && (len==2 || len==3)) { write1(byte); write2(num); return true; }
-#define as32(   op, byte) if (is(op) && ((len==2 && !explicitlen) || len==3)) { write1((unsigned int)byte); write3(num); return true; }
-#define as_a(   op, byte) if (is(op)) { if(!explicitlen && !hexconstant) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { write1(byte); write1(num); } \
-																					 else { write1((unsigned int)byte); write2(num); } return true; }
-#define as_xy(  op, byte) if (is(op)) { if(!explicitlen && !hexconstant) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { write1(byte); write1(num); } \
-																					 else {  write1((unsigned int)byte); write2(num); } return true; }
-#define as_rep( op, byte) if (is(op)) { if (pass<2) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } recent_opcode_num = num; return true; }
-#define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); write1((unsigned int)byte); write1((unsigned int)pos); \
+#define as32(   op, byte) if (is(op) && ((len<3 && !explicitlen) || len==3)) { withlen(3); write1((unsigned int)byte); write3(num); return true; }
+#define as_a(   op, byte) if (is(op)) { if(!explicitlen && !hexconstant) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { withlen(1); write1(byte); write1(num); } \
+																					 else { withlen(2); write1((unsigned int)byte); write2(num); } return true; }
+#define as_xy(  op, byte) if (is(op)) { if(!explicitlen && !hexconstant) asar_throw_warning(0, warning_id_implicitly_sized_immediate); if (len==1) { withlen(1); write1(byte); write1(num); } \
+																					 else { withlen(2); write1((unsigned int)byte); write2(num); } return true; }
+#define as_rep( op, byte) if (is(op)) { if (pass<2) { num=getnum(par); } if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here); withlen(0); for (unsigned int i=0;i<num;i++) { write1((unsigned int)byte); } recent_opcode_num = num; return true; }
+#define as_rel1(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+2); withlen(1); write1((unsigned int)byte); write1((unsigned int)pos); \
 													if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 													return true; }
-#define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+3); write1((unsigned int)byte); write2((unsigned int)pos);\
+#define as_rel2(op, byte) if (is(op)) { int pos=(!foundlabel)?(int)num:(int)num-((snespos&0xFFFFFF)+3); withlen(2); write1((unsigned int)byte); write2((unsigned int)pos);\
 											if (pass==2 && foundlabel && (pos<-32768 || pos>32767)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 											return true; }
 #define the8(offset, len) as##len("ORA", offset+0x00); as##len("AND", offset+0x20); as##len("EOR", offset+0x40); as##len("ADC", offset+0x60); \
@@ -167,11 +168,14 @@ bool asblock_65816(char** word, int numwords)
 			autoptr<char**>param=qpsplit(par.temp_raw(), ",", &numargs);
 			if (numargs ==2)
 			{
+				withlen(2);
 				write1(is("MVN")?(unsigned int)0x54:(unsigned int)0x44);
 				write1(pass==2?getnum(param[0]):0);
 				write1(pass==2?getnum(param[1]):0);
 				return true;
 			}
+			getvars(false);
+			if(len < 2) return false;
 		}
 		if (false)
 		{

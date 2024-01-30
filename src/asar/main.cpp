@@ -154,19 +154,13 @@ virtual_file_error asar_get_last_io_error()
 }
 
 static bool freespaced;
-static int getlenforlabel(int insnespos, int thislabel, bool exists, bool use_asar2_settings)
+static int getlenforlabel(int insnespos, int thislabel, bool exists)
 {
 	if (warnxkas && (((unsigned int)(thislabel^insnespos)&0xFFFF0000)==0))
 		asar_throw_warning(1, warning_id_xkas_label_access);
 	unsigned int bank = thislabel>>16;
 	unsigned int word = thislabel&0xFFFF;
 	unsigned int relaxed_bank;
-	int opt_dp = optimize_dp;
-	int opt_addr = optimize_address;
-	if(use_asar2_settings) {
-		if(!set_optimize_dp) opt_dp = optimize_dp_flag::ALWAYS;
-		if(!set_optimize_address) opt_addr = optimize_address_flag::MIRRORS;
-	}
 	if(optimizeforbank >= 0) {
 		relaxed_bank = optimizeforbank;
 	} else {
@@ -183,17 +177,17 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists, bool use_as
 		freespaced=true;
 		return 2;
 	}
-	else if((opt_dp == optimize_dp_flag::RAM) && bank == 0x7E && (word-dp_base < 0x100))
+	else if((optimize_dp == optimize_dp_flag::RAM) && bank == 0x7E && (word-dp_base < 0x100))
 	{
 		return 1;
 	}
-	else if(opt_dp == optimize_dp_flag::ALWAYS && (bank == 0x7E || !(bank & 0x40)) && (word-dp_base < 0x100))
+	else if(optimize_dp == optimize_dp_flag::ALWAYS && (bank == 0x7E || !(bank & 0x40)) && (word-dp_base < 0x100))
 	{
 		return 1;
 	}
 	else if (
 		// if we should optimize ram accesses...
-		(opt_addr == optimize_address_flag::RAM || opt_addr == optimize_address_flag::MIRRORS)
+		(optimize_address == optimize_address_flag::RAM || optimize_address == optimize_address_flag::MIRRORS)
 		// and we're in a bank with ram mirrors... (optimizeforbank=0x7E is checked later)
 		&& !(relaxed_bank & 0x40)
 		// and the label is in low RAM
@@ -203,7 +197,7 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists, bool use_as
 	}
 	else if (
 		// if we should optimize mirrors...
-		opt_addr == optimize_address_flag::MIRRORS
+		optimize_address == optimize_address_flag::MIRRORS
 		// we're in a bank with ram mirrors...
 		&& !(relaxed_bank & 0x40)
 		// and the label is in a mirrored section
@@ -227,14 +221,6 @@ static int getlenforlabel(int insnespos, int thislabel, bool exists, bool use_as
 	}
 	else if ((thislabel^insnespos)&0xFF0000){ return 3; }
 	else { return 2;}
-}
-
-static int getlenforlabel_wrap(int insnespos, int thislabel, bool exists)
-{
-	int oldlen = getlenforlabel(insnespos, thislabel, exists, false);
-	int newlen = getlenforlabel(insnespos, thislabel, exists, true);
-	if(oldlen != newlen) asar_throw_warning(2, warning_id_optimization_settings, oldlen, newlen);
-	return oldlen;
 }
 
 bool is_hex_constant(const char* str){
@@ -268,7 +254,7 @@ int getlen(const char * orgstr, bool optimizebankextraction)
 		// RPG Hacker: Umm... what kind of magic constant is this?
 		label_data.pos = 31415926;
 		bool found = labelval(posnegname, &label_data);
-		return getlenforlabel_wrap(snespos, (int)label_data.pos, found);
+		return getlenforlabel(snespos, (int)label_data.pos, found);
 	}
 notposneglabel:
 	int len=0;
@@ -311,7 +297,7 @@ notposneglabel:
 		{
 			snes_label thislabel;
 			bool exists=labelval(&str, &thislabel);
-			thislen=getlenforlabel_wrap(snespos, (int)thislabel.pos, exists);
+			thislen=getlenforlabel(snespos, (int)thislabel.pos, exists);
 		}
 		else str++;
 		if (optimizebankextraction && maybebankextraction &&
