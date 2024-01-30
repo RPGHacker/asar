@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9.0)
+cmake_minimum_required(VERSION 3.13.0)
 
 OPTION(ASAR_GEN_EXE_TEST "Build Asar standalone application test suite" ON)
 OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON)
@@ -157,14 +157,28 @@ if(ASAR_GEN_DLL_TEST)
 	endif()
 
 	if(ASAR_GEN_CS_TEST)
-		set(ASAR_CS_SOURCES "")
-		list(APPEND ASAR_CS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/test.cs" "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c_sharp/asar.cs")
-		add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/cs_interface_test.exe"
-			COMMAND csc -out:cs_interface_test.exe -unsafe "${ASAR_CS_SOURCES}"
-			DEPENDS "${ASAR_CS_SOURCES}"
-			VERBATIM COMMAND_EXPAND_LISTS)
 
-		add_custom_target(cs-interface-test DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/cs_interface_test.exe")
+		set(ASAR_CS_SOURCES "")
+		list(APPEND ASAR_CS_SOURCES
+			"${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/test.cs"
+			"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c_sharp/asar.cs"
+		)
+
+		if(CMAKE_GENERATOR MATCHES "Visual Studio")
+			enable_language(CSharp)
+			add_executable(asar-csharp-test ${ASAR_CS_SOURCES})
+			target_compile_options(asar-csharp-test PRIVATE "/unsafe")
+			set(ASAR_CS_TEST_EXEC "$<TARGET_FILE:asar-csharp-test>")
+		else()
+			find_program(ASAR_CS_COMPILER csc mono-csc mcs)
+			set(ASAR_CS_TEST_EXEC "${CMAKE_CURRENT_BINARY_DIR}/asar-csharp-test.exe")
+			add_custom_command(OUTPUT "${ASAR_CS_TEST_EXEC}"
+				COMMAND ${ASAR_CS_COMPILER} "-out:${ASAR_CS_TEST_EXEC}" -unsafe "${ASAR_CS_SOURCES}"
+				DEPENDS "${ASAR_CS_SOURCES}"
+				VERBATIM COMMAND_EXPAND_LISTS)
+
+			add_custom_target(asar-csharp-test DEPENDS "${ASAR_CS_TEST_EXEC}")
+		endif()
 
 		if(NOT ASAR_USE_SANITIZER)
 			# same concerns with sanitizer as the python test
@@ -178,9 +192,9 @@ if(ASAR_GEN_DLL_TEST)
 				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "LD_LIBRARY_PATH=." mono)
 			endif()
 			add_custom_target(run-cs-interface-test
-				${cs_test_cmd_prefix} "${CMAKE_CURRENT_BINARY_DIR}/cs_interface_test.exe"
+				${cs_test_cmd_prefix} "${ASAR_CS_TEST_EXEC}"
 				WORKING_DIRECTORY "$<TARGET_FILE_DIR:asar>"
-				DEPENDS asar cs-interface-test
+				DEPENDS asar asar-csharp-test
 				VERBATIM)
 			add_dependencies(run-tests run-cs-interface-test)
 			set_property(TARGET run-cs-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
