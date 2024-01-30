@@ -63,7 +63,7 @@ namespace AsarCLR
         private static extern RawAsarDefine* asar_getalldefines(out int length);
 
         [DllImport("asar", EntryPoint = "asar_resolvedefines", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr asar_resolvedefines(string data, bool learnNew);
+        private static extern IntPtr asar_resolvedefines(string data);
 
         [DllImport("asar", EntryPoint = "asar_math", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern double asar_math(string math, out IntPtr error);
@@ -179,7 +179,9 @@ namespace AsarCLR
             public int warning_setting_count;
             public RawMemoryFile* memory_files;
             public int memory_file_count;
+            [MarshalAs(UnmanagedType.I1)]
             public bool override_checksum_gen;
+            [MarshalAs(UnmanagedType.I1)]
             public bool generate_checksum;
         };
 
@@ -518,7 +520,7 @@ namespace AsarCLR
         /// <returns></returns>
         public static string resolvedefines(string data, bool learnNew)
         {
-            return Marshal.PtrToStringAnsi(asar_resolvedefines(data, learnNew));
+            return Marshal.PtrToStringAnsi(asar_resolvedefines(data));
         }
 
         /// <summary>
