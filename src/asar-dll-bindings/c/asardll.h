@@ -191,8 +191,8 @@ asarfunc const char * (*asar_getdefine)(const char * name);
 //Gets the values and names of all defines.
 asarfunc const struct definedata * (*asar_getalldefines)(int * count);
 
-//Parses all defines in the parameter. The parameter controls whether it'll learn new defines in
-// this string if it finds any. Note that it may emit errors.
+//Parses all defines in the parameter. If there were any errors, returns an empty string.
+//learnnew has not done anything for at least 12 years.
 asarfunc const char * (*asar_resolvedefines)(const char * data, bool learnnew);
 
 //Parses a string containing math. It automatically assumes global scope (no namespaces), and has

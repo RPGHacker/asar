@@ -145,8 +145,7 @@ class _AsarDLL:
             self.setup_func("getlabelval", (c_char_p,), c_int)
             self.setup_func("getdefine", (c_char_p,), c_char_p)
             self.setup_func("getalldefines", (c_int_ptr,), POINTER(_definedata))
-            self.setup_func("resolvedefines", (c_char_p, ctypes.c_bool),
-                            c_char_p)
+            self.setup_func("resolvedefines", (c_char_p,), c_char_p)
             self.setup_func("math", (c_char_p, POINTER(c_char_p)),
                             ctypes.c_double)
             self.setup_func("getwrittenblocks", (c_int_ptr,),
@@ -376,14 +375,14 @@ def getalldefines():
     return {x.name.decode(): x.contents.decode() for x in definedatas}
 
 
-def resolvedefines(data, learnnew):
+def resolvedefines(data, learnnew=False):
     """Parse all defines in the given data.
 
     Returns the data with all defines evaluated.
-    learnnew controls whether it'll learn new defines in this string if it
-    finds any. Note that it may emit errors.
+    If there were any errors, returns an empty string.
+    learnnew has never done anything.
     """
-    return _asar.dll.asar_resolvedefines(data, learnnew)
+    return _asar.dll.asar_resolvedefines(data)
 
 
 def math(to_calculate):
