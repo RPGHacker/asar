@@ -10,7 +10,7 @@ namespace AsarCLR
     /// </summary>
     public static unsafe class Asar
     {
-        const int expectedapiversion = 303;
+        const int expectedapiversion = 400;
 
         [DllImport("asar", EntryPoint = "asar_init", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
@@ -32,11 +32,7 @@ namespace AsarCLR
 
         [DllImport("asar", EntryPoint = "asar_patch", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
-        private static extern bool asar_patch(string patchLocation, byte* romData, int bufLen, int* romLength);
-
-        [DllImport("asar", EntryPoint = "asar_patch_ex", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
-        [return: MarshalAs(UnmanagedType.I1)]
-        private static extern bool asar_patch_ex(ref RawPatchParams parameters);
+        private static extern bool asar_patch(ref RawPatchParams parameters);
 
         [DllImport("asar", EntryPoint = "asar_maxromsize", CharSet = CharSet.Ansi, CallingConvention = CallingConvention.Cdecl)]
         private static extern int asar_maxromsize();
@@ -169,8 +165,6 @@ namespace AsarCLR
             public int* romlen;
             public byte** includepaths;
             public int numincludepaths;
-            [MarshalAs(UnmanagedType.I1)]
-            public bool should_reset;
             public RawAsarDefine* additional_defines;
             public int additional_define_count;
             public string stdincludesfile;
@@ -183,6 +177,8 @@ namespace AsarCLR
             public bool override_checksum_gen;
             [MarshalAs(UnmanagedType.I1)]
             public bool generate_checksum;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool full_call_stack;
         };
 
         /// <summary>
@@ -191,9 +187,6 @@ namespace AsarCLR
         /// <param name="patchLocation">The patch location.</param>
         /// <param name="romData">The rom data. It must not be headered.</param>
         /// <param name="includePaths">lists additional include paths</param>
-        /// <param name="shouldReset">specifies whether asar should clear out all defines, labels,
-        /// etc from the last inserted file. Setting it to False will make Asar act like the
-        /// currently patched file was directly appended to the previous one.</param>
         /// <param name="additionalDefines">specifies extra defines to give to the patch</param>
         /// <param name="stdIncludeFile">path to a file that specifes additional include paths</param>
         /// <param name="stdDefineFile">path to a file that specifes additional defines</param>
@@ -202,12 +195,14 @@ namespace AsarCLR
         /// in memory.</param>
         /// <param name="generateChecksum">specifies whether asar should generate a checksum. If this
         /// is null, the default behavior is used.</param>
+        /// <param name="fullCallStack">whether warning and error messages should always
+        /// contain the full call stack.</param>
         /// <returns>True if no errors.</returns>
         public static bool patch(string patchLocation, ref byte[] romData, string[] includePaths = null,
-            bool shouldReset = true, Dictionary<string, string> additionalDefines = null,
+            Dictionary<string, string> additionalDefines = null,
             string stdIncludeFile = null, string stdDefineFile = null,
             Dictionary<string, bool> warningSettings = null, Dictionary<string, byte[]> memoryFiles = null,
-            bool? generateChecksum = null)
+            bool? generateChecksum = null, bool fullCallStack = false)
         {
             if (includePaths == null)
             {
@@ -298,7 +293,6 @@ namespace AsarCLR
                         buflen = newsize,
                         romlen = &length,
 
-                        should_reset = shouldReset,
                         includepaths = includepaths,
                         numincludepaths = includes.Length,
                         additional_defines = additional_defines,
@@ -311,11 +305,12 @@ namespace AsarCLR
                         memory_files = memory_files,
                         memory_file_count = memFiles.Length,
                         override_checksum_gen = generateChecksum != null,
-                        generate_checksum = generateChecksum ?? false
+                        generate_checksum = generateChecksum ?? false,
+                        full_call_stack = fullCallStack,
                     };
                     param.structsize = Marshal.SizeOf(param);
 
-                    success = asar_patch_ex(ref param);
+                    success = asar_patch(ref param);
                 }
 
                 if (length < newsize)
@@ -370,9 +365,9 @@ namespace AsarCLR
             public IntPtr block;
             public IntPtr filename;
             public int line;
-            public IntPtr callerfilename;
-            public int callerline;
-            public int errid;
+            public IntPtr callstack;
+            public int callstacksize;
+            public IntPtr errname;
         };
 
         private static Asarerror[] cleanerrors(RawAsarError* ptr, int length)
@@ -388,9 +383,9 @@ namespace AsarCLR
                 output[i].Block = Marshal.PtrToStringAnsi(ptr[i].block);
                 output[i].Filename = Marshal.PtrToStringAnsi(ptr[i].filename);
                 output[i].Line = ptr[i].line;
-                output[i].Callerfilename = Marshal.PtrToStringAnsi(ptr[i].callerfilename);
-                output[i].Callerline = ptr[i].callerline;
-                output[i].ErrorId = ptr[i].errid;
+                //output[i].Callerfilename = Marshal.PtrToStringAnsi(ptr[i].callerfilename);
+                //output[i].Callerline = ptr[i].callerline;
+                output[i].ErrorId = Marshal.PtrToStringAnsi(ptr[i].errname);
             }
 
             return output;
@@ -604,9 +599,8 @@ namespace AsarCLR
         public string Block;
         public string Filename;
         public int Line;
-        public string Callerfilename;
-        public int Callerline;
-        public int ErrorId;
+        // TODO: call stack
+        public string ErrorId;
     }
 
     /// <summary>
