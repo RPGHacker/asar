@@ -385,12 +385,11 @@ def getalldefines() -> dict[str, str]:
     return {x.name.decode(): x.contents.decode() for x in definedatas}
 
 
-def resolvedefines(data, learnnew=False) -> str:
+def resolvedefines(data) -> str:
     """Parse all defines in the given data.
 
     Returns the data with all defines evaluated.
     If there were any errors, returns an empty string.
-    learnnew has never done anything.
     """
     return _asar.dll.asar_resolvedefines(data)
 

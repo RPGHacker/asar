@@ -516,9 +516,8 @@ namespace AsarCLR
         /// <summary>
         /// </summary>
         /// <param name="data"></param>
-        /// <param name="learnNew"></param>
         /// <returns></returns>
-        public static string resolvedefines(string data, bool learnNew)
+        public static string resolvedefines(string data)
         {
             return Marshal.PtrToStringAnsi(asar_resolvedefines(data));
         }

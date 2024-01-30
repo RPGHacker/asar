@@ -180,7 +180,8 @@ int asar_getlabelval(const char * name);
  */
 const char * asar_getdefine(const char * name);
 
-/* Parses all defines in the parameter. Note that it may emit errors.
+/* Parses all defines in the parameter.
+ * If there were any errors, returns an empty string.
  */
 const char * asar_resolvedefines(const char * data);
 
