@@ -1,0 +1,28 @@
+name: Deploy manual to Pages
+on:
+  push:
+    branches:
+      - asar_19
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # To push a branch
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Deploy GitHub Pages
+      run: |
+        git worktree add gh-pages gh-pages
+        git config user.name "Deploy from CI"
+        git config user.email ""
+        cd gh-pages
+        # Delete the ref to avoid keeping history.
+        git update-ref -d refs/heads/gh-pages
+        rm -rf ${{ github.ref_name }}
+        cp -r ../docs ${{ github.ref_name }}
+        git add .
+        git commit -m "Deploy $GITHUB_SHA to gh-pages"
+        git push --force --set-upstream origin gh-pages
