@@ -143,6 +143,22 @@ namespace AsarCLR
             return asar_reset();
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RawWarnSetting
+        {
+            public byte* warnid;
+            [MarshalAs(UnmanagedType.I1)]
+            public bool enabled;
+        };
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RawMemoryFile
+        {
+            public byte* path;
+            public void* buffer;
+            public UIntPtr length;
+        };
+
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
         private struct RawPatchParams
         {
@@ -159,6 +175,12 @@ namespace AsarCLR
             public int additional_define_count;
             public string stdincludesfile;
             public string stddefinesfile;
+            public RawWarnSetting* warning_settings;
+            public int warning_setting_count;
+            public RawMemoryFile* memory_files;
+            public int memory_file_count;
+            public bool override_checksum_gen;
+            public bool generate_checksum;
         };
 
         /// <summary>
@@ -168,15 +190,22 @@ namespace AsarCLR
         /// <param name="romData">The rom data. It must not be headered.</param>
         /// <param name="includePaths">lists additional include paths</param>
         /// <param name="shouldReset">specifies whether asar should clear out all defines, labels,
-        /// etc from the last inserted file. Setting it to False will make Asar act like the
-        //  currently patched file was directly appended to the previous one.</param>
+        /// etc from the last inserted file. Setting it to False will make Asar act like the 
+        /// currently patched file was directly appended to the previous one.</param>
         /// <param name="additionalDefines">specifies extra defines to give to the patch</param>
         /// <param name="stdIncludeFile">path to a file that specifes additional include paths</param>
         /// <param name="stdDefineFile">path to a file that specifes additional defines</param>
+        /// <param name="warningSettings">specifies enable/disable settings for each warning ID</param>
+        /// <param name="memoryFiles">specifies a mapping for virtual file paths to file data stored
+        /// in memory.</param>
+        /// <param name="generateChecksum">specifies whether asar should generate a checksum. If this
+        /// is null, the default behavior is used.</param>
         /// <returns>True if no errors.</returns>
         public static bool patch(string patchLocation, ref byte[] romData, string[] includePaths = null,
             bool shouldReset = true, Dictionary<string, string> additionalDefines = null,
-            string stdIncludeFile = null, string stdDefineFile = null)
+            string stdIncludeFile = null, string stdDefineFile = null,
+            Dictionary<string, bool> warningSettings = null, Dictionary<string, byte[]> memoryFiles = null,
+            bool? generateChecksum = null)
         {
             if (includePaths == null)
             {
@@ -188,8 +217,20 @@ namespace AsarCLR
                 additionalDefines = new Dictionary<string, string>();
             }
 
+            if (warningSettings == null)
+            {
+                warningSettings = new Dictionary<string, bool>();
+            }
+
+            if (memoryFiles == null)
+            {
+                memoryFiles = new Dictionary<string, byte[]>();
+            }
+
             var includes = new byte*[includePaths.Length];
             var defines = new RawAsarDefine[additionalDefines.Count];
+            var warnings = new RawWarnSetting[warningSettings.Count];
+            var memFiles = new RawMemoryFile[memoryFiles.Count];
 
             try
             {
@@ -208,6 +249,30 @@ namespace AsarCLR
                     defines[i].contents = Marshal.StringToCoTaskMemAnsi(value);
                 }
 
+                var warningKeys = warningSettings.Keys.ToArray();
+
+                for (int i = 0; i < warningSettings.Count; i++)
+                {
+                    var warnId = warningKeys[i];
+                    var value = warningSettings[warnId];
+                    warnings[i].warnid = (byte*)Marshal.StringToCoTaskMemAnsi(warnId);
+                    warnings[i].enabled = value;
+                }
+
+                var memFileKeys = memoryFiles.Keys.ToArray();
+
+                for (int i = 0; i < memoryFiles.Count; i++)
+                {
+                    var path = memFileKeys[i];
+                    var value = memoryFiles[path];
+                    memFiles[i].path = (byte*)Marshal.StringToCoTaskMemAnsi(path);
+                    fixed (byte* buf = &value[0])
+                    {
+                        memFiles[i].buffer = buf;
+                    }
+                    memFiles[i].length = (UIntPtr)value.Length;
+                }
+
                 int newsize = maxromsize();
                 int length = romData.Length;
 
@@ -221,6 +286,8 @@ namespace AsarCLR
                 fixed (byte* ptr = romData)
                 fixed (byte** includepaths = includes)
                 fixed (RawAsarDefine* additional_defines = defines)
+                fixed (RawWarnSetting* warning_settings = warnings)
+                fixed (RawMemoryFile* memory_files = memFiles)
                 {
                     var param = new RawPatchParams
                     {
@@ -235,7 +302,14 @@ namespace AsarCLR
                         additional_defines = additional_defines,
                         additional_define_count = defines.Length,
                         stddefinesfile = stdDefineFile,
-                        stdincludesfile = stdIncludeFile
+                        stdincludesfile = stdIncludeFile,
+
+                        warning_settings = warning_settings,
+                        warning_setting_count = warnings.Length,
+                        memory_files = memory_files,
+                        memory_file_count = memFiles.Length,
+                        override_checksum_gen = generateChecksum != null,
+                        generate_checksum = generateChecksum ?? false
                     };
                     param.structsize = Marshal.SizeOf(param);
 
@@ -260,6 +334,16 @@ namespace AsarCLR
                 {
                     Marshal.FreeCoTaskMem(define.name);
                     Marshal.FreeCoTaskMem(define.contents);
+                }
+
+                foreach (var warning in warnings)
+                {
+                    Marshal.FreeCoTaskMem((IntPtr)warning.warnid);
+                }
+
+                foreach (var memFile in memFiles)
+                {
+                    Marshal.FreeCoTaskMem((IntPtr)memFile.path);
                 }
             }
         }
@@ -570,7 +654,7 @@ namespace AsarCLR
         /// <summary>
         /// Standard HiROM.
         /// </summary>
-        HiRom,
+        HiRom, 
 
         /// <summary>
         /// SA-1 ROM.
