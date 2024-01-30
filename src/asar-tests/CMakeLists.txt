@@ -170,7 +170,7 @@ if(ASAR_GEN_DLL_TEST)
 			target_compile_options(asar-csharp-test PRIVATE "/unsafe")
 			set(ASAR_CS_TEST_EXEC "$<TARGET_FILE:asar-csharp-test>")
 		else()
-			find_program(ASAR_CS_COMPILER csc mono-csc mcs)
+			find_program(ASAR_CS_COMPILER NAMES csc mono-csc mcs)
 			set(ASAR_CS_TEST_EXEC "${CMAKE_CURRENT_BINARY_DIR}/asar-csharp-test.exe")
 			add_custom_command(OUTPUT "${ASAR_CS_TEST_EXEC}"
 				COMMAND ${ASAR_CS_COMPILER} "-out:${ASAR_CS_TEST_EXEC}" -unsafe "${ASAR_CS_SOURCES}"
