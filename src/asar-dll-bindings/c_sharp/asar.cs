@@ -356,6 +356,13 @@ namespace AsarCLR
         {
             return asar_maxromsize();
         }
+        [StructLayout(LayoutKind.Sequential)]
+        private struct RawAsarStackentry {
+            public IntPtr fullpath;
+            public IntPtr prettypath;
+            public int lineno;
+            public IntPtr details;
+        };
 
         [StructLayout(LayoutKind.Sequential)]
         private struct RawAsarError
@@ -365,7 +372,7 @@ namespace AsarCLR
             public IntPtr block;
             public IntPtr filename;
             public int line;
-            public IntPtr callstack;
+            public RawAsarStackentry* callstack;
             public int callstacksize;
             public IntPtr errname;
         };
@@ -383,8 +390,13 @@ namespace AsarCLR
                 output[i].Block = Marshal.PtrToStringAnsi(ptr[i].block);
                 output[i].Filename = Marshal.PtrToStringAnsi(ptr[i].filename);
                 output[i].Line = ptr[i].line;
-                //output[i].Callerfilename = Marshal.PtrToStringAnsi(ptr[i].callerfilename);
-                //output[i].Callerline = ptr[i].callerline;
+                output[i].CallStack = new StackEntry[ptr[i].callstacksize];
+                for(int j = 0; j < ptr[i].callstacksize; j++) {
+                    output[i].CallStack[j].FullPath = Marshal.PtrToStringAnsi(ptr[i].callstack[j].fullpath);
+                    output[i].CallStack[j].PrettyPath = Marshal.PtrToStringAnsi(ptr[i].callstack[j].prettypath);
+                    output[i].CallStack[j].LineNo = ptr[i].callstack[j].lineno;
+                    output[i].CallStack[j].Details = Marshal.PtrToStringAnsi(ptr[i].callstack[j].details);
+                }
                 output[i].ErrorId = Marshal.PtrToStringAnsi(ptr[i].errname);
             }
 
@@ -590,6 +602,17 @@ namespace AsarCLR
     }
 
     /// <summary>
+    /// Contains information about one entry in an error's stack trace.
+    /// </summary>
+    public struct StackEntry
+    {
+        public string FullPath;
+        public string PrettyPath;
+        public int LineNo;
+        public string Details;
+    }
+
+    /// <summary>
     /// Contains full information of a Asar error or warning.
     /// </summary>
     public struct Asarerror
@@ -599,7 +622,7 @@ namespace AsarCLR
         public string Block;
         public string Filename;
         public int Line;
-        // TODO: call stack
+        public StackEntry[] CallStack;
         public string ErrorId;
     }
 
