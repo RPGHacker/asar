@@ -20,7 +20,7 @@
 		<h3>Contributors:</h3>
 		<ul>
 			<li>RPG Hacker</li>
-			<li>randomdude999</li>
+			<li>trillian</li>
 			<li>p4plus2</li>
 			<li>Atari2</li>
 			<li>Alcaro</li>
@@ -41,14 +41,14 @@
 			<li>Variadic macro parameters now use the syntax <code class="65c816_asar">&lt;...[math]&gt;</code>, which makes them less ambiguous and helps prevent syntax parsing bugs. (RPG Hacker)</li>
 			<li>HiROM, ExHiROM, and ExLoROM mappers can now use <code>freecode</code>. (p4plus2)</li>
 			<li><code>check bankcross</code> now allows disabling checking for half-bank crossings (going from $7FFF to $8000). (p4plus2)</li>
-			<li>New <code>pc()</code> and <code>realbase()</code> functions: returns the current SNES address that is being written to. (p4plus2, randomdude999)</li>
+			<li>New <code>pc()</code> and <code>realbase()</code> functions: returns the current SNES address that is being written to. (p4plus2, trillian)</li>
 			<li>Namespaces can now be saved using <code>pushns</code> and <code>pullns</code>. (p4plus2)</li>
-			<li>It's now possible to use macro arguments and macro labels in files that are <code>incsrc</code>'d from macros. (randomdude999)</li>
-			<li>Added <code>for</code> loops, used like <code>for i = 1..10</code>. These are more convenient than while loops in most cases and are the main replacement for <code>rep</code>. (randomdude999)</li>
-			<li><code>incbin</code> now has a new syntax for including a range of the target file which looks like the for loop range syntax and is less ambiguous. (randomdude999)</li>
+			<li>It's now possible to use macro arguments and macro labels in files that are <code>incsrc</code>'d from macros. (trillian)</li>
+			<li>Added <code>for</code> loops, used like <code>for i = 1..10</code>. These are more convenient than while loops in most cases and are the main replacement for <code>rep</code>. (trillian)</li>
+			<li><code>incbin</code> now has a new syntax for including a range of the target file which looks like the for loop range syntax and is less ambiguous. (trillian)</li>
 			<li>Added <code>spcblock</code> feature as a replacement for <code>spc-inline</code>, which allows defining blocks of SPC data, but in a more flexible way that can easily be extended in the future. (p4plus2)</li>
-			<li>Added the <code>--error-limit</code> option, which allows raising the limit on the number of errors that Asar will print before stopping. (randomdude999)</li>
-			<li><code>freespacebyte</code> command to set the byte value used for searching for freespace and expanding the ROM. (randomdude999)</li>
+			<li>Added the <code>--error-limit</code> option, which allows raising the limit on the number of errors that Asar will print before stopping. (trillian)</li>
+			<li><code>freespacebyte</code> command to set the byte value used for searching for freespace and expanding the ROM. (trillian)</li>
 		</ul>
 
 		<h3>Bug fixes:</h3>
@@ -57,17 +57,17 @@
 			<li>Escaping quotes in macro calls now works more reliably. (RPG Hacker)</li>
 			<li>Macro calls &amp; definitions no longer break as easily from including whitespace. (RPG Hacker)</li>
 			<li>For invalid table files, Asar now prints the line number of the first invalid entry. (RPG Hacker)</li>
-			<li>Addr-to-line mappings now include <code>autoclean jml/jsl</code> commands, pseudo opcodes like <code>asl #4</code>, and most other data-writing commands like <code>db/dw/dl</code>. (spooonsss, RPG Hacker, randomdude999)</li>
-			<li><code>'''</code> and <code>';'</code> are now valid can now be used without causing errors. (randomdude999, RPG Hacker)</li>
+			<li>Addr-to-line mappings now include <code>autoclean jml/jsl</code> commands, pseudo opcodes like <code>asl #4</code>, and most other data-writing commands like <code>db/dw/dl</code>. (spooonsss, RPG Hacker, trillian)</li>
+			<li><code>'''</code> and <code>';'</code> are now valid can now be used without causing errors. (trillian, RPG Hacker)</li>
 			<li>Fixed some edge case bugs in Asar's virtual filesystem (usable via the DLL) on Windows. (Atari2)</li>
 			<li>The <code>--version</code> commandline flag now causes asar to exit afterwards, which is the expected behavior for command-line flags. (Alcaro)</li>
 			<li>Fixed some bugs with the label optimizer, making it optimize better. (p4plus2)</li>
-			<li>Fixed freespaces sometimes being a few bytes too long. (randomdude999)</li>
+			<li>Fixed freespaces sometimes being a few bytes too long. (trillian)</li>
 			<li>Assigning labels with = now puts them in the right namespace. (p4plus2)</li>
-			<li>Fixed some memory leaks and possible crashes in the DLL. (randomdude999)</li>
-			<li>Fixed some phantom errors when using forward labels. (randomdude999)</li>
-			<li>Asar should now allow as much recursion as system resources allow, and then throw a nice error instead of crashing. (Atari2.0, randomdude999, p4plus2)</li>
-			<li><code>optimize address</code> now works a bit more consistently (new behavior also properly documented in manual). (randomdude999)</li>
+			<li>Fixed some memory leaks and possible crashes in the DLL. (trillian)</li>
+			<li>Fixed some phantom errors when using forward labels. (trillian)</li>
+			<li>Asar should now allow as much recursion as system resources allow, and then throw a nice error instead of crashing. (Atari2.0, trillian, p4plus2)</li>
+			<li><code>optimize address</code> now works a bit more consistently (new behavior also properly documented in manual). (trillian)</li>
 			<li>Fixed bug where pointing multiple autocleans at the same freespace would sometimes eat some of the data in it. (spooonsss)</li>
 		</ul></div>
 
