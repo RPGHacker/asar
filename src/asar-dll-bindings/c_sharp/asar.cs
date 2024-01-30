@@ -190,7 +190,7 @@ namespace AsarCLR
         /// <param name="romData">The rom data. It must not be headered.</param>
         /// <param name="includePaths">lists additional include paths</param>
         /// <param name="shouldReset">specifies whether asar should clear out all defines, labels,
-        /// etc from the last inserted file. Setting it to False will make Asar act like the 
+        /// etc from the last inserted file. Setting it to False will make Asar act like the
         /// currently patched file was directly appended to the previous one.</param>
         /// <param name="additionalDefines">specifies extra defines to give to the patch</param>
         /// <param name="stdIncludeFile">path to a file that specifes additional include paths</param>
@@ -654,7 +654,7 @@ namespace AsarCLR
         /// <summary>
         /// Standard HiROM.
         /// </summary>
-        HiRom, 
+        HiRom,
 
         /// <summary>
         /// SA-1 ROM.
