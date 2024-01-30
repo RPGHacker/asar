@@ -205,6 +205,7 @@ static bool asblock_pick(char** word, int numwords)
 	if (arch==arch_spc700 || in_spcblock) return asblock_spc700(word, numwords);
 	if (arch==arch_65816) {
 		int op_len = 0;
+		string oldword0 = word[0];
 		if(asblock_65816(word, numwords, false, op_len)) {
 			if(set_optimize_address && set_optimize_dp) return true;
 			int old_dp = optimize_dp;
@@ -212,6 +213,9 @@ static bool asblock_pick(char** word, int numwords)
 			if(!set_optimize_dp) optimize_dp = optimize_dp_flag::ALWAYS;
 			if(!set_optimize_address) optimize_address = optimize_address_flag::MIRRORS;
 			int new_len = -1;
+			// asblock fucks up word[0], fix it again
+			word[0] = oldword0.temp_raw();
+			// (does doing it like this lead to Funny Mem Leaks?)
 			asblock_65816(word, numwords, true, new_len);
 			if(new_len != op_len) asar_throw_warning(2, warning_id_optimization_settings, op_len, new_len);
 			optimize_address = old_addr;
