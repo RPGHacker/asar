@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.9.0)
 
 OPTION(ASAR_GEN_EXE_TEST "Build Asar standalone application test suite" ON)
 OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON)
+OPTION(ASAR_GEN_CS_TEST "Build the C# interface test suite" ON)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -153,5 +154,36 @@ if(ASAR_GEN_DLL_TEST)
 			VERBATIM)
 		add_dependencies(run-tests run-interface-test)
 		set_property(TARGET run-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+	endif()
+
+	if(ASAR_GEN_CS_TEST)
+		set(ASAR_CS_SOURCES "")
+		list(APPEND ASAR_CS_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/test.cs" "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c_sharp/asar.cs")
+		add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/cs_interface_test.exe"
+			COMMAND csc -out:cs_interface_test.exe -unsafe "${ASAR_CS_SOURCES}"
+			DEPENDS "${ASAR_CS_SOURCES}"
+			VERBATIM COMMAND_EXPAND_LISTS)
+
+		add_custom_target(cs-interface-test DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/cs_interface_test.exe")
+
+		if(NOT ASAR_USE_SANITIZER)
+			# same concerns with sanitizer as the python test
+
+			# on Linux, mono looks for native libraries in LD_LIBRARY_PATH.
+			# on Windows, it looks in a bunch of places, but the most convenient is the current working directory.
+			# so we set the cwd to the directory with asar.dll and add it to LD_LIBRARY_PATH.
+			if(WIN32)
+				set(cs_test_cmd_prefix "")
+			else()
+				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "LD_LIBRARY_PATH=." mono)
+			endif()
+			add_custom_target(run-cs-interface-test
+				${cs_test_cmd_prefix} "${CMAKE_CURRENT_BINARY_DIR}/cs_interface_test.exe"
+				WORKING_DIRECTORY "$<TARGET_FILE_DIR:asar>"
+				DEPENDS asar cs-interface-test
+				VERBATIM)
+			add_dependencies(run-tests run-cs-interface-test)
+			set_property(TARGET run-cs-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+		endif()
 	endif()
 endif()

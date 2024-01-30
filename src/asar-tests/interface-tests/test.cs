@@ -66,6 +66,7 @@ endmacro
 
 		// TODO: mapper type, written block, defines, labels
 
+		Console.WriteLine("All checks passed!");
 		return 0;
 	}
 }
