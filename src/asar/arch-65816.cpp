@@ -180,6 +180,11 @@ int get_real_len(int min_len, int max_len, insn_context& ctx, const parse_result
 			}
 		}
 		if(arg_min_len > max_len) {
+			// we might get here on pass 0 if getlen is wrong about the width,
+			// which can happen with forward labels and namespaces.
+			// in that case return some valid width to silence the error.
+			if(pass == 0) return max_len;
+
 			asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(min_len, max_len), arg_min_len*8);
 		}
 		// todo warn about widening when dpbase != 0
