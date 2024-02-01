@@ -48,7 +48,7 @@ static const char * getarg(bool tellusage, const char * defval= nullptr)
 	return args[0];
 }
 
-void u8_fgets(char* buffer, int buffer_size, FILE* handle)
+bool u8_fgets(char* buffer, int buffer_size, FILE* handle)
 {
 #if defined(windows)
 	// RPG Hacker: Using buffer_size * 2 here to account for potential surrogate pairs.
@@ -60,7 +60,7 @@ void u8_fgets(char* buffer, int buffer_size, FILE* handle)
 	// weird reason. (or, more specifically, msvcrt.dll is broken. msvc itself
 	// doesn't use that one.)
 	BOOL res = ReadConsoleW(GetStdHandle(STD_INPUT_HANDLE), w_buf, num_chars-1, &num_chars, nullptr);
-	if(!res) { free(w_buf); return; }
+	if(!res) { free(w_buf); return false; }
 	w_buf[num_chars] = 0;
 	//(void)fgetws(w_buf, num_chars, stdin);
 	string u8_str;
@@ -72,8 +72,10 @@ void u8_fgets(char* buffer, int buffer_size, FILE* handle)
 		if(strchr(buffer, '\r')) *(strchr(buffer, '\r')) = '\n';
 	}
 	free(w_buf);
+	return true;
 #else
-	(void)fgets(buffer, buffer_size, handle);
+	char* out = fgets(buffer, buffer_size, handle);
+	return (out != NULL);
 #endif
 }
 
@@ -86,7 +88,10 @@ static const char * requirestrfromuser(const char * question, bool filename)
 	{
 		*rval=0;
 		printf("%s ", question);
-		u8_fgets(rval, 250, stdin);
+		if(!u8_fgets(rval, 250, stdin)) {
+			fprintf(stderr, "Unexpected end of input\n");
+			exit(1);
+		}
 	}
 	*strchr(rval, '\n')=0;
 	confirmclose=true;
@@ -107,13 +112,9 @@ static const char * requeststrfromuser(const char * question, bool filename, con
 	char * rval=(char*)malloc(256);
 	*rval=0;
 	printf("%s ", question);
-	u8_fgets(rval, 250, stdin);
+	if(!u8_fgets(rval, 250, stdin)) return defval;
 	char *eol = strchr(rval, '\n');
-	if(!eol)
-	{
-		printf("Unexpected end of input");
-		exit(-1);
-	}
+	if(!eol) return defval;
 	*eol = 0;
 	confirmclose=true;
 	if (!*rval) return defval;
