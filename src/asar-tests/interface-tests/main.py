@@ -1,6 +1,8 @@
-import unittest
 import os
+import subprocess
 import sys
+import unittest
+import tempfile
 
 sys.path += [os.path.join(os.path.dirname(__file__), "../../asar-dll-bindings/python")]
 import asar
@@ -248,6 +250,47 @@ db $69
 
 # TODO:
 # error call stack
+
+@unittest.skipIf(asar_exe_path is None, "ASAREXE environment variable not set")
+class TestAsarEXE(unittest.TestCase):
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory(prefix="asar-test-")
+
+    def tearDown(self):
+        self.temp_dir.cleanup()
+        del self.temp_dir
+
+    def runAsar(self, *args):
+        assert asar_exe_path is not None # just to shut up pyright
+        res = subprocess.run([asar_exe_path, *args], stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8")
+        return (res.returncode, res.stdout, res.stderr)
+
+    def testBasicCli(self):
+        patch_name = os.path.join(self.temp_dir.name, "patch.asm")
+        rom_name = os.path.join(self.temp_dir.name, "rom.sfc")
+        with open(patch_name, 'w') as f:
+            f.write("org $8000\ndb $42")
+        out = self.runAsar(patch_name, rom_name)
+        self.assertEqual(out, (0, "", ""))
+        with open(rom_name, 'rb') as f:
+            self.assertEqual(f.read(), b"\x42")
+
+    def testInteractive(self):
+        assert asar_exe_path is not None
+        patch_name = os.path.join(self.temp_dir.name, "patch.asm")
+        rom_name = os.path.join(self.temp_dir.name, "rom.sfc")
+        with open(patch_name, 'w') as f:
+            f.write("org $8000\ndb $42")
+        p = subprocess.Popen([asar_exe_path], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, encoding="utf-8")
+        p.stdin.write(patch_name + "\n") # type: ignore
+        p.stdin.write(rom_name + "\n") # type: ignore
+        stdout, stderr = p.communicate()
+        self.assertEqual(stderr, '')
+        lines = stdout.splitlines()
+        self.assertIn("Assembling completed without problems.", lines[-1])
+        # These 2 are also on the last line because they don't print a terminating newline themselves
+        self.assertIn("Enter patch name: ", lines[-1])
+        self.assertIn("Enter ROM name: ", lines[-1])
 
 if __name__ == '__main__':
     unittest.main()

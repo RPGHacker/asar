@@ -150,7 +150,7 @@ if(ASAR_GEN_DLL_TEST)
 		# error) so disable the interface tests in this case.
 		find_package(Python3)
 		add_custom_target(run-interface-test
-			"${CMAKE_COMMAND}" -E env "ASARDLL=$<TARGET_FILE:asar>" "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/main.py"
+			"${CMAKE_COMMAND}" -E env "ASARDLL=$<TARGET_FILE:asar>" "ASAREXE=$<TARGET_FILE:asar-standalone>" "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/main.py"
 			VERBATIM)
 		add_dependencies(run-tests run-interface-test)
 		set_property(TARGET run-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
