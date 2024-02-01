@@ -12,6 +12,14 @@ You can use `;` to add comments to your code, making it easier to read and under
     lda $00        ; Asar only sees the lda $00 and ignores everything else
 ```
 
+There are also multiline comments, which are started with `;[[` and ended with `]]`:
+
+```asar
+lda $00   ;[[ this is a comment
+still a comment
+more comment ]] lda $01
+```
+
 ## Brackets
 
 Brackets, {{# cmd: { #}} and {{# cmd: } #}}, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's entirely up to the coder whether, how and in what quantity brackets are used.  

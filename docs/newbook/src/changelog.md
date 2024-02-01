@@ -6,28 +6,28 @@
 
 ### Contributors:
 
--   randomdude999
+-   trillian
 -   RPG Hacker
 -   p4plus2
 
 ### New features:
 
--   UTF-8 support: Asar now expects all source files to be UTF-8-encoded. Unicode code points (encoded as UTF-8) are now supported in table files, math commands, tables etc. Unicode file names are now also supported on Windows. (randomdude999, RPG Hacker)
+-   UTF-8 support: Asar now expects all source files to be UTF-8-encoded. Unicode code points (encoded as UTF-8) are now supported in table files, math commands, tables etc. Unicode file names are now also supported on Windows. (trillian, RPG Hacker)
 -   Added support for nested macro definitions. (RPG Hacker)
 -   Improved readability of some error messages. (RPG Hacker)
 -   Generally improved error formatting of Asar and added the `--full-error-stack` option to display complete call stacks. (RPG Hacker)
--   Added multiline comments using `;[[ comment ]]` (randomdude999)
--   Freespaces have a bunch of new features which make them more useful outside of SMW hacking - new options for disabling RATS tags, looking for code in a specific bank or a specific part of ROM. Along with this, freespace allocation should now be a bit more efficient, and the 125 freespace limit has been lifted. (randomdude999)
+-   Added multiline comments using `;[[ comment ]]` (trillian)
+-   Freespaces have a bunch of new features which make them more useful outside of SMW hacking - new options for disabling RATS tags, looking for code in a specific bank or a specific part of ROM. Along with this, freespace allocation should now be a bit more efficient, and the 125 freespace limit has been lifted. (trillian)
 -   Allowed spaces in math. (p4plus2)
 -   A struct can now be used directly like a regular label. (p4plus2)
--   Greatly improved "invalid instruction" errors, which now tell you when an addressing mode doesn't exist for the current instruction, instead of saying "unknown command" for everything. (randomdude999)
--   `autoclean` can now be used with more instructions, allowing such contraptions as `autoclean cmp label,x` if desired. (randomdude999)
+-   Greatly improved "invalid instruction" errors, which now tell you when an addressing mode doesn't exist for the current instruction, instead of saying "unknown command" for everything. (trillian)
+-   `autoclean` can now be used with more instructions, allowing such contraptions as `autoclean cmp label,x` if desired. (trillian)
 
 ### Bug fixes:
 
 -   Asar no longer strips just any white space from defines, allowing them to more closely reflect user intent. (p4plus2)
--   Using `org $xxxxxx : db $00` to expand the ROM to a specific size will now allow the freespace finder to use the newly created space. (randomdude999)
--   In `norom`, using `base` will now no longer give bank cross errors for the "real" position, since there are no real banks in norom. (randomdude999)
+-   Using `org $xxxxxx : db $00` to expand the ROM to a specific size will now allow the freespace finder to use the newly created space. (trillian)
+-   In `norom`, using `base` will now no longer give bank cross errors for the "real" position, since there are no real banks in norom. (trillian)
 -   Better branch instruction handling: some legal but previously rejected branches (especially wrapping around bank borders) are now accepted, and some illegal branches are now properly rejected. (binary1230)
 -   A bunch more bugfixes and crash fixes that are too minor to list here
 
@@ -44,7 +44,7 @@
 ### Contributors:
 
 -   RPG Hacker
--   randomdude999
+-   trillian
 -   p4plus2
 -   Atari2
 -   Alcaro
@@ -63,14 +63,15 @@
 -   Variadic macro parameters now use the syntax `<...[math]>`, which makes them less ambiguous and helps prevent syntax parsing bugs. (RPG Hacker)
 -   HiROM, ExHiROM, and ExLoROM mappers can now use `freecode`. (p4plus2)
 -   `check bankcross` now allows disabling checking for half-bank crossings (going from $7FFF to $8000). (p4plus2)
--   New `pc()` and `realbase()` functions: return the current SNES address that is being written to. (p4plus2, randomdude999)
+-   New `pc()` and `realbase()` functions: return the current SNES address that is being written to. (p4plus2, trillian)
 -   Namespaces can now be saved using `pushns` and `pullns`. (p4plus2)
--   It's now possible to use macro arguments and macro labels in files that are `incsrc`'d from macros. (randomdude999)
--   Added `for` loops, used like `for i = 1..10`. These are more convenient than while loops in most cases and are the main replacement for `rep`. (randomdude999)
--   `incbin` now has a new syntax for including a range of the target file which looks like the for loop range syntax and is less ambiguous. (randomdude999)
+-   `while` loops can now be ended with `endwhile`. (p4plus2)
+-   It's now possible to use macro arguments and macro labels in files that are `incsrc`'d from macros. (trillian)
+-   Added `for` loops, used like `for i = 1..10`. These are more convenient than while loops in most cases and are the main replacement for `rep`. (trillian)
+-   `incbin` now has a new syntax for including a range of the target file which looks like the for loop range syntax and is less ambiguous. (trillian)
 -   Added `spcblock` feature as a replacement for `spc-inline`, which allows defining blocks of SPC data, but in a more flexible way that can easily be extended in the future. (p4plus2)
--   Added the `--error-limit` option, which allows raising the limit on the number of errors that Asar will print before stopping. (randomdude999)
--   `freespacebyte` command to set the byte value used for searching for freespace and expanding the ROM. (randomdude999)
+-   Added the `--error-limit` option, which allows raising the limit on the number of errors that Asar will print before stopping. (trillian)
+-   `freespacebyte` command to set the byte value used for searching for freespace and expanding the ROM. (trillian)
 
 ### Bug fixes:
 
@@ -78,17 +79,17 @@
 -   Escaping quotes in macro calls now works more reliably. (RPG Hacker)
 -   Macro calls & definitions no longer break as easily from including whitespace. (RPG Hacker)
 -   For invalid table files, Asar now prints the line number of the first invalid entry. (RPG Hacker)
--   Addr-to-line mappings now include `autoclean jml/jsl` commands, pseudo opcodes like `asl #4`, and most other data-writing commands like `db/dw/dl`. (spooonsss, RPG Hacker, randomdude999)
--   `'''` and `';'` are now valid can now be used without causing errors. (randomdude999, RPG Hacker)
+-   Addr-to-line mappings now include `autoclean jml/jsl` commands, pseudo opcodes like `asl #4`, and most other data-writing commands like `db/dw/dl`. (spooonsss, RPG Hacker, trillian)
+-   `'''` and `';'` are now valid can now be used without causing errors. (trillian, RPG Hacker)
 -   Fixed some edge case bugs in Asar's virtual filesystem (usable via the DLL) on Windows. (Atari2)
 -   The `--version` commandline flag now causes asar to exit afterwards, which is the expected behavior for command-line flags. (Alcaro)
 -   Fixed some bugs with the label optimizer, making it optimize better. (p4plus2)
--   Fixed freespaces sometimes being a few bytes too long. (randomdude999)
+-   Fixed freespaces sometimes being a few bytes too long. (trillian)
 -   Assigning labels with = now puts them in the right namespace. (p4plus2)
--   Fixed some memory leaks and possible crashes in the DLL. (randomdude999)
--   Fixed some phantom errors when using forward labels. (randomdude999)
--   Asar should now allow as much recursion as system resources allow, and then throw a nice error instead of crashing. (Atari2.0, randomdude999, p4plus2)
--   `optimize address` now works a bit more consistently (new behavior also properly documented in manual). (randomdude999)
+-   Fixed some memory leaks and possible crashes in the DLL. (trillian)
+-   Fixed some phantom errors when using forward labels. (trillian)
+-   Asar should now allow as much recursion as system resources allow, and then throw a nice error instead of crashing. (Atari2.0, trillian, p4plus2)
+-   `optimize address` now works a bit more consistently (new behavior also properly documented in manual). (trillian)
 -   Fixed bug where pointing multiple autocleans at the same freespace would sometimes eat some of the data in it. (spooonsss)
 
 ### Deprecated features:
