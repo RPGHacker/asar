@@ -16,11 +16,10 @@ if "ASAREXE" in os.environ:
 
 tests_dir = os.path.dirname(os.path.abspath(__file__))
 
+@unittest.skipIf(asar_dll_path is None, "ASARDLL environment variable not set")
 class TestAsarDLL(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        if asar_dll_path is None:
-            raise unittest.SkipTest("ASARDLL environment variable not set")
         asar.init(asar_dll_path)
 
     @classmethod
@@ -275,6 +274,7 @@ class TestAsarEXE(unittest.TestCase):
         with open(rom_name, 'rb') as f:
             self.assertEqual(f.read(), b"\x42")
 
+    @unittest.skipIf(sys.platform.startswith("win"), "our windows console input doesn't work with pipes")
     def testInteractive(self):
         assert asar_exe_path is not None
         patch_name = os.path.join(self.temp_dir.name, "patch.asm")
