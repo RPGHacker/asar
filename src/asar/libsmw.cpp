@@ -43,6 +43,8 @@ static int findromwritepos(int snesoffset, int searchstartpos, int searchendpos)
 
 static void addromwriteforbank(int snesoffset, int numbytes)
 {
+	if(numbytes == 0) return;
+
 	// common case: this rom write is immediately after the last one.
 	if(last_writtenblock_ind < writtenblocks.count) {
 		auto& blk = writtenblocks[last_writtenblock_ind];

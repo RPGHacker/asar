@@ -484,10 +484,10 @@ namespace AsarCLR
         }
 
         /// <summary>
-        /// Gets contents of a define. If define doesn't exists, a null string will be generated.
+        /// Gets contents of a define. If define doesn't exist, an empty string will be returned.
         /// </summary>
         /// <param name="defineName">The define name.</param>
-        /// <returns>The define content. If define has not found, this will be null.</returns>
+        /// <returns>The define content. If the define was not found, this will be an empty string.</returns>
         public static string getdefine(string defineName)
         {
             return Marshal.PtrToStringAnsi(asar_getdefine(defineName));

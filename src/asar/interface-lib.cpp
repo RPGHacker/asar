@@ -609,11 +609,14 @@ EXPORT const char * asar_getdefine(const char * name)
 EXPORT const char * asar_resolvedefines(const char * data)
 {
 	static string out;
+	out = "";
 	try
 	{
 		resolvedefines(out, data);
 	}
-	catch(errfatal&){}
+	catch(errfatal&){
+		out = "";
+	}
 	return out;
 }
 
