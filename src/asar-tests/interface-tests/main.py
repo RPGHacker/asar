@@ -16,6 +16,9 @@ if "ASAREXE" in os.environ:
 
 tests_dir = os.path.dirname(os.path.abspath(__file__))
 
+def WB(pc, snes, len):
+    return asar.writtenblockdata(asar._writtenblockdata(pc, snes, len))
+
 @unittest.skipIf(asar_dll_path is None, "ASARDLL environment variable not set")
 class TestAsarDLL(unittest.TestCase):
     @classmethod
@@ -59,14 +62,16 @@ class TestAsarDLL(unittest.TestCase):
         out = asar.patch(
             "/main", b'',
             std_include_file=tests_dir+"/stdincludes.txt",
+            includepaths=["/stdinc4"],
             memory_files={
                 "/main": b"org $8000 : incsrc stdi1.asm\n\
-                        incsrc stdi2.asm : incsrc stdi3.asm",
+                        incsrc stdi2.asm : incsrc stdi3.asm : incsrc stdi4.asm",
                 "/stdinc/stdi1.asm": b"db 1",
                 "/stdinc2/stdi2.asm": b"db 2",
                 tests_dir + "/stdinc3/stdi3.asm": b"db 3",
+                "/stdinc4/stdi4.asm": b"db 4",
             })
-        self.assertOk(out, b'\1\2\3')
+        self.assertOk(out, b'\1\2\3\4')
 
     def testStdDefines(self):
         out = asar.patch("/main", b'',
@@ -131,7 +136,7 @@ class TestAsarDLL(unittest.TestCase):
                 warning_overrides={"Wwarn_command": False, "Wimplicitly_sized_immediate": True},
                 memory_files={"main": b"org $8000 : lda #0 : warn \"lol\""})
         self.assertTrue(out[0])
-        warns = [x.errname.decode() for x in asar.getwarnings()]
+        warns = [x.errname for x in asar.getwarnings()]
         self.assertEqual(warns, ["Wrelative_path_used", "Wimplicitly_sized_immediate"])
 
     def testMappers(self):
@@ -158,9 +163,8 @@ class TestAsarDLL(unittest.TestCase):
                     org $018000 : db 1,2,3
                     """)
         self.assertTrue(out[0])
-        wb = asar.writtenblockdata
-        self.assertEqual(asar.getwrittenblocks(), [wb(0, 0x808000, 8), wb(0x20, 0x808020, 3),
-                    wb(0x7fdc, 0x80ffdc, 4), wb(0x7fff, 0x80ffff, 1), wb(0x8000, 0x818000, 3)])
+        self.assertEqual(asar.getwrittenblocks(), [WB(0, 0x808000, 8), WB(0x20, 0x808020, 3),
+                    WB(0x7fdc, 0x80ffdc, 4), WB(0x7fff, 0x80ffff, 1), WB(0x8000, 0x818000, 3)])
 
     def testWrittenBlocks2(self):
         out = self.patchSingle(b"""
@@ -169,33 +173,31 @@ class TestAsarDLL(unittest.TestCase):
             org $410000 : db $02
             """, override_checksum=False)
         self.assertTrue(out[0])
-        wb = asar.writtenblockdata
-        self.assertEqual(asar.getwrittenblocks(), [wb(0xffff, 0xc0ffff, 1), wb(0x10000, 0xc10000, 1)])
+        self.assertEqual(asar.getwrittenblocks(), [WB(0xffff, 0xc0ffff, 1), WB(0x10000, 0xc10000, 1)])
 
     def testWrittenBlocks3(self):
         out = self.patchSingle(b"org $fffe : db $00, $00")
         self.assertTrue(out[0])
-        wb = asar.writtenblockdata
-        self.assertEqual(asar.getwrittenblocks(), [wb(0x7fdc, 0x80ffdc, 4), wb(0x7ffe, 0x80fffe, 2)])
+        self.assertEqual(asar.getwrittenblocks(), [WB(0x7fdc, 0x80ffdc, 4), WB(0x7ffe, 0x80fffe, 2)])
 
     def testErrFormat(self):
         out = self.patchSingle(b"error \"err or! \", hex(1+1)\nblah")
         self.assertFalse(out[0])
         (err, err2) = asar.geterrors()
-        self.assertEqual(err.errname, b"Eunknown_command")
-        self.assertEqual(err2.errname, b"Eerror_command")
-        self.assertEqual(err2.rawerrdata, b"error command: err or! 2")
-        self.assertEqual(err.filename, b"/main")
+        self.assertEqual(err.errname, "Eunknown_command")
+        self.assertEqual(err2.errname, "Eerror_command")
+        self.assertEqual(err2.rawerrdata, "error command: err or! 2")
+        self.assertEqual(err.filename, "/main")
         # 0-indexed line numbers...
         self.assertEqual(err.line, 1)
-        self.assertEqual(err.fullerrdata, b"main:2: error: (Eunknown_command): Unknown command.\n    in block: [blah]")
+        self.assertEqual(err.fullerrdata, "main:2: error: (Eunknown_command): Unknown command.\n    in block: [blah]")
 
     def testResolvedefines(self):
         out = self.patchSingle(b"!x = aaa")
         self.assertOk(out, b"")
-        self.assertEqual(asar.resolvedefines(b"asdf !x"), b"asdf aaa")
-        self.assertEqual(asar.resolvedefines(b"g"), b"g")
-        self.assertEqual(asar.resolvedefines(b"aaa !aaaaa"), b"")
+        self.assertEqual(asar.resolvedefines("asdf !x"), "asdf aaa")
+        self.assertEqual(asar.resolvedefines("g"), "g")
+        self.assertEqual(asar.resolvedefines("aaa !aaaaa"), "")
 
     def testMath(self):
         self.patchSingle(b"mylbl = 1234")
