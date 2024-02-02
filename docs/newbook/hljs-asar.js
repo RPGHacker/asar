@@ -18,7 +18,7 @@ hljsAsar = {
         };
         const asarOperatorsMode = {
             scope: "operator",
-            begin: /\(|\)|\+|\-|\*|\/|\%|\<\<|\>\>|\&|\||\^|\~|\*\*/,
+            begin: /\(|\)|\+|\-|\*|\/|\%|\<|\>|\&|\||\^|\~|#=|:=|\?=|!=|=/,
         };
 
         const asarFunctionCallMode = {
@@ -26,8 +26,6 @@ hljsAsar = {
             begin: /[a-zA-Z0-9_]+(?=\()/,
         }
 
-        // trying to highlight labels separately is more trouble than it's worth,
-        // the syntax conflicts with like everything else lol
         const asarLabelReferenceMode = {
             scope: "label",
             variants: [
@@ -36,19 +34,16 @@ hljsAsar = {
             ],
         };
 
-        /*const asarLabelDefinitionMode = {
+        const asarLabelDefinitionMode = {
             scope: "label",
             variants: [
-                // sublabels, macro labels, # labels - optional :
-                { begin: /#?\??\.+[a-zA-Z0-9_]+:?/ },
-                { begin: /#\??\.*[a-zA-Z0-9_]+:?/ },
+                // all other kinds of labels are already handled by asarLabelReferenceMode
+                // # labels - optional :
                 { begin: /#?\?\.*[a-zA-Z0-9_]+:?/ },
                 // main labels - require :
                 { begin: /[a-zA-Z0-9_]+:/ },
-                // +- labels
-                { begin: /\??(-+|\++):?/ },
             ]
-        };*/
+        };
 
         const asarSimpleDefineInMacroArg = {
             scope: "variable.define",
@@ -123,10 +118,6 @@ hljsAsar = {
                         },
                         //hljs.QUOTE_STRING_MODE,
                         //hljs.APOS_STRING_MODE,
-                        {
-                            scope: "keyword",
-                            begin: asarKeywords.join('\\b|').concat('\\b')
-                        },
                         // hack for macro definitions
                         {
                             begin: /\b(?=macro )/,
@@ -143,9 +134,16 @@ hljsAsar = {
                             // stuff a lot more readable in those cases.
                             begin: /(%|!)[a-zA-Z0-9_]+(?=\()/,
                         },
+                        // checking this earlier because otherwise, functions that are named like builtins would be highlighted wrong
+                        asarFunctionCallMode,
+                        asarLabelDefinitionMode,
+                        {
+                            scope: "keyword",
+                            begin: asarKeywords.join('\\b|') + "\\b"
+                        },
                         {
                             scope: "built_in",
-                            begin: asarOpcodes.join('(\\.[bwl]|\\b)|').concat('(\\.[bwl]|\\b)')
+                            begin: asarOpcodes.join('(\\.[bwl]|\\b)|') + '(\\.[bwl]|\\b)'
                         },
                         //asarLabelDefinitionMode,
                         asarBracedDefineOutsideMacro,
