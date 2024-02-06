@@ -13,7 +13,7 @@ segment [ram/noram][,align][,bank={num}][,start={num}][,pin={label}]
 
 The freespace command makes Asar search the output ROM for a freespace area large enough to contain the following section of code/data. If such an area is found, the pc is placed at its beginning and a RATS tag automatically written. If no such area is found, an error is thrown. The parameters control what kind of freespace to look for.
 
-The `freecode` command is an alias of `freespace ram`, whereas `freedata` is an alias of `freespace noram`. The `segment` command is an alias for `freespace norats`.
+The `freecode` command is an alias of `freespace ram`, whereas `freedata` is an alias of `freespace noram`. The `segment` command is an alias for `freespace norats`. (Additionally, with `segment` specifying `ram` or `noram` is optional and defaults to `noram`.)
   
 | Parameter | Details |
 | --- | --- |
@@ -26,6 +26,8 @@ The `freecode` command is an alias of `freespace ram`, whereas `freedata` is an 
 | `bank=` | Only search for freespace in the given bank. Mostly useful when using `norats`. |
 | `start=` | Search for freespace starting at the specified position in ROM. Useful for hacking non-SMW games, where the original ROM might be bigger or smaller. Note that technically, this limits the freespace finder to positions that are after the location of `start` in the ROM file: For example, when using `$C00000` as the start position in `hirom`, the entire ROM will be searched, since `$C00000` is at the start of the ROM file. |
 | `pin=` | Pin this freespace to another one, forcing them to be placed in the same bank. |
+
+Every boolean option also has a negative version prefixed with `no` that allows disabling it to restore the default behavior. (In the case of `norats`, using `rats` will restore the default behavior.)
 
 One thing to note about freespaces is that if Asar places two freespace areas within the same bank, it will use 24-bit addressing in cases where they reference each other, despite 16-bit addressing being possible in theory. This can be worked around by only using a single freespace area instead. It's not recommended to explicitly use 16-bit addressing in these cases as the two freespace areas are not guaranteed to always end up in the same bank for all users.
 
@@ -55,6 +57,19 @@ MyNewCode:
 {{# syn: freespacebyte {value} #}}
 
 This command sets the byte which Asar considers to be free space. This value will be used for searching for freespace, as padding when resizing the ROM, or when cleaning up old freespaces.
+
+## `freespace_settings`
+
+{{# syn: freespace_settings {options...} #}}
+
+This command allows giving default values for the `freespace`/`freecode`/... commands. The syntax is the same as the `freespace` command. Asar will act like any options provided here are prepended to all `freespace`/etc commands.
+
+```asar
+freespace_settings start=$088000
+freecode static ; this will act like `freespace start=$088000,ram,static`
+; (the `ram` comes from using freecode instead of freespace:
+;  note how it's added after the default settings.)
+```
 
 ## `autoclean`
 

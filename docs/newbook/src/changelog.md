@@ -18,6 +18,7 @@
 -   Generally improved error formatting of Asar and added the `--full-error-stack` option to display complete call stacks. (RPG Hacker)
 -   Added multiline comments using `;[[ comment ]]` (trillian)
 -   Freespaces have a bunch of new features which make them more useful outside of SMW hacking - new options for disabling RATS tags, looking for code in a specific bank or a specific part of ROM. Along with this, freespace allocation should now be a bit more efficient, and the 125 freespace limit has been lifted. (trillian)
+-   Freespaces can now have some options applied by default using the `freespace_settings` command. (trillian)
 -   Allowed spaces in math. (p4plus2)
 -   A struct can now be used directly like a regular label. (p4plus2)
 -   Greatly improved "invalid instruction" errors, which now tell you when an addressing mode doesn't exist for the current instruction, instead of saying "unknown command" for everything. (trillian)
