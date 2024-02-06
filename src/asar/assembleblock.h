@@ -68,6 +68,8 @@ struct freespace_data {
 	bool write_rats;
 	// should rework this...
 	bool flag_align;
+	// whether the `cleaned` argument was given
+	bool flag_cleaned;
 	// pinned freespaces: how much space is actually needed for this freespace
 	int total_len;
 	// pinned freespaces: how much of this block we've already used

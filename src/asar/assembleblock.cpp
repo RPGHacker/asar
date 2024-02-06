@@ -189,7 +189,10 @@ inline void write1_65816(unsigned int num)
 		int pcpos = snestopc(realsnespos & 0xFFFFFF);
 		if(pcpos < 0) asar_throw_error(pass, error_type_fatal, error_id_internal_error, "invalid pos in pass 1");
 		addromwrite(pcpos, 1);
-		if (pcpos>=romlen) romlen=pcpos+1;
+		if (pcpos>=romlen) {
+			if(pcpos - romlen > 0) writeromdata_bytes(romlen, freespacebyte, pcpos - romlen, false);
+			romlen=pcpos+1;
+		}
 	}
 	step(1);
 	ratsmetastate=ratsmeta_ban;
@@ -297,7 +300,7 @@ int freespaceid;
 // start address of the current freespace, used for computing the length of the
 // current freespace.
 static int freespacestart;
-
+freespace_data default_freespace_settings;
 
 bool confirmname(const char * name)
 {
@@ -590,20 +593,6 @@ static unsigned char padbyte[12];
 
 static bool nested_namespaces = false;
 
-static int getfreespaceid()
-{
-	/*static const int max_num_freespaces = 125;
-	if (freespaceidnext > max_num_freespaces) asar_throw_error(pass, error_type_fatal, error_id_freespace_limit_reached, max_num_freespaces);*/
-	int newid = freespaceidnext++;
-	if(newid >= freespaces.count) {
-		freespaces[newid].pos = -1;
-		freespaces[newid].leaked = true;
-		freespaces[newid].orgpos = -2;
-		freespaces[newid].orglen = -1;
-	}
-	return newid;
-}
-
 void checkbankcross()
 {
 	if (!snespos_valid) return;
@@ -707,10 +696,57 @@ void initstuff()
 
 	initmathcore();
 
+	default_freespace_settings = {};
+	default_freespace_settings.bank = -3;
+	default_freespace_settings.search_start = -1;
+	default_freespace_settings.write_rats = true;
+	// rest are initialized to false/0/empty string
+
 	callstack.reset();
 #if defined(_WIN32) || !defined(NO_USE_THREADS)
 	init_stack_use_check();
 #endif
+}
+
+void parse_freespace_arguments(freespace_data& thisfs, string& arguments) {
+	if(arguments == "") return;
+	autoptr<char**> pars=split(arguments.temp_raw(), ',');
+
+	for (int i=0;pars[i];i++)
+	{
+		if (!stricmp(pars[i], "ram")) { thisfs.bank = -2; }
+		else if (!stricmp(pars[i], "noram")) { thisfs.bank = -1; }
+		else if (!stricmp(pars[i], "static")) { thisfs.is_static = true; }
+		else if (!stricmp(pars[i], "nostatic")) { thisfs.is_static = false; }
+		else if (!stricmp(pars[i], "align")) { thisfs.flag_align = true; }
+		else if (!stricmp(pars[i], "noalign")) { thisfs.flag_align = false; }
+		else if (!stricmp(pars[i], "cleaned")) { thisfs.flag_cleaned = true; }
+		else if (!stricmp(pars[i], "nocleaned")) { thisfs.flag_cleaned = false; }
+		else if (!stricmp(pars[i], "rats")) { thisfs.write_rats = true; }
+		else if (!stricmp(pars[i], "norats")) { thisfs.write_rats = false; }
+		else if (stribegin(pars[i], "bank="))
+		{
+			thisfs.bank = getnum(pars[i] + 5);
+			if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+		}
+		else if (stribegin(pars[i], "start="))
+		{
+			thisfs.search_start = getnum(pars[i] + 6);
+			if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+		}
+		else if (stribegin(pars[i], "pin="))
+		{
+			// TODO: should we handle posneg labels here too?
+			string pin_to = pars[i] + 4;
+			const char* pin_to_c = pin_to.data();
+			thisfs.pin_target = labelname(&pin_to_c);
+			if(*pin_to_c) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+			// this is to throw an "undefined label" error with the proper callstack
+			if(pass) labelval(pin_to);
+			thisfs.pin_target_ns = ns;
+		}
+		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+	}
 }
 
 int get_freespace_pin_target(int target_id) {
@@ -1868,97 +1904,40 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (is("freespace") || is("freecode") || is("freedata") || is("segment"))
 	{
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+
+		freespace_data this_fs_settings = default_freespace_settings;
+		if (is("freecode")) this_fs_settings.bank = -2;
+		if (is("freedata")) this_fs_settings.bank = -1;
+		if (is("segment")) this_fs_settings.write_rats = false;
+
 		string parstr;
-		if (numwords==1) parstr="\n";//crappy hack: impossible character to cut out extra commas
+		if (numwords==1) parstr="";
 		else if (numwords==2) parstr=word[1];
 		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-		if (is("freecode")) parstr=STR"ram,"+parstr;
-		if (is("freedata")) parstr=STR"noram,"+parstr;
-		if (is("segment")) parstr = STR "norats," + parstr;
-		autoptr<char**> pars=split(parstr.temp_raw(), ',');
-		bool fixedpos=false;
-		bool align=false;
-		bool leakwarn=true;
-		bool write_rats=true;
-		int target_bank = -3;
-		string pin_to_freespace = "";
-		int search_start_pos = -1;
+		parse_freespace_arguments(this_fs_settings, parstr);
 
-		for (int i=0;pars[i];i++)
-		{
-			if (pars[i][0]=='\n') {}
-			else if (!stricmp(pars[i], "ram"))
-			{
-				if (target_bank!=-3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				target_bank = -2;
-			}
-			else if (!stricmp(pars[i], "noram"))
-			{
-				if (target_bank!=-3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				target_bank = -1;
-			}
-			else if (!stricmp(pars[i], "static"))
-			{
-				if (fixedpos) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				fixedpos=true;
-			}
-			else if (!stricmp(pars[i], "align"))
-			{
-				if (align) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				align=true;
-			}
-			else if (!stricmp(pars[i], "cleaned"))
-			{
-				if (!leakwarn) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				leakwarn=false;
-			}
-			else if (!stricmp(pars[i], "norats"))
-			{
-				write_rats=false;
-			}
-			else if (stribegin(pars[i], "bank="))
-			{
-				if(target_bank != -3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-				target_bank = getnum(pars[i] + 5);
-				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-			}
-			else if (stribegin(pars[i], "start="))
-			{
-				search_start_pos = getnum(pars[i] + 6);
-				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
-			}
-			else if (stribegin(pars[i], "pin="))
-			{
-				// TODO: should we handle posneg labels here too?
-				string pin_to = pars[i] + 4;
-				const char* pin_to_c = pin_to.data();
-				pin_to_freespace = labelname(&pin_to_c);
-				if(*pin_to_c) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
-				// this is to throw an "undefined label" error with the proper callstack
-				if(pass) labelval(pin_to);
-			}
-			else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-		}
-		if(target_bank == -3 && !write_rats) target_bank = -1;
-		if(target_bank == -3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		if(this_fs_settings.bank == -3 && !this_fs_settings.write_rats) this_fs_settings.bank = -1;
+		if(this_fs_settings.bank == -3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
 		// no point specifying anything about cleaning when not writing a rats tag
-		if(!write_rats && (!leakwarn || fixedpos)) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
-		if(!write_rats) leakwarn = false;
+		if(!this_fs_settings.write_rats &&
+			(this_fs_settings.flag_cleaned || this_fs_settings.is_static))
+			asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		if(!this_fs_settings.write_rats) this_fs_settings.flag_cleaned = true;
 		freespaceend();
-		freespaceid=getfreespaceid();
+		freespaceid = freespaceidnext++;
 		freespace_data& thisfs = freespaces[freespaceid];
 
-		thisfs.pin_target = pin_to_freespace;
-		if(pin_to_freespace) thisfs.pin_target_ns = ns;
-		thisfs.write_rats = write_rats;
-		thisfs.search_start = search_start_pos;
-		thisfs.bank = target_bank;
-		thisfs.flag_align = align;
-
-		if (pass==0) snespos=0;
+		if (pass==0) {
+			thisfs = this_fs_settings;
+			thisfs.pos = -1;
+			thisfs.leaked = true;
+			thisfs.orgpos = -2;
+			thisfs.orglen = -1;
+			snespos=0;
+		}
 		if (pass==1)
 		{
-			if (fixedpos && thisfs.orgpos == -2)
+			if (thisfs.is_static && thisfs.orgpos == -2)
 			{
 				thisfs.pos = 0;
 				thisfs.leaked = false;//mute some other errors
@@ -1968,32 +1947,36 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		if (pass==2)
 		{
-			if (fixedpos && thisfs.orgpos == -2) return;//to kill some errors (supposedly????)
+			if (thisfs.is_static && thisfs.orgpos == -2) return;//to kill some errors (supposedly????)
 			snespos=thisfs.pos;
-			if (thisfs.leaked && leakwarn) asar_throw_warning(2, warning_id_freespace_leaked);
-			freespaceuse += (write_rats ? 8 : 0) + thisfs.len;
+			if (thisfs.leaked && !thisfs.flag_cleaned) asar_throw_warning(2, warning_id_freespace_leaked);
+			freespaceuse += (thisfs.write_rats ? 8 : 0) + thisfs.len;
 
 			// add a mapping for the start of the rats tag
-			if (write_rats) add_addr_to_line(snespos-8);
+			if (thisfs.write_rats) add_addr_to_line(snespos-8);
 		}
-		thisfs.is_static = fixedpos;
 		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(thisfs.len).data());
 		if (snespos < 0) asar_throw_error(pass, error_type_fatal, error_id_no_freespace, dec(thisfs.len).data());
-		bytes+=write_rats ? 8 : 0;
+		bytes+=thisfs.write_rats ? 8 : 0;
 		freespacestart=snespos;
 		startpos=snespos;
 		realstartpos=snespos;
 		realsnespos=snespos;
 		optimizeforbank=-1;
-		ratsmetastate=write_rats ? ratsmeta_allow : ratsmeta_ban;
+		ratsmetastate=thisfs.write_rats ? ratsmeta_allow : ratsmeta_ban;
 		snespos_valid = true;
 		// check this at the very end so that snespos gets set properly, to
 		// prevent spurious errors later
 		//...i guess this can still cause bankcross errors if the old freespace
 		//happened to be very close to the end of a bank or something, but
 		//whatever
-		if (pass == 2 && fixedpos && thisfs.orgpos > 0 && thisfs.len > thisfs.orglen)
+		if (pass == 2 && thisfs.is_static && thisfs.orgpos > 0 && thisfs.len > thisfs.orglen)
 			asar_throw_error(2, error_type_block, error_id_static_freespace_growing);
+	}
+	else if (is1("freespace_settings"))
+	{
+		string arg = word[1];
+		parse_freespace_arguments(default_freespace_settings, arg);
 	}
 	else if (is1("prot"))
 	{
