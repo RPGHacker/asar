@@ -302,6 +302,14 @@ Aside from user-defined functions mentioned above, Asar also supports a number o
       warn "This patch was only tested in Asar and might not work correctly in your assembler."
   endif
   ```
+- `char(string, index)`
+
+  Returns the `index`-th character in `string` (starting at zero). Note that this function ignores the current table mapping, and also doesn't respect Unicode properly: it returns bytes of the string's UTF-8 encoding. For example, `db char("ä", 0)` writes `C3`, which is the first byte of 'ä' in UTF-8.
+
+- `stringlength(string)`
+
+  Returns the length of `string` in bytes (encoded as UTF-8). I.e. `char(str, stringlength(str)-1)` is the last byte of the string.
+
 - `pc()`
 
   Returns the current SNES address. This is a shorthand for placing a label right before the current command.
