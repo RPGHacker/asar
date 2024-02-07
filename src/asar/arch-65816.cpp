@@ -305,7 +305,14 @@ void branch(insn_context& ctx) {
 	int64_t num = 0;
 	if(pass == 2) {
 		num = getnum(parsed.arg);
-		if(foundlabel) {
+		bool target_is_abs = foundlabel;
+		if(ctx.modifier != 0) {
+			if(to_lower(ctx.modifier) == 'a') target_is_abs = true;
+			else if(to_lower(ctx.modifier) == 'r') target_is_abs = false;
+			// TODO: better error message
+			else asar_throw_error(2, error_type_block, error_id_invalid_opcode_length);
+		}
+		if(target_is_abs) {
 			// cast delta to signed 16-bit, this makes it possible to handle bank-border-wrapping automatically
 			int16_t delta = num - (snespos + width + 1);
 			if((num & ~0xffff) != (snespos & ~0xffff)) {
@@ -333,7 +340,6 @@ void implied(insn_context& ctx) {
 		// todo: some kind of "this instruction doesn't take an argument" message?
 		asar_throw_error(0, error_type_block, error_id_bad_addr_mode);
 	}
-	// also should check that ctx.modifier == 0
 	opcode0(ctx, opc);
 }
 
