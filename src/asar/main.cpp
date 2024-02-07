@@ -654,7 +654,7 @@ void resolvedefines(string& out, const char * start)
 				// RPG Hacker: Is it really a good idea to normalize
 				// the content of defines? That kinda violates their
 				// functionality as a string replacement mechanism.
-				val.qnormalize();
+				//val.qnormalize();
 
 				// RPG Hacker: throw an error if we're trying to overwrite built-in defines.
 				if (builtindefines.exists(defname))
