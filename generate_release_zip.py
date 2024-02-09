@@ -6,13 +6,15 @@ import os
 if len(sys.argv) != 2:
 	print("Usage: {} version_number".format(sys.argv[0]))
 	sys.exit(1)
+	
+branch_name = 'asar_19'
 
 zipf = zipfile.ZipFile("asar"+sys.argv[1]+".zip", 'x', compression=zipfile.ZIP_DEFLATED)
 
-build_server_prefix = lambda f, n: f"https://random.muncher.se/ftp/asar/windows/xp_compat/build/asar/{f}/MinSizeRel/{n}"
-with urllib.request.urlopen(build_server_prefix("bin", "asar.exe")) as resp:
+build_server_prefix = lambda f, n, b: f"https://random.muncher.se/ftp/asar/windows/{branch_name}/{b}/build/asar/{f}/MinSizeRel/{n}"
+with urllib.request.urlopen(build_server_prefix("bin", "asar.exe", "win64")) as resp:
 	exe_data = resp.read()
-with urllib.request.urlopen(build_server_prefix("lib", "asar.dll")) as resp:
+with urllib.request.urlopen(build_server_prefix("lib", "asar.dll", "win32")) as resp:
 	dll_data = resp.read()
 
 zipf.writestr("asar.exe", exe_data)
