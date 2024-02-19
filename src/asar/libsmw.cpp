@@ -111,9 +111,9 @@ void addromwrite(int pcoffset, int numbytes)
 	// RPG Hacker: Some kind of witchcraft which I actually hope works as intended
 	// Basically, the purpose of this is to sort all ROM writes into banks for the sake of cleanness
 
-	while (((snesaddr >> 16) & 0xFF) != (((snesaddr + bytesleft) >> 16) & 0xFF))
+	while ((snesaddr >> 16) != ((snesaddr + bytesleft) >> 16))
 	{
-		int bytesinbank = ((snesaddr + 0x10000) & 0xFF0000) - snesaddr;
+		int bytesinbank = ((snesaddr + 0x10000) & 0xffff0000) - snesaddr;
 
 		addromwriteforbank(snesaddr, bytesinbank);
 
