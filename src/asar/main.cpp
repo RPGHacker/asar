@@ -20,7 +20,7 @@
 const int asarver_maj=1;
 const int asarver_min=9;
 const int asarver_bug=0;
-const bool asarver_beta=true;
+const bool asarver_beta=false;
 bool default_math_pri=false;
 bool default_math_round_off=false;
 extern bool suppress_all_warnings;
