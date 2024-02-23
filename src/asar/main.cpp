@@ -578,7 +578,7 @@ void assembleline(const char * fname, int linenum, const char * line)
 		{
 			thisline = linenum;
 			thisblock = blocks[0];
-			asar_throw_warning(0, warning_id_feature_deprecated, "inline if statements", "Add an \" : endif\" at the end of the line");
+			asar_throw_warning(0, warning_id_feature_deprecated, "inline if statements without endif", "Add an \" : endif\" at the end of the line");
 			if (numif==numtrue) numtrue--;
 			numif--;
 		}

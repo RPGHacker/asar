@@ -1569,7 +1569,10 @@ void assembleblock(const char * block, bool isspecialline)
 			else
 			{
 				const char * math=pars[i];
-				if (math[0]=='#') math++;
+				if (math[0]=='#') {
+					asar_throw_warning(0, warning_id_feature_deprecated, "# before numbers in db/dw/...", "remove the #");
+					math++;
+				}
 				unsigned int num=(pass==2)?getnum(math):0;
 				if (len == 1) write1(num);
 				if (len == 2) write2(num);

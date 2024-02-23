@@ -91,9 +91,9 @@
 			<li><code>spc700-raw</code>: use <code>arch spc700</code> and <code>norom</code>.</li>
 			<li><code>fastrom</code>: Has never actually worked and can be removed.</li>
 			<li><code>header</code>: Doesn't do anything and can be removed.</li>
+			<li><code>#</code> before numbers in <code>db/dw/dl/dd</code> statements: this was intended for xkas compatibility but was for some reason enabled everywhere without a warning. The <code>#</code> does nothing and can be removed.</li>
 			<li>Non-UTF-8 source files: Re-save your source files as UTF-8 in a text editor of choice.</li>
 			<li><code>;@command</code> and <code>@command</code> notation: Use <code>command</code> instead.</li>
-			<li>Wrapping defines to resolve in quotes (e.g. <code>db "!define"</code>): The quotes aren't needed (<code>db !define</code>).</li>
 			<li>Single-line/inline if statements: Use full if blocks with an <code>if</code>/<code>endif</code> pair instead. (Note that you can still have an if statement entirely on one line, you just need to have an <code> : endif</code> at the end of it.)</li>
 			<li><code>freespace fixed</code>: Use <code>freespace static</code> instead.</li>
 			<li><code class="65c816_asar">&lt;math&gt;</code> syntax for variadic macro parameters: Use <code class="65c816_asar">&lt;...[math]&gt;</code> instead.</li>
