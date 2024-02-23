@@ -12,7 +12,7 @@
             VALUE "FileVersion",        "v1.90\0"
             // apparently this is required?
             VALUE "InternalName",       "asar\0"
-            VALUE "OriginalFilename",   "asar.exe\0"
+            VALUE "OriginalFilename",   "asar.dll\0"
             VALUE "ProductName",        "Asar\0"
             VALUE "ProductVersion",     "v1.90\0"
         }
