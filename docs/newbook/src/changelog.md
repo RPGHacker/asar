@@ -40,7 +40,7 @@
 
 ## v1.90
 
-**Release:** ???
+**Release:** February 23, 2024
 
 ### Contributors:
 
@@ -111,9 +111,9 @@
 -   `spc700-raw`: use `arch spc700` and `norom`.
 -   `fastrom`: Has never actually worked and can be removed.
 -   `header`: Doesn't do anything and can be removed.
+-   `#` before numbers in `db/dw/dl/dd` statements: this was intended for xkas compatibility but was for some reason enabled everywhere without a warning. The `#` does nothing and can be removed.
 -   Non-UTF-8 source files: Re-save your source files as UTF-8 in a text editor of choice.
 -   `;@command` and `@command` notation: Use `command` instead.
--   Wrapping defines to resolve in quotes (e.g. `db "!define"`): The quotes aren't needed (`db !define`).
 -   Single-line/inline if statements: Use full if blocks with an `if`/`endif` pair instead. (Note that you can still have an if statement entirely on one line, you just need to have an `: endif` at the end of it.)
 -   `freespace fixed`: Use `freespace static` instead.
 -   `<math>` syntax for variadic macro parameters: Use `<...[math]>` instead.
