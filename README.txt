@@ -9,7 +9,7 @@ Writing Patches
 ---------------
 
 For a detailed guide on all commands supported by Asar, see the included manual
-(also available on-line at https://rpghacker.github.io/asar/manual/ ).
+(also available on-line at https://rpghacker.github.io/asar/asar_19/manual/ ).
 
 Another thing that may be helpful when writing patches is syntax highlighting.
 Currently asar includes syntax definitions for Notepad++ and Sublime Text.
@@ -24,7 +24,7 @@ History
 -------
 
 For a detailed changelog, please see the included changelog (or on-line at
-https://rpghacker.github.io/asar/changelog/ ).
+https://rpghacker.github.io/asar/asar_19/changelog/ ).
 
 Bug reports
 -----------
@@ -38,5 +38,5 @@ create a new issue, detailing what happens, what you expected to happen, and the
 patch you are trying to apply.
 
 If you don't have a GitHub account, you can also tell someone about the bug on
-Discord (in the #asm channel) or the SMW Central forums (in Asar's thread,
-https://smwc.me/t/51349 ).
+Discord (in the #asm channel on SMWC, or #asar on SnesLab) or the SMW Central
+forums (in Asar's thread, https://smwc.me/t/51349 ).
