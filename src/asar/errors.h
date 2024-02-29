@@ -57,7 +57,6 @@
 	ERR(label_not_found, "Label '%s' wasn't found.") \
 	ERR(label_redefined, "Label '%s' redefined.") \
 	ERR(broken_label_definition, "Broken label definition.") \
-	ERR(label_cross_assignment, "Setting labels to other non-static labels is not valid.") \
 	ERR(macro_label_outside_of_macro, "Macro label outside of a macro.") \
 	ERR(invalid_namespace_name, "Invalid namespace name.") \
 	ERR(invalid_namespace_use, "Invalid use of namespace command.") \
@@ -118,7 +117,6 @@
 	ERR(broken_autoclean, "Broken autoclean command.") \
 	ERR(pulltable_without_table, "Using pulltable when there is no table on the stack yet.") \
 	ERR(pad_in_freespace, "pad does not make sense in a freespaced code.") \
-	ERR(org_label_forward, "org Label is only valid for labels earlier in the patch.") \
 	ERR(base_label_invalid, "base Label is not valid.") \
 	ERR(pushpc_without_pullpc, "pushpc without matching pullpc.") \
 	ERR(pullpc_without_pushpc, "pullpc without matching pushpc.") \

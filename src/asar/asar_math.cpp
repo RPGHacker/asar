@@ -324,16 +324,13 @@ double asar_pctosnes_wrapper()
 
 double asar_realbase_wrapper()
 {
-	//need a better way to do this to make sure it is useful...
-	//foundlabel=true;  //Going to consider this an implicit label because we don't really have a better system
+	foundlabel = true;
 	return realsnespos;
 }
 
 double asar_pc_wrapper()
 {
-	// while this really should set foundlabel, not doing it right now for symmetry with realbase.
-	// we should rework the way foundlabel works anyways.
-	//foundlabel = true;
+	foundlabel = true;
 	return snespos;
 }
 

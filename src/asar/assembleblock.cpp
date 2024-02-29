@@ -1554,10 +1554,9 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				return;
 			} // todo: error checking here
 		}
-		// randomdude999: int cast b/c i'm too lazy to also mess with making setlabel()
-		// unsigned, besides it wouldn't matter anyways.
 		int num=(int)getnum(word[2]);
-		if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_cross_assignment);
+		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
+		bool is_static = foundlabel_static;
 
 		const char* newlabelname = word[0];
 		bool ismacro = false;
@@ -1584,7 +1583,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 
 		completename += newlabelname;
 
-		setlabel(ns + completename, num, true);
+		setlabel(ns + completename, num, is_static);
 	}
 	else if (assemblemapper(word, numwords)) {}
 	else if (is1("org"))
@@ -1592,7 +1591,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		freespaceend();
 		unsigned int num=getnum(par);
-		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
+		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
 		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex(num, 6).data());
 		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) asar_throw_warning(0, warning_id_set_middle_byte);
 		snespos=(int)num;

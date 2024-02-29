@@ -5,10 +5,10 @@
 ;`errElabel_in_conditional
 ;`errEno_labels_here
 ;`errEno_labels_here
-;`errElabel_cross_assignment
 ;`errEno_labels_here
 ;`errEno_labels_here
 ;`errEno_labels_here
+;`errElabel_in_conditional
 ;`errEdefine_label_math
 org $008000
 ANonStaticLabel:
@@ -47,13 +47,16 @@ endif
 incbin "data/64kb.bin":ANonStaticLabel..$8002
 incbin "data/64kb.bin":$8000..ANonStaticLabel+2
 
-ANewLabel = ANonStaticLabel
-
 Here:
 fillbyte Here
 fill ANonStaticLabel
 
 padbyte Here
 pad ANonStaticLabel
+
+OtherLabel = ANonStaticLabel ; this should be fine
+if OtherLabel == $008000
+  ; but this should not
+endif
 
 !adefine #= ANonStaticLabel
