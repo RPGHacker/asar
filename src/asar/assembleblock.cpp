@@ -187,7 +187,11 @@ inline void write1_65816(unsigned int num)
 	}
 	if(pass == 1 && freespaceid == 0) {
 		int pcpos = snestopc(realsnespos & 0xFFFFFF);
-		if(pcpos < 0) asar_throw_error(pass, error_type_fatal, error_id_internal_error, "invalid pos in pass 1");
+		if(pcpos < 0)
+		{
+			movinglabelspossible=true;
+			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
+		}
 		addromwrite(pcpos, 1);
 		if (pcpos>=romlen) {
 			if(pcpos - romlen > 0) writeromdata_bytes(romlen, freespacebyte, pcpos - romlen, false);
