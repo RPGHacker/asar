@@ -156,9 +156,50 @@ bool readfile(const char * fname, const char * basepath, char ** data, int * len
 	return true;
 }
 
-#define dequote(var, next, error) if (var=='"') do { next; while (var!='"' && var != '\0') { if (!var) error; next; }	if (var == '\0') error;	next; } while(0); else if (var=='\'') do { next; if (!var) error; /* ''' special case hack */ if (var=='\'') { next; if (var!='\'') error; next; } else { next; while (var!='\'' && var != '\0') { if (!var) error; next; } if (var == '\0') error; next; } } while(0)
-#define skippar(var, next, error) dequote(var, next, error); else if (var=='(') { int par=1; next; while (par) { dequote(var, next, error); else { \
-				if (var=='(') par++; if (var==')') par--; if (!var) error; next; } } } else if (var==')') error
+#define dequote(var, next, error) \
+	if (var=='"') \
+		do { \
+			next; \
+			while (var!='"' && var != '\0') { \
+				if (!var) error; \
+				next; \
+			} \
+			if (var == '\0') error; \
+			next; \
+		} while(0); \
+	else if (var=='\'') \
+		do { \
+			next; \
+			if (!var) error; /* ''' special case hack */ \
+			if (var=='\'') { \
+				next; \
+				if (var!='\'') error; \
+				next; \
+			} else { \
+				next; \
+				while (var!='\'' && var != '\0') { \
+					if (!var) error; \
+					next; \
+				} \
+				if (var == '\0') error; \
+				next; \
+			} \
+		} while(0)
+
+#define skippar(var, next, error) \
+	dequote(var, next, error); \
+	else if (var=='(') { \
+		int par=1; next; \
+		while (par) { \
+			dequote(var, next, error); \
+			else { \
+				if (var=='(') par++; \
+				if (var==')') par--; \
+				if (!var) error; \
+				next; \
+			} \
+		} \
+	} else if (var==')') error
 
 string& string::replace(const char * instr, const char * outstr, bool all)
 {
