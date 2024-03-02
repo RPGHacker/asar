@@ -28,7 +28,6 @@
 #	include <algorithm>
 #	include <set>
 #	include <list>
-#	include <cstdint>
 #	include <errno.h>
 
 #	if defined(_MSC_VER)
@@ -47,6 +46,8 @@
 #	include <list>
 #	include <errno.h>
 #endif
+
+#include <cstdint>
 
 #if defined(ASAR_TEST_DLL)
 #	include "asardll.h"
