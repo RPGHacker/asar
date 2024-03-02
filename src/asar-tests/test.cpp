@@ -47,6 +47,8 @@
 #	include <errno.h>
 #endif
 
+#include <cstdint>
+
 #if defined(ASAR_TEST_DLL)
 #	include "asardll.h"
 #endif
