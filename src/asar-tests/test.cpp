@@ -522,11 +522,11 @@ int main(int argc, char * argv[])
 	{
 		char * fname = input_files[testno].file_path;
 
-		char out_rom_name[512];
+		char out_rom_name[256];
 		snprintf(out_rom_name, sizeof(out_rom_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".sfc");
-		char stdout_log_name[512];
+		char stdout_log_name[256];
 		snprintf(stdout_log_name, sizeof(stdout_log_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".stdout.log");
-		char stderr_log_name[512];
+		char stderr_log_name[256];
 		snprintf(stderr_log_name, sizeof(stderr_log_name), "%s%s%s%s", output_directory, (has_path_seperator ? "" : "/"), input_files[testno].file_name, ".stderr.log");
 
 		// Delete files if they already exist, so we don't get leftovers from a previous testrun
