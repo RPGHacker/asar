@@ -20,6 +20,8 @@ set(ASAR_API_VERSION_MINOR 3)
 set(ASAR_API_VERSION_PATCH 0)
 set(ASAR_API_VERSION ${ASAR_API_VERSION_MAJOR}.${ASAR_API_VERSION_MINOR}.${ASAR_API_VERSION_PATCH})
 
+include(GNUInstallDirs)
+
 # This maro sets a number of properties required by both,
 # stand-alone application and library interface
 
@@ -283,7 +285,7 @@ if(ASAR_GEN_EXE)
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
 	)
 
-	install(TARGETS asar-standalone)
+	install(TARGETS asar-standalone DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 endif(ASAR_GEN_EXE)
 
@@ -315,7 +317,7 @@ if(ASAR_GEN_DLL)
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
 	)
 
-	install(TARGETS asar)
+	install(TARGETS asar DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 endif(ASAR_GEN_DLL)
 
@@ -343,6 +345,6 @@ if (ASAR_GEN_LIB)
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
 	)
 
-	install(TARGETS asar-static)
+	install(TARGETS asar-static DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 endif()
