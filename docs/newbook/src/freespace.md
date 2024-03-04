@@ -5,10 +5,10 @@ Freespace is a concept that comes into play when extending an existing ROM. To i
 ## `freespace` / `freecode` / `freedata` / `segment`
 
 {{# syn:
-freespace {ram/noram}[,norats][,align][,cleaned][,static][,bank={num}][,start={num}][,pin={label}]
+freespace {ram/noram}[,norats][,align][,cleaned][,static][,bankcross][,bank={num}][,start={num}][,pin={label}]
 freecode [options...]
 freedata [options...]
-segment [ram/noram][,align][,bank={num}][,start={num}][,pin={label}]
+segment [ram/noram][,align][,bankcross][,bank={num}][,start={num}][,pin={label}]
 #}}
 
 The freespace command makes Asar search the output ROM for a freespace area large enough to contain the following section of code/data. If such an area is found, the pc is placed at its beginning and a RATS tag automatically written. If no such area is found, an error is thrown. The parameters control what kind of freespace to look for.
@@ -26,6 +26,7 @@ The `freecode` command is an alias of `freespace ram`, whereas `freedata` is an 
 | `bank=` | Only search for freespace in the given bank. Mostly useful when using `norats`. |
 | `start=` | Search for freespace starting at the specified position in ROM. Useful for hacking non-SMW games, where the original ROM might be bigger or smaller. Note that technically, this limits the freespace finder to positions that are after the location of `start` in the ROM file: For example, when using `$C00000` as the start position in `hirom`, the entire ROM will be searched, since `$C00000` is at the start of the ROM file. |
 | `pin=` | Pin this freespace to another one, forcing them to be placed in the same bank. |
+| `bankcross` | Allow this freespace to cross bank borders. You must also use `check bankcross off` inside the freespace to allow the data inside it to cross borders. Note that all of the concerns regarding `check bankcross off` also apply here. |
 
 Every boolean option also has a negative version prefixed with `no` that allows disabling it to restore the default behavior. (In the case of `norats`, using `rats` will restore the default behavior.)
 

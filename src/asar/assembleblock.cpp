@@ -96,7 +96,8 @@ static int fixsnespos(int inaddr, int step)
 		}
 		return inaddr+step;
 	} else if (mapper == hirom) {
-		if ((inaddr&0x400000) == 0) {
+		if ((inaddr&0x400000) == 0 && freespaceid == 0) {
+			// we shouldn't get here in pass 2 inside a freespace anyways i think
 			// system pages, need to account for low pages and stuff
 			if ((inaddr&0xFFFF)+step > 0xFFFF) {
 				return inaddr+step+0x8000;
@@ -728,6 +729,8 @@ void parse_freespace_arguments(freespace_data& thisfs, string& arguments) {
 		else if (!stricmp(pars[i], "nocleaned")) { thisfs.flag_cleaned = false; }
 		else if (!stricmp(pars[i], "rats")) { thisfs.write_rats = true; }
 		else if (!stricmp(pars[i], "norats")) { thisfs.write_rats = false; }
+		else if (!stricmp(pars[i], "bankcross")) { thisfs.allow_bankcross = true; }
+		else if (!stricmp(pars[i], "nobankcross")) { thisfs.allow_bankcross = false; }
 		else if (stribegin(pars[i], "bank="))
 		{
 			thisfs.bank = getnum(pars[i] + 5);
@@ -802,7 +805,7 @@ void allocate_freespaces() {
 		// if this freespace is pinned to another one, set it later
 		if(fs.pin_target_id != i) continue;
 		// TODO: possibly fancier align
-		fs.pos = getsnesfreespace(fs.total_len, fs.bank, true, true, fs.flag_align, fs.write_rats, fs.search_start);
+		fs.pos = getsnesfreespace(fs.total_len, fs.bank, true, !fs.allow_bankcross, fs.flag_align, fs.write_rats, fs.search_start);
 		fs.used_len = fs.len;
 	}
 	// set pos for all pinned freespaces

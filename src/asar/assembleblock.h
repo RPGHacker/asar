@@ -74,6 +74,7 @@ struct freespace_data {
 	int total_len;
 	// pinned freespaces: how much of this block we've already used
 	int used_len;
+	bool allow_bankcross;
 };
 extern autoarray<freespace_data> freespaces;
 

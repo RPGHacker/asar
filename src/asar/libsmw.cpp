@@ -352,7 +352,7 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 		if(target_bank >= 0) return snestopc(target_bank << 16 | 0x8000);
 		return 0;
 	}
-	if (size>0x10000) return -1;
+	if (size>0x10000 && (write_rats || respectbankborders)) return -1;
 	bool isforcode = target_bank == -2;
 	if(write_rats)
 		size+=8;
@@ -416,7 +416,7 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 			}
 			return -1;
 		}
-		return trypcfreespace(0, search_start, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
+		return trypcfreespace(0, search_start, romlen, size, respectbankborders?0xFFFF:0xFFFFFF, align?0xFFFF:0, freespacebyte, write_rats);
 	}
 	if (mapper==exlorom)
 	{
@@ -440,7 +440,7 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 			}
 			return -1;
 		}
-		return trypcfreespace(0, search_start, romlen, size, 0xFFFF, align?0xFFFF:0, freespacebyte, write_rats);
+		return trypcfreespace(0, search_start, romlen, size, respectbankborders?0xFFFF:0xFFFFFF, align?0xFFFF:0, freespacebyte, write_rats);
 	}
 	if (mapper==sfxrom)
 	{
