@@ -325,3 +325,36 @@ if (ASAR_GEN_LIB)
 	)
 
 endif()
+
+
+
+
+
+# Define a pkgconfig file
+
+if (ASAR_GEN_DLL OR ASAR_GEN_LIB)
+	set (ASAR_PROJECT_NAME "asar")
+	set (ASAR_PKGCONFIG_NAME "lib/lib${ASAR_PROJECT_NAME}.pc")
+
+	include(lib/JoinPaths.cmake)
+
+	join_paths(
+		ASAR_PKGCONF_LIBDIR "\${prefix}" "${CMAKE_INSTALL_LIBDIR}"
+	)
+
+	join_paths(
+		ASAR_PKGCONF_INCLUDEDIR "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}"
+	)
+
+	configure_file(
+		"${ASAR_PKGCONFIG_NAME}.in"
+		"${CMAKE_CURRENT_BINARY_DIR}/${ASAR_PKGCONFIG_NAME}"
+		@ONLY
+	)
+
+	install(
+		FILES "${CMAKE_CURRENT_BINARY_DIR}/${ASAR_PKGCONFIG_NAME}"
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+	)
+
+endif()
