@@ -1,5 +1,5 @@
 ;`+
-;`08000 53 54 41 52 01 00 fe ff 01 02
+;`08000 53 54 41 52 02 00 fd ff 08 80 80
 ;`0fff8 53 54 41 52 fd ff 02 00
 ;`1fffd 03
 ;`2fff8 53 54 41 52 ff ff 00 00
@@ -11,7 +11,8 @@ norom ; hack: this disables checksum generation
 hirom
 
 freecode cleaned
-db $01,$02
+codelbl:
+dl codelbl
 
 freedata cleaned
 skip $fffd

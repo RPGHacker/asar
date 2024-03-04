@@ -516,7 +516,17 @@ void WalkMetadata(int loc, void(*func)(int loc, char * name, int len, const unsi
 
 int getsnesfreespace(int size, int target_bank, bool autoexpand, bool respectbankborders, bool align, bool write_rats, int search_start)
 {
-	return pctosnes(getpcfreespace(size, target_bank, autoexpand, respectbankborders, align, write_rats, snestopc(search_start)));
+	int pcfree = getpcfreespace(size, target_bank, autoexpand, respectbankborders, align, write_rats, snestopc(search_start));
+	int snesfree = pctosnes(pcfree);
+	if(snesfree == -1) return -1;
+	bool isforcode = target_bank == -2;
+	// not sure if this is ever a concern for other mappers...
+	if(isforcode && (mapper == hirom || mapper == exhirom)) {
+		snesfree = snesfree & ~0x400000;
+		// maybe this should throw an internal error or something instead lol
+		if((snesfree&0x8000) != 0x8000) return -1;
+	}
+	return snesfree;
 }
 
 bool openrom(const char * filename, bool confirm)
