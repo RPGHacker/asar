@@ -133,6 +133,10 @@ endmacro()
 # Add shared source files for Asar
 set(ASAR_SHARED_SOURCE_FILES "")
 
+set(ASAR_PUBLIC_HEADER
+	"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/asar.h"
+)
+
 list(
 	APPEND ASAR_SHARED_SOURCE_FILES
 	
@@ -173,7 +177,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/dll_helper.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.h"
+	"${ASAR_PUBLIC_HEADER}"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
