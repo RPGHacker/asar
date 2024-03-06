@@ -834,9 +834,9 @@ void finishpass()
 
 //defines.traverse(nerf);
 	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_missing_endspcblock);
-	if (in_struct || in_sub_struct) asar_throw_error(pass, error_type_null, error_id_struct_without_endstruct);
-	else if (pushpcnum && pass == 0) asar_throw_error(pass, error_type_null, error_id_pushpc_without_pullpc);
-	else if (pushnsnum && pass == 0) asar_throw_error(pass, error_type_null, error_id_pushns_without_pullns);
+	if (in_struct || in_sub_struct) asar_throw_error(0, error_type_null, error_id_struct_without_endstruct);
+	else if (pushpcnum) asar_throw_error(0, error_type_null, error_id_pushpc_without_pullpc);
+	else if (pushnsnum) asar_throw_error(0, error_type_null, error_id_pushns_without_pullns);
 	freespaceend();
 	if (arch==arch_65816) asend_65816();
 	if (arch==arch_spc700) asend_spc700();
@@ -1629,7 +1629,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			if (foundlabel && !foundlabel_static) static_struct = false;
 			if (pass > 0) {
 				// foundlabel_static isn't accurate anymore
-				static_struct &= structs.find(word[1]).is_static;
+				if(structs.exists(word[1])) static_struct &= structs.find(word[1]).is_static;
 			}
 		}
 
