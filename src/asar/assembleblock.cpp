@@ -993,7 +993,7 @@ void assembleblock(const char * block, bool isspecialline)
 #define is3(test) (numwords==4 && !stricmpwithlower(word[0], test))
 #define par word[1]
 
-	if(!moreonlinecond && !(is("elseif") || is("else"))){
+	if(!moreonlinecond && !(is("elseif") || is("else") || is("endif") || is("endwhile"))){
 		return;
 	}
 
