@@ -11,9 +11,15 @@ if (MSVC)
 	message(STATUS "In MSVC you can override MSVC_LIB_TYPE, valid values are D for dynamic and T for static")
 endif()
 
+set(ASAR_API_VERSION_MAJOR 3)
+set(ASAR_API_VERSION_MINOR 3)
+set(ASAR_API_VERSION_PATCH 0)
+set(ASAR_API_VERSION ${ASAR_API_VERSION_MAJOR}.${ASAR_API_VERSION_MINOR}.${ASAR_API_VERSION_PATCH})
+
 set (CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fsanitize=address")
 set (CMAKE_LINKER_FLAGS_DEBUG "${CMAKE_LINKER_FLAGS_DEBUG} -fsanitize=address")
 
+include(GNUInstallDirs)
 
 # This macro sets a number of properties required by both,
 # stand-alone application and library interface
@@ -127,6 +133,10 @@ endmacro()
 # Add shared source files for Asar
 set(ASAR_SHARED_SOURCE_FILES "")
 
+set(ASAR_PUBLIC_HEADER
+	"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/asar.h"
+)
+
 list(
 	APPEND ASAR_SHARED_SOURCE_FILES
 	
@@ -167,7 +177,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/dll_helper.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.h"
+	"${ASAR_PUBLIC_HEADER}"
 	
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
@@ -244,7 +254,7 @@ if(ASAR_GEN_EXE)
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/bin"
 	)
 
-	install(TARGETS asar-standalone)
+	install(TARGETS asar-standalone DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 endif(ASAR_GEN_EXE)
 
@@ -269,12 +279,18 @@ if(ASAR_GEN_DLL)
 
 	set_target_properties(asar
 		PROPERTIES
+		VERSION "${ASAR_API_VERSION}"
+		SOVERSION "${ASAR_API_VERSION_MAJOR}"
+		PUBLIC_HEADER "${ASAR_PUBLIC_HEADER}"
 		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
 	)
 
-	install(TARGETS asar)
+	install(
+		TARGETS asar DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/asar
+	)
 
 endif(ASAR_GEN_DLL)
 
@@ -297,11 +313,48 @@ if (ASAR_GEN_LIB)
 
 	set_target_properties(asar-static
 		PROPERTIES
+		PUBLIC_HEADER "${ASAR_PUBLIC_HEADER}"
 		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
 		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
 		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
 	)
 
-	install(TARGETS asar-static)
+	install(
+		TARGETS asar-static DESTINATION ${CMAKE_INSTALL_LIBDIR}
+		PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/asar
+	)
+
+endif()
+
+
+
+
+
+# Define a pkgconfig file
+
+if (ASAR_GEN_DLL OR ASAR_GEN_LIB)
+	set (ASAR_PROJECT_NAME "asar")
+	set (ASAR_PKGCONFIG_NAME "lib/lib${ASAR_PROJECT_NAME}.pc")
+
+	include(lib/JoinPaths.cmake)
+
+	join_paths(
+		ASAR_PKGCONF_LIBDIR "\${prefix}" "${CMAKE_INSTALL_LIBDIR}"
+	)
+
+	join_paths(
+		ASAR_PKGCONF_INCLUDEDIR "\${prefix}" "${CMAKE_INSTALL_INCLUDEDIR}"
+	)
+
+	configure_file(
+		"${ASAR_PKGCONFIG_NAME}.in"
+		"${CMAKE_CURRENT_BINARY_DIR}/${ASAR_PKGCONFIG_NAME}"
+		@ONLY
+	)
+
+	install(
+		FILES "${CMAKE_CURRENT_BINARY_DIR}/${ASAR_PKGCONFIG_NAME}"
+		DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+	)
 
 endif()
