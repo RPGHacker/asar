@@ -73,7 +73,7 @@ void set_warning_enabled(asar_warning_id warnid, bool enabled);
 // Supported string format: wXXXX, WXXXX or XXXX.
 // Returns warning_id_end if the string is malformed
 // or the ID wasn't found.
-asar_warning_id parse_warning_id_from_string(const char* string);
+asar_warning_id parse_warning_id_from_string(const char* string, int warn_pass = 0);
 
 void reset_warnings_to_default();
 

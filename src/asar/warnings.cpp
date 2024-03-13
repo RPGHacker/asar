@@ -152,7 +152,7 @@ void set_warning_enabled(asar_warning_id warnid, bool enabled)
 	warning.enabled = enabled;
 }
 
-asar_warning_id parse_warning_id_from_string(const char* string)
+asar_warning_id parse_warning_id_from_string(const char* string, int warn_pass)
 {
 	const char* pos = string;
 
@@ -188,7 +188,7 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 		return warning_id_end;
 	}
 
-	asar_throw_warning(1, warning_id_feature_deprecated, "Numerical warnings", "Please transition to Wwarning_name");
+	asar_throw_warning(warn_pass, warning_id_feature_deprecated, "Numerical warnings", "Please transition to Wwarning_name");
 	return warnid;
 }
 

@@ -408,7 +408,7 @@ EXPORT bool asar_patch_ex(const patchparams_base *params)
 
 		for (int i = 0; i < paramscurrent.warning_setting_count; ++i)
 		{
-			asar_warning_id warnid = parse_warning_id_from_string(paramscurrent.warning_settings[i].warnid);
+			asar_warning_id warnid = parse_warning_id_from_string(paramscurrent.warning_settings[i].warnid, pass);
 
 			if (warnid != warning_id_end)
 			{
