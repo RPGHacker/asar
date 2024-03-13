@@ -19,7 +19,7 @@
 // Couldn't find a way to automate this without shoving the version somewhere in the CMake files
 const int asarver_maj=1;
 const int asarver_min=9;
-const int asarver_bug=0;
+const int asarver_bug=1;
 const bool asarver_beta=false;
 bool default_math_pri=false;
 bool default_math_round_off=false;
