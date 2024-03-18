@@ -1131,12 +1131,14 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		bool cond;
 		if(!is("for"))
 		{
+			if(word[1] == NULL) asar_throw_error(0, error_type_block, error_id_broken_command, word[0], "Missing condition.");
 			cond = getnum(word[1]);
 			if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 		}
 
 		if (is("for"))
 		{
+			if(word[1] == NULL) asar_throw_error(0, error_type_block, error_id_broken_command, word[0], "Missing loop range.");
 			if(single_line_for_tracker != 1)
 			{
 				numif--;
