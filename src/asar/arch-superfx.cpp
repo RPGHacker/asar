@@ -120,6 +120,7 @@ bool asblock_superfx(char** word, int numwords)
 		int numwordsinner;
 		autoptr<char*> parcpy= duplicate_string(par);
 		autoptr<char**> arg=qpsplit(parcpy, ',', &numwordsinner);
+		verify_paren(arg);
 		bool ret=false;
 #define ok() ret=true
 #define op(op) if (is(op)) ok()

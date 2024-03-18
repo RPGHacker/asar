@@ -129,6 +129,7 @@ bool asblock_spc700(char** word, int numwords)
 		if (opLen > 2) { asar_throw_error(0, error_type_block, error_id_opcode_length_too_long); }
 		autoptr<char*> parcpy= duplicate_string(par);
 		autoptr<char**> arg=qpsplit(parcpy, ',', &numwordsinner);
+		verify_paren(arg);
 		if (numwordsinner ==1)
 		{
 			string op;

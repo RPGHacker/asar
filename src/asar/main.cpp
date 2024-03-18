@@ -758,7 +758,7 @@ void assembleline(const char * fname, int linenum, const char * line, int& singl
 				if(stripped_block[i] == ':' && stripped_block[i+1] == 0) i++;
 
 				// last block - strip trailing " :" if present.
-				if(!moreonline && stripped_block[stripped_block.length()-2] == ' ' && stripped_block[stripped_block.length()-1] == ':') {
+				if(!moreonline && stripped_block.length() >= 2 && stripped_block[stripped_block.length()-2] == ' ' && stripped_block[stripped_block.length()-1] == ':') {
 					stripped_block.truncate(stripped_block.length()-2);
 				}
 
@@ -932,6 +932,7 @@ bool do_line_logic(const char* line, const char* filename, int lineno)
 			string tmp=replace_macro_args(line);
 			tmp.qnormalize();
 			resolvedefines(current_line, tmp);
+			if (!confirmquotes(current_line)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
 		}
 		else current_line=line;
 

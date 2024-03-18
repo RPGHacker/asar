@@ -457,7 +457,7 @@ void jmp_jsr_jml(insn_context& ctx) {
 
 template<int opc>
 void mvn_mvp(insn_context& ctx) {
-	int count;
+	int count = 0;
 	autoptr<char**> parts = qpsplit(ctx.arg.raw(), ',', &count);
 	if(count != 2) asar_throw_error(2, error_type_block, error_id_bad_addr_mode);
 	// todo length checks ???
