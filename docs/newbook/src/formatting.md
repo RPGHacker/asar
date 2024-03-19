@@ -17,7 +17,7 @@ There are also multiline comments, which are started with `;[[` and ended with `
 ```asar
 lda $00   ;[[ this is a comment
 still a comment
-more comment ]] lda $01
+more comment ]] : lda $01
 ```
 
 ## Brackets

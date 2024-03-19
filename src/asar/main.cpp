@@ -824,48 +824,56 @@ void assemblefile(const char * filename)
 		sourcefile& newfile = filecontents.create(absolutepath);
 		newfile.contents =split(temp, '\n');
 		newfile.data = temp;
-		bool in_block_comment = false;
-		int block_comment_start = -1;
-		string block_comment_start_line;
 		for (int i=0;newfile.contents[i];i++)
 		{
 			newfile.numlines++;
-			char * line= newfile.contents[i];
-			if(in_block_comment) {
-				char * end = strstr(line, "]]");
-				if(!end) {
-					*line = 0;
-					continue;
-				}
-				line = end+2;
-				in_block_comment = false;
-			}
-redo_line:
-			char * comment = strqchr(line, ';');
-			if(comment) {
+			char * line = newfile.contents[i];
+			int i_temp = i;
+			char * comment;
+			while((comment = strqchr(line, ';'))) {
 				if(comment[1] == '[' && comment[2] == '[') {
-					in_block_comment = true;
-					block_comment_start = i;
-					block_comment_start_line = line;
-					// this is a little messy because a multiline comment could
-					// end right on the line where it started. so if we find
-					// the end, cut the comment out of the line and recheck for
-					// more comments.
-					char * end = strstr(line, "]]");
-					if(end) {
-						memmove(comment, end+2, strlen(end+2)+1);
-						in_block_comment = false;
-						goto redo_line;
+					// block comment - find where it ends
+					char* theline = comment + 3;
+					char* comment_end = strstr(theline, "]]");
+					while(comment_end == nullptr) {
+						i_temp++;
+						char* new_line = newfile.contents[i_temp];
+						if(new_line == nullptr) {
+							callstack_push cs_push(callstack_entry_type::LINE, line, i);
+							asar_throw_error(0, error_type_null, error_id_unclosed_block_comment);
+							// make sure this line is still parsed correctly
+							*comment = 0;
+							// but don't go looking at any other lines
+							goto break_outer;
+						}
+						comment_end = strstr(new_line, "]]");
+						// this line is itself part of the comment, so ignore it
+						//new_line[0] = 0;
+						// except not like that^, because that will break the
+						// memmove below
+						static char junk[]="";
+						// using a static here should be fine, since if the line
+						// doesn't contain ',' or '\' we won't go mutating it
+						newfile.contents[i_temp] = junk;
 					}
+					// comment_end+2 is a valid pointer, since comment_end is
+					// guaranteed to start with ]]
+					comment_end += 2;
+					// stitch together the part of the line before the comment,
+					// and the part of the line after it
+					memmove(comment, comment_end, strlen(comment_end) + 1);
+					// and then recheck for ; in the line again...
+				} else {
+					*comment = 0;
 				}
-				*comment = 0;
 			}
-			if (!confirmquotes(line)) { callstack_push cs_push(callstack_entry_type::LINE, line, i); asar_throw_error(0, error_type_null, error_id_mismatched_quotes); line[0] = '\0'; }
+		break_outer:
+			if (!confirmquotes(line)) {
+				callstack_push cs_push(callstack_entry_type::LINE, line, i);
+				asar_throw_error(0, error_type_null, error_id_mismatched_quotes);
+				line[0] = '\0';
+			}
 			newfile.contents[i] = strip_whitespace(line);
-		}
-		if(in_block_comment) {
-			callstack_push cs_push(callstack_entry_type::LINE, block_comment_start_line, block_comment_start);
-			asar_throw_error(0, error_type_null, error_id_unclosed_block_comment);
 		}
 		for(int i=0;newfile.contents[i];i++)
 		{
