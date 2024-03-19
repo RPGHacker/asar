@@ -1,0 +1,847 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Changelog - Asar Manual</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="usage.html"><strong aria-hidden="true">2.</strong> Usage</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="standard-includes.html"><strong aria-hidden="true">2.1.</strong> Standard Includes</a></li><li class="chapter-item expanded "><a href="standard-defines.html"><strong aria-hidden="true">2.2.</strong> Standard Defines</a></li></ol></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architectures</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="arch-65816.html"><strong aria-hidden="true">3.1.</strong> List of 65816 Instructions</a></li><li class="chapter-item expanded "><a href="arch-spc700.html"><strong aria-hidden="true">3.2.</strong> List of SPC700 Instructions</a></li><li class="chapter-item expanded "><a href="arch-superfx.html"><strong aria-hidden="true">3.3.</strong> List of SuperFX Instructions</a></li></ol></li><li class="chapter-item expanded "><a href="mapping-modes.html"><strong aria-hidden="true">4.</strong> Mapping Modes</a></li><li class="chapter-item expanded "><a href="compat.html"><strong aria-hidden="true">5.</strong> Compatibility Settings</a></li><li class="chapter-item expanded "><a href="formatting.html"><strong aria-hidden="true">6.</strong> Code Formatting and Syntax</a></li><li class="chapter-item expanded "><a href="program-counter.html"><strong aria-hidden="true">7.</strong> Program Counter</a></li><li class="chapter-item expanded "><a href="math.html"><strong aria-hidden="true">8.</strong> Math</a></li><li class="chapter-item expanded "><a href="labels.html"><strong aria-hidden="true">9.</strong> Labels</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="structs.html"><strong aria-hidden="true">9.1.</strong> Structs</a></li><li class="chapter-item expanded "><a href="namespaces.html"><strong aria-hidden="true">9.2.</strong> Namespaces</a></li></ol></li><li class="chapter-item expanded "><a href="defines.html"><strong aria-hidden="true">10.</strong> Defines</a></li><li class="chapter-item expanded "><a href="macros.html"><strong aria-hidden="true">11.</strong> Macros</a></li><li class="chapter-item expanded "><a href="functions.html"><strong aria-hidden="true">12.</strong> Functions</a></li><li class="chapter-item expanded "><a href="conditionals.html"><strong aria-hidden="true">13.</strong> Conditionals and Loops</a></li><li class="chapter-item expanded "><a href="binary.html"><strong aria-hidden="true">14.</strong> Binary Data</a></li><li class="chapter-item expanded "><a href="includes.html"><strong aria-hidden="true">15.</strong> Includes</a></li><li class="chapter-item expanded "><a href="freespace.html"><strong aria-hidden="true">16.</strong> Freespace</a></li><li class="chapter-item expanded "><a href="prints.html"><strong aria-hidden="true">17.</strong> Text Output</a></li><li class="chapter-item expanded "><a href="checks.html"><strong aria-hidden="true">18.</strong> Checks</a></li><li class="chapter-item expanded "><a href="warnings.html"><strong aria-hidden="true">19.</strong> Warnings</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="cmd-index.html"><strong aria-hidden="true">20.</strong> List of commands</a></li><li class="chapter-item expanded "><a href="warning-list.html"><strong aria-hidden="true">21.</strong> List of all warnings</a></li><li class="chapter-item expanded "><a href="error-list.html"><strong aria-hidden="true">22.</strong> List of all errors</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="changelog.html" class="active"><strong aria-hidden="true">23.</strong> Changelog</a></li><li class="chapter-item expanded "><a href="changelog-old.html"><strong aria-hidden="true">24.</strong> Historical changelog</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Asar Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="asar-changelog"><a class="header" href="#asar-changelog">Asar Changelog</a></h1>
+<h2 id="v200"><a class="header" href="#v200">v2.0.0</a></h2>
+<p><strong>Release:</strong> ???</p>
+<h3 id="contributors"><a class="header" href="#contributors">Contributors:</a></h3>
+<ul>
+<li>trillian</li>
+<li>RPG Hacker</li>
+<li>p4plus2</li>
+</ul>
+<h3 id="new-features"><a class="header" href="#new-features">New features:</a></h3>
+<ul>
+<li>UTF-8 support: Asar now expects all source files to be UTF-8-encoded. Unicode code points (encoded as UTF-8) are now supported in table files, math commands, tables etc. Unicode file names are now also supported on Windows. (trillian, RPG Hacker)</li>
+<li>Added support for nested macro definitions. (RPG Hacker)</li>
+<li>Improved readability of some error messages. (RPG Hacker)</li>
+<li>Generally improved error formatting of Asar and added the <code>--full-error-stack</code> option to display complete call stacks. (RPG Hacker)</li>
+<li>Added multiline comments using <code>;[[ comment ]]</code> (trillian)</li>
+<li>Freespaces have a bunch of new features which make them more useful outside of SMW hacking - new options for disabling RATS tags, looking for code in a specific bank or a specific part of ROM. Along with this, freespace allocation should now be a bit more efficient, and the 125 freespace limit has been lifted. (trillian)</li>
+<li>Freespaces can now have some options applied by default using the <code>freespace_settings</code> command. (trillian)</li>
+<li>Allowed spaces in math. (p4plus2)</li>
+<li>A struct can now be used directly like a regular label. (p4plus2)</li>
+<li>Greatly improved &quot;invalid instruction&quot; errors, which now tell you when an addressing mode doesn't exist for the current instruction, instead of saying &quot;unknown command&quot; for everything. (trillian)</li>
+<li><code>autoclean</code> can now be used with more instructions, allowing such contraptions as <code>autoclean cmp label,x</code> if desired. (trillian)</li>
+</ul>
+<h3 id="bug-fixes"><a class="header" href="#bug-fixes">Bug fixes:</a></h3>
+<ul>
+<li>Asar no longer strips just any white space from defines, allowing them to more closely reflect user intent. (p4plus2)</li>
+<li>Using <code>org $xxxxxx : db $00</code> to expand the ROM to a specific size will now allow the freespace finder to use the newly created space. (trillian)</li>
+<li>In <code>norom</code>, using <code>base</code> will now no longer give bank cross errors for the &quot;real&quot; position, since there are no real banks in norom. (trillian)</li>
+<li>Better branch instruction handling: some legal but previously rejected branches (especially wrapping around bank borders) are now accepted, and some illegal branches are now properly rejected. (binary1230)</li>
+<li>A bunch more bugfixes and crash fixes that are too minor to list here</li>
+</ul>
+<h3 id="removed-features"><a class="header" href="#removed-features">Removed features:</a></h3>
+<ul>
+<li>All features that were deprecated in Asar v1.90 or earlier.</li>
+</ul>
+<hr />
+<h2 id="v190"><a class="header" href="#v190">v1.90</a></h2>
+<p><strong>Release:</strong> February 23, 2024</p>
+<h3 id="contributors-1"><a class="header" href="#contributors-1">Contributors:</a></h3>
+<ul>
+<li>RPG Hacker</li>
+<li>trillian</li>
+<li>p4plus2</li>
+<li>Atari2</li>
+<li>Alcaro</li>
+<li>spooonsss</li>
+</ul>
+<h3 id="notes"><a class="header" href="#notes">Notes:</a></h3>
+<ul>
+<li>The primary purpose of this release is to be a stepping stone towards Asar 2.0. For this purpose, a lot of features have been deprecated and will now throw warnings. Please fix any of those warnings you come across in your patches to assure they will still assemble in Asar 2.0.</li>
+</ul>
+<h3 id="new-features-1"><a class="header" href="#new-features-1">New features:</a></h3>
+<ul>
+<li>The <code>error</code>, <code>warn</code> and <code>assert</code> commands now support the same functions as the <code>print</code> command. (RPG Hacker)</li>
+<li>Static labels (i.e. labels that don't move between passes) can now be used in more places, including if statements. (RPG Hacker)</li>
+<li>Asar can be built as a static library. (Atari2)</li>
+<li>Asar now uses named warnings and errors instead of magic numbers as identifiers. (p4plus2, RPG Hacker)</li>
+<li>Variadic macro parameters now use the syntax <code>&lt;...[math]&gt;</code>, which makes them less ambiguous and helps prevent syntax parsing bugs. (RPG Hacker)</li>
+<li>HiROM, ExHiROM, and ExLoROM mappers can now use <code>freecode</code>. (p4plus2)</li>
+<li><code>check bankcross</code> now allows disabling checking for half-bank crossings (going from $7FFF to $8000). (p4plus2)</li>
+<li>New <code>pc()</code> and <code>realbase()</code> functions: return the current SNES address that is being written to. (p4plus2, trillian)</li>
+<li>Namespaces can now be saved using <code>pushns</code> and <code>pullns</code>. (p4plus2)</li>
+<li><code>while</code> loops can now be ended with <code>endwhile</code>. (p4plus2)</li>
+<li>It's now possible to use macro arguments and macro labels in files that are <code>incsrc</code>'d from macros. (trillian)</li>
+<li>Added <code>for</code> loops, used like <code>for i = 1..10</code>. These are more convenient than while loops in most cases and are the main replacement for <code>rep</code>. (trillian)</li>
+<li><code>incbin</code> now has a new syntax for including a range of the target file which looks like the for loop range syntax and is less ambiguous. (trillian)</li>
+<li>Added <code>spcblock</code> feature as a replacement for <code>spc-inline</code>, which allows defining blocks of SPC data, but in a more flexible way that can easily be extended in the future. (p4plus2)</li>
+<li>Added the <code>--error-limit</code> option, which allows raising the limit on the number of errors that Asar will print before stopping. (trillian)</li>
+<li><code>freespacebyte</code> command to set the byte value used for searching for freespace and expanding the ROM. (trillian)</li>
+</ul>
+<h3 id="bug-fixes-1"><a class="header" href="#bug-fixes-1">Bug fixes:</a></h3>
+<ul>
+<li>Variadic arguments in macros can now also take zero arguments, which can be used to implement optional arguments. (RPG Hacker)</li>
+<li>Escaping quotes in macro calls now works more reliably. (RPG Hacker)</li>
+<li>Macro calls &amp; definitions no longer break as easily from including whitespace. (RPG Hacker)</li>
+<li>For invalid table files, Asar now prints the line number of the first invalid entry. (RPG Hacker)</li>
+<li>Addr-to-line mappings now include <code>autoclean jml/jsl</code> commands, pseudo opcodes like <code>asl #4</code>, and most other data-writing commands like <code>db/dw/dl</code>. (spooonsss, RPG Hacker, trillian)</li>
+<li><code>'''</code> and <code>';'</code> are now valid can now be used without causing errors. (trillian, RPG Hacker)</li>
+<li>Fixed some edge case bugs in Asar's virtual filesystem (usable via the DLL) on Windows. (Atari2)</li>
+<li>The <code>--version</code> commandline flag now causes asar to exit afterwards, which is the expected behavior for command-line flags. (Alcaro)</li>
+<li>Fixed some bugs with the label optimizer, making it optimize better. (p4plus2)</li>
+<li>Fixed freespaces sometimes being a few bytes too long. (trillian)</li>
+<li>Assigning labels with = now puts them in the right namespace. (p4plus2)</li>
+<li>Fixed some memory leaks and possible crashes in the DLL. (trillian)</li>
+<li>Fixed some phantom errors when using forward labels. (trillian)</li>
+<li>Asar should now allow as much recursion as system resources allow, and then throw a nice error instead of crashing. (Atari2.0, trillian, p4plus2)</li>
+<li><code>optimize address</code> now works a bit more consistently (new behavior also properly documented in manual). (trillian)</li>
+<li>Fixed bug where pointing multiple autocleans at the same freespace would sometimes eat some of the data in it. (spooonsss)</li>
+</ul>
+<h3 id="deprecated-features"><a class="header" href="#deprecated-features">Deprecated features:</a></h3>
+<ul>
+<li>Warning and error IDs: Use new name strings instead.</li>
+<li>xkas compatibility mode: port your patch to asar instead. Everything xkas compatibility mode does should already throw warnings.</li>
+<li><code>JMP.l</code>: Use <code>JML</code> instead.</li>
+<li>Quoted symbolic arguments to functions (e.g. <code>sizeof(&quot;my_struct&quot;)</code>): Remove the quotes (<code>sizeof(my_struct)</code>).</li>
+<li>Redefining previously defined functions.</li>
+<li><code>math round</code> and <code>math pri</code>: Use parentheses and explicit rounding where xkas-style math emulation is needed instead.</li>
+<li><code>if !condition</code> to negate conditions: Use <code>if not(condition)</code> instead.</li>
+<li>While blocks ending with <code>endif</code>: Use <code>endwhile</code> instead.</li>
+<li><code>check bankcross on</code>: Use <code>check bankcross full</code> or <code>check bankcross half</code> instead.</li>
+<li><code>rep</code> to repeat commands: Use while loops, unrolled loops or for loops instead.</li>
+<li>Windows-specific paths (e.g. <code>incsrc dir\file.asm</code>): Use cross-platform paths instead (<code>incsrc dir/file.asm</code>).</li>
+<li><code>table</code> command: Assign characters directly instead, like <code>'a' = $00</code>.</li>
+<li><code>spc700-inline</code>: Use <code>spcblock</code> and <code>endspcblock</code> instead.</li>
+<li><code>spc700-raw</code>: use <code>arch spc700</code> and <code>norom</code>.</li>
+<li><code>fastrom</code>: Has never actually worked and can be removed.</li>
+<li><code>header</code>: Doesn't do anything and can be removed.</li>
+<li><code>#</code> before numbers in <code>db/dw/dl/dd</code> statements: this was intended for xkas compatibility but was for some reason enabled everywhere without a warning. The <code>#</code> does nothing and can be removed.</li>
+<li>Non-UTF-8 source files: Re-save your source files as UTF-8 in a text editor of choice.</li>
+<li><code>;@command</code> and <code>@command</code> notation: Use <code>command</code> instead.</li>
+<li>Single-line/inline if statements: Use full if blocks with an <code>if</code>/<code>endif</code> pair instead. (Note that you can still have an if statement entirely on one line, you just need to have an <code>: endif</code> at the end of it.)</li>
+<li><code>freespace fixed</code>: Use <code>freespace static</code> instead.</li>
+<li><code>&lt;math&gt;</code> syntax for variadic macro parameters: Use <code>&lt;...[math]&gt;</code> instead.</li>
+<li>incbin with a range like <code>incbin file.bin:0-F</code>: use <code>incbin file.bin:$0..$10</code> instead. (note that the new syntax is end-exclusive.)</li>
+<li><code>incbin file.bin -&gt; target</code>: put an <code>org</code> or <code>freespace</code> command before the incbin.</li>
+<li><code>if a = b</code>: use <code>if a == b</code> instead.</li>
+<li>Comments starting with <code>;[[</code> : These mark the start of block comments in Asar 2.0, so either remove the <code>[[</code> for the time being, or make the commented line end with a <code>]]</code>.</li>
+<li>Using <code>A</code> as a label name ambiguously, e.g. <code>lda a</code>: in Asar 2 this will be interpreted as trying to use the &quot;A&quot; addressing mode, and will give an error. You can use <code>A+0</code> if you really must refer to the label as is.</li>
+<li>The <code>startpos</code> command of the <code>spc700-inline</code> architecture: use the optional <code>execute</code> argument to <code>endspcblock</code> instead.</li>
+<li>Specifying the byte to use for freespace like <code>freecode $ff</code>. Use the new separate <code>freespacebyte</code> command for it.</li>
+<li>The <code>warnpc</code> command: use <code>assert pc() &lt;= $xxxxxx</code> instead.</li>
+</ul>
+<hr />
+<h2 id="v181"><a class="header" href="#v181">v1.81</a></h2>
+<p><strong>Release:</strong> January 20, 2021</p>
+<h3 id="contributors-2"><a class="header" href="#contributors-2">Contributors:</a></h3>
+<ul>
+<li>p4plus2</li>
+</ul>
+<h3 id="bug-fixes-2"><a class="header" href="#bug-fixes-2">Bug fixes:</a></h3>
+<ul>
+<li>Prevent defines from being resolved in false branches of if statements when inside variadic macros</li>
+<li>Fix a phantom error when referencing a struct before defining it</li>
+</ul>
+<hr />
+<h2 id="v180"><a class="header" href="#v180">v1.80</a></h2>
+<p><strong>Release:</strong> January 18, 2021</p>
+<h3 id="contributors-3"><a class="header" href="#contributors-3">Contributors:</a></h3>
+<ul>
+<li>RPG Hacker</li>
+<li>randomdude999</li>
+<li>p4plus2</li>
+<li>CypherSignal</li>
+<li>LDAsuku</li>
+<li>Katrina</li>
+<li>Atari2.0</li>
+<li>Vitor Vilela</li>
+</ul>
+<h3 id="new-features-2"><a class="header" href="#new-features-2">New features:</a></h3>
+<ul>
+<li>The C DLL binding for Windows should now print a few more details if loading the DLL failed. (RPG Hacker)</li>
+<li>The <code>print</code> command has a new <code>bin()</code> function. Also, <code>bin()</code>, <code>dec()</code> and <code>hex()</code> now take an optional width argument that allows padding the number with zeroes. (randomdude999)</li>
+<li>Labels can now be used in the condition of an <code>assert</code> command. (randomdude999)</li>
+<li>The WLA symbol file now includes an address-to-line mapping, which can be used by some debuggers to provide source-level debugging. (CypherSignal)</li>
+<li>The <code>sizeof()</code> and <code>objectsize()</code> functions don't need quotes around the struct name anymore. For backwards compatibilty, quotes are still allowed. (p4plus2)</li>
+<li>There is a new label optimizer, which can convert RAM labels to direct page or word accesses where possible. For this there are 3 new commands: <code>dpbase</code>, <code>optimize dp</code> and <code>optimize address</code>. (p4plus2)</li>
+<li>The <code>floor()</code> and <code>ceil()</code> functions have been added. (randomdude999)</li>
+<li>The <code>bank()</code> and <code>&lt;:</code> function and math operator have been added (p4plus2)</li>
+<li>The <code>datasize()</code> function has been added. (p4plus2)</li>
+<li>Warning if the mapper mode is changed after being set (p4plus2)</li>
+<li>Major improvements to internal string handling in asar (makes asar significantly faster) (p4plus2)</li>
+<li>Variadic macro support (p4plus2)</li>
+<li>Support for global labels (p4plus2)</li>
+<li>Errors about crossing banks have been improved, now they print the exact line where the bank border was crossed instead of saying it was &quot;somewhere before this point&quot;. (randomdude999)</li>
+<li>Add <code>fill align</code> and <code>skip align</code> (randomdude999)</li>
+</ul>
+<h3 id="bug-fixes-3"><a class="header" href="#bug-fixes-3">Bug fixes:</a></h3>
+<ul>
+<li>The Asar DLL can now be loaded in Windows applications that define UNICODE. (RPG Hacker)</li>
+<li>Labels can now start with underscores. (LDAsuku)</li>
+<li>An <code>undef</code> command inside an unexecuted <code>if</code> statement would still get executed. This is now fixed. (randomdude999)</li>
+<li>The <code>assert</code> command would give strange errors when the condition to test contained a comma. This is now fixed. (randomdude999)</li>
+<li>Trailing commas can now be used to join lines that contain more than one comma, and the joined lines can now have comments. (randomdude999)</li>
+<li>An invalid warning ID in a <code>warnings enable</code> command no longer prints the error message three times. (randomdude999)</li>
+<li>When using the Asar DLL, built-in defines (e.g. <code>!assembler_ver</code>) are now always present. Previously they were missing when the DLL was called without specifying a standard defines file. (randomdude999)</li>
+<li>Repeatable instructions (like <code>LSR #4</code> don't accept labels in their argument anymore. (randomdude999)</li>
+<li>Asar no longer writes an incorrect checksum for ROMs whose size isn't a power of 2, e.g. 2.5MB, 3MB, 6MB. (randomdude999)</li>
+<li>The &quot;It would be wise to set the 008000 bit&quot; warning has been relaxed and isn't thrown for labels in banks 70-7F. (randomdude999)</li>
+<li>Overwriting built-in functions now throws a warning. Overwriting user-defined functions now also throws a warning for consistency. (randomdude999)</li>
+<li>Opcode length specifications were sometimes being ignored in <code>arch spc700</code>. Now <code>adc.w a, $0</code> properly assembles to <code>85 00 00</code> instead of <code>84 00</code>. (randomdude999)</li>
+<li>Fixed case sensitivity problem in function calls. (p4plus2)</li>
+<li>Fixed struct definition with label base corrupting label name. (p4plus2)</li>
+<li>Fixed missing error on certain types of label. (p4plus2)</li>
+<li>Fix some phantom errors in math processor (randomdude999)</li>
+<li>Fixed a memory leak in the cli version of asar (p4plus2)</li>
+<li>Fixed a memory corruption in spc700 processing (p4plus2)</li>
+<li>Fixed various memory bugs (found via valgrind/fsanitize) (p4plus2)</li>
+<li>Fixed a case where if statements wouldn't always throw an error (randomdude999)</li>
+<li>Fixed a case where you could get invisible errors when prefixing commands with <code>@</code> (randomdude999)</li>
+<li>Fixed <code>arch superfx</code> ignoring all commands with more than 2 words (randomdude999)</li>
+<li>Fixed non-ASCII characters in strings being written as garbage (Katrina)</li>
+<li>Fixed crashes when getting into an infinite recursion loop (randomdude999)</li>
+<li>Improvements to syntax highlighting in the Asar manual (Atari2.0)</li>
+<li>The C# wrapper has been updated to work with Asar versions 1.60 and newer. (Vitor Vilela)</li>
+<li>Improved error message for SPC instructions with out of range arguments (randomdude999)</li>
+</ul>
+<hr />
+<h2 id="v171"><a class="header" href="#v171">v1.71</a></h2>
+<p><strong>Release:</strong> January 6, 2019</p>
+<h3 id="contributors-4"><a class="header" href="#contributors-4">Contributors:</a></h3>
+<ul>
+<li>randomdude999</li>
+</ul>
+<h3 id="bug-fixes-4"><a class="header" href="#bug-fixes-4">Bug fixes:</a></h3>
+<ul>
+<li>The Super FX ROM mapping should now properly support freespace.</li>
+<li>The <code>canread()</code> functions returned true for the first byte after the end of the ROM. That has been fixed.</li>
+<li>Using <code>check bankcross off</code> now should mess with the PC less (i.e. no forced fastrom addressing).</li>
+<li>Using the <code>error</code> command now doesn't print the line of code that caused the error. All warnings except for the one from the <code>warn</code> command should now print the line of code that caused the warning. (note that not all warnings or errors are associated with a specific line of code.)</li>
+</ul>
+<hr />
+<h2 id="v170"><a class="header" href="#v170">v1.70</a></h2>
+<p><strong>Release:</strong> January 4, 2019</p>
+<h3 id="contributors-5"><a class="header" href="#contributors-5">Contributors:</a></h3>
+<ul>
+<li>randomdude999</li>
+<li>boldowa</li>
+</ul>
+<h3 id="new-features-3"><a class="header" href="#new-features-3">New features:</a></h3>
+<ul>
+<li>The <code>fullsa1rom</code> mapper now supports automatic freespace searching. (randomdude999)</li>
+<li><code>incbin</code> ranges can now use math as an alternative to unprefixed hex. To use this, surround the math with parentheses. For example, <code>incbin file:(4+2)-($F+$10)</code>. Note that in math statements, unprefixed numbers are decimal, not hex! (randomdude999)</li>
+</ul>
+<h3 id="bug-fixes-5"><a class="header" href="#bug-fixes-5">Bug fixes:</a></h3>
+<ul>
+<li>Fixed quite a few crashes in Asar:
+<ul>
+<li>Fixed a crash when including a directory (randomdude999, found by <a href="http://smwc.me/u/Selicre">Selicre</a>)</li>
+<li>Fixed a crash when using a macro sublabel outside of a macro (randomdude999)</li>
+<li>Fixed a crash when having unmatched structs in a weird way (randomdude999)</li>
+<li>Fixed a crash when appending to a non-existent define (randomdude999, found by Selicre)</li>
+<li>Fixed a crash when Asar encountered mismatched quotes after define evaluation (randomdude999, found by Alcaro)</li>
+</ul>
+</li>
+<li>Made Asar about 2x faster than before (randomdude999)</li>
+<li>Values larger than $80000000 in things like <code>dd</code> should work better (randomdude999)</li>
+<li>Fixed a freespace leak when using <code>prot</code> (randomdude999, found by WhiteYoshiEgg)</li>
+<li>Fixed Windows header includes, to make cross-compilation of Asar on Linux work better (boldowa)</li>
+</ul>
+<hr />
+<h2 id="v161"><a class="header" href="#v161">v1.61</a></h2>
+<p><strong>Release:</strong> August 22, 2018</p>
+<h3 id="contributors-6"><a class="header" href="#contributors-6">Contributors:</a></h3>
+<ul>
+<li>randomdude999</li>
+</ul>
+<h3 id="bug-fixes-6"><a class="header" href="#bug-fixes-6">Bug fixes:</a></h3>
+<ul>
+<li>Fixed asar quietly skipping assembling a line if it had a label followed by 3 or more spaces and ended with <code>&quot;</code>.</li>
+<li>In 1.60, <code>if !condition</code> was removed without a proper deprecation process. It has been re-added with a deprecation warning, because a few patches still managed to use it.</li>
+</ul>
+<hr />
+<h2 id="v160"><a class="header" href="#v160">v1.60</a></h2>
+<p><strong>Release:</strong> July 6, 2018</p>
+<h3 id="contributors-7"><a class="header" href="#contributors-7">Contributors:</a></h3>
+<ul>
+<li>RPG Hacker</li>
+<li>boldowa/6646</li>
+<li>zetaPRIME</li>
+<li>Horrowind</li>
+<li>randomdude999</li>
+<li>TheBiob</li>
+<li>BenJuan26</li>
+<li>Vitor Vilela</li>
+<li>KevinCathcart</li>
+<li>KungFuFurby</li>
+</ul>
+<h3 id="new-features-4"><a class="header" href="#new-features-4">New features:</a></h3>
+<ul>
+<li>
+<p>Asar is now officially hosted on GitHub: <a href="https://github.com/RPGHacker/asar">https://github.com/RPGHacker/asar</a></p>
+</li>
+<li>
+<p>Asar now uses CMake, which should make it easier to build on different platforms and with different compilers. (RPG Hacker, randomdude999, boldowa)</p>
+</li>
+<li>
+<p>Added a proper manual in HTML format to Asar, rather than just having the xkas manual and a TXT file with all changes. (RPG Hacker)</p>
+</li>
+<li>
+<p>Added Python binding for the Asar DLL. (randomdude999)</p>
+</li>
+<li>
+<p>Added <code>defined()</code> function (randomdude999) and <code>undef</code> command. (zetaPRIME)</p>
+</li>
+<li>
+<p>Added simple syntax highlighting for Sublime Text. (randomdude999)</p>
+</li>
+<li>
+<p>+/- label declarations can also end with an optional <code>:</code> now for consistency. (RPG Hacker)</p>
+</li>
+<li>
+<p>Added macro-local variations for +/- labels and sub labels, which are also prefixed with a <code>?</code>. (RPG Hacker)</p>
+</li>
+<li>
+<p>Added macro main label assignment. (RPG Hacker)</p>
+<pre><code class="language-asar">macro my_macro()
+    ?MacroLabel = $008000
+    
+    dl ?MacroLabel  ; Valid
+endmacro
+
+%my_macro()
+
+dl ?MacroLabel      ; Error!
+</code></pre>
+</li>
+<li>
+<p>Added support for a new type of label declaration: prefixing a label or sub label declaration (including macro labels) with <code>#</code> will create that label without modifying existing label hierarchies. This is mainly intended for hacky incsrc/routine macros as used by GPS, which can break existing label hierarchies when used. (RPG Hacker)</p>
+<pre><code class="language-asar">macro my_new_routine()
+    jsl MyNewRoutine
+            
+    !macro_routine_defined ?= 0
+    
+    if !macro_routine_defined == 0
+        pushpc
+        
+        freecode cleaned
+        
+        #MyNewRoutine:
+            incsrc routines/mynewroutine.asm
+        
+        pullpc
+    
+        !macro_routine_defined = 1
+    endif
+endmacro
+
+Main:
+    %my_new_routine()
+.Sub
+
+    ; Both of these are found
+    dl MyNewRoutine
+    dl Main_Sub
+</code></pre>
+<p>Note that while it's technically possible to use this feature on sub labels, macro labels and macro sub labels, I don't think there's any reasonable use case for this. In most cases, regular macro labels and regular macro sub labels are recommended for usage inside macros.</p>
+</li>
+<li>
+<p>Added support for include search paths. (RPG Hacker)</p>
+</li>
+<li>
+<p>Added asar_patch_ex() function to DLL API, which works like asar_patch(), but takes additional parameters. (RPG Hacker)</p>
+</li>
+<li>
+<p>You can now escape <code>!</code> by doing <code>\!</code> (useful for preventing Asar to replace defines in certain places). (randomdude999)</p>
+</li>
+<li>
+<p>You can now escape <code>\</code> by doing <code>\\</code>. (RPG Hacker)</p>
+</li>
+<li>
+<p>Added support for <code>pushbase</code>/<code>pullbase</code>. (randomdude999, RPG Hacker)</p>
+</li>
+<li>
+<p>Added <code>check title</code> command which makes Asar verify the title of the output ROM (to assure a patch is applied to the correct ROM). (randomdude999)</p>
+</li>
+<li>
+<p>Added support for nested namespaces. (randomdude999, RPG Hacker)<br />
+Enable them via the command:</p>
+<pre><code class="language-asar">namespace nested on
+</code></pre>
+</li>
+<li>
+<p>Added support for <code>check bankcross off</code> which disables checking for bank crossing. Use with caution; might not work with certain features or outright break some stuff. (randomdude999, RPG Hacker)</p>
+</li>
+<li>
+<p>Added a new, simple README. (randomdude999, RPG Hacker)</p>
+</li>
+<li>
+<p>Added a <code>filesize()</code> function and a <code>getfilestatus()</code> function. (randomdude999)</p>
+</li>
+<li>
+<p>Added support for <code>stdincludes.txt</code> and <code>stddefines.txt</code> - see manual for details. (RPG Hacker, randomdude999)</p>
+</li>
+<li>
+<p>Added support for setting defines via the command line or DLL API. See manual (section: usage) for details. (randomdude999)</p>
+</li>
+<li>
+<p>Added <code>includeonce</code> command for shared files which may be included multiple times, but should only be assembled once. (RPG Hacker)</p>
+</li>
+<li>
+<p>Added support for generating a symbols file. Currently, WLA and no$sns format are supported. (KevinCathcart)</p>
+</li>
+<li>
+<p>Opcode length specifiers (<code>.b</code>, <code>.w</code> and <code>.l</code>) are now also supported for the SPC700 architecture. (KungFuFurby)</p>
+</li>
+<li>
+<p>Added <code>stringsequal()</code> and <code>stringsequalnocase()</code> functions. (RPG Hacker)</p>
+</li>
+<li>
+<p>Added support for some built-in defines. Currently, <code>!assembler</code> and <code>!assembler_ver</code> are supported. Trying to modify those defines will throw an error. (RPG Hacker)</p>
+</li>
+<li>
+<p>Added IDs to all warnings and errors, together with functionality to enable or disable specific warnings. (RPG Hacker)</p>
+</li>
+<li>
+<p>Added a new optional warning that has to be enabled manually to throw warnings when opcodes are implicitly sized. (KevinCathcart)</p>
+</li>
+<li>
+<p>Added functionality to allow overriding Asar's default behavior of enabling/disabling checksum generation based on context. (randomdude999)</p>
+</li>
+</ul>
+<h3 id="bug-fixes-7"><a class="header" href="#bug-fixes-7">Bug fixes:</a></h3>
+<ul>
+<li>
+<p>Fixed various bugs in the DLL interface. It should now hopefully be possible to apply multiple patches in succession via the DLL interface without resorting to hacks. (RPG Hacker, randomdude999, boldowa)</p>
+</li>
+<li>
+<p>Rewrote big parts of test applications once again to make it a lot easier to test a bunch of ASM files and actually get some meaningful information out of it. (RPG Hacker)</p>
+</li>
+<li>
+<p>Fixed the way <code>;@</code> works. This command was really meant for backwards-compatibility with xkas and is supposed to assemble everything following it, which it now does again. (RPG Hacker)<br />
+As a result of this change, any of the following are now valid Asar code:</p>
+<pre><code class="language-asar">;@asar 1.60
+@asar 1.60
+asar 1.60
+</code></pre>
+<p>When Asar finds an unknown command on a line starting with <code>;@</code> or <code>@</code>, it only throws a warning instead of an error. You can make use of this fact by using optional features from newer Asar versions and still have your patch assemble in old Asar versions, where those features are ignored (don't know how practicable and useful this really is, but in theory, it should be possible). And of course it can be used for patches that are compatible with both xkas and Asar, not that that's particularly useful anymore in this day and age.</p>
+</li>
+<li>
+<p>Changed format of existing command line arguments for consistency. (RPG Hacker)</p>
+</li>
+<li>
+<p>LoROM banks <code>$70</code> to <code>$7D</code> can be used correctly. (randomdude999)</p>
+</li>
+<li>
+<p>Struct definitions are cleared correctly in Asar lib. (randomdude999)</p>
+</li>
+<li>
+<p>Fixed a freeze that could occur when using <code>freedata align</code>. (TheBiob)</p>
+</li>
+<li>
+<p>Fixed a bug in <code>pad</code> command that made it not update the pc correctly and also made it trigger a bank cross error before actually writing any data into a new bank. (RPG Hacker)</p>
+</li>
+<li>
+<p>Fixed a rare crash when using the command-line interface in ways you're not supposed to use it. (randomdude999)</p>
+</li>
+<li>
+<p>Fixed <code>readfile()</code>/<code>canreadfile()</code> crashing when reading from more than 16 different files in the same patch. (randomdude999)</p>
+</li>
+<li>
+<p>Fixed the ROM title being reported incorrectly. (randomdude999)</p>
+</li>
+<li>
+<p>Fixed using really large values in math with <code>math round on</code> making the values negative sometimes. (randomdude999)</p>
+</li>
+<li>
+<p>Fixed an SA-1 mapping issue. (Vitor Vilela, randomdude999)</p>
+</li>
+<li>
+<p>Fixed <code>print double()</code> not working when any of their arguments contain commas or parentheses. (randomdude999)</p>
+</li>
+<li>
+<p>Made it possible to pass string parameters to functions like <code>readfile1()</code> via user-defined functions. Previously, this failed as Asar expected all parameters in user-defined functions to be numbers. (KevinCathcart)</p>
+</li>
+<li>
+<p>Fixed a bug related to evaluation of parameters in user-defined functions. In some situations, Asar returned the incorrect parameter. For example: given a user-defined function with a parameter <code>ab</code> and a paramater <code>abc</code>, Asar occasionally returned the parameter <code>abc</code> when referencing the paramter <code>ab</code>. (KevinCathcart)</p>
+</li>
+<li>
+<p>Added more undocumented features to the manual. (RPG Hacker)</p>
+</li>
+<li>
+<p>0x hex literals were supported by Asar on some platforms, which wasn't supposed to be the case. Made sure 0x hex literals throw errors on all platforms. (randomdude999)</p>
+</li>
+</ul>
+<h3 id="deprecated-features-1"><a class="header" href="#deprecated-features-1">Deprecated features:</a></h3>
+<ul>
+<li>Started the process of deprecating xkas compatibility mode. From now on, using xkas compatibility features will throw warnings. In a future version of Asar, xkas compatibility will be removed entirely.</li>
+<li>Started deprecating <code>autoclear</code>, which is an alias of <code>autoclean</code>. Please use only <code>autoclean</code> from now on.</li>
+<li>Started deprecating <code>freespace fixed</code>, which is an alias of <code>freespace static</code>. Please use only <code>freespace static</code> from now on.</li>
+<li>Deprecated and removed support for <code>if !condition</code>. This feature was planned for deprecation as it bites with Asar's define syntax, but it was removed earlier than planned because, after inspecting the code, it was determined that it didn't work properly and probably wasn't even usable in versions prior to 1.60 at all. The only way to use it in Asar 1.60 was by using the new escape sequence for !, which didn't exist in earlier Asar versions. Thus it can be assumed that the feature wasn't used in previous Asar versions and can be removed safely. To negate conditions in Asar 1.60, either use the built-in logic functions (<code>if !(a == 0 &amp;&amp; b == 0)</code> becomes <code>if not(and(equal(a, 0),equal(b, 0)))</code>) or directly negate the condition (<code>if !(a == 0 &amp;&amp; b == 0)</code> becomes <code>if a != 0 || b != 0</code>).</li>
+</ul>
+<hr />
+<h2 id="v150"><a class="header" href="#v150">v1.50</a></h2>
+<p><strong>Release:</strong> February 28, 2017</p>
+<h3 id="contributors-8"><a class="header" href="#contributors-8">Contributors:</a></h3>
+<ul>
+<li>RPG Hacker</li>
+<li>p4plus2</li>
+</ul>
+<h3 id="new-features-5"><a class="header" href="#new-features-5">New features:</a></h3>
+<ul>
+<li>Added support for structs.</li>
+<li>Added API to Asar lib for getting information on all blocks of data written by Asar.</li>
+<li>Added API to Asar lib for getting the mapper currently used by Asar.</li>
+<li>Added support for ExLoROM and ExHiROM mappers.<br />
+NOTE: Based entirely on conversion tables I got from Ladida; don't know if these conversions are actually correct. Some features may not work as intended when using those mappers (such as <code>freedata</code>, for example), but I can't verify this.</li>
+<li>Added <code>pushtable</code> and <code>pulltable</code> commands, which let you back-up or restore the current character table to the/from the stack.</li>
+<li>Added <code>ext\notepad-plus-plus\syntax-highlighting.xml</code>. This file can be imported into Notepad++ as a user-defined language to add syntax highlighting for Asar patches, featuring all commands currently supported by Asar. By default, this syntax highlighting is enabled on all files with an extension of <code>.asm</code> or <code>.asr</code>, but this can be customized via Notepad++.</li>
+</ul>
+<h3 id="bug-fixes-8"><a class="header" href="#bug-fixes-8">Bug fixes:</a></h3>
+<ul>
+<li>Lines starting with <code>@</code> or <code>;@</code> that don't map to a recognized special command now only throw warnings at best and no errors.</li>
+<li>Rewrote code of tests a little to make them easier to execute and make them clean up their own mess.</li>
+<li>C# wrapper for Asar DLL was non-functional since it didn't specify a calling convention, making it always lead to an exception in some scenarios.</li>
+</ul>
+<h3 id="notes-1"><a class="header" href="#notes-1">Notes:</a></h3>
+<ul>
+<li>Just like the last version, this version of Asar was built in MSVC rather than g++, but this time I also updated the Asar DLL (which I had overlooked last time). I'm not sure if Windows applications are compatible with DLLs that were built by a different compiler, so if you're planning to use the DLL, this is something to watch out for. If you're planning to use a compiler other than MSVC, I recommend just rebuilding the DLL from source in whatever compiler you're using (or directly including the Asar library code in your project).</li>
+</ul>
+<hr />
+<h2 id="v140"><a class="header" href="#v140">v1.40</a></h2>
+<p><strong>Release:</strong> October 23, 2016</p>
+<h3 id="contributors-9"><a class="header" href="#contributors-9">Contributors:</a></h3>
+<ul>
+<li>RPG Hacker</li>
+</ul>
+<h3 id="new-features-6"><a class="header" href="#new-features-6">New features:</a></h3>
+<ul>
+<li>
+<p><code>readfile</code> functions: <code>readfile1(filename, offset)</code>, <code>readfile2(filename, offset)</code>, <code>readfile3(filename, offset)</code>, <code>readfile4(filename, offset)</code> - similiar to <code>read1()</code> etc. functions, except data is read from another file instead of from the ROM (note that offset is a PC offset, not a SNES offset). You can pass an optional third value which is returned if the read fails. These functions are primarily intended for reading bytes from another file and then doing math with them. For example: reading bytes from a Lunar Magic .pal file, converting them into a different format and then writing them to the ROM as a table that can directly be DMA'd to CGRAM without further conversions (all conversions happen at compile-time). As an additional bonus, all of those functions cache any file passed to them (up to 16 simultanous files), which means that multiple readfile() calls on the same file will keep the file open rather than repeatedly opening and closing the file.</p>
+</li>
+<li>
+<p><code>canreadfile</code> functions: <code>canreadfile1(filename, offset)</code>, <code>canreadfile2(filename, offset)</code>, <code>canreadfile3(filename, offset)</code>, <code>canreadfile4(filename, offset)</code>, <code>canreadfile(filename, offset, length)</code> - basically the <code>readfile()</code> equivalents of <code>canread1()</code> etc.</p>
+</li>
+<li>
+<p><code>snestopc(address)</code> and <code>pctosnes(address)</code> functions: for manually converting addresses (note that those functions are dependent on the ROM's current mapping mode, so use them with caution - chances are you will never need them at all).</p>
+</li>
+<li>
+<p><code>max(a, b)</code>, <code>min(a, b)</code> and <code>clamp(value, min, max)</code> functions: <code>max()</code>/<code>min()</code> return the maximum/minimum of two values, whereas <code>clamp()</code> makes sure that that value is <code>&gt;= min</code> and <code>&lt;= max.</code></p>
+</li>
+<li>
+<p><code>safediv(dividend, divisor, exception)</code> function: divides <code>dividend</code> by <code>divisor</code>, unless <code>divisor</code> is 0, in which case <code>exception</code> is returned.</p>
+</li>
+<li>
+<p><code>select(statement, true, false)</code> function: if <code>statement</code> is 0, <code>false</code> is returned, in any other case, <code>true</code> is returned. Basically, a mathematical version of &quot;if/else&quot;. Please note that unlike if/else blocks, function arguments in Asar are always evaluated before a function returns. In other words: if you do <code>select(1, 1/1, 1/0)</code>, Asar will throw a &quot;division by zero&quot; error, even though the function would return 1/1. In this particular case, it's recommended to simply use the <code>safediv()</code> function in place of a regular division.</p>
+</li>
+<li>
+<p><code>not(value)</code> function: returns 1 if <code>value</code> is 0 and 0 in any other case.</p>
+</li>
+<li>
+<p>comparison functions: <code>equal(a, b)</code>, <code>notequal(a, b)</code>, <code>less(a, b)</code>, <code>lessequal(a, b)</code>, <code>greater(a, b)</code>, <code>greaterequal(a, b)</code> - rather self-explanatory, return 1 if the respective comparison is true and 0 otherwise. Primarily intended to be passed as statement to <code>select()</code> function.</p>
+</li>
+<li>
+<p>logical functions: <code>and(a, b)</code>, <code>or(a, b)</code>, <code>nand(a, b)</code>, <code>nor(a, b)</code>, <code>xor(a, b)</code> - also self-explanatory, return 1 if the respective logical operation is true and 0 otherwise. Primarily intended to be passed as statement to <code>select()</code> function.</p>
+</li>
+<li>
+<p><code>while</code> loops: Added compile-time <code>while</code> loops to Asar. Those work similar to if conditionals, with the difference that their blocks are assembled repeatedly until their condition becomes false. For easier implementation and higher compatibility, while loops are terminated with <code>endif</code>, just like <code>if</code> conditionals. When using while loops, be careful not to cause an infinite loop. Asar won't make any effort to detect those.</p>
+</li>
+<li>
+<p>Multiline operator: You can now put <code>\</code> at the end of any line of source code and Asar will append the next line to it. This is similar to putting a <code>,</code> at the end of a line, with the difference, that the <code>\</code> itself does not appear in the concatenated string, whereas the <code>,</code> would. This is useful to split long function definitions into multiplie lines, for example. Note that all whitespace following the <code>\</code> is ignored, whereas whitespace preceeding the <code>\</code> isn't. Therefore</p>
+<pre><code class="language-asar">db\
+$FF
+</code></pre>
+<p>turns into</p>
+<pre><code class="language-asar">db$FF
+</code></pre>
+<p>for example, whereas</p>
+<pre><code class="language-asar">db \
+$FF
+</code></pre>
+<p>turns into</p>
+<pre><code class="language-asar">db $FF
+</code></pre>
+</li>
+<li>
+<p><code>double(num)</code> print function: Can be passed to print to print a double variable with its fractional part. Has a default precision of 5 decimal places, but can be passed an optional second argument to override the precision.</p>
+</li>
+<li>
+<p><code>round(num, precision)</code> function: Rounds the double variable <code>num</code> to <code>precision</code> decimal places. Pass 0 as precision to round to the nearest integer.</p>
+</li>
+</ul>
+<h3 id="bug-fixes-9"><a class="header" href="#bug-fixes-9">Bug fixes:</a></h3>
+<ul>
+<li>
+<p>Asar 1.37 officially suppported overloaded versions of <code>read1()</code> to <code>read4()</code>, but always threw &quot;Wrong number of parameters to function&quot; errors when actually using those overloaded versions.</p>
+</li>
+<li>
+<p>Asar 1.37 threw &quot;Wrong number of parameters to function&quot; error for function <code>canread()</code> when passing 2 arguments to it, because it actually treated it as <code>canread1()</code> due to an internal error in string comparison.</p>
+</li>
+<li>
+<p>Using better double -&gt; int conversions in some places - where</p>
+<pre><code class="language-asar">dd $FFFFFFFF
+</code></pre>
+<p>would assemble to <code>00 00 00 80</code> (<code>$80000000</code>) in Asar 1.37, it now assembles to <code>FF FF FF FF</code></p>
+</li>
+<li>
+<p>Defines in <code>elseif</code> conditionals now get properly resolved.</p>
+</li>
+<li>
+<p>The <code>#=</code> define operator now doesn't truncate its value when using <code>math round off</code>, making it possible to do double-precision math with it.</p>
+</li>
+<li>
+<p>Asar 1.37 detected misplaced elses and endifs, but not misplaced elseifs.</p>
+</li>
+<li>
+<p>Putting <code>@xkas : @asar 1.37</code> on the first line would previously lead to an error, whereas putting <code>@asar 1.37 : @xkas</code> there would not. Both variations lead to an error message now, since it really doesn't make much sense to use them together in any combination.</p>
+</li>
+<li>
+<p>Special commands like <code>@asar</code> or <code>@include</code> could previously be used on the first line only and needed to be chained with a <code>:</code> inbetween. They can now be used on any line as long as no other command comes before or inbetween them.</p>
+</li>
+<li>
+<p>Asar 1.37 fixed a bug in SuperFX compilation, but <code>src/test/arch-superfx.asm</code> was never edited to acknowledge this fix, so the test always failed</p>
+</li>
+<li>
+<p>Added different define operators (<code>=</code>, <code>+=</code>, <code>:=</code>, <code>#=</code>, <code>?=</code>) to manual.txt. Those have been in Asar for quite a while, but were never documented yet, although they can be quite useful.</p>
+</li>
+</ul>
+<h3 id="notes-2"><a class="header" href="#notes-2">Notes:</a></h3>
+<ul>
+<li>This version of Asar was built in MSVC rather than g++, mainly because I already had that installed and use Visual Studo as an IDE, anyways. Functionally, this shouldn't make any difference, unless using Asar in unintended ways, where anything goes. I did build the Linux version in g++ to confirm compatibility, though.</li>
+</ul>
+<hr />
+<h2 id="v137"><a class="header" href="#v137">v1.37</a></h2>
+<p><strong>Release:</strong> March 26, 2016</p>
+<h3 id="contributors-10"><a class="header" href="#contributors-10">Contributors:</a></h3>
+<ul>
+<li>Raidenthequick</li>
+</ul>
+<h3 id="new-features-7"><a class="header" href="#new-features-7">New features:</a></h3>
+<ul>
+<li>New <code>freespace</code> argument added; a <code>$xx</code> byte that will search the ROM for contiguous sections of that byte. Before it was hardcoded to only search for <code>$00</code>. Default is still <code>$00</code> if not supplied, so past patches should not be broken.</li>
+<li>In line with this, <code>autoclean</code> was hardcoded to clean using <code>$00</code>. This was fixed also to clean with the byte supplied by freecode, or <code>$00</code> if not supplied.</li>
+</ul>
+<h3 id="bug-fixes-10"><a class="header" href="#bug-fixes-10">Bug fixes:</a></h3>
+<ul>
+<li>Super FX short addressing fixed, and added error checking for valid short address. For example, <code>lms r0,($00D4)</code> used to output <code>3D A0 D4</code>, which is actually incorrect because short addressing doubles the byte supplied by the instruction to give a range from <code>$0000</code>-<code>$01FE</code> with just one byte (since Super FX reads words). This now outputs <code>3D A0 6A</code> which is correct. Also, asar now throws an error for anything outside <code>$0000</code>-<code>$01FE</code> as well as all odd-numbered addresses for both <code>sms</code> and <code>lms</code> instructions. (Odd-numbered addresses cannot be accessed using short addressing due to the multiplying by 2.)</li>
+<li>Super FX and SPC700 labels were broken if used within freespace. This has been fixed by doing what 65816 does: mask the address with <code>0xFFFFFF</code> because freespace addresses use a high byte to indicate that they're freespace.</li>
+<li>Fixed SA-1 mapping using wrong Super MMC banks range.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="error-list.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="changelog-old.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="error-list.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="changelog-old.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="sectionhack.js"></script>
+
+
+    </div>
+    </body>
+</html>

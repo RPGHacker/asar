@@ -1,0 +1,835 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>List of SuperFX Instructions - Asar Manual</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="usage.html"><strong aria-hidden="true">2.</strong> Usage</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="standard-includes.html"><strong aria-hidden="true">2.1.</strong> Standard Includes</a></li><li class="chapter-item expanded "><a href="standard-defines.html"><strong aria-hidden="true">2.2.</strong> Standard Defines</a></li></ol></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architectures</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="arch-65816.html"><strong aria-hidden="true">3.1.</strong> List of 65816 Instructions</a></li><li class="chapter-item expanded "><a href="arch-spc700.html"><strong aria-hidden="true">3.2.</strong> List of SPC700 Instructions</a></li><li class="chapter-item expanded "><a href="arch-superfx.html" class="active"><strong aria-hidden="true">3.3.</strong> List of SuperFX Instructions</a></li></ol></li><li class="chapter-item expanded "><a href="mapping-modes.html"><strong aria-hidden="true">4.</strong> Mapping Modes</a></li><li class="chapter-item expanded "><a href="compat.html"><strong aria-hidden="true">5.</strong> Compatibility Settings</a></li><li class="chapter-item expanded "><a href="formatting.html"><strong aria-hidden="true">6.</strong> Code Formatting and Syntax</a></li><li class="chapter-item expanded "><a href="program-counter.html"><strong aria-hidden="true">7.</strong> Program Counter</a></li><li class="chapter-item expanded "><a href="math.html"><strong aria-hidden="true">8.</strong> Math</a></li><li class="chapter-item expanded "><a href="labels.html"><strong aria-hidden="true">9.</strong> Labels</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="structs.html"><strong aria-hidden="true">9.1.</strong> Structs</a></li><li class="chapter-item expanded "><a href="namespaces.html"><strong aria-hidden="true">9.2.</strong> Namespaces</a></li></ol></li><li class="chapter-item expanded "><a href="defines.html"><strong aria-hidden="true">10.</strong> Defines</a></li><li class="chapter-item expanded "><a href="macros.html"><strong aria-hidden="true">11.</strong> Macros</a></li><li class="chapter-item expanded "><a href="functions.html"><strong aria-hidden="true">12.</strong> Functions</a></li><li class="chapter-item expanded "><a href="conditionals.html"><strong aria-hidden="true">13.</strong> Conditionals and Loops</a></li><li class="chapter-item expanded "><a href="binary.html"><strong aria-hidden="true">14.</strong> Binary Data</a></li><li class="chapter-item expanded "><a href="includes.html"><strong aria-hidden="true">15.</strong> Includes</a></li><li class="chapter-item expanded "><a href="freespace.html"><strong aria-hidden="true">16.</strong> Freespace</a></li><li class="chapter-item expanded "><a href="prints.html"><strong aria-hidden="true">17.</strong> Text Output</a></li><li class="chapter-item expanded "><a href="checks.html"><strong aria-hidden="true">18.</strong> Checks</a></li><li class="chapter-item expanded "><a href="warnings.html"><strong aria-hidden="true">19.</strong> Warnings</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="cmd-index.html"><strong aria-hidden="true">20.</strong> List of commands</a></li><li class="chapter-item expanded "><a href="warning-list.html"><strong aria-hidden="true">21.</strong> List of all warnings</a></li><li class="chapter-item expanded "><a href="error-list.html"><strong aria-hidden="true">22.</strong> List of all errors</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="changelog.html"><strong aria-hidden="true">23.</strong> Changelog</a></li><li class="chapter-item expanded "><a href="changelog-old.html"><strong aria-hidden="true">24.</strong> Historical changelog</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Asar Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="supported-superfx-instructions"><a class="header" href="#supported-superfx-instructions">Supported SuperFX instructions</a></h1>
+<p>i don't really know who originally specified this syntax or where asar's version comes from tbh</p>
+<pre><code class="language-asar">ADC #0
+ADC #0
+ADC #1
+ADC #2
+ADC #3
+ADC #4
+ADC #5
+ADC #6
+ADC #7
+ADC #8
+ADC #9
+ADC #10
+ADC #11
+ADC #12
+ADC #13
+ADC #14
+ADC #15
+ADC R0
+ADC R1
+ADC R2
+ADC R3
+ADC R4
+ADC R5
+ADC R6
+ADC R7
+ADC R8
+ADC R9
+ADC R10
+ADC R11
+ADC R12
+ADC R13
+ADC R14
+ADC R15
+ADD #0
+ADD #1
+ADD #2
+ADD #3
+ADD #4
+ADD #5
+ADD #6
+ADD #7
+ADD #8
+ADD #9
+ADD #10
+ADD #11
+ADD #12
+ADD #13
+ADD #14
+ADD #15
+ADD R0
+ADD R1
+ADD R2
+ADD R3
+ADD R4
+ADD R5
+ADD R6
+ADD R7
+ADD R8
+ADD R9
+ADD R10
+ADD R11
+ADD R12
+ADD R13
+ADD R14
+ADD R15
+ALT1
+ALT2
+ALT3
+AND #1
+AND #2
+AND #3
+AND #4
+AND #5
+AND #6
+AND #7
+AND #8
+AND #9
+AND #10
+AND #11
+AND #12
+AND #13
+AND #14
+AND #15
+AND R1
+AND R2
+AND R3
+AND R4
+AND R5
+AND R6
+AND R7
+AND R8
+AND R9
+AND R10
+AND R11
+AND R12
+AND R13
+AND R14
+AND R15
+ASR
+BCC $00
+BCS $00
+BEQ $00
+BGE $00
+BIC #1
+BIC #2
+BIC #3
+BIC #4
+BIC #5
+BIC #6
+BIC #7
+BIC #8
+BIC #9
+BIC #10
+BIC #11
+BIC #12
+BIC #13
+BIC #14
+BIC #15
+BIC R1
+BIC R2
+BIC R3
+BIC R4
+BIC R5
+BIC R6
+BIC R7
+BIC R8
+BIC R9
+BIC R10
+BIC R11
+BIC R12
+BIC R13
+BIC R14
+BIC R15
+BLT $00
+BMI $00
+BNE $00
+BPL $00
+BRA $00
+BVC $00
+BVS $00
+CACHE
+CMODE
+CMP R0
+CMP R1
+CMP R2
+CMP R3
+CMP R4
+CMP R5
+CMP R6
+CMP R7
+CMP R8
+CMP R9
+CMP R10
+CMP R11
+CMP R12
+CMP R13
+CMP R14
+CMP R15
+COLOR
+DEC R0
+DEC R1
+DEC R2
+DEC R3
+DEC R4
+DEC R5
+DEC R6
+DEC R7
+DEC R8
+DEC R9
+DEC R10
+DEC R11
+DEC R12
+DEC R13
+DEC R14
+DIV2
+FMULT
+FROM R0
+FROM R1
+FROM R2
+FROM R3
+FROM R4
+FROM R5
+FROM R6
+FROM R7
+FROM R8
+FROM R9
+FROM R10
+FROM R11
+FROM R12
+FROM R13
+FROM R14
+FROM R15
+GETB
+GETBH
+GETBL
+GETBS
+GETC
+HIB
+IBT R0,#$00
+IBT R1,#$00
+IBT R2,#$00
+IBT R3,#$00
+IBT R4,#$00
+IBT R5,#$00
+IBT R6,#$00
+IBT R7,#$00
+IBT R8,#$00
+IBT R9,#$00
+IBT R10,#$00
+IBT R11,#$00
+IBT R12,#$00
+IBT R13,#$00
+IBT R14,#$00
+IBT R15,#$00
+INC R0
+INC R1
+INC R2
+INC R3
+INC R4
+INC R5
+INC R6
+INC R7
+INC R8
+INC R9
+INC R10
+INC R11
+INC R12
+INC R13
+INC R14
+IWT R0,#0000
+IWT R1,#0000
+IWT R2,#0000
+IWT R3,#0000
+IWT R4,#0000
+IWT R5,#0000
+IWT R6,#0000
+IWT R7,#0000
+IWT R8,#0000
+IWT R9,#0000
+IWT R10,#0000
+IWT R11,#0000
+IWT R12,#0000
+IWT R13,#0000
+IWT R14,#0000
+IWT R15,#0000
+JMP R8
+JMP R9
+JMP R10
+JMP R11
+JMP R12
+JMP R13
+LDB (R0)
+LDB (R1)
+LDB (R2)
+LDB (R3)
+LDB (R4)
+LDB (R5)
+LDB (R6)
+LDB (R7)
+LDB (R8)
+LDB (R9)
+LDB (R10)
+LDB (R11)
+LDW (R0)
+LDW (R1)
+LDW (R2)
+LDW (R3)
+LDW (R4)
+LDW (R5)
+LDW (R6)
+LDW (R7)
+LDW (R8)
+LDW (R9)
+LDW (R10)
+LDW (R11)
+LEA R0,$0000
+LINK #1
+LINK #2
+LINK #3
+LINK #4
+LJMP R8
+LJMP R9
+LJMP R10
+LJMP R11
+LJMP R12
+LJMP R13
+LM R0,($0000)
+LM R1,($0000)
+LM R2,($0000)
+LM R3,($0000)
+LM R4,($0000)
+LM R5,($0000)
+LM R6,($0000)
+LM R7,($0000)
+LM R8,($0000)
+LM R9,($0000)
+LM R10,($0000)
+LM R11,($0000)
+LM R12,($0000)
+LM R13,($0000)
+LM R14,($0000)
+LM R15,($0000)
+LMS R0,($00)
+LMS R1,($00)
+LMS R2,($00)
+LMS R3,($00)
+LMS R4,($00)
+LMS R5,($00)
+LMS R6,($00)
+LMS R7,($00)
+LMS R8,($00)
+LMS R9,($00)
+LMS R10,($00)
+LMS R11,($00)
+LMS R12,($00)
+LMS R13,($00)
+LMS R14,($00)
+LMS R15,($00)
+LMULT
+LOB
+LOOP
+LSR
+MERGE
+MOVE ($00),R0
+MOVE R0,#$00
+MOVE R0,($00)
+MOVE R0,R0
+MOVEB (R0),R0
+MOVEB R0,(R0)
+MOVES R0,R0
+MOVEW (R0),R0
+MOVEW R0,(R0)
+MULT #0
+MULT #1
+MULT #2
+MULT #3
+MULT #4
+MULT #5
+MULT #6
+MULT #7
+MULT #8
+MULT #9
+MULT #10
+MULT #11
+MULT #12
+MULT #13
+MULT #14
+MULT #15
+MULT R0
+MULT R1
+MULT R2
+MULT R3
+MULT R4
+MULT R5
+MULT R6
+MULT R7
+MULT R8
+MULT R9
+MULT R10
+MULT R11
+MULT R12
+MULT R13
+MULT R14
+MULT R15
+NOP
+NOT
+OR #1
+OR #2
+OR #3
+OR #4
+OR #5
+OR #6
+OR #7
+OR #8
+OR #9
+OR #10
+OR #11
+OR #12
+OR #13
+OR #14
+OR #15
+OR R1
+OR R2
+OR R3
+OR R4
+OR R5
+OR R6
+OR R7
+OR R8
+OR R9
+OR R10
+OR R11
+OR R12
+OR R13
+OR R14
+OR R15
+PLOT
+RAMB
+ROL
+ROMB
+ROR
+RPIX
+SBC R0
+SBC R1
+SBC R2
+SBC R3
+SBC R4
+SBC R5
+SBC R6
+SBC R7
+SBC R8
+SBC R9
+SBC R10
+SBC R11
+SBC R12
+SBC R13
+SBC R14
+SBC R15
+SBK
+SEX
+SM ($0000),R0
+SM ($0000),R1
+SM ($0000),R2
+SM ($0000),R3
+SM ($0000),R4
+SM ($0000),R5
+SM ($0000),R6
+SM ($0000),R7
+SM ($0000),R8
+SM ($0000),R9
+SM ($0000),R10
+SM ($0000),R11
+SM ($0000),R12
+SM ($0000),R13
+SM ($0000),R14
+SM ($0000),R15
+SMS ($00),R0
+SMS ($00),R1
+SMS ($00),R2
+SMS ($00),R3
+SMS ($00),R4
+SMS ($00),R5
+SMS ($00),R6
+SMS ($00),R7
+SMS ($00),R8
+SMS ($00),R9
+SMS ($00),R10
+SMS ($00),R11
+SMS ($00),R12
+SMS ($00),R13
+SMS ($00),R14
+SMS ($00),R15
+STB (R0)
+STB (R1)
+STB (R2)
+STB (R3)
+STB (R4)
+STB (R5)
+STB (R6)
+STB (R7)
+STB (R8)
+STB (R9)
+STB (R10)
+STB (R11)
+STOP
+STW (R0)
+STW (R1)
+STW (R2)
+STW (R3)
+STW (R4)
+STW (R5)
+STW (R6)
+STW (R7)
+STW (R8)
+STW (R9)
+STW (R10)
+STW (R11)
+SUB #0
+SUB #1
+SUB #2
+SUB #3
+SUB #4
+SUB #5
+SUB #6
+SUB #7
+SUB #8
+SUB #9
+SUB #10
+SUB #11
+SUB #12
+SUB #13
+SUB #14
+SUB #15
+SUB R0
+SUB R1
+SUB R2
+SUB R3
+SUB R4
+SUB R5
+SUB R6
+SUB R7
+SUB R8
+SUB R9
+SUB R10
+SUB R11
+SUB R12
+SUB R13
+SUB R14
+SUB R15
+SWAP
+TO R0
+TO R1
+TO R2
+TO R3
+TO R4
+TO R5
+TO R6
+TO R7
+TO R8
+TO R9
+TO R10
+TO R11
+TO R12
+TO R13
+TO R14
+TO R15
+UMULT #0
+UMULT #1
+UMULT #2
+UMULT #3
+UMULT #4
+UMULT #5
+UMULT #6
+UMULT #7
+UMULT #8
+UMULT #9
+UMULT #10
+UMULT #11
+UMULT #12
+UMULT #13
+UMULT #14
+UMULT #15
+UMULT R0
+UMULT R1
+UMULT R2
+UMULT R3
+UMULT R4
+UMULT R5
+UMULT R6
+UMULT R7
+UMULT R8
+UMULT R9
+UMULT R10
+UMULT R11
+UMULT R12
+UMULT R13
+UMULT R14
+UMULT R15
+WITH R0
+WITH R1
+WITH R2
+WITH R3
+WITH R4
+WITH R5
+WITH R6
+WITH R7
+WITH R8
+WITH R9
+WITH R10
+WITH R11
+WITH R12
+WITH R13
+WITH R14
+WITH R15
+XOR #1
+XOR #2
+XOR #3
+XOR #4
+XOR #5
+XOR #6
+XOR #7
+XOR #8
+XOR #9
+XOR #10
+XOR #11
+XOR #12
+XOR #13
+XOR #14
+XOR #15
+XOR R1
+XOR R2
+XOR R3
+XOR R4
+XOR R5
+XOR R6
+XOR R7
+XOR R8
+XOR R9
+XOR R10
+XOR R11
+XOR R12
+XOR R13
+XOR R14
+XOR R15
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="arch-spc700.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="mapping-modes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="arch-spc700.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="mapping-modes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="sectionhack.js"></script>
+
+
+    </div>
+    </body>
+</html>

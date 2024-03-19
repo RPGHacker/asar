@@ -1,0 +1,338 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Usage - Asar Manual</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="usage.html" class="active"><strong aria-hidden="true">2.</strong> Usage</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="standard-includes.html"><strong aria-hidden="true">2.1.</strong> Standard Includes</a></li><li class="chapter-item expanded "><a href="standard-defines.html"><strong aria-hidden="true">2.2.</strong> Standard Defines</a></li></ol></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architectures</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="arch-65816.html"><strong aria-hidden="true">3.1.</strong> List of 65816 Instructions</a></li><li class="chapter-item expanded "><a href="arch-spc700.html"><strong aria-hidden="true">3.2.</strong> List of SPC700 Instructions</a></li><li class="chapter-item expanded "><a href="arch-superfx.html"><strong aria-hidden="true">3.3.</strong> List of SuperFX Instructions</a></li></ol></li><li class="chapter-item expanded "><a href="mapping-modes.html"><strong aria-hidden="true">4.</strong> Mapping Modes</a></li><li class="chapter-item expanded "><a href="compat.html"><strong aria-hidden="true">5.</strong> Compatibility Settings</a></li><li class="chapter-item expanded "><a href="formatting.html"><strong aria-hidden="true">6.</strong> Code Formatting and Syntax</a></li><li class="chapter-item expanded "><a href="program-counter.html"><strong aria-hidden="true">7.</strong> Program Counter</a></li><li class="chapter-item expanded "><a href="math.html"><strong aria-hidden="true">8.</strong> Math</a></li><li class="chapter-item expanded "><a href="labels.html"><strong aria-hidden="true">9.</strong> Labels</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="structs.html"><strong aria-hidden="true">9.1.</strong> Structs</a></li><li class="chapter-item expanded "><a href="namespaces.html"><strong aria-hidden="true">9.2.</strong> Namespaces</a></li></ol></li><li class="chapter-item expanded "><a href="defines.html"><strong aria-hidden="true">10.</strong> Defines</a></li><li class="chapter-item expanded "><a href="macros.html"><strong aria-hidden="true">11.</strong> Macros</a></li><li class="chapter-item expanded "><a href="functions.html"><strong aria-hidden="true">12.</strong> Functions</a></li><li class="chapter-item expanded "><a href="conditionals.html"><strong aria-hidden="true">13.</strong> Conditionals and Loops</a></li><li class="chapter-item expanded "><a href="binary.html"><strong aria-hidden="true">14.</strong> Binary Data</a></li><li class="chapter-item expanded "><a href="includes.html"><strong aria-hidden="true">15.</strong> Includes</a></li><li class="chapter-item expanded "><a href="freespace.html"><strong aria-hidden="true">16.</strong> Freespace</a></li><li class="chapter-item expanded "><a href="prints.html"><strong aria-hidden="true">17.</strong> Text Output</a></li><li class="chapter-item expanded "><a href="checks.html"><strong aria-hidden="true">18.</strong> Checks</a></li><li class="chapter-item expanded "><a href="warnings.html"><strong aria-hidden="true">19.</strong> Warnings</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="cmd-index.html"><strong aria-hidden="true">20.</strong> List of commands</a></li><li class="chapter-item expanded "><a href="warning-list.html"><strong aria-hidden="true">21.</strong> List of all warnings</a></li><li class="chapter-item expanded "><a href="error-list.html"><strong aria-hidden="true">22.</strong> List of all errors</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="changelog.html"><strong aria-hidden="true">23.</strong> Changelog</a></li><li class="chapter-item expanded "><a href="changelog-old.html"><strong aria-hidden="true">24.</strong> Historical changelog</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Asar Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="usage"><a class="header" href="#usage">Usage</a></h1>
+<p>The general command-line syntax is:</p>
+<pre><code class="language-powershell">asar.exe [options] {asm_file} [rom_file]
+</code></pre>
+<p>For convenience, double-clicking the Asar executable will prompt you to enter paths to an ASM file and a ROM file and thus allow you to directly use Asar without passing any command line arguments to it.</p>
+<h2 id="options"><a class="header" href="#options">Options</a></h2>
+<p>The valid options are:</p>
+<h3 id="--version"><a class="header" href="#--version"><code>--version</code></a></h3>
+<p>Displays Asar version information and exits.</p>
+<pre><code class="language-powershell">asar.exe --version
+</code></pre>
+<h3 id="-v----verbose"><a class="header" href="#-v----verbose"><code>-v</code> / <code>--verbose</code></a></h3>
+<p>Enables verbose mode.</p>
+<pre><code class="language-powershell">asar.exe --verbose C:/homebrew/my_game/main.asm
+</code></pre>
+<h3 id="--no-title-check"><a class="header" href="#--no-title-check"><code>--no-title-check</code></a></h3>
+<p>Disables input ROM title and checksum verification when using Asar to apply a patch to an existing ROM file. Note that irresponsible use of this option will likely corrupt your ROM.</p>
+<pre><code class="language-powershell">asar.exe --no-title-check C:/homebrew/my_game/main.asm
+</code></pre>
+<h3 id="--pause-modemode"><a class="header" href="#--pause-modemode"><code>--pause-mode={mode}</code></a></h3>
+<p>Sets Asar's pause mode, specifying when Asar should pause the application before exit, where <code>{mode}</code> can be one of the following:</p>
+<ul>
+<li><code>never</code>: Don't pause the application (default)</li>
+<li><code>on-error</code>: Pause the application if an error was thrown.</li>
+<li><code>on-warning</code>: Pause the application if an error or a warning was thrown.</li>
+<li><code>always</code>: Always pause the application.</li>
+</ul>
+<pre><code class="language-powershell">asar.exe --pause-mode=always C:/homebrew/my_game/main.asm
+</code></pre>
+<h3 id="-ipath----include-path"><a class="header" href="#-ipath----include-path"><code>-I{path}</code> / <code>--include {path}</code></a></h3>
+<p>Adds an include search path for file-based commands to Asar. Normally, commands like incsrc, incbin etc. look for files relative to the ASM file that is currently being compiled. If those files aren't found, an error is thrown, unless you specify include search paths, in which case Asar will look for the file in each respective directory before throwing an error. For example, imagine you compiled the file</p>
+<pre><code>C:/homebrew/my_game.asm
+</code></pre>
+<p>with Asar, adding the include search path</p>
+<pre><code>-I&quot;C:/homebrew/binary data&quot;
+</code></pre>
+<p>and the ASM file included the line:</p>
+<pre><code>incbin &quot;data/player_gfx.bin&quot;
+</code></pre>
+<p>Asar would now look for a file:</p>
+<pre><code>C:/homebrew/data/player_gfx.bin
+</code></pre>
+<p>If this file didn't exist, it would then look for a file:</p>
+<pre><code>C:/homebrew/binary data/data/player_gfx.bin
+</code></pre>
+<p>If this file didn't exist, Asar would throw an error, otherwise Asar would include it. See section <a href="./includes.html">Includes</a> for details on Asar's handling of file names.</p>
+<pre><code class="language-powershell">asar.exe -IC:/homebrew/my_game/includes -IC:/homebrew/shared
+    C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc
+
+asar.exe --include C:/homebrew/my_game/includes
+    C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc
+</code></pre>
+<h3 id="-didentifiervalue----define-identifiervalue"><a class="header" href="#-didentifiervalue----define-identifiervalue"><code>-D{identifier}[=value]</code> / <code>--define {identifier}[=value]</code></a></h3>
+<p>Adds a define to Asar. When no value is provided, the define is set to an empty string. See section <a href="./defines.html">Defines</a> for details.</p>
+<pre><code class="language-powershell">asar.exe -Ddebug -Dskip_title_screen=0
+    C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc
+
+asar.exe --define debug=1 --define mytext=&quot; value with whitespace &quot;
+    C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc
+</code></pre>
+<h3 id="--symbolsformat"><a class="header" href="#--symbolsformat"><code>--symbols={format}</code></a></h3>
+<p>Specifies the format of the symbols output file generated by Asar. The following values are supported for {format}:</p>
+<ul>
+<li><code>none</code>: Don't generate a symbols file (default).</li>
+<li><code>wla</code>: Generate a symbols file in the WLA format. This format additionally includes an address-to-line mapping which can be used by some debuggers to provide source-level debugging.</li>
+<li><code>nocash</code>: Generate a symbols file in the no$sns format.</li>
+</ul>
+<pre><code class="language-powershell">asar.exe --symbols=wla C:/homebrew/my_game/main.asm
+</code></pre>
+<h3 id="--symbols-pathpath"><a class="header" href="#--symbols-pathpath"><code>--symbols-path={path}</code></a></h3>
+<p>Specifies the path and file name to use for generating the symbols output file. By default, the path is the path of <code>[rom_file]</code> and the file name is the base name of <code>[rom_file]</code> with an extension of <code>.sym</code>. Ignored when <code>--symbols</code> is set to <code>none</code>.<br />
+Note that relative paths here are relative from the current working directory, not relative from <code>{asm_file}</code> or <code>[rom_file]</code>.</p>
+<pre><code class="language-powershell">asar.exe --symbols=wla
+    --symbols-path=C:/homebrew/my_game/symbols/main.symbols
+    C:/homebrew/my_game/main.asm
+</code></pre>
+<h3 id="-wname"><a class="header" href="#-wname"><code>-w{name}</code></a></h3>
+<p>Enables the warning with the specified name. See section <a href="./warnings.html">Warnings</a> for details.</p>
+<pre><code class="language-powershell">asar.exe -wWimplicitly_sized_immediate C:/homebrew/my_game/main.asm
+</code></pre>
+<h3 id="-wnoname"><a class="header" href="#-wnoname"><code>-wno{name}</code></a></h3>
+<p>Disables the warning with the specified name. See section <a href="./warnings.html">Warnings</a> for details.</p>
+<pre><code class="language-powershell">asar.exe -wnoWfreespace_leaked C:/homebrew/my_game/main.asm
+</code></pre>
+<h3 id="-werror"><a class="header" href="#-werror"><code>-werror</code></a></h3>
+<p>Causes Asar to treat all warnings as errors.</p>
+<pre><code class="language-powershell">asar.exe -werror main.asm
+</code></pre>
+<h3 id="--fix-checksumonoff"><a class="header" href="#--fix-checksumonoff"><code>--fix-checksum={on/off}</code></a></h3>
+<p>Overrides Asar's default behavior of enabling or disabling checksum generation based on context. When set to <code>on</code>, Asar always generates a checksum. When set to <code>off</code>, Asar never generates a checksum.</p>
+<pre><code class="language-powershell">asar.exe --fix-checksum=on C:/homebrew/my_game/main.asm
+</code></pre>
+<h3 id="--full-error-stack"><a class="header" href="#--full-error-stack"><code>--full-error-stack</code></a></h3>
+<p>This option makes Asar print a complete call stack whenever an error or warning occurs. This is very useful for patches that use nested macros or mutiple <code>incsrc</code>.</p>
+<pre><code class="language-powershell">asar.exe --full-error-stack C:/homebrew/my_game/main.asm
+</code></pre>
+<h3 id="--error-limitn"><a class="header" href="#--error-limitn"><code>--error-limit={n}</code></a></h3>
+<p>Sets the maximum number of errors that Asar will print before stopping. The default is 20.</p>
+<pre><code class="language-powershell">asar.exe --error-limit=500 C:/homebrew/my_game/main.asm
+</code></pre>
+<h2 id="positional-arguments"><a class="header" href="#positional-arguments">Positional arguments</a></h2>
+<h3 id="asm_file"><a class="header" href="#asm_file"><code>{asm_file}</code></a></h3>
+<p>Path to the ASM source file.</p>
+<h3 id="rom_file"><a class="header" href="#rom_file"><code>[rom_file]</code></a></h3>
+<p>Path to the ROM file that is modified by Asar. If this file doesn't exist yet, Asar creates a new ROM file instead. When omitted, Asar checks if <code>asm_file_name.sfc</code> or <code>asm_file_name.smc</code> exists and uses the one it finds. When zero or two ROMs with that filename are found, Asar defaults to the .sfc extension. As a convention, Asar always treats .smc files as headered and .sfc files as unheadered ROMs. This means that headered .sfc files or unheadered .smc files cannot be used with Asar unless their extension is changed. This is by design and meant to encourage compliance with the convention.</p>
+<p>Examples:</p>
+<pre><code class="language-powershell">asar.exe C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc
+asar.exe C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.smc
+asar.exe C:/homebrew/my_game/main.asm
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="intro.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="standard-includes.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="intro.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="standard-includes.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="sectionhack.js"></script>
+
+
+    </div>
+    </body>
+</html>

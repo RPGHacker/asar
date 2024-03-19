@@ -1,0 +1,412 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Labels - Asar Manual</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="usage.html"><strong aria-hidden="true">2.</strong> Usage</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="standard-includes.html"><strong aria-hidden="true">2.1.</strong> Standard Includes</a></li><li class="chapter-item expanded "><a href="standard-defines.html"><strong aria-hidden="true">2.2.</strong> Standard Defines</a></li></ol></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architectures</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="arch-65816.html"><strong aria-hidden="true">3.1.</strong> List of 65816 Instructions</a></li><li class="chapter-item expanded "><a href="arch-spc700.html"><strong aria-hidden="true">3.2.</strong> List of SPC700 Instructions</a></li><li class="chapter-item expanded "><a href="arch-superfx.html"><strong aria-hidden="true">3.3.</strong> List of SuperFX Instructions</a></li></ol></li><li class="chapter-item expanded "><a href="mapping-modes.html"><strong aria-hidden="true">4.</strong> Mapping Modes</a></li><li class="chapter-item expanded "><a href="compat.html"><strong aria-hidden="true">5.</strong> Compatibility Settings</a></li><li class="chapter-item expanded "><a href="formatting.html"><strong aria-hidden="true">6.</strong> Code Formatting and Syntax</a></li><li class="chapter-item expanded "><a href="program-counter.html"><strong aria-hidden="true">7.</strong> Program Counter</a></li><li class="chapter-item expanded "><a href="math.html"><strong aria-hidden="true">8.</strong> Math</a></li><li class="chapter-item expanded "><a href="labels.html" class="active"><strong aria-hidden="true">9.</strong> Labels</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="structs.html"><strong aria-hidden="true">9.1.</strong> Structs</a></li><li class="chapter-item expanded "><a href="namespaces.html"><strong aria-hidden="true">9.2.</strong> Namespaces</a></li></ol></li><li class="chapter-item expanded "><a href="defines.html"><strong aria-hidden="true">10.</strong> Defines</a></li><li class="chapter-item expanded "><a href="macros.html"><strong aria-hidden="true">11.</strong> Macros</a></li><li class="chapter-item expanded "><a href="functions.html"><strong aria-hidden="true">12.</strong> Functions</a></li><li class="chapter-item expanded "><a href="conditionals.html"><strong aria-hidden="true">13.</strong> Conditionals and Loops</a></li><li class="chapter-item expanded "><a href="binary.html"><strong aria-hidden="true">14.</strong> Binary Data</a></li><li class="chapter-item expanded "><a href="includes.html"><strong aria-hidden="true">15.</strong> Includes</a></li><li class="chapter-item expanded "><a href="freespace.html"><strong aria-hidden="true">16.</strong> Freespace</a></li><li class="chapter-item expanded "><a href="prints.html"><strong aria-hidden="true">17.</strong> Text Output</a></li><li class="chapter-item expanded "><a href="checks.html"><strong aria-hidden="true">18.</strong> Checks</a></li><li class="chapter-item expanded "><a href="warnings.html"><strong aria-hidden="true">19.</strong> Warnings</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="cmd-index.html"><strong aria-hidden="true">20.</strong> List of commands</a></li><li class="chapter-item expanded "><a href="warning-list.html"><strong aria-hidden="true">21.</strong> List of all warnings</a></li><li class="chapter-item expanded "><a href="error-list.html"><strong aria-hidden="true">22.</strong> List of all errors</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="changelog.html"><strong aria-hidden="true">23.</strong> Changelog</a></li><li class="chapter-item expanded "><a href="changelog-old.html"><strong aria-hidden="true">24.</strong> Historical changelog</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Asar Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="labels"><a class="header" href="#labels">Labels</a></h1>
+<p>Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets.</p>
+<h2 id="main-labels"><a class="header" href="#main-labels">Main Labels</a></h2>
+<pre><code class="language-asar">[#]{identifier}:
+</code></pre>
+<p>Main labels are the top-most level of labels supported by Asar. They're global and thus can be directly acessed from anywhere. Their identifier can contain any of the following characters: <code>a-z A-Z 0-9 _</code></p>
+<pre><code class="language-asar">org $008000
+
+Main:
+    %do_frame()
+    jmp Main    ; Equal to jmp $8000
+</code></pre>
+<p>An alternate form of defining main labels is by directly assigning a value to them. A common use-case for this is to make a label point to an existing address inside a ROM. Syntax:</p>
+<pre><code class="language-asar">{identifier} = {snes_address}
+</code></pre>
+<p>where <code>snes_address</code> can be a number or any math statement evaluating to an SNES address. Note that defining a main label this way does not start a new <a href="#sub-labels">sub label</a> group.</p>
+<pre><code class="language-asar">Main:
+; ...
+
+SomewhereInRom = $04CA40
+
+.Sub:
+; ...
+
+Table:
+    dl Main_Sub                 ; Okay!
+    dl SomewhereInRom_Sub       ; Error, label not found
+</code></pre>
+<p>Prefixing a label definition (except label assignments) with a <code>#</code> will define the label without modifying existing label hierarchies. This can be useful for defining global routines inside call-anywhere macros without having them break existing label hierarchies.</p>
+<pre><code class="language-asar">macro my_new_routine()
+    jsl MyNewRoutine
+            
+    !macro_routine_defined ?= 0
+    
+    if !macro_routine_defined == 0
+        pushpc
+        
+        freecode cleaned
+        
+        #MyNewRoutine:
+            incsrc routines/mynewroutine.asm
+        
+        pullpc
+    
+        !macro_routine_defined = 1
+    endif
+endmacro
+
+Main:
+    %my_new_routine()
+.Sub
+
+    ; Both of these are found
+    dl MyNewRoutine
+    dl Main_Sub
+</code></pre>
+<p>Asar includes a label optimizer which attempts to optimize performance by shortening opcodes accessing labels from 24-bit to 16-bit whenever possible. See section <a href="./program-counter.html#optimize-address">Program Counter</a> for details.</p>
+<h2 id="sub-labels"><a class="header" href="#sub-labels">Sub Labels</a></h2>
+<pre><code class="language-asar">[#].{identifier}[:]
+</code></pre>
+<p>Sub labels are the second-most level of labels supported by Asar. They're local to the last main label declared and their identifiers can contain the same characters as main labels.</p>
+<pre><code class="language-asar">Proc1:
+    nop
+.Sub
+    bra .Sub
+
+Proc2:
+    nop
+.Sub:   ; Note that the colon is optional
+    bra .Sub
+</code></pre>
+<p>Sub labels allow you to reuse redundantly named labels such as Loop, End, etc. without causing label redefinition errors. A new sub label group is automatically started after a main label is declared. Internally, sub labels are converted to <code>MainLabel_SubLabel</code>, which can be used to access them from anywhere.</p>
+<pre><code class="language-asar">Main1:
+    ; ...
+.Sub1:
+    ; ...
+.Sub2:
+    ; ...
+    
+Main2:
+    ; ...
+.Sub1:
+    ; ...
+.Sub2:
+    ; ...
+    
+Table:
+    dl Main1_Sub1
+    dl Main1_Sub2
+    dl Main2_Sub1
+    dl Main2_Sub2
+</code></pre>
+<p>Sub labels can themselves contain sub labels to an arbitrary depth by prepending additional dots.</p>
+<pre><code class="language-asar">Main1:
+; ...
+.Sub:
+; ...
+..Deeper:
+; ...
+...TheEnd:
+; ...
+
+Table:
+    dl Main1_Sub_Deeper_TheEnd
+</code></pre>
+<p>Prefixing a sub label definition with a <code>#</code> will define the sub label without modifying existing label hierarchies, but there is probably no practical use for this and it's unintuitive, so it should be avoided.</p>
+<h2 id="--labels"><a class="header" href="#--labels">+/- Labels</a></h2>
+<pre><code class="language-asar">+[+...][:]
+
+-[-...][:]
+</code></pre>
+<p>+/- labels are a special type of labels that are different from both main labels and sub labels in that they don't refer to a specific location in code, but rather to a location relative from where they are used. When used inside opcodes etc., <code>+</code> always refers to the next + label and <code>-</code> always refers to the previous - label. You can also chain an arbitrary number of + or an arbitrary number of - to create unique +/- labels that don't overwrite labels with a different number of +/-, for example <code>+++</code> or <code>-----</code>.</p>
+<pre><code class="language-asar">    ldx.b #4
+        
+--              ; A
+    lda $10,x
+    beq +       ; Branches to &quot;C&quot;
+        
+    ldy.b #8
+    
+-               ; B
+    %do_something()
+    
+    dey
+    bne -       ; Branches to &quot;B&quot;
+    
++:              ; C - note that +/- labels can also include an optional colon in their declaration
+    dex
+    bpl --      ; Branches to &quot;A&quot;
+</code></pre>
+<p>+/- labels are useful in a number of situations. For example: inside a long routine with multiple short loops, where even a sub label like <code>.Loop</code> would get repetitive. +/- labels aren't bound to any scope, which means they can technically be used across different scopes. Just like sub labels, +/- labels are converted to main labels internally. Unlike sub labels, they can not be referenced from code directly since their names depend on where in the code they're used, making it impractical to directly refer to them. This is by design. They can, however, be accessed via the Asar DLL API, and their full name may appear in error messages printed by Asar. The naming format used for them is <code>:pos_x_y</code> for + labels and <code>:neg_x_y</code> for - labels, where <code>x</code> = number of chained +/- and <code>y</code> = instance of this label within all +/- labels of the same name (starting from 0 for + labels and from 1 for - labels).</p>
+<pre><code class="language-asar">lorom
+org $008000
+
+---         ; :neg_3_1
+-           ; :neg_1_1
+    bra -
+--          ; :neg_2_1
+-           ; :neg_1_2
+    bra ---
+    bra --
+    bra -
+    
+    bra ++
+    bra +
+    bra +++
+    
+++          ; :pos_2_0
++           ; :pos_1_0
+    bra ++
+++          ; :pos_2_1
++++         ; :pos_3_0
+</code></pre>
+<h2 id="macro-labels"><a class="header" href="#macro-labels">Macro Labels</a></h2>
+<pre><code class="language-asar">[#]?{identifier}:
+
+?{identifier} = {snes_address}
+
+[#]?.{identifier}[:]
+
+?+[+...]
+
+?-[-...]
+</code></pre>
+<p>Macro labels are special variations of the labels mentioned in the previous sections. Functionally, they behave the same as the other labels with the exception of being local to the macro they're used in. This means they can't be referenced from outside the respective macro. Macro labels are created by prefixing any of the other label types with a <code>?</code> .</p>
+<pre><code class="language-asar">macro do_something()
+    ?MacroMainLabel:
+    ?.MacroSubLabel
+    ?-
+        ; All of these are fine!
+        dl ?MacroMainLabel
+        dl ?.MacroSubLabel
+        dl ?-
+        dl ?+
+        dl ?MacroMainLabel_MacroSubLabel
+    ?+
+endmacro
+
+%do_something()
+
+; ERROR! ?MacroMainLabel is undefined, because we're not inside %do_something() anymore.
+dl ?MacroMainLabel
+</code></pre>
+<p>Prefixing a macro label definition (except for macro label assignments and macro +/- labels) with a <code>#</code> will define the macro label without modifying existing label hierarchies, but there is probably no practical use for this, so it should be avoided. Like all other labels, macro labels are converted to main labels internally and prefixed with an identifier of <code>:macro_x_</code> where <code>x</code> = total macro call count. They can't be referenced in code directly, except inside their respective macro and using the respective macro label syntax seen above. They can, however, be accessed via the Asar DLL API, and their full name may appear in error messages printed by Asar.</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="math.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="structs.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="math.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="structs.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="sectionhack.js"></script>
+
+
+    </div>
+    </body>
+</html>

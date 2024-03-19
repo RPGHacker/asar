@@ -1,0 +1,416 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>List of all errors - Asar Manual</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="usage.html"><strong aria-hidden="true">2.</strong> Usage</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="standard-includes.html"><strong aria-hidden="true">2.1.</strong> Standard Includes</a></li><li class="chapter-item expanded "><a href="standard-defines.html"><strong aria-hidden="true">2.2.</strong> Standard Defines</a></li></ol></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architectures</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="arch-65816.html"><strong aria-hidden="true">3.1.</strong> List of 65816 Instructions</a></li><li class="chapter-item expanded "><a href="arch-spc700.html"><strong aria-hidden="true">3.2.</strong> List of SPC700 Instructions</a></li><li class="chapter-item expanded "><a href="arch-superfx.html"><strong aria-hidden="true">3.3.</strong> List of SuperFX Instructions</a></li></ol></li><li class="chapter-item expanded "><a href="mapping-modes.html"><strong aria-hidden="true">4.</strong> Mapping Modes</a></li><li class="chapter-item expanded "><a href="compat.html"><strong aria-hidden="true">5.</strong> Compatibility Settings</a></li><li class="chapter-item expanded "><a href="formatting.html"><strong aria-hidden="true">6.</strong> Code Formatting and Syntax</a></li><li class="chapter-item expanded "><a href="program-counter.html"><strong aria-hidden="true">7.</strong> Program Counter</a></li><li class="chapter-item expanded "><a href="math.html"><strong aria-hidden="true">8.</strong> Math</a></li><li class="chapter-item expanded "><a href="labels.html"><strong aria-hidden="true">9.</strong> Labels</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="structs.html"><strong aria-hidden="true">9.1.</strong> Structs</a></li><li class="chapter-item expanded "><a href="namespaces.html"><strong aria-hidden="true">9.2.</strong> Namespaces</a></li></ol></li><li class="chapter-item expanded "><a href="defines.html"><strong aria-hidden="true">10.</strong> Defines</a></li><li class="chapter-item expanded "><a href="macros.html"><strong aria-hidden="true">11.</strong> Macros</a></li><li class="chapter-item expanded "><a href="functions.html"><strong aria-hidden="true">12.</strong> Functions</a></li><li class="chapter-item expanded "><a href="conditionals.html"><strong aria-hidden="true">13.</strong> Conditionals and Loops</a></li><li class="chapter-item expanded "><a href="binary.html"><strong aria-hidden="true">14.</strong> Binary Data</a></li><li class="chapter-item expanded "><a href="includes.html"><strong aria-hidden="true">15.</strong> Includes</a></li><li class="chapter-item expanded "><a href="freespace.html"><strong aria-hidden="true">16.</strong> Freespace</a></li><li class="chapter-item expanded "><a href="prints.html"><strong aria-hidden="true">17.</strong> Text Output</a></li><li class="chapter-item expanded "><a href="checks.html"><strong aria-hidden="true">18.</strong> Checks</a></li><li class="chapter-item expanded "><a href="warnings.html"><strong aria-hidden="true">19.</strong> Warnings</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="cmd-index.html"><strong aria-hidden="true">20.</strong> List of commands</a></li><li class="chapter-item expanded "><a href="warning-list.html"><strong aria-hidden="true">21.</strong> List of all warnings</a></li><li class="chapter-item expanded "><a href="error-list.html" class="active"><strong aria-hidden="true">22.</strong> List of all errors</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="changelog.html"><strong aria-hidden="true">23.</strong> Changelog</a></li><li class="chapter-item expanded "><a href="changelog-old.html"><strong aria-hidden="true">24.</strong> Historical changelog</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Asar Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="list-of-all-errors"><a class="header" href="#list-of-all-errors">List of all errors</a></h1>
+<p>This list is extracted directly from the source code. Some errors might be unused or have incomplete messages (due to the messages being partially computed at runtime).</p>
+<div class="table-wrapper"><table><thead><tr><th>Error name</th><th>Message</th></tr></thead><tbody>
+<tr><td>Elimit_reached</td><td>Over %d errors detected. Aborting.</td></tr>
+<tr><td>Ewerror</td><td>One or more warnings was detected with werror on.</td></tr>
+<tr><td>Ebuffer_too_small</td><td>The given buffer is too small to contain the resulting ROM.</td></tr>
+<tr><td>Eparams_null</td><td>params passed to asar_patch_ex() is null.</td></tr>
+<tr><td>Eparams_invalid_size</td><td>Size of params passed to asar_patch_ex() is invalid.</td></tr>
+<tr><td>Ecmdl_define_invalid</td><td>Invalid define name in %s: '%s'.</td></tr>
+<tr><td>Ecmdl_define_override</td><td>%s '%s' overrides a previous define. Did you specify the same define twice?</td></tr>
+<tr><td>Ecreate_rom_failed</td><td>Couldn't create ROM.</td></tr>
+<tr><td>Eopen_rom_failed</td><td>Couldn't open ROM.</td></tr>
+<tr><td>Eopen_rom_not_smw_extension</td><td>Doesn't look like an SMW ROM. (Maybe its extension is wrong?)</td></tr>
+<tr><td>Eopen_rom_not_smw_header</td><td>Doesn't look like an SMW ROM. (Maybe it's headered?)</td></tr>
+<tr><td>Estddefines_no_identifier</td><td>stddefines.txt contains a line with a value, but no identifier.</td></tr>
+<tr><td>Estddefine_after_closing_quote</td><td>Broken std defines. (Something after closing quote)</td></tr>
+<tr><td>Efailed_to_open_file</td><td>Failed to open file '%s'.</td></tr>
+<tr><td>Efile_not_found</td><td>File '%s' wasn't found.</td></tr>
+<tr><td>Efile_offset_out_of_bounds</td><td>File offset %s out of bounds for file '%s'.</td></tr>
+<tr><td>Emismatched_parentheses</td><td>Mismatched parentheses.</td></tr>
+<tr><td>Einvalid_hex_value</td><td>Invalid hex value.</td></tr>
+<tr><td>Einvalid_binary_value</td><td>Invalid binary value.</td></tr>
+<tr><td>Einvalid_character</td><td>Invalid character.</td></tr>
+<tr><td>Estring_literal_not_terminated</td><td>String literal not terminated.</td></tr>
+<tr><td>Emalformed_function_call</td><td>Malformed function call.</td></tr>
+<tr><td>Einvalid_number</td><td>Invalid number.</td></tr>
+<tr><td>Egarbage_near_quoted_string</td><td>Garbage near quoted string.</td></tr>
+<tr><td>Emismatched_quotes</td><td>Mismatched quotes.</td></tr>
+<tr><td>Erom_too_short</td><td>ROM is too short to have a title. (Expected '%s')</td></tr>
+<tr><td>Erom_title_incorrect</td><td>ROM title is incorrect. Expected '%s', got '%s'.</td></tr>
+<tr><td>Ebank_border_crossed</td><td>A bank border was crossed, SNES address $%06X.</td></tr>
+<tr><td>Estart_of_file</td><td>This command may only be used at the start of a file.</td></tr>
+<tr><td>Einvalid_version_number</td><td>Invalid version number.</td></tr>
+<tr><td>Easar_too_old</td><td>This version of Asar is too old for this patch.</td></tr>
+<tr><td>Erelative_branch_out_of_bounds</td><td>Relative branch out of bounds. (Distance is %s).</td></tr>
+<tr><td>Esnes_address_doesnt_map_to_rom</td><td>SNES address %s doesn't map to ROM.</td></tr>
+<tr><td>Esnes_address_out_of_bounds</td><td>SNES address %s out of bounds.</td></tr>
+<tr><td>Einvalid_tcall</td><td>Invalid tcall.</td></tr>
+<tr><td>Euse_xplus</td><td>Use (x+) instead.</td></tr>
+<tr><td>Eopcode_length_too_long</td><td>Opcode length is too long.</td></tr>
+<tr><td>Esuperfx_invalid_short_address</td><td>Invalid short address parameter: $%s. (Must be even number and $0000-$01FE)</td></tr>
+<tr><td>Esuperfx_invalid_register</td><td>Invalid register for opcode; valid range is %d-%d.</td></tr>
+<tr><td>Einvalid_opcode_length</td><td>Invalid opcode length specification.</td></tr>
+<tr><td>Einvalid_mapper</td><td>Invalid mapper.</td></tr>
+<tr><td>Enan</td><td>NaN encountered.</td></tr>
+<tr><td>Edivision_by_zero</td><td>Division by zero.</td></tr>
+<tr><td>Emodulo_by_zero</td><td>Modulo by zero.</td></tr>
+<tr><td>Eunknown_operator</td><td>Unknown operator.</td></tr>
+<tr><td>Einvalid_input</td><td>Invalid input.</td></tr>
+<tr><td>Einvalid_function_name</td><td>Invalid function name.</td></tr>
+<tr><td>Efunction_not_found</td><td>Function '%s' wasn't found.</td></tr>
+<tr><td>Efunction_redefined</td><td>Function '%s' redefined.</td></tr>
+<tr><td>Ebroken_function_declaration</td><td>Broken function declaration.</td></tr>
+<tr><td>Ewrong_num_parameters</td><td>Wrong number of parameters to function.</td></tr>
+<tr><td>Einvalid_param_name</td><td>Invalid parameter name.</td></tr>
+<tr><td>Einvalid_label_name</td><td>Invalid label name.</td></tr>
+<tr><td>Elabel_not_found</td><td>Label '%s' wasn't found.</td></tr>
+<tr><td>Elabel_redefined</td><td>Label '%s' redefined.</td></tr>
+<tr><td>Ebroken_label_definition</td><td>Broken label definition.</td></tr>
+<tr><td>Emacro_label_outside_of_macro</td><td>Macro label outside of a macro.</td></tr>
+<tr><td>Einvalid_namespace_name</td><td>Invalid namespace name.</td></tr>
+<tr><td>Einvalid_namespace_use</td><td>Invalid use of namespace command.</td></tr>
+<tr><td>Einvalid_struct_name</td><td>Invalid struct name.</td></tr>
+<tr><td>Estruct_not_found</td><td>Struct '%s' wasn't found.</td></tr>
+<tr><td>Estruct_redefined</td><td>Struct '%s' redefined.</td></tr>
+<tr><td>Estruct_invalid_parent_name</td><td>Invalid parent name.</td></tr>
+<tr><td>Einvalid_label_missing_closer</td><td>Invalid label name, missing array closer.</td></tr>
+<tr><td>Einvalid_subscript</td><td>Invalid array subscript after first scope resolution.</td></tr>
+<tr><td>Elabel_missing_parent</td><td>This label has no parent.</td></tr>
+<tr><td>Estruct_without_endstruct</td><td>struct without matching endstruct.</td></tr>
+<tr><td>Enested_struct</td><td>Can not nest structs.</td></tr>
+<tr><td>Emissing_struct_params</td><td>Missing struct parameters.</td></tr>
+<tr><td>Etoo_many_struct_params</td><td>Too many struct parameters.</td></tr>
+<tr><td>Emissing_extends</td><td>Missing extends keyword.</td></tr>
+<tr><td>Einvalid_endstruct_count</td><td>Invalid endstruct parameter count.</td></tr>
+<tr><td>Eexpected_align</td><td>Expected align parameter.</td></tr>
+<tr><td>Eendstruct_without_struct</td><td>endstruct can only be used in combination with struct.</td></tr>
+<tr><td>Ealignment_too_small</td><td>Alignment must be &gt;= 1.</td></tr>
+<tr><td>Einvalid_define_name</td><td>Invalid define name.</td></tr>
+<tr><td>Edefine_not_found</td><td>Define '%s' wasn't found.</td></tr>
+<tr><td>Ebroken_define_declaration</td><td>Broken define declaration.</td></tr>
+<tr><td>Eoverriding_builtin_define</td><td>Trying to set define '%s', which is the name of a built-in define and thus can't be modified.</td></tr>
+<tr><td>Edefine_label_math</td><td>!Define #= Label is not allowed with non-static labels.</td></tr>
+<tr><td>Emismatched_braces</td><td>Mismatched braces.</td></tr>
+<tr><td>Einvalid_macro_name</td><td>Invalid macro name.</td></tr>
+<tr><td>Emacro_not_found</td><td>Macro '%s' wasn't found.</td></tr>
+<tr><td>Emacro_redefined</td><td>Macro '%s' redefined. First defined at: %s:%d</td></tr>
+<tr><td>Ebroken_macro_declaration</td><td>Broken macro declaration.</td></tr>
+<tr><td>Einvalid_macro_param_name</td><td>Invalid macro parameter name.</td></tr>
+<tr><td>Emacro_param_not_found</td><td>Macro parameter '%s' wasn't found.%s</td></tr>
+<tr><td>Emacro_param_redefined</td><td>Macro parameter '%s' redefined</td></tr>
+<tr><td>Ebroken_macro_usage</td><td>Broken macro usage.</td></tr>
+<tr><td>Emacro_wrong_num_params</td><td>Wrong number of parameters to macro.</td></tr>
+<tr><td>Emisplaced_endmacro</td><td>Misplaced endmacro.</td></tr>
+<tr><td>Eunclosed_macro</td><td>Unclosed macro: '%s'.</td></tr>
+<tr><td>Elabel_in_conditional</td><td>Non-static label in %s command.</td></tr>
+<tr><td>Emisplaced_elseif</td><td>Misplaced elseif.</td></tr>
+<tr><td>Eelseif_in_while</td><td>Can't use elseif in a while loop.</td></tr>
+<tr><td>Emisplaced_endif</td><td>Misplaced endif.</td></tr>
+<tr><td>Emisplaced_else</td><td>Misplaced else.</td></tr>
+<tr><td>Eelse_in_while_loop</td><td>Can't use else in a while loop.</td></tr>
+<tr><td>Eunclosed_if</td><td>Unclosed if statement.</td></tr>
+<tr><td>Eunknown_command</td><td>Unknown command.</td></tr>
+<tr><td>Ebroken_incbin</td><td>Broken incbin command.</td></tr>
+<tr><td>Erecursion_limit</td><td>Recursion limit reached.</td></tr>
+<tr><td>Ecant_be_main_file</td><td>This file may not be used as the main file.%s</td></tr>
+<tr><td>Eno_labels_here</td><td>Can't use non-static labels here.</td></tr>
+<tr><td>Einvalid_freespace_request</td><td>Invalid freespace request.</td></tr>
+<tr><td>Estatic_freespace_autoclean</td><td>A static freespace must be targeted by at least one autoclean.</td></tr>
+<tr><td>Estatic_freespace_growing</td><td>A static freespace may not grow.</td></tr>
+<tr><td>Eno_freespace_in_mapped_banks</td><td>No freespace found in the mapped banks. (Requested size: %s)</td></tr>
+<tr><td>Eno_freespace</td><td>No freespace found. (Requested size: %s)</td></tr>
+<tr><td>Eprot_not_at_freespace_start</td><td>PROT must be used at the start of a freespace block.</td></tr>
+<tr><td>Eprot_too_many_entries</td><td>Too many entries to PROT.</td></tr>
+<tr><td>Eautoclean_in_freespace</td><td>autoclean used in freespace.</td></tr>
+<tr><td>Eautoclean_label_at_freespace_end</td><td>Don't autoclean a label at the end of a freespace block, you'll remove some stuff you're not supposed to remove.</td></tr>
+<tr><td>Ebroken_autoclean</td><td>Broken autoclean command.</td></tr>
+<tr><td>Epulltable_without_table</td><td>Using pulltable when there is no table on the stack yet.</td></tr>
+<tr><td>Epad_in_freespace</td><td>pad does not make sense in a freespaced code.</td></tr>
+<tr><td>Ebase_label_invalid</td><td>base Label is not valid.</td></tr>
+<tr><td>Epushpc_without_pullpc</td><td>pushpc without matching pullpc.</td></tr>
+<tr><td>Epullpc_without_pushpc</td><td>pullpc without matching pushpc.</td></tr>
+<tr><td>Epullpc_different_arch</td><td>pullpc in another architecture than the pushpc.</td></tr>
+<tr><td>Epullbase_without_pushbase</td><td>pullbase without matching pushbase.</td></tr>
+<tr><td>Einvalid_check</td><td>Invalid check command.</td></tr>
+<tr><td>Eassertion_failed</td><td>Assertion failed%s</td></tr>
+<tr><td>Eerror_command</td><td>error command%s</td></tr>
+<tr><td>Einvalid_print_function_syntax</td><td>Invalid printable string syntax.</td></tr>
+<tr><td>Eunknown_variable</td><td>Unknown variable.</td></tr>
+<tr><td>Epushwarnings_without_pullwarnings</td><td>warnings push without matching warnings pull.</td></tr>
+<tr><td>Epullwarnings_without_pushwarnings</td><td>warnings pull without matching warnings push.</td></tr>
+<tr><td>Efailed_to_open_file_access_denied</td><td>Failed to open file '%s'. Access denied.</td></tr>
+<tr><td>Efailed_to_open_not_regular_file</td><td>Failed to open file '%s'. Not a regular file (did you try to use a directory?)</td></tr>
+<tr><td>Ebad_dp_base</td><td>The dp base should be page aligned (i.e. a multiple of 256), got %s</td></tr>
+<tr><td>Ebad_dp_optimize</td><td>Bad dp optimize value %s, expected: [none, ram, always]</td></tr>
+<tr><td>Ebad_address_optimize</td><td>Bad dp optimize value %s, expected: [default, ram, mirrors]</td></tr>
+<tr><td>Ebad_optimize</td><td>Bad optimize value %s, expected: [dp, address]</td></tr>
+<tr><td>Erequire_parameter</td><td>Missing required function parameter</td></tr>
+<tr><td>Eexpected_parameter</td><td>Not enough parameters in calling of function %s</td></tr>
+<tr><td>Eunexpected_parameter</td><td>Too many parameters in calling of function %s</td></tr>
+<tr><td>Eduplicate_param_name</td><td>Duplicated parameter name: %s in creation of function %s</td></tr>
+<tr><td>Einvalid_alignment</td><td>Invalid alignment. Expected a power of 2.</td></tr>
+<tr><td>Ealignment_too_big</td><td>Requested alignment too large.</td></tr>
+<tr><td>Enegative_shift</td><td>Bitshift amount is negative.</td></tr>
+<tr><td>Emacro_not_varadic</td><td>Invalid use of %s, active macro is not variadic.</td></tr>
+<tr><td>Evararg_sizeof_nomacro</td><td>Invalid use of sizeof(...), no active macro.</td></tr>
+<tr><td>Emacro_wrong_min_params</td><td>Variadic macro call with too few parameters</td></tr>
+<tr><td>Evararg_out_of_bounds</td><td>Variadic macro parameter %s is out of bounds.%s</td></tr>
+<tr><td>Evararg_must_be_last</td><td>Variadic macro parameter must be the last parameter.</td></tr>
+<tr><td>Einvalid_global_label</td><td>Global label definition contains an invalid label [%s].</td></tr>
+<tr><td>Espc700_addr_out_of_range</td><td>Address %s out of range for instruction, valid range is 0000-1FFF</td></tr>
+<tr><td>Elabel_ambiguous</td><td>Label (%s) location is ambiguous due to straddling optimization border.</td></tr>
+<tr><td>Efeature_unavaliable_in_spcblock</td><td>This feature may not be used while an spcblock is active</td></tr>
+<tr><td>Eendspcblock_without_spcblock</td><td>Use of endspcblock without matching spcblock</td></tr>
+<tr><td>Emissing_endspcblock</td><td>Use of endspcblock without matching spcblock</td></tr>
+<tr><td>Espcblock_inside_struct</td><td>Can not start an spcblock while a struct is still open</td></tr>
+<tr><td>Espcblock_too_few_args</td><td>Too few args passed to spcblock</td></tr>
+<tr><td>Espcblock_too_many_args</td><td>Too many args passed to spcblock</td></tr>
+<tr><td>Eunknown_spcblock_type</td><td>Unknown spcblock format</td></tr>
+<tr><td>Ecustom_spcblock_missing_macro</td><td>Custom spcblock types must refer to a valid macro</td></tr>
+<tr><td>Espcblock_macro_doesnt_exist</td><td>Macro specified to custom spcblock was not found</td></tr>
+<tr><td>Eextra_spcblock_arg_for_type</td><td>Only custom spcblock type takes a fourth argument</td></tr>
+<tr><td>Espcblock_macro_must_be_varadic</td><td>Custom spcblock macros must be variadic</td></tr>
+<tr><td>Espcblock_macro_invalid_static_args</td><td>Custom spcblock macros must have three static arguments</td></tr>
+<tr><td>Espcblock_custom_types_incomplete</td><td>Custom spcblock types are not yet supported. One day.</td></tr>
+<tr><td>Einvalid_endspcblock_arg</td><td>Invalid argument to endspcblock: &quot;%s&quot;</td></tr>
+<tr><td>Eunknown_endspcblock_format</td><td>Unsupported endspcblock format. Currently supported formats are &quot;endspcblock&quot; and &quot;endspcblock execute [label]&quot;</td></tr>
+<tr><td>Einternal_error</td><td>An internal error occured (%s). This is a bug in Asar, please report it at https://github.com/RPGHacker/asar/issues, along with a patch that reproduces it if possible.</td></tr>
+<tr><td>Epushns_without_pullns</td><td>pushns without matching pullns.</td></tr>
+<tr><td>Epullns_without_pushns</td><td>pullns without matching pushns.</td></tr>
+<tr><td>Elabel_forward</td><td>The use of forward labels is not allowed in this context.</td></tr>
+<tr><td>Eundefined_char</td><td>'%s' is not defined in the character table</td></tr>
+<tr><td>Einvalid_utf8</td><td>Invalid text encoding detected. Asar expects UTF-8-encoded text. Please re-save this file in a text editor of choice using UTF-8 encoding.</td></tr>
+<tr><td>Ecmdl_utf16_to_utf8_failed</td><td>UTF-16 to UTF-8 string conversion failed: %s.</td></tr>
+<tr><td>Ebroken_command</td><td>Broken %s command. %s</td></tr>
+<tr><td>Eoob</td><td>Operation out of bounds: Requested index %d for object of size %d</td></tr>
+<tr><td>Eunclosed_vararg</td><td>Variadic macro parameter wasn't closed properly.</td></tr>
+<tr><td>Einvalid_vararg</td><td>Trying to use variadic macro parameter syntax to resolve a non variadic argument &lt;%s&gt;.</td></tr>
+<tr><td>Einvalid_depth_resolve</td><td>Invalid %s resolution depth: Trying to backwards-resolve a %s using %i '^', but current scope only supports up to %i '^'.</td></tr>
+<tr><td>Eplatform_paths</td><td>Platform-specific paths aren'supported. Please use platform-independent paths (use / instead of \\).</td></tr>
+<tr><td>Ebad_single_line_for</td><td>Single-line for loop not allowed here.</td></tr>
+<tr><td>Ebroken_for_loop</td><td>Broken for loop command: %s</td></tr>
+<tr><td>Emissing_org</td><td>Missing org or freespace command.</td></tr>
+<tr><td>Eunclosed_block_comment</td><td>Unclosed block comment.</td></tr>
+<tr><td>Ebad_addr_mode</td><td>This addressing mode is not valid for this instruction.</td></tr>
+<tr><td>Ebad_access_width</td><td>This addressing mode can accept %s arguments, but the provided argument is %d-bit.</td></tr>
+<tr><td>Elabel_before_if</td><td>Labels are not allowed before &quot;%s&quot; commands. Suggestion: move the label to a separate line.</td></tr>
+</tbody></table>
+</div>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="warning-list.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="changelog.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="warning-list.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="changelog.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="sectionhack.js"></script>
+
+
+    </div>
+    </body>
+</html>

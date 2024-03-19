@@ -1,0 +1,490 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Functions - Asar Manual</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="usage.html"><strong aria-hidden="true">2.</strong> Usage</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="standard-includes.html"><strong aria-hidden="true">2.1.</strong> Standard Includes</a></li><li class="chapter-item expanded "><a href="standard-defines.html"><strong aria-hidden="true">2.2.</strong> Standard Defines</a></li></ol></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architectures</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="arch-65816.html"><strong aria-hidden="true">3.1.</strong> List of 65816 Instructions</a></li><li class="chapter-item expanded "><a href="arch-spc700.html"><strong aria-hidden="true">3.2.</strong> List of SPC700 Instructions</a></li><li class="chapter-item expanded "><a href="arch-superfx.html"><strong aria-hidden="true">3.3.</strong> List of SuperFX Instructions</a></li></ol></li><li class="chapter-item expanded "><a href="mapping-modes.html"><strong aria-hidden="true">4.</strong> Mapping Modes</a></li><li class="chapter-item expanded "><a href="compat.html"><strong aria-hidden="true">5.</strong> Compatibility Settings</a></li><li class="chapter-item expanded "><a href="formatting.html"><strong aria-hidden="true">6.</strong> Code Formatting and Syntax</a></li><li class="chapter-item expanded "><a href="program-counter.html"><strong aria-hidden="true">7.</strong> Program Counter</a></li><li class="chapter-item expanded "><a href="math.html"><strong aria-hidden="true">8.</strong> Math</a></li><li class="chapter-item expanded "><a href="labels.html"><strong aria-hidden="true">9.</strong> Labels</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="structs.html"><strong aria-hidden="true">9.1.</strong> Structs</a></li><li class="chapter-item expanded "><a href="namespaces.html"><strong aria-hidden="true">9.2.</strong> Namespaces</a></li></ol></li><li class="chapter-item expanded "><a href="defines.html"><strong aria-hidden="true">10.</strong> Defines</a></li><li class="chapter-item expanded "><a href="macros.html"><strong aria-hidden="true">11.</strong> Macros</a></li><li class="chapter-item expanded "><a href="functions.html" class="active"><strong aria-hidden="true">12.</strong> Functions</a></li><li class="chapter-item expanded "><a href="conditionals.html"><strong aria-hidden="true">13.</strong> Conditionals and Loops</a></li><li class="chapter-item expanded "><a href="binary.html"><strong aria-hidden="true">14.</strong> Binary Data</a></li><li class="chapter-item expanded "><a href="includes.html"><strong aria-hidden="true">15.</strong> Includes</a></li><li class="chapter-item expanded "><a href="freespace.html"><strong aria-hidden="true">16.</strong> Freespace</a></li><li class="chapter-item expanded "><a href="prints.html"><strong aria-hidden="true">17.</strong> Text Output</a></li><li class="chapter-item expanded "><a href="checks.html"><strong aria-hidden="true">18.</strong> Checks</a></li><li class="chapter-item expanded "><a href="warnings.html"><strong aria-hidden="true">19.</strong> Warnings</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="cmd-index.html"><strong aria-hidden="true">20.</strong> List of commands</a></li><li class="chapter-item expanded "><a href="warning-list.html"><strong aria-hidden="true">21.</strong> List of all warnings</a></li><li class="chapter-item expanded "><a href="error-list.html"><strong aria-hidden="true">22.</strong> List of all errors</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="changelog.html"><strong aria-hidden="true">23.</strong> Changelog</a></li><li class="chapter-item expanded "><a href="changelog-old.html"><strong aria-hidden="true">24.</strong> Historical changelog</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Asar Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="functions"><a class="header" href="#functions">Functions</a></h1>
+<p>Functions in Asar can be considered the math equivalent of macros. They are a convenient way of wrapping commonly used math statements, can include parameters and can be called in all places where math is supported. Use the following syntax to define a function:</p>
+<p><a name="a0"></a></p>
+<pre><code class="language-asar">function {identifier}([param1_name[, param2_name...]]) = {math}
+</code></pre>
+<p>where all the names can contain any of the following characters: <code>a-z A-Z 0-9 _</code> and where <code>{math}</code> can be any <a href="./math.html">math statement</a> supported by Asar (including the use of other functions). Use a parameter's name to expand it inside a function.</p>
+<pre><code class="language-asar">function kilobytes_to_bytes(kb) = kb*1024
+function megabytes_to_kilobytes(mb) = mb*1024
+function megabytes_to_bytes(mb) = kilobytes_to_bytes(megabytes_to_kilobytes(mb))
+
+; Will print &quot;4 MB = 4194304 bytes.&quot;
+print &quot;4 MB = &quot;,dec(megabytes_to_bytes(x)),&quot; bytes.&quot;
+
+
+function data_index_to_offset(index) = index*2
+
+lda .Data+data_index_to_offset(2)    ; Will load $0002 into A
+
+.Data
+    dw $0000
+    dw $0001
+    dw $0002
+</code></pre>
+<p>Function definitions must be on a single line and can't include whitespace in their math statements, except when using the <a href="./formatting.html#multi-line-operators">multi-line operator <code>\</code></a>, which can be used to split long function definitions into multiple lines.</p>
+<p>Note that user-defined functions can't use string parameters themselves. However, they can take strings as arguments and pass them on to built-in functions.</p>
+<pre><code class="language-asar">function readfilenormalized(filename, pos) = readfile4(filename, pos)/2147483648.0
+db readfilenormalizd(&quot;datafile.bin&quot;, 0)
+</code></pre>
+<h2 id="built-in-functions"><a class="header" href="#built-in-functions">Built-in Functions</a></h2>
+<p>Aside from user-defined functions mentioned above, Asar also supports a number of built-in functions. Some built-in functions take string parameters, which must be wrapped in double quotes.</p>
+<!-- TODO: better way to format this list?? -->
+<ul>
+<li>
+<p><code>read1(pos[, default])</code>, <code>read2(pos[, default])</code>, <code>read3(pos[, default])</code>, <code>read4(pos[, default])</code></p>
+<p>Read one/two/three/four byte(s) from the output ROM at SNES location pos. Mainly intended for detecting the presence of certain hijacks/patches in a ROM. Throws an error when given an invalid address, unless the optional parameter default is provided in which case it is returned.</p>
+<pre><code class="language-asar">if read1($00FFD5) == $23
+    !is_sa1_rom = 1
+else
+    !is_sa1_rom = 0
+endif
+</code></pre>
+</li>
+<li>
+<p><code>readfile1(filename, pos[, default])</code>, <code>readfile2(filename, pos[, default])</code>, <code>readfile3(filename, pos[, default])</code>, <code>readfile4(filename, pos[, default])</code></p>
+<p>Read one/two/three/four byte(s) from file filename at position pos (see section <a href="./includes.html">Includes</a> for details on Asar's handling of file names). Throws an error when the referenced file doesn't exist or the given position is out-of-bounds, unless the optional parameter default is provided in which case it is returned.</p>
+<pre><code class="language-asar">!readresult = readfile4(&quot;datafile.bin&quot;, 0, $FFFFFFFF)
+if !readresult != $FFFFFFFF
+    print &quot;Read $&quot;,hex(!readresult),&quot; from datafile.bin.&quot;
+endif
+</code></pre>
+</li>
+<li>
+<p><code>canread1(pos)</code>, <code>canread2(pos)</code>, <code>canread3(pos)</code>, <code>canread4(pos)</code>, <code>canread(pos, num)</code></p>
+<p>Returns 1 if reading one/two/three/four/num bytes from the output ROM at SNES location pos would succeed and 0 otherwise.</p>
+<pre><code class="language-asar">if canread1($00FFD5) == 1
+    print &quot;Detected ROM type: $&quot;,hex(read1($00FFD5))
+else
+    error &quot;Failed to detect ROM type!&quot;
+endif
+</code></pre>
+</li>
+<li>
+<p><code>canreadfile1(filename, pos)</code>, <code>canreadfile2(filename, pos)</code>, <code>canreadfile3(filename, pos)</code>, <code>canreadfile4(filename, pos)</code>, <code>canreadfile(filename, pos, num)</code></p>
+<p>Returns 1 if reading one/two/three/four/num bytes from file filename at position pos would succeed and 0 otherwise (see section <a href="./includes.html">Includes</a> for details on Asar's handling of file names).</p>
+<pre><code class="language-asar">if canreadfile4(&quot;datafile.bin&quot;, 512) == 1
+    print &quot;Read $&quot;,hex(readfile4(&quot;datafile.bin&quot;, 512)),&quot; from datafile.bin at position 512.&quot;
+else
+    error &quot;datafile.bin either doesn't exist or is too small.&quot;
+endif
+</code></pre>
+</li>
+<li>
+<p><code>filesize(filename)</code></p>
+<p>Returns the size of file filename. Throws an error if the file doesn't exist.</p>
+<pre><code class="language-asar">!fsize #= filesize(&quot;datafile.bin&quot;)
+!fpos = 0
+
+assert !fsize &gt;= 0, &quot;datafile.bin doesn't exist or can't be opened&quot;.
+while !fpos &lt; !fsize
+    ; Do something with datafile.bin here, like calling readfile1(&quot;datafile.bin&quot;, !fpos)
+    ;...
+    
+    !fpos #= !fpos+1
+endwhile
+</code></pre>
+</li>
+<li>
+<p><code>getfilestatus(filename)</code></p>
+<p>Checks the status of file filename. Returns 0 if the file exists and can be read from, returns 1 if the file doesn't exist and returns 2 if the file exists, but can't be read from for any other reason (like being read-protected, being locked etc.).</p>
+<pre><code class="language-asar">assert getfilestatus(&quot;datafile.bin&quot;) != 1, &quot;datafile.bin doesn't seem to exist&quot;
+</code></pre>
+</li>
+<li>
+<p><code>sqrt(x)</code></p>
+<p>Computes the square root of x.</p>
+</li>
+<li>
+<p><code>sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code>, <code>asin(x)</code>, <code>acos(x)</code>, <code>atan(x)</code>, <code>arcsin(x)</code>, <code>arccos(x)</code>, <code>arctan(x)</code></p>
+<p>Various trigonometric functions. Units are in radians.</p>
+</li>
+<li>
+<p><code>log(x)</code>, <code>log2(x)</code>, <code>log10(x)</code></p>
+<p>Logarithmic functions (base-e, base-2 and base-10 respectively).</p>
+</li>
+<li>
+<p><code>snestopc(address)</code>, <code>pctosnes(address)</code></p>
+<p>Functions for converting between SNES and PC addresses. Affected by the current <a href="./mapping-modes.html">mapping mode</a>.</p>
+<pre><code class="language-asar">print &quot;SNES address $018000 in the current mapping mode is equivalent to PC address 0x&quot;,dec(snestopc($018000))
+</code></pre>
+</li>
+<li>
+<p><code>min(a, b)</code>, <code>max(a, b)</code></p>
+<p>Return the minimum/maximum of two numbers.</p>
+<pre><code class="language-asar">!start_index #= max(!current_index-1, 0)
+</code></pre>
+</li>
+<li>
+<p><code>clamp(value, minimum, maximum)</code></p>
+<p>Makes sure that value stays within the bounds set by minimum and maximum. Equal to <code>min(max(value, minimum), maximum)</code>.</p>
+<pre><code class="language-asar">!used_amount #= clamp(!used_percentage, 0.0, 1.0)*!total_amount
+</code></pre>
+</li>
+<li>
+<p><code>safediv(a, b, exception)</code></p>
+<p>Returns <code>a/b</code> unless b is 0 in which case exception is returned. Intended for avoiding division by zero errors in functions.</p>
+<pre><code class="language-asar">!single_sprite_memory = safediv(!total_sprite_memory, !max_num_sprites, 0)
+</code></pre>
+</li>
+<li>
+<p><code>select(statement, true, false)</code></p>
+<p>Returns false if statement is 0 and true otherwise. Can be considered an if/else conditional that is usable within functions.</p>
+<p>NOTE: Asar always evaluates all parameters of a function before calling it, so if, for example, you pass an expression that divides by zero to select() as true, Asar will throw a division by zero error even if statement evalutes to 0 and thus false would be returned. To work around this, you can use the <code>safediv()</code> function in place of a regular division.</p>
+<pre><code class="language-asar">function sprite_size() = select(!extra_bytes_enabled, 16+4, 16)
+</code></pre>
+</li>
+<li>
+<p><code>not(value)</code></p>
+<p>Returns 1 if value is 0 and 0 in any other case. Useful for negating statements in the <code>select()</code> function.</p>
+<pre><code class="language-asar">function required_sprite_memory(num_sprites) = not(!sprites_disabled)*sprite_size()*num_sprites
+</code></pre>
+</li>
+<li>
+<p><code>bank(value)</code></p>
+<p>Returns <code>value&gt;&gt;16</code></p>
+<pre><code class="language-asar">lda #bank(some_label)
+</code></pre>
+</li>
+<li>
+<p><code>equal(value, comparand)</code>, <code>notequal(value, comparand)</code>, <code>less(value, comparand)</code>, <code>lessequal(value, comparand)</code>, <code>greater(value, comparand)</code>, <code>greaterequal(value, comparand)</code></p>
+<p>Comparison functions. Return 1 if the respective comparison is true and 0 otherwise. Useful as statements in the <code>select()</code> function.</p>
+<pre><code class="language-asar">function abs(num) = select(less(num, 0), num*-1, num)
+</code></pre>
+</li>
+<li>
+<p><code>and(a, b)</code>, <code>or(a, b)</code>, <code>nand(a, b)</code>, <code>nor(a, b)</code>, <code>xor(a, b)</code></p>
+<p>Perform the respective logical operation with a and b. Useful for chaining statements in the <code>select()</code> function.</p>
+<pre><code class="language-asar">function total_sprite_extra_bytes(num_sprites) = select(and(not(!sprites_disabled), !extra_bytes_enabled), 4, 0)*num_sprites
+</code></pre>
+</li>
+<li>
+<p><code>round(number, precision)</code></p>
+<p>Rounds <code>number</code> to <code>precision</code> decimal places. Pass 0 as precision to round to the nearest integer.</p>
+<pre><code class="language-asar">if round(!distance, 2) == 0.0
+    error &quot;Distance is zero or almost zero. Please choose a bigger value for distance as small values will cause problems.&quot;
+endif
+</code></pre>
+</li>
+<li>
+<p><code>floor(number)</code>, <code>ceil(number)</code></p>
+<p>Rounds a number up (in the case of <code>ceil</code>) or down (in the case of <code>floor</code>) to the nearest integer.</p>
+<pre><code class="language-asar">!banks_used #= ceil(!data_size/65536)
+</code></pre>
+</li>
+<li>
+<p><code>defined(identifier)</code></p>
+<p>Takes an identifier as a string parameter and returns 1 if a define with that identifier exists, 0 otherwise.<br />
+NOTE: Don't include the <code>!</code> in the identifier as Asar will otherwise try to expand it as a define before calling the function.</p>
+<pre><code class="language-asar">if defined(&quot;include_guard&quot;) == 0
+    !include_guard = 1
+    ; ...
+endif
+</code></pre>
+</li>
+<li>
+<p><code>sizeof(identifier)</code></p>
+<p>Takes the identifier of a struct as a parameter and returns the base size of that struct (without any extension structs).</p>
+<pre><code class="language-asar">struct parent $0000
+    .data1: skip 2
+endstruct
+
+struct child extends parent
+    .data2: skip 3
+endstruct
+
+db sizeof(parent)             ; db 2
+db sizeof(parent.child)       ; db 3
+</code></pre>
+</li>
+<li>
+<p><code>objectsize(identifier)</code></p>
+<p>Takes the identifier of a struct as a parameter and returns the object size of that struct. In the case of an extended struct, this will be the base size of the struct plus the size of its largest extension struct. Throws an error if a struct with that name doesn't exist.</p>
+<pre><code class="language-asar">struct parent $0000
+    .data1: skip 2
+endstruct
+
+struct child extends parent
+    .data2: skip 3
+endstruct
+
+db objectsize(parent)         ; db 5
+db objectsize(parent.child)   ; db 3
+</code></pre>
+</li>
+<li>
+<p><code>datasize(label)</code></p>
+<p>Takes a given label and calculates the distance between it and the next label. It will throw a warning if the distance exceeds 0xFFFF or is the last label in the targeted assembly.</p>
+<pre><code class="language-asar">org $008000
+main:
+
+lda #datasize(my_table)       ;3
+lda #datasize(other_label)    ;0x7FF3 (last label, throws a warning. calculated as $FFFFFF-$00800C)
+lda #datasize(main)           ;9
+
+
+my_table:
+    db $00, $00, $02
+other_label:
+</code></pre>
+</li>
+<li>
+<p><code>stringsequal(string1, string2)</code></p>
+<p>Returns 1 if the given string parameters are equal and 0 otherwise.</p>
+<pre><code class="language-asar">if not(stringsequal(&quot;!assembler&quot;, &quot;asar&quot;))
+    warn &quot;This patch was only tested in Asar and might not work correctly in your assembler.&quot;
+endif
+</code></pre>
+</li>
+<li>
+<p><code>stringsequalnocase(string1, string2)</code></p>
+<p>Returns 1 if the given string parameters are equal and 0 otherwise. The comparison is case-insensitive.</p>
+<pre><code class="language-asar">if not(stringsequalnocase(&quot;!assembler&quot;, &quot;ASAR&quot;))
+    warn &quot;This patch was only tested in Asar and might not work correctly in your assembler.&quot;
+endif
+</code></pre>
+</li>
+<li>
+<p><code>char(string, index)</code></p>
+<p>Returns the <code>index</code>-th character in <code>string</code> (starting at zero). Note that this function ignores the current table mapping, and also doesn't respect Unicode properly: it returns bytes of the string's UTF-8 encoding. For example, <code>db char(&quot;ä&quot;, 0)</code> writes <code>C3</code>, which is the first byte of 'ä' in UTF-8.</p>
+</li>
+<li>
+<p><code>stringlength(string)</code></p>
+<p>Returns the length of <code>string</code> in bytes (encoded as UTF-8). I.e. <code>char(str, stringlength(str)-1)</code> is the last byte of the string.</p>
+</li>
+<li>
+<p><code>pc()</code></p>
+<p>Returns the current SNES address. This is a shorthand for placing a label right before the current command.</p>
+</li>
+<li>
+<p><code>realbase()</code></p>
+<p>Returns the current address in the ROM being written to. This is not the same as the value of a nearby label when the <code>base</code> command is active: it returns the actual address the code will end up at.</p>
+</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="macros.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="conditionals.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="macros.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="conditionals.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="sectionhack.js"></script>
+
+
+    </div>
+    </body>
+</html>

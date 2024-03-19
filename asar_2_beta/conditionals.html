@@ -1,0 +1,337 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Conditionals and Loops - Asar Manual</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon.svg">
+        <link rel="shortcut icon" href="favicon.png">
+        <link rel="stylesheet" href="css/variables.css">
+        <link rel="stylesheet" href="css/general.css">
+        <link rel="stylesheet" href="css/chrome.css">
+        <link rel="stylesheet" href="css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="highlight.css">
+        <link rel="stylesheet" href="tomorrow-night.css">
+        <link rel="stylesheet" href="ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "navy" : "light";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('light')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="intro.html"><strong aria-hidden="true">1.</strong> Introduction</a></li><li class="chapter-item expanded "><a href="usage.html"><strong aria-hidden="true">2.</strong> Usage</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="standard-includes.html"><strong aria-hidden="true">2.1.</strong> Standard Includes</a></li><li class="chapter-item expanded "><a href="standard-defines.html"><strong aria-hidden="true">2.2.</strong> Standard Defines</a></li></ol></li><li class="chapter-item expanded "><a href="arch.html"><strong aria-hidden="true">3.</strong> Architectures</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="arch-65816.html"><strong aria-hidden="true">3.1.</strong> List of 65816 Instructions</a></li><li class="chapter-item expanded "><a href="arch-spc700.html"><strong aria-hidden="true">3.2.</strong> List of SPC700 Instructions</a></li><li class="chapter-item expanded "><a href="arch-superfx.html"><strong aria-hidden="true">3.3.</strong> List of SuperFX Instructions</a></li></ol></li><li class="chapter-item expanded "><a href="mapping-modes.html"><strong aria-hidden="true">4.</strong> Mapping Modes</a></li><li class="chapter-item expanded "><a href="compat.html"><strong aria-hidden="true">5.</strong> Compatibility Settings</a></li><li class="chapter-item expanded "><a href="formatting.html"><strong aria-hidden="true">6.</strong> Code Formatting and Syntax</a></li><li class="chapter-item expanded "><a href="program-counter.html"><strong aria-hidden="true">7.</strong> Program Counter</a></li><li class="chapter-item expanded "><a href="math.html"><strong aria-hidden="true">8.</strong> Math</a></li><li class="chapter-item expanded "><a href="labels.html"><strong aria-hidden="true">9.</strong> Labels</a></li><li><ol class="section"><li class="chapter-item expanded "><a href="structs.html"><strong aria-hidden="true">9.1.</strong> Structs</a></li><li class="chapter-item expanded "><a href="namespaces.html"><strong aria-hidden="true">9.2.</strong> Namespaces</a></li></ol></li><li class="chapter-item expanded "><a href="defines.html"><strong aria-hidden="true">10.</strong> Defines</a></li><li class="chapter-item expanded "><a href="macros.html"><strong aria-hidden="true">11.</strong> Macros</a></li><li class="chapter-item expanded "><a href="functions.html"><strong aria-hidden="true">12.</strong> Functions</a></li><li class="chapter-item expanded "><a href="conditionals.html" class="active"><strong aria-hidden="true">13.</strong> Conditionals and Loops</a></li><li class="chapter-item expanded "><a href="binary.html"><strong aria-hidden="true">14.</strong> Binary Data</a></li><li class="chapter-item expanded "><a href="includes.html"><strong aria-hidden="true">15.</strong> Includes</a></li><li class="chapter-item expanded "><a href="freespace.html"><strong aria-hidden="true">16.</strong> Freespace</a></li><li class="chapter-item expanded "><a href="prints.html"><strong aria-hidden="true">17.</strong> Text Output</a></li><li class="chapter-item expanded "><a href="checks.html"><strong aria-hidden="true">18.</strong> Checks</a></li><li class="chapter-item expanded "><a href="warnings.html"><strong aria-hidden="true">19.</strong> Warnings</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="cmd-index.html"><strong aria-hidden="true">20.</strong> List of commands</a></li><li class="chapter-item expanded "><a href="warning-list.html"><strong aria-hidden="true">21.</strong> List of all warnings</a></li><li class="chapter-item expanded "><a href="error-list.html"><strong aria-hidden="true">22.</strong> List of all errors</a></li><li class="spacer"></li><li class="chapter-item expanded "><a href="changelog.html"><strong aria-hidden="true">23.</strong> Changelog</a></li><li class="chapter-item expanded "><a href="changelog-old.html"><strong aria-hidden="true">24.</strong> Historical changelog</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Asar Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="conditionals-and-loops"><a class="header" href="#conditionals-and-loops">Conditionals and Loops</a></h1>
+<p>Conditional compilation allows you to only compile specific sections of code when certain conditions are met. This can be used in a number of ways, but is most commonly used in conjunction with defines to make code easily customizable and/or provide some simple configuration options to end users.</p>
+<h2 id="if--elseif--else--endif"><a class="header" href="#if--elseif--else--endif"><code>if</code> / <code>elseif</code> / <code>else</code> / <code>endif</code></a></h2>
+<p>The most basic form of conditionals are if conditionals. They are given a math statement and only compile their enclosed code if that statement evaluates to a value greater than 0.</p>
+<p><a name="a0"></a>
+<a name="a1"></a>
+<a name="a2"></a>
+<a name="a3"></a></p>
+<pre><code class="language-asar">if {condition}
+    {codeblock}
+endif
+</code></pre>
+<p>To construct condition statements, you can also make use of a number of comparison operators specific to conditionals. They return 1 if their respective comparison is true and 0 otherwise.</p>
+<div class="table-wrapper"><table><thead><tr><th>Operator</th><th>Details</th></tr></thead><tbody>
+<tr><td><code>a == b</code></td><td>Returns 1 if <code>a</code> is equal to <code>b</code></td></tr>
+<tr><td><code>a != b</code></td><td>Returns 1 if <code>a</code> is not equal to <code>b</code></td></tr>
+<tr><td><code>a &gt; b</code></td><td>Returns 1 if <code>a</code> is greater than <code>b</code></td></tr>
+<tr><td><code>a &lt; b</code></td><td>Returns 1 if <code>a</code> is less than <code>b</code></td></tr>
+<tr><td><code>a &gt;= b</code></td><td>Returns 1 if <code>a</code> is greater than or equal to <code>b</code></td></tr>
+<tr><td><code>a &lt;= b</code></td><td>Returns 1 if <code>a</code> is less than or equal to <code>b</code></td></tr>
+</tbody></table>
+</div>
+<p>You can use logical operators to chain multiple conditions.</p>
+<div class="table-wrapper"><table><thead><tr><th>Operator</th><th>Details</th></tr></thead><tbody>
+<tr><td><code>a || b</code></td><td>Returns 1 if at least one of <code>a</code> and <code>b</code> evaluates to 1</td></tr>
+<tr><td><code>a &amp;&amp; b</code></td><td>Returns 1 if both of <code>a</code> and <code>b</code> evaluate to 1</td></tr>
+</tbody></table>
+</div>
+<p>Evaluation is lazy (TODO it's not anymore, is it?) which means that the assembler will stop evaluating a condition as soon as the result can be determined (for example, in the condition <code>0 &amp;&amp; my_function()</code>, my_function() will never be called). Note that only one kind of logical operator can be used in a single condition, but conditionals themselves can be nested to an arbitrary depth, which can be used as a workaround here.</p>
+<p>Optionally, if conditionals can contain an arbitrary number of elseif branches as well as a single else branch. The assembler checks the if and all elseif branches in succession until a single condition evaluates to <code>&gt; 0</code> - if none does, the code inside the else branch is compiled.</p>
+<pre><code class="language-asar">!mode = 0       ; Supported modes: 0, 1, 2, 3
+!verbose = 0    ; Set to 1 to enable verbose mode
+
+if !mode == 0
+    ; ...
+elseif !mode == 1
+    ; ...
+elseif !mode == 2
+    ; ...
+elseif !mode == 3
+    if !verbose != 0
+        print &quot;Oh boy, so you're going with mode 3 today!&quot;
+    endif
+    ; ...
+else
+    error &quot;Unsupported mode! Please choose 0, 1, 2 or 3!&quot;
+endif
+</code></pre>
+<p>Alternatively, if statements can also be constructed on a single line via the following syntax:</p>
+<pre><code class="language-asar">if {condition} : {codeblock}[ : codeblock...] : endif
+</code></pre>
+<pre><code class="language-asar">PressedY:
+    if !fireballs_enabled : %PlaySoundEffect(!fireball_sfx) : jsr ShootFireball : endif
+    rtl
+</code></pre>
+<p>If you plan to use labels in if conditions, note that there's certain restrictions that apply. More specifically, only static labels can be used. That is, only labels whose address can't change between Asar's passes, as demonstrated by the following example:</p>
+<pre><code class="language-asar">FirstLabel = $018000
+        
+freecode
+    lda SecondLabel,x
+    
+SecondLabel:
+    db $00,$01,$02,$03
+    
+; All good. FirstLabel was statically defined.
+if FirstLabel == 0
+endif
+
+; Error Elabel_in_conditional. The label could move between passes.
+if SecondLabel == 0
+endif
+</code></pre>
+<h2 id="while"><a class="header" href="#while"><code>while</code></a></h2>
+<p><a name="a4"></a>
+<a name="a5"></a></p>
+<pre><code class="language-asar">while {condition}
+    {code}
+endwhile
+</code></pre>
+<p>A special variation of if conditionals are while loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to <code>&lt;= 0</code>. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.</p>
+<pre><code class="language-asar">!counter = 0
+        
+while !counter &lt; $10
+    db (!counter&lt;&lt;8)|$00,(!counter&lt;&lt;8)|$01,(!counter&lt;&lt;8)|$02,(!counter&lt;&lt;8)|$03
+    db (!counter&lt;&lt;8)|$04,(!counter&lt;&lt;8)|$05,(!counter&lt;&lt;8)|$06,(!counter&lt;&lt;8)|$07
+    db (!counter&lt;&lt;8)|$08,(!counter&lt;&lt;8)|$09,(!counter&lt;&lt;8)|$0A,(!counter&lt;&lt;8)|$0B
+    db (!counter&lt;&lt;8)|$0C,(!counter&lt;&lt;8)|$0D,(!counter&lt;&lt;8)|$0E,(!counter&lt;&lt;8)|$0F
+            
+    !counter #= !counter+1
+endwhile
+</code></pre>
+<p>Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the assembler, as Asar won't attempt to detect those.</p>
+<h2 id="for"><a class="header" href="#for"><code>for</code></a></h2>
+<p><a name="a6"></a>
+<a name="a7"></a></p>
+<pre><code class="language-asar">for {variable} = {start}..{end}
+    {code}
+endfor
+</code></pre>
+<p>For loops repeat the contents a specified number of times. In the for loop body, you have access to a loop counter as a define. The range is specified as start-inclusive and end-exclusive. For example:</p>
+<pre><code class="language-asar">for i = 1..5
+    db !i
+    db 2*!i
+endfor
+</code></pre>
+<p>This will write the bytes <code>01 02 02 04 03 06 04 08</code>.</p>
+<p>You can also put for loops on a single line, however in this case due to the order in which Asar parses defines, you will not be able to use the loop counter. For example:</p>
+<pre><code class="language-asar">for i = 0..10 : nop : endfor
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="functions.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="binary.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="functions.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="binary.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr.min.js"></script>
+        <script src="mark.min.js"></script>
+        <script src="searcher.js"></script>
+
+        <script src="clipboard.min.js"></script>
+        <script src="highlight.js"></script>
+        <script src="book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="sectionhack.js"></script>
+
+
+    </div>
+    </body>
+</html>
