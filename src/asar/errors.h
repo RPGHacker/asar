@@ -150,7 +150,7 @@
 	ERR(invalid_global_label, "Global label definition contains an invalid label [%s].") \
 	ERR(spc700_addr_out_of_range, "Address %s out of range for instruction, valid range is 0000-1FFF") \
 	ERR(label_ambiguous, "Label (%s) location is ambiguous due to straddling optimization border.") \
-	ERR(feature_unavaliable_in_spcblock, "This feature may not be used while an spcblock is active") \
+	ERR(feature_unavailable_in_spcblock, "This feature may not be used while an spcblock is active") \
 	ERR(endspcblock_without_spcblock, "Use of endspcblock without matching spcblock") \
 	ERR(missing_endspcblock, "Use of endspcblock without matching spcblock") \
 	ERR(spcblock_inside_struct, "Can not start an spcblock while a struct is still open") \

@@ -1593,7 +1593,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (assemblemapper(word, numwords)) {}
 	else if (is1("org"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		freespaceend();
 		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
@@ -1911,7 +1911,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is("freespace") || is("freecode") || is("freedata") || is("segment"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 
 		freespace_data this_fs_settings = default_freespace_settings;
 		if (is("freecode")) this_fs_settings.bank = -2;
@@ -1988,7 +1988,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("prot"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		if (!ratsmetastate) asar_throw_error(2, error_type_block, error_id_prot_not_at_freespace_start);
 		if (ratsmetastate==ratsmeta_used) step(-5);
 		int num;
@@ -2021,7 +2021,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("autoclean") || is2("autoclean"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		if (numwords==3)
 		{
 			const char * labeltest = word[2];
@@ -2092,7 +2092,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is0("pushns"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		pushns[pushnsnum].ns = ns;
 		for(int i = 0; i < namespace_list.count; i++)
 		{
@@ -2107,7 +2107,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is0("pullns"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		if (!pushnsnum) asar_throw_error(0, error_type_block, error_id_pullns_without_pushns);
 		pushnsnum--;
 		ns = pushns[pushnsnum].ns;
@@ -2120,7 +2120,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("namespace") || is2("namespace"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		bool leave = false;
 		if (par)
 		{
@@ -2364,7 +2364,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("arch"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
 		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
@@ -2444,7 +2444,7 @@ bool assemblemapper(char** word, int numwords)
 	}
 	else return false;
 
-	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 	if(!mapper_set){
 		mapper_set = true;
 	}else if(previous_mapper != mapper){
