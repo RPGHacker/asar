@@ -1625,7 +1625,7 @@ void assembleblock(const char * block, bool isspecialline)
 	else if (assemblemapper(word, numwords)) {}
 	else if (is1("org"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		freespaceend();
 		unsigned int num=getnum(par);
 		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_org_label_forward);
@@ -1954,7 +1954,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is("freespace") || is("freecode") || is("freedata"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		string parstr;
 		if (numwords==1) parstr="\n";//crappy hack: impossible character to cut out extra commas
@@ -2047,7 +2047,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("prot"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		if (!confirmqpar(par)) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 		if (!ratsmetastate) asar_throw_error(2, error_type_block, error_id_prot_not_at_freespace_start);
 		if (ratsmetastate==ratsmeta_used) step(-5);
@@ -2080,7 +2080,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("autoclean") || is2("autoclean") || is1("autoclear") || is2("autoclear"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		if (is1("autoclear") || is2("autoclear")) asar_throw_warning(0, warning_id_autoclear_deprecated);
 		if (numwords==3)
 		{
@@ -2213,7 +2213,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is0("pushns"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		pushns[pushnsnum].ns = ns;
 		for(int i = 0; i < namespace_list.count; i++)
 		{
@@ -2228,7 +2228,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is0("pullns"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		if (!pushnsnum) asar_throw_error(0, error_type_block, error_id_pullns_without_pushns);
 		pushnsnum--;
 		ns = pushns[pushnsnum].ns;
@@ -2241,7 +2241,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("namespace") || is2("namespace"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		bool leave = false;
 		if (par)
 		{
@@ -2647,7 +2647,7 @@ void assembleblock(const char * block, bool isspecialline)
 	}
 	else if (is1("arch"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 		if (emulatexkas) asar_throw_warning(0, warning_id_convert_to_asar);
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
@@ -2786,7 +2786,7 @@ bool assemblemapper(char** word, int numwords)
 	}
 	else return false;
 
-	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavailable_in_spcblock);
 	if(!mapper_set){
 		mapper_set = true;
 	}else if(previous_mapper != mapper){

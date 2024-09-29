@@ -238,7 +238,7 @@ enum asar_error_id : int
 	error_id_spc700_addr_out_of_range,
 	error_id_label_ambiguous,
 
-	error_id_feature_unavaliable_in_spcblock,
+	error_id_feature_unavailable_in_spcblock,
 	error_id_endspcblock_without_spcblock,
 	error_id_missing_endspcblock,
 	error_id_spcblock_bad_arch,
