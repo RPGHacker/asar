@@ -8,6 +8,24 @@
 #define typed_realloc(type, ptr, count) (type*)realloc(ptr, sizeof(type)*(count))
 
 
+// This function is intentionally left out of the header file so that it is not visible to the
+// compiler and less likely to be inlined into resize(). This in turn reduces the size of resize()
+// so that it is then inlined in more places.
+void string::reallocate_capacity(unsigned int new_length)
+{
+	// Allocate 1 extra byte for NUL terminator
+	int new_alloc_capacity = bitround(new_length + 1);
+
+	if (is_inlined()) {
+		data_ptr = copy(data_ptr, min(len, new_length), (char*)malloc(new_alloc_capacity));
+	}
+	else {
+		data_ptr = (char*)realloc(data_ptr, new_alloc_capacity);
+	}
+	allocated.capacity = new_alloc_capacity - 1; // capacity field doesn't count NUL terminator
+}
+
+
 // Detects if str starts with a UTF-8 byte order mark.
 // If so, throws a warning, then returns the number of bytes we should skip ahead in the string.
 size_t check_bom(const char* str)

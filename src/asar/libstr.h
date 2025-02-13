@@ -3,6 +3,9 @@
 #include "std-includes.h"
 #include "libmisc.h"
 #include <cstdint>
+#include <cstring>
+#include <utility>
+
 //ty alcaro
 extern const unsigned char char_props[256];
 static inline int to_lower(unsigned char c) { return c|(char_props[c]&0x20); }
@@ -28,32 +31,32 @@ class string {
 public:
 const char *data() const
 {
-	return cached_data;
+	return data_ptr;
 }
 
 char *temp_raw() const	//things to cleanup and take a look at
 {
-	return cached_data;
+	return data_ptr;
 }
 
 char *raw() const
 {
-	return cached_data;
+	return data_ptr;
 }
 
 int length() const
 {
-	return is_inlined() ? inlined.len : allocated.len;
+	return len;
 }
 
-void set_length(int length)
+void resize(unsigned int new_length)
 {
-	if(length > max_inline_length_){
-		inlined.len = (unsigned char)-1;
-		allocated.len = length;
-	}else{
-		inlined.len = length;
+	if (new_length > capacity()) {
+		reallocate_capacity(new_length);
 	}
+
+	len = new_length;
+	data_ptr[new_length] = 0; //always ensure null terminator
 }
 
 void truncate(int newlen)
@@ -69,13 +72,13 @@ void assign(const char * newstr)
 
 void assign(const string &newstr)
 {
-	assign(newstr, newstr.length());
+	assign(newstr.data(), newstr.length());
 }
 
 void assign(const char * newstr, int end)
 {
 	resize(end);
-	copy(newstr, length(), cached_data);
+	copy(newstr, end, data_ptr);
 }
 
 
@@ -95,7 +98,7 @@ string& append(const string& other, int start, int end)
 {
 	int current_end = length();
 	resize(length() + end - start);
-	copy(other.cached_data + start, end - start, cached_data + current_end);
+	copy(other.data() + start, end - start, data_ptr + current_end);
 	return *this;
 }
 
@@ -103,7 +106,7 @@ string& append(const char *other, int start, int end)
 {
 	int current_end = length();
 	resize(length() + end - start);
-	copy(other + start, end - start, cached_data + current_end);
+	copy(other + start, end - start, data_ptr + current_end);
 	return *this;
 }
 
@@ -111,7 +114,7 @@ string& operator+=(const string& other)
 {
 	int current_end = length();
 	resize(length() + other.length());
-	copy(other.cached_data, other.length(), cached_data + current_end);
+	copy(other.data(), other.length(), data_ptr + current_end);
 	return *this;
 }
 
@@ -120,14 +123,14 @@ string& operator+=(const char *other)
 	int current_end = length();
 	int otherlen=(int)strlen(other);
 	resize(length() + otherlen);
-	copy(other, otherlen, cached_data + current_end);
+	copy(other, otherlen, data_ptr + current_end);
 	return *this;
 }
 
 string& operator+=(char c)
 {
 	resize(length() + 1);
-	cached_data[length() - 1] = c;
+	data_ptr[length() - 1] = c;
 	return *this;
 }
 
@@ -177,14 +180,9 @@ explicit operator bool() const
 
 string()
 {
-	//todo reduce I know this isn't all needed
-	allocated.bufferlen = 0;
-	allocated.str = 0;
-	allocated.len = 0;
-	inlined.len = 0;
-	cached_data = inlined.str;
-	next_resize = max_inline_length_+1;
-
+	data_ptr = inlined.data;
+	len = 0;
+	inlined.data[0] = '\0';
 }
 string(const char * newstr) : string()
 {
@@ -199,29 +197,26 @@ string(const string& old) : string()
 	assign(old.data());
 }
 
-string(string &&move) : string()
+string(string &&move) noexcept : string()
 {
 	*this = move;
 }
 
-string& operator=(string&& move)
+string& operator=(string&& other) noexcept
 {
-	if(!is_inlined()) free(allocated.str);
-	if(!move.is_inlined()){
-		allocated.str = move.allocated.str;
-		allocated.bufferlen = move.allocated.bufferlen;
-		set_length(move.allocated.len);
-
-		move.inlined.len = 0;
-		move.inlined.str[0] = 0;
-		cached_data = allocated.str;
-		next_resize = move.next_resize;
-
-	}else{
-		inlined.len = 0;
-		cached_data = inlined.str;
-		next_resize = max_inline_length_+1;
-		assign(move);
+	if (other.is_inlined()) {
+		// No resources to steal so just do a normal assignment
+		*this = other;
+	} else {
+		if (is_inlined()) {
+			data_ptr = other.data_ptr;
+			other.data_ptr = 0;
+		} else {
+			// Give our old allocation back so other can free it for us
+			std::swap(data_ptr, other.data_ptr);
+		}
+		len = other.len;
+		allocated = other.allocated;
 	}
 	return *this;
 }
@@ -229,21 +224,22 @@ string& operator=(string&& move)
 ~string()
 {
 	if(!is_inlined()){
-		free(allocated.str);
+		free(data_ptr);
 	}
 }
 
 //maybe these should return refs to chain.  but also good not to encourage chaining
 void strip_prefix(char c)
 {
-	if(cached_data[0] == c){
-		*this = string(cached_data + 1, length() - 1);
+	if(data()[0] == c){
+		std::memmove(data_ptr, data_ptr + 1, length() - 1);
+		resize(length() - 1);
 	}
 }
 
 void strip_suffix(char c)
 {
-	if(cached_data[length() - 1] == c){
+	if (data()[length() - 1] == c) {
 		truncate(length() - 1);
 	}
 }
@@ -269,64 +265,38 @@ string& convert_line_endings_to_native()
 void serialize(serializer & s)
 {
 	s(str, allocated.bufferlen);
-	set_length(strlen(str));
+	resize(strlen(str));
 }
 #endif
 #define SERIALIZER_BANNED
 
 private:
 static const int scale_factor = 4; //scale sso
-static const int max_inline_length_ = ((sizeof(char *) + sizeof(int) * 2) * scale_factor) - 2;
-char *cached_data;
-int next_resize;
-struct si{
-		char str[max_inline_length_ + 1];
-		unsigned char len;
+static const int inline_capacity = ((sizeof(char *) + sizeof(int) * 2) * scale_factor) - 2;
+
+// Points to a malloc'd data block or to inlined.data
+char *data_ptr;
+unsigned int len;
+union {
+	struct {
+		// Actual allocated capacity is +1 this value, to cover for the terminating NUL
+		unsigned int capacity;
+	} allocated;
+	struct {
+		char data[inline_capacity + 1];
+	} inlined;
 };
 
-struct sa{
-		char *str;
-		int len;
-		int bufferlen ;
-};
-union{
-	si inlined;
-	sa allocated;
-};
+void reallocate_capacity(unsigned int new_length);
 
-
-void resize(int new_length)
+unsigned capacity() const
 {
-	const char *old_data = data();
-	if(new_length >= next_resize || (!is_inlined() && new_length <= max_inline_length_)) {
-		if(new_length > max_inline_length_ && (is_inlined() || allocated.bufferlen <= new_length)){ //SSO or big to big
-			int new_size = bitround(new_length + 1);
-			if(old_data == inlined.str){
-				allocated.str = copy(old_data, min(length(), new_length), (char *)malloc(new_size));
-			}else{
-				allocated.str = (char *)realloc(allocated.str, new_size);
-				old_data = inlined.str;	//this will prevent freeing a dead realloc ptr
-			}
-			allocated.bufferlen = new_size;
-			cached_data = allocated.str;
-			next_resize = allocated.bufferlen;
-		}else if(length() > max_inline_length_ && new_length <= max_inline_length_){ //big to SSO
-			copy(old_data, new_length, inlined.str);
-			cached_data = inlined.str;
-			next_resize = max_inline_length_+1;
-		}
-		if(old_data != inlined.str && old_data != data()){
-			free((char *)old_data);
-		}
-	}
-	set_length(new_length);
-
-	raw()[new_length] = 0; //always ensure null terminator
+	return is_inlined() ? inline_capacity : allocated.capacity;
 }
 
 bool is_inlined() const
 {
-	return inlined.len != (unsigned char)-1;
+	return data_ptr == inlined.data;
 }
 };
 #define STR (string)
@@ -509,10 +479,6 @@ inline string substr(const char * str, int len)
 {
 	return string(str, len);
 }
-
-//todo make these members
-string &strip_prefix(string &str, char c);
-string &strip_suffix(string &str, char c);
 
 
 inline char *strip_whitespace(char *str)
