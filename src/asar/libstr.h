@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstring>
 #include <utility>
+#include <string_view>
 
 //ty alcaro
 extern const unsigned char char_props[256];
@@ -148,26 +149,6 @@ string operator+(const char * right) const
 	return ret;
 }
 
-bool operator==(const char * right) const
-{
-	return !strcmp(data(), right);
-}
-
-bool operator==(const string& right) const
-{
-	return !strcmp(data(), right.data());
-}
-
-bool operator!=(const char * right) const
-{
-	return (strcmp(data(), right) != 0);
-}
-
-bool operator!=(const string& right) const
-{
-	return (strcmp(data(), right.data()) != 0);
-}
-
 operator const char*() const
 {
 	return data();
@@ -300,6 +281,32 @@ bool is_inlined() const
 }
 };
 #define STR (string)
+
+#define ASAR_STRCMP_OPERATORS(op) \
+	inline bool operator op(const string& left, const string& right) { \
+		return strcmp(left, right) op 0; \
+	} \
+	inline bool operator op(const string& left, const char* right) { \
+		return strcmp(left, right) op 0; \
+	} \
+	inline bool operator op(const char* left, const string& right) { \
+		return strcmp(left, right) op 0; \
+	}
+
+ASAR_STRCMP_OPERATORS(==)
+ASAR_STRCMP_OPERATORS(!=)
+ASAR_STRCMP_OPERATORS(<)
+ASAR_STRCMP_OPERATORS(<=)
+ASAR_STRCMP_OPERATORS(>)
+ASAR_STRCMP_OPERATORS(>=)
+#undef ASAR_STRCMP_OPERATORS
+
+template<>
+struct std::hash<string> {
+	size_t operator()(const ::string& s) const {
+		return std::hash<std::string_view>()(std::string_view(s.data(), s.length()));
+	}
+};
 
 char * readfile(const char * fname, const char * basepath);
 char * readfilenative(const char * fname);
