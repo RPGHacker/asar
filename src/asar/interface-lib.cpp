@@ -6,6 +6,7 @@
 #include "assembleblock.h"
 #include "asar_math.h"
 #include "platform/thread-helpers.h"
+#include <algorithm>
 
 #if defined(CPPCLI)
 #define EXPORT extern "C"
@@ -230,14 +231,6 @@ static void resetdllstuff()
 #define maxromsize (16*1024*1024)
 
 static bool expectsNewAPI = false;
-
-static void addlabel(const string & name, const snes_label & label_data)
-{
-	labeldata label;
-	label.name = strdup(name);
-	label.location = (int)(label_data.pos & 0xFFFFFF);
-	ldata[labelsinldata++] = label;
-}
 
 /* $EXPORTSTRUCT_PP$
  */
@@ -574,8 +567,15 @@ EXPORT const struct labeldata * asar_getalllabels(int * count)
 {
 	for (int i=0;i<labelsinldata;i++) free((void*)ldata[i].name);
 	labelsinldata=0;
-	labels.each(addlabel);
+	labels.each([](const string& name, const snes_label& label_data) {
+		labeldata label;
+		label.name = strdup(name);
+		label.location = (int)(label_data.pos & 0xFFFFFF);
+		ldata[labelsinldata++] = label;
+	});
 	*count=labelsinldata;
+	std::sort<labeldata*>(ldata, ldata + labelsinldata,
+		[](auto& l, auto& r) { return strcmp(l.name, r.name) < 0; });
 	return ldata;
 }
 
@@ -620,14 +620,6 @@ EXPORT const char * asar_resolvedefines(const char * data)
 	return out;
 }
 
-static void adddef(const string& name, string& value)
-{
-	definedata define;
-	define.name= duplicate_string(name);
-	define.contents= duplicate_string(value);
-	ddata[definesinddata++]=define;
-}
-
 /* $EXPORT$
  * Gets the values and names of all defines.
  */
@@ -639,8 +631,15 @@ EXPORT const struct definedata * asar_getalldefines(int * count)
 		free((void*)ddata[i].contents);
 	}
 	definesinddata=0;
-	defines.each(adddef);
+	defines.each([](const string& name, string& value) {
+		definedata define;
+		define.name = duplicate_string(name);
+		define.contents = duplicate_string(value);
+		ddata[definesinddata++] = define;
+	});
 	*count=definesinddata;
+	std::sort<definedata*>(ddata, ddata + definesinddata,
+		[](auto& l, auto& r) { return strcmp(l.name, r.name) < 0; });
 	return ddata;
 }
 
