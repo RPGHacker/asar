@@ -1073,9 +1073,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	int addrToLinePos = realsnespos & 0xFFFFFF;
 
 	if (!word[0] || !word[0][0]) return;
-	if (is("if") || is("elseif") || is("assert") || is("while") || is("for"))
+	if (is("if") || is("elseif") || is("while") || is("for"))
 	{
-		string errmsg;
 		whiletracker wstatus;
 		wstatus.startline = get_current_line();
 		wstatus.iswhile = is("while");
@@ -1092,28 +1091,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				&& whilestatus[numif].for_cur < whilestatus[numif].for_end)
 			is_for_cont = true;
 		whiletracker& addedwstatus = is_for_cont ? whilestatus[numif] : (whilestatus[numif] = wstatus);
-		if (is("assert"))
-		{
-			autoptr<char**> tokens = qpsplit(word[numwords - 1], ',');
-			verify_paren(tokens);
-			if (tokens[0] != NULL && tokens[1] != NULL)
-			{
-				string rawerrmsg;
-				size_t pos = 1;
-				while (tokens[pos])
-				{
-					rawerrmsg += tokens[pos];
-					if (tokens[pos + 1] != NULL)
-					{
-						rawerrmsg += ",";
-					}
-					pos++;
-				}
-
-				errmsg = handle_print(rawerrmsg.raw());
-			}
-		}
-
 		//handle nested if statements
 		if (numtrue!=numif && !(is("elseif") && numtrue+1==numif))
 		{
@@ -1133,7 +1110,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		{
 			if(word[1] == NULL) asar_throw_error(0, error_type_block, error_id_broken_command, word[0], "Missing condition.");
 			cond = getnum(word[1]);
-			if (foundlabel && !foundlabel_static && !is("assert")) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
+			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
 		}
 
 		if (is("for"))
@@ -1216,12 +1193,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				elsestatus[numif]=true;
 			}
 		}
-		// otherwise, must be assert command
-		else if (pass == 2 && !cond)
-		{
-			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).data());
-			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
-		}
 		return;
 	}
 	else if (is0("endif") || is0("endwhile") || is0("endfor"))
@@ -1282,7 +1253,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	if (!word[0] || !word[0][0]) return;
 
 	// recheck for any of the conditionals tested above
-	if(is("if") || is("elseif") || is("assert") || is("while") || is("for")
+	if(is("if") || is("elseif") || is("while") || is("for")
 		|| is0("endif") || is0("endwhile") || is0("endfor") || is0("else"))
 	{
 		asar_throw_error(0, error_type_block, error_id_label_before_if, word[0]);
@@ -1328,6 +1299,42 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			}
 		}
 		add_addr_to_line(addrToLinePos);
+	}
+	else if (is("assert"))
+	{
+		string errmsg;
+		autoptr<char**> tokens = qpsplit(word[numwords - 1], ',');
+		verify_paren(tokens);
+		if (tokens[0] != NULL && tokens[1] != NULL)
+		{
+			string rawerrmsg;
+			size_t pos = 1;
+			while (tokens[pos])
+			{
+				rawerrmsg += tokens[pos];
+				if (tokens[pos + 1] != NULL)
+				{
+					rawerrmsg += ",";
+				}
+				pos++;
+			}
+
+			errmsg = handle_print(rawerrmsg.raw());
+		}
+		for(int i = 1; i < numwords - 1; i++)
+		{
+			word[i][strlen(word[i])] = ' ';
+		}
+		numwords = 2;
+
+		bool cond;
+		if(word[1] == NULL) asar_throw_error(0, error_type_block, error_id_broken_command, "assert", "Missing condition.");
+		cond = getnum(word[1]);
+		if (pass == 2 && !cond)
+		{
+			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).data());
+			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
+		}
 	}
 	else if(word[0][0]=='%')
 	{
