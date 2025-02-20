@@ -324,24 +324,24 @@ inline string hex(unsigned int value)
 {
 	char buffer[64];
 	if(0);
-	else if (value<=0x000000FF) sprintf(buffer, "%.2X", value);
-	else if (value<=0x0000FFFF) sprintf(buffer, "%.4X", value);
-	else if (value<=0x00FFFFFF) sprintf(buffer, "%.6X", value);
-	else sprintf(buffer, "%.8X", value);
+	else if (value<=0x000000FF) snprintf(buffer, sizeof(buffer), "%.2X", value);
+	else if (value<=0x0000FFFF) snprintf(buffer, sizeof(buffer), "%.4X", value);
+	else if (value<=0x00FFFFFF) snprintf(buffer, sizeof(buffer), "%.6X", value);
+	else snprintf(buffer, sizeof(buffer), "%.8X", value);
 	return buffer;
 }
 
 inline string hex(unsigned int value, int width)
 {
 	char buffer[64];
-	sprintf(buffer, "%.*X", width, value);
+	snprintf(buffer, sizeof(buffer), "%.*X", width, value);
 	return buffer;
 }
 
 inline string dec(int value)
 {
 	char buffer[64];
-	sprintf(buffer, "%i", value);
+	snprintf(buffer, sizeof(buffer), "%i", value);
 	return buffer;
 }
 
@@ -352,7 +352,7 @@ inline string ftostr(double value)
 	char rval[512];
 	// RPG Hacker: Ridiculously high precision, I know, but we're working with doubles
 	// here and can afford it, so no need to waste any precision
-	sprintf(rval, "%.100f", value);
+	snprintf(rval, sizeof(rval), "%.100f", value);
 	if (strchr(rval, '.'))//nuke useless zeroes
 	{
 		char * end=strrchr(rval, '\0')-1;
@@ -375,7 +375,7 @@ inline string ftostrvar(double value, int precision)
 
 	// see above
 	char rval[512];
-	sprintf(rval, "%.*f", clampedprecision, (double)value);
+	snprintf(rval, sizeof(rval), "%.*f", clampedprecision, (double)value);
 	if (strchr(rval, '.'))//nuke useless zeroes
 	{
 		char * end = strrchr(rval, '\0') - 1;
