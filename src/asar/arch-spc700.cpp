@@ -276,10 +276,10 @@ bool asblock_spc700(char** word, int numwords)
 	return true; } while(0)
 #define w11(opcode, math1, math2) do { write1((unsigned int)opcode); write1(getnum_ck(math1)); write1(getnum_ck(math2)); return true; } while(0)
 #define wr(opcode, math) do { int len=getlen(math); int num=(int)getnum_ck(math); int pos=(len==1)?num:num-(snespos+2); \
-								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
+								if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								write1((unsigned int)opcode); write1((unsigned int)pos); return true; } while(0)
 #define w1r(opcode, math1, math2) do { int len=getlen(math2); int num=(int)getnum_ck(math2); int pos=(len==1)?num:num-(snespos+3); \
-								if (pass && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
+								if (pass==2 && foundlabel && (pos<-128 || pos>127)) asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data()); \
 								write1((unsigned int)opcode); write1(getnum_ck(math1)); write1((unsigned int)pos); return true; } while(0)
 			string s1;
 			string s2;
