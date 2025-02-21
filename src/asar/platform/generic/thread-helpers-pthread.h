@@ -59,12 +59,13 @@ bool run_as_thread(functor&& callback) {
 #ifndef NO_USE_THREADS
 void* stack_bottom = nullptr;
 void init_stack_use_check() {
+	pthread_t self = pthread_self();
 #ifdef __APPLE__
-	stack_bottom = pthread_get_stackaddr_np(pthread_self());
+	stack_bottom = (char*)pthread_get_stackaddr_np(self) - pthread_get_stacksize_np(self);
 #else
 	pthread_attr_t attrs;
 	size_t stack_size = 0;
-	pthread_getattr_np(pthread_self(), &attrs);
+	pthread_getattr_np(self, &attrs);
 	pthread_attr_getstack(&attrs, &stack_bottom, &stack_size);
 	pthread_attr_destroy(&attrs);
 #endif
