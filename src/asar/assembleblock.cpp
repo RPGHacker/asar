@@ -1303,33 +1303,34 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (is("assert"))
 	{
 		string errmsg;
-		autoptr<char**> tokens = qpsplit(word[numwords - 1], ',');
-		verify_paren(tokens);
-		if (tokens[0] != NULL && tokens[1] != NULL)
-		{
-			string rawerrmsg;
-			size_t pos = 1;
-			while (tokens[pos])
+		if(numwords > 1) {
+			for(int i = 1; i < numwords - 1; i++)
 			{
-				rawerrmsg += tokens[pos];
-				if (tokens[pos + 1] != NULL)
-				{
-					rawerrmsg += ",";
-				}
-				pos++;
+				word[i][strlen(word[i])] = ' ';
 			}
+			numwords = 2;
+			autoptr<char**> tokens = qpsplit(word[1], ',');
+			verify_paren(tokens);
+			if (tokens[0] != NULL && tokens[1] != NULL)
+			{
+				string rawerrmsg;
+				size_t pos = 1;
+				while (tokens[pos])
+				{
+					rawerrmsg += tokens[pos];
+					if (tokens[pos + 1] != NULL)
+					{
+						rawerrmsg += ",";
+					}
+					pos++;
+				}
 
-			errmsg = handle_print(rawerrmsg.raw());
+				errmsg = handle_print(rawerrmsg.raw());
+			}
 		}
-		for(int i = 1; i < numwords - 1; i++)
-		{
-			word[i][strlen(word[i])] = ' ';
-		}
-		numwords = 2;
 
-		bool cond;
 		if(word[1] == NULL) asar_throw_error(0, error_type_block, error_id_broken_command, "assert", "Missing condition.");
-		cond = getnum(word[1]);
+		bool cond = getnum(word[1]);
 		if (pass == 2 && !cond)
 		{
 			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).data());
