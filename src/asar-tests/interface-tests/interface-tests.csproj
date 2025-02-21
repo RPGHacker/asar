@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net6.0</TargetFramework>
+    <!-- can be changed to <TargetFrameworks>net8.0;net9.0;...</> if necessary, but then we need to specify `-f net8.0` when calling dotnet run, which would be annoying -->
+    <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>interface_tests</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
