@@ -26,7 +26,6 @@ jobs:
             os: ubuntu-24.04
           - name: osx
             os: macos-14
-            cmake_opts: '-DASAR_GEN_CS_TEST=OFF'
     name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
 
