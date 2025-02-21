@@ -39,8 +39,10 @@ jobs:
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-    - name: debug stuff
-      uses: mxschmitt/action-tmate@v3
+
+    # Uncomment this to get a debug shell on the actions runner
+    #- name: debug stuff
+    #uses: mxschmitt/action-tmate@v3
 
     - name: Tests
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target run-tests
