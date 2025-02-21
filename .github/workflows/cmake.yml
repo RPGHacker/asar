@@ -17,16 +17,15 @@ jobs:
   build:
     strategy:
       matrix:
-        config: ['windows-msvc-2019']
-        os: ['windows-2019']
-        generator: ['-G "Visual Studio 16 2019"']
-        toolset: ['-T v142']
         include:
+          - config: windows-msvc-2019
+            os: windows-2019
+            cmake_opts: '-G "Visual Studio 16 2019" -T v142'
           - config: ubuntu-20
             os: ubuntu-20.04
           - config: osx
             os: macos-14
-            extra_opts: '-DASAR_GEN_CS_TEST=OFF'
+            cmake_opts: '-DASAR_GEN_CS_TEST=OFF'
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -35,14 +34,14 @@ jobs:
         fetch-depth: 0
 
     - name: Configure CMake
-      run: cmake -S ${{github.workspace}}/src -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{ matrix.generator }} ${{ matrix.toolset }} ${{ matrix.extra_opts }}
+      run: cmake -S ${{github.workspace}}/src -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{ matrix.cmake_opts }}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
     # Uncomment this to get a debug shell on the actions runner
     #- name: debug stuff
-    #uses: mxschmitt/action-tmate@v3
+    #  uses: mxschmitt/action-tmate@v3
 
     - name: Tests
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target run-tests
