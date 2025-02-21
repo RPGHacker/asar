@@ -24,6 +24,8 @@ jobs:
         include:
           - config: ubuntu-20
             os: ubuntu-20.04
+          - config: osx
+            os: macos-14
     runs-on: ${{ matrix.os }}
 
     steps:
