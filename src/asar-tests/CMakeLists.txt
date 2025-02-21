@@ -188,6 +188,8 @@ if(ASAR_GEN_DLL_TEST)
 			# so we set the cwd to the directory with asar.dll and add it to LD_LIBRARY_PATH.
 			if(WIN32)
 				set(cs_test_cmd_prefix "")
+			elseif(APPLE)
+				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "DYLD_LIBRARY_PATH=." mono)
 			else()
 				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "LD_LIBRARY_PATH=." mono)
 			endif()
