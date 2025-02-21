@@ -1313,19 +1313,16 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			verify_paren(tokens);
 			if (tokens[0] != NULL && tokens[1] != NULL)
 			{
-				string rawerrmsg;
 				size_t pos = 1;
 				while (tokens[pos])
 				{
-					rawerrmsg += tokens[pos];
+					errmsg += tokens[pos];
 					if (tokens[pos + 1] != NULL)
 					{
-						rawerrmsg += ",";
+						errmsg += ",";
 					}
 					pos++;
 				}
-
-				errmsg = handle_print(rawerrmsg.raw());
 			}
 		}
 
@@ -1333,7 +1330,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		bool cond = getnum(word[1]);
 		if (pass == 2 && !cond)
 		{
-			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + errmsg).data());
+			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + handle_print(errmsg.raw())).data());
 			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
 		}
 	}
