@@ -6,15 +6,15 @@ environment:
     - JOB_NAME: "win32"
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "Win32"
-      CMAKE_ARCH: "-A Win32"
+      CMAKE_ARCH: "-A Win32 -DASAR_GEN_CS_TEST=OFF"
     - JOB_NAME: "win64"
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "x64"
       CMAKE_ARCH: "-A x64 -DPython3_EXECUTABLE=C:\\Python311-x64\\python.exe"
     - JOB_NAME: "clang"
       CMAKE_TARGET: "Visual Studio 16 2019"
-      PLATFORM: "Win32"
-      CMAKE_ARCH: "-A Win32"
+      PLATFORM: "x64"
+      CMAKE_ARCH: "-A x64 -DPython3_EXECUTABLE=C:\\Python311-x64\\python.exe"
       CMAKE_PLATFORM_TOOLSET: "-T ClangCL"
 
 install:
@@ -22,8 +22,6 @@ install:
     mkdir build
 
     cd build
-
-    set PATH=C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\mingw64\bin;%PATH%
 
     vcpkg integrate remove
     

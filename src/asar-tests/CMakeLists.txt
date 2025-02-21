@@ -166,15 +166,9 @@ if(ASAR_GEN_DLL_TEST)
 
 		set(ASAR_DOTNET_DIR "${CMAKE_CURRENT_BINARY_DIR}/dotnet")
 		set(ASAR_CS_TEST_EXEC "${ASAR_DOTNET_DIR}/interface-tests.dll")
-		set(ASAR_DOTNET_OPTS "")
-		if(CMAKE_VS_PLATFORM_NAME STREQUAL "Win32")
-			set(ASAR_DOTNET_OPTS "--runtime=win-x86")
-		elseif(CMAKE_VS_PLATFORM_NAME STREQUAL "x64")
-			set(ASAR_DOTNET_OPTS "--runtime=win-x64")
-		endif()
 
 		add_custom_command(OUTPUT "${ASAR_CS_TEST_EXEC}"
-			COMMAND dotnet build -o "${ASAR_DOTNET_DIR}" ${ASAR_DOTNET_OPTS} --artifacts-path "${ASAR_DOTNET_DIR}/junk" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/interface-tests.csproj"
+			COMMAND dotnet build -o "${ASAR_DOTNET_DIR}" --artifacts-path "${ASAR_DOTNET_DIR}/junk" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/interface-tests.csproj"
 			DEPENDS "${ASAR_CS_SOURCES}"
 			VERBATIM)
 		add_custom_target(asar-csharp-test DEPENDS "${ASAR_CS_TEST_EXEC}")
