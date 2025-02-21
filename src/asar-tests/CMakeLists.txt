@@ -164,6 +164,14 @@ if(ASAR_GEN_DLL_TEST)
 			"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c_sharp/asar.cs"
 		)
 
+		set(ASAR_DOTNET_DIR "${CMAKE_CURRENT_BINARY_DIR}/dotnet")
+		set(ASAR_CS_TEST_EXEC "${ASAR_DOTNET_DIR}/interface-tests.dll")
+		add_custom_command(OUTPUT "${ASAR_CS_TEST_EXEC}"
+			COMMAND dotnet build -o "${ASAR_DOTNET_DIR}" --artifacts-path "${ASAR_DOTNET_DIR}/junk" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/interface-tests.csproj"
+			DEPENDS "${ASAR_CS_SOURCES}"
+			VERBATIM)
+		add_custom_target(asar-csharp-test DEPENDS "${ASAR_CS_TEST_EXEC}")
+
 		if(NOT ASAR_USE_SANITIZER)
 			# same concerns with sanitizer as the python test
 
@@ -178,9 +186,9 @@ if(ASAR_GEN_DLL_TEST)
 				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "LD_LIBRARY_PATH=.")
 			endif()
 			add_custom_target(run-cs-interface-test
-				${cs_test_cmd_prefix} dotnet run --artifacts-path "${CMAKE_CURRENT_BINARY_DIR}/dotnet" --project "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/interface-tests.csproj"
+				${cs_test_cmd_prefix} dotnet "${ASAR_CS_TEST_EXEC}"
 				WORKING_DIRECTORY "$<TARGET_FILE_DIR:asar>"
-				DEPENDS asar
+				DEPENDS asar asar-csharp-test
 				VERBATIM)
 			add_dependencies(run-tests run-cs-interface-test)
 			set_property(TARGET run-cs-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
