@@ -60,7 +60,7 @@ bool run_as_thread(functor&& callback) {
 void* stack_bottom = nullptr;
 void init_stack_use_check() {
 #ifdef __APPLE__
-	pthread_get_stackaddr_np(pthread_self(), &stack_bottom);
+	stack_bottom = pthread_get_stackaddr_np(pthread_self());
 #else
 	pthread_attr_t attrs;
 	size_t stack_size = 0;
