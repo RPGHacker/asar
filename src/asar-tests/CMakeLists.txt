@@ -164,22 +164,6 @@ if(ASAR_GEN_DLL_TEST)
 			"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c_sharp/asar.cs"
 		)
 
-		if(CMAKE_GENERATOR MATCHES "Visual Studio")
-			enable_language(CSharp)
-			add_executable(asar-csharp-test ${ASAR_CS_SOURCES})
-			target_compile_options(asar-csharp-test PRIVATE "/unsafe")
-			set(ASAR_CS_TEST_EXEC "$<TARGET_FILE:asar-csharp-test>")
-		else()
-			find_program(ASAR_CS_COMPILER NAMES csc mono-csc mcs)
-			set(ASAR_CS_TEST_EXEC "${CMAKE_CURRENT_BINARY_DIR}/asar-csharp-test.exe")
-			add_custom_command(OUTPUT "${ASAR_CS_TEST_EXEC}"
-				COMMAND ${ASAR_CS_COMPILER} "-out:${ASAR_CS_TEST_EXEC}" -unsafe "${ASAR_CS_SOURCES}"
-				DEPENDS "${ASAR_CS_SOURCES}"
-				VERBATIM COMMAND_EXPAND_LISTS)
-
-			add_custom_target(asar-csharp-test DEPENDS "${ASAR_CS_TEST_EXEC}")
-		endif()
-
 		if(NOT ASAR_USE_SANITIZER)
 			# same concerns with sanitizer as the python test
 
@@ -189,14 +173,14 @@ if(ASAR_GEN_DLL_TEST)
 			if(WIN32)
 				set(cs_test_cmd_prefix "")
 			elseif(APPLE)
-				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "DYLD_LIBRARY_PATH=." mono)
+				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "DYLD_LIBRARY_PATH=.")
 			else()
-				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "LD_LIBRARY_PATH=." mono)
+				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "LD_LIBRARY_PATH=.")
 			endif()
 			add_custom_target(run-cs-interface-test
-				${cs_test_cmd_prefix} "${ASAR_CS_TEST_EXEC}"
+				${cs_test_cmd_prefix} dotnet run --artifacts-path "${CMAKE_CURRENT_BINARY_DIR}/dotnet" --project "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/interface-tests.csproj"
 				WORKING_DIRECTORY "$<TARGET_FILE_DIR:asar>"
-				DEPENDS asar asar-csharp-test
+				DEPENDS asar
 				VERBATIM)
 			add_dependencies(run-tests run-cs-interface-test)
 			set_property(TARGET run-cs-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)

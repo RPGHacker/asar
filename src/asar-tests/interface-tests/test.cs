@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq;
 
+namespace interface_tests {
 class AsarTest
 {
 	static void check(bool ck, string error)
@@ -117,4 +118,5 @@ endmacro
 		Console.WriteLine("All checks passed!");
 		return 0;
 	}
+}
 }
