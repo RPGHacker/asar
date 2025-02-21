@@ -18,14 +18,16 @@ jobs:
     strategy:
       matrix:
         include:
-          - config: windows-msvc-2019
-            os: windows-2019
-            cmake_opts: '-G "Visual Studio 16 2019" -T v142'
-          - config: ubuntu-20
-            os: ubuntu-20.04
-          - config: osx
+          - name: windows
+            os: windows-2022
+            # is this even necessary? isn't it the default?
+            cmake_opts: '-G "Visual Studio 17 2022"'
+          - name: ubuntu
+            os: ubuntu-24.04
+          - name: osx
             os: macos-14
             cmake_opts: '-DASAR_GEN_CS_TEST=OFF'
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
 
     steps:
