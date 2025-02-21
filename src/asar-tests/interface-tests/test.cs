@@ -17,6 +17,12 @@ class AsarTest
 
 	static int Main(string[] args)
 	{
+		Console.WriteLine("DEBUG: cwd = {0}", System.IO.Directory.GetCurrentDirectory());
+		Console.WriteLine("DEBUG: exe at {0}", System.Reflection.Assembly.GetEntryAssembly().Location);
+		Console.WriteLine("cwd files:");
+		foreach(var a in System.IO.Directory.GetFileSystemEntries(System.IO.Directory.GetCurrentDirectory())) {
+			Console.WriteLine("  {0}", a);
+		}
 		check(Asar.init() == true, "init()");
 		check(Asar.version() >= 20000, "version() correct");
 		check(Asar.apiversion() == 400, "apiversion() correct");
