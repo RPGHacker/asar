@@ -303,7 +303,7 @@ bool asblock_spc700(char** word, int numwords)
 				}
 				int pos = (getnum_ck(arg[1])- (unsigned int)(snespos)-3);
 				if (pass==2 && (pos<-128 || pos>127)) {
-					asar_throw_error(1, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data());
+					asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data());
 				}
 				if(0);
 				else if (isop("bbs")) write1((unsigned int)(0x03|(bits<<5)));
