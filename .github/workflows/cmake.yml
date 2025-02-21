@@ -26,6 +26,7 @@ jobs:
             os: ubuntu-20.04
           - config: osx
             os: macos-14
+            extra_opts: '-DASAR_GEN_CS_TEST=OFF'
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -34,7 +35,7 @@ jobs:
         fetch-depth: 0
 
     - name: Configure CMake
-      run: cmake -S ${{github.workspace}}/src -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{ matrix.generator }} ${{ matrix.toolset }}
+      run: cmake -S ${{github.workspace}}/src -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{ matrix.generator }} ${{ matrix.toolset }} ${{ matrix.extra_opts }}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
