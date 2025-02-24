@@ -4,16 +4,6 @@
 #include <cassert>
 #include <initializer_list>
 
-#define write1 write1_pick
-
-void asinit_65816()
-{
-}
-
-void asend_65816()
-{
-}
-
 // A bit of terminology i just invented:
 // "mnemonic" refers to the name of an instruction, e.g. LDA or JMP.
 // "address mode" is the form of an instruction's argument, with a specific

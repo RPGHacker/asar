@@ -2,19 +2,9 @@
 #include "assembleblock.h"
 #include "asar_math.h"
 
-#define write1 write1_pick
-
 static int64_t getnum_ck(const char* math)
 {
 	return pass == 2 ? getnum(math) : 0;
-}
-
-void asinit_spc700()
-{
-}
-
-void asend_spc700()
-{
 }
 
 static bool matchandwrite(const char * str, const char * left, const char * right, string& remainder)

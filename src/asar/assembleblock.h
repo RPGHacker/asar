@@ -112,12 +112,12 @@ extern int single_line_for_tracker;
 bool confirmname(const char * name);
 string posneglabelname(const char ** input, bool define);
 
-void write1_pick(unsigned int num);
+void write1(unsigned int num);
 void write2(unsigned int num);
 void write3(unsigned int num);
 void write4(unsigned int num);
 
-int snestopc_pick(int addr);
+int snestopc(int addr);
 
 int getlenfromchar(char c);
 

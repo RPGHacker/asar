@@ -337,7 +337,7 @@ double asar_pc_wrapper()
 template <int count> double asar_read()
 {
 	int target = get_double_argument();
-	int addr=snestopc_pick(target);
+	int addr=snestopc(target);
 	if(has_next_parameter())
 	{
 		double default_value = get_double_argument();
@@ -365,7 +365,7 @@ template <int count> double asar_canread()
 	{
 		length = get_double_argument();
 	}
-	int addr=snestopc_pick(get_double_argument());
+	int addr=snestopc(get_double_argument());
 	if (addr<0 || addr+length-1>=romlen_r) return 0;
 	else return 1;
 }

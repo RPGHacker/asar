@@ -2,19 +2,9 @@
 #include "assembleblock.h"
 #include "asar_math.h"
 
-#define write1 write1_pick
-
 static int64_t getnum_ck(const char* math)
 {
 	return pass == 2 ? getnum(math) : 0;
-}
-
-void asinit_superfx()
-{
-}
-
-void asend_superfx()
-{
 }
 
 static void range(int min, int mid, int max)

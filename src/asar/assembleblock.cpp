@@ -65,11 +65,6 @@ struct spcblock_data{
 	mapper_t old_mapper;
 }spcblock;
 
-int snestopc_pick(int addr)
-{
-	return snestopc(addr);
-}
-
 inline void verifysnespos()
 {
 	if (!snespos_valid)
@@ -169,7 +164,7 @@ inline void step(int num)
 	bytes+=num;
 }
 
-inline void write1_65816(unsigned int num)
+void write1(unsigned int num)
 {
 	verifysnespos();
 	if (pass==2)
@@ -203,11 +198,6 @@ inline void write1_65816(unsigned int num)
 	ratsmetastate=ratsmeta_ban;
 }
 
-void write1_pick(unsigned int num)
-{
-	write1_65816(num);
-}
-
 static bool asblock_pick(char** word, int numwords)
 {
 	if (arch==arch_spc700 || in_spcblock) return asblock_spc700(word, numwords);
@@ -215,9 +205,6 @@ static bool asblock_pick(char** word, int numwords)
 	if (arch==arch_superfx) return asblock_superfx(word, numwords);
 	return true;
 }
-
-#define write1 write1_pick
-#define snestopc snestopc_pick
 
 const char * safedequote(char * str)
 {
@@ -684,10 +671,6 @@ void initstuff()
 	in_sub_struct = false;
 	in_spcblock = false;
 
-	if (arch==arch_65816) asinit_65816();
-	if (arch==arch_spc700) asinit_spc700();
-	if (arch==arch_superfx) asinit_superfx();
-
 	disable_bank_cross_errors = false;
 	check_half_banks_crossed = false;
 	nested_namespaces = false;
@@ -838,9 +821,6 @@ void finishpass()
 	else if (pushpcnum) asar_throw_error(0, error_type_null, error_id_pushpc_without_pullpc);
 	else if (pushnsnum) asar_throw_error(0, error_type_null, error_id_pushns_without_pullns);
 	freespaceend();
-	if (arch==arch_65816) asend_65816();
-	if (arch==arch_spc700) asend_spc700();
-	if (arch==arch_superfx) asend_superfx();
 
 	deinitmathcore();
 	if(pass == 0) {
