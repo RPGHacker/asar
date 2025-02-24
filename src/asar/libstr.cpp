@@ -28,7 +28,7 @@ void string::reallocate_capacity(unsigned int new_length)
 
 // Detects if str starts with a UTF-8 byte order mark.
 // If so, throws a warning, then returns the number of bytes we should skip ahead in the string.
-size_t check_bom(const char* str)
+static size_t check_bom(const char* str)
 {
 	// RPG Hacker: We could also check for BoMs of incompatible encodings here (like UTF-16)
 	// and throw errors, but not sure if that's worth adding. Asar never supported any wide

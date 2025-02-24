@@ -12,8 +12,6 @@ extern int reallycalledmacros;
 extern bool inmacro;
 extern int numvarargs;
 
-extern string defining_macro_name;
-
 struct macrodata
 {
 	autoarray<string> lines;
@@ -31,6 +29,3 @@ struct macrodata
 void freemacro(macrodata* & macro);
 
 extern assocarr<macrodata*> macros;
-extern macrodata* current_macro;
-extern const char* const* current_macro_args;
-extern int current_macro_numargs;

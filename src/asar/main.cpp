@@ -38,7 +38,7 @@ autoarray<callstack_entry> callstack;
 bool errored=false;
 bool ignoretitleerrors=false;
 
-volatile int recursioncount=0;
+int recursioncount=0;
 
 virtual_filesystem* filesystem = nullptr;
 
@@ -100,13 +100,13 @@ bool simple_callstacks = true;
 
 // Shortens target_path to a relative path, but only if it resides
 // within base_path or a child directory of it.
-string shorten_to_relative_path(const char* base_path, const char* target_path)
+static string shorten_to_relative_path(const char* base_path, const char* target_path)
 {
 	if (stribegin(target_path, base_path)) target_path += strlen(base_path);
 	return target_path;
 }
 
-string get_top_level_directory()
+static string get_top_level_directory()
 {
 	string top_level_file_dir;
 	for (int i = 0; i < callstack.count; ++i)
@@ -120,7 +120,7 @@ string get_top_level_directory()
 	return top_level_file_dir;
 }
 
-string generate_call_details_string(const char* current_block, const char* current_call, int indentation, bool add_lines)
+static string generate_call_details_string(const char* current_block, const char* current_call, int indentation, bool add_lines)
 {
 	string e;
 	if (current_block != nullptr || current_call != nullptr)
@@ -135,7 +135,7 @@ string generate_call_details_string(const char* current_block, const char* curre
 	return e;
 }
 
-string get_pretty_filename(const char* current_file)
+static string get_pretty_filename(const char* current_file)
 {
 	// RPG Hacker: One could make an argument that we shouldn't shorten paths
 	// here, since some IDEs support jumping to files by double-clicking their
@@ -145,13 +145,13 @@ string get_pretty_filename(const char* current_file)
 	return shorten_to_relative_path(get_top_level_directory(), current_file);
 }
 
-string generate_filename_and_line(const char* current_file, int current_line_no)
+static string generate_filename_and_line(const char* current_file, int current_line_no)
 {
 	return STR current_file
 		+ (current_line_no>=0?STR ":"+dec(current_line_no+1):"");
 }
 
-string format_stack_line(const printable_callstack_entry& entry, int stack_frame_index)
+static string format_stack_line(const printable_callstack_entry& entry, int stack_frame_index)
 {
 	string indent = "\n|   ";
 	indent += dec(stack_frame_index);
@@ -165,7 +165,7 @@ string format_stack_line(const printable_callstack_entry& entry, int stack_frame
 		+ entry.details;
 }
 
-void push_stack_line(autoarray<printable_callstack_entry>* out, const char* current_file, const char* current_block, const char* current_call, int current_line_no, int indentation, bool add_lines)
+static void push_stack_line(autoarray<printable_callstack_entry>* out, const char* current_file, const char* current_block, const char* current_call, int current_line_no, int indentation, bool add_lines)
 {
 	printable_callstack_entry new_entry;
 	new_entry.fullpath = current_file;
@@ -243,7 +243,7 @@ void get_full_printable_callstack(autoarray<printable_callstack_entry>* out, int
 	}
 }
 
-string get_full_callstack()
+static string get_full_callstack()
 {
 	autoarray<printable_callstack_entry> printable_stack;
 	get_full_printable_callstack(&printable_stack, 12, true);
@@ -262,7 +262,7 @@ string get_full_callstack()
 
 // RPG Hacker: This function essetially replicates classic Asar behavior
 // of only printing a single macro call below the current level.
-string get_simple_callstack()
+static string get_simple_callstack()
 {
 	int i;
 	const char* current_call = nullptr;

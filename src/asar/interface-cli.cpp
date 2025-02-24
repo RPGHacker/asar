@@ -38,8 +38,6 @@
 #  include <io.h>
 #endif
 
-extern const char asarver[];
-
 void print(const char * str)
 {
 	puts(str);
@@ -60,7 +58,7 @@ static bool has_windows_screen_info = false;
 static DWORD windows_screen_attributes = 0u;
 #endif
 
-void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e color)
+static void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e color)
 {
 #if defined(linux)
 	if (isatty(fileno(output_loc)))
@@ -101,7 +99,7 @@ void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e col
 #endif
 }
 
-void reset_text_color(FILE* output_loc, string* in_out_str)
+static void reset_text_color(FILE* output_loc, string* in_out_str)
 {
 #if defined(linux)
 	if (isatty(fileno(output_loc)))

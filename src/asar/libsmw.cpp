@@ -15,10 +15,10 @@ static FileHandleType thisfile = InvalidFileHandle;
 asar_error_id openromerror;
 
 autoarray<writtenblockdata> writtenblocks;
-int last_writtenblock_ind = 0;
+static int last_writtenblock_ind = 0;
 // not immediately put into writtenblocks to allow the freespace finder to use
 // the reclaimed space.
-autoarray<writtenblockdata> cleared_rats_tag_blocks;
+static autoarray<writtenblockdata> cleared_rats_tag_blocks;
 std::vector<writtenblockdata> found_rats_tags;
 bool found_rats_tags_initialized;
 
@@ -197,7 +197,7 @@ void handle_cleared_rats_tags()
 	cleared_rats_tag_blocks.reset();
 }
 
-void find_rats_tags()
+static void find_rats_tags()
 {
 	// TODO: should probably look for overlapping rats tags too, just in case.
 	// note that found_rats_tags must not have overlaps, but we can merge overlapped rats tags into one

@@ -19,8 +19,7 @@ int realsnespos;
 int startpos;
 int realstartpos;
 
-bool mapper_set = false;
-bool warn_endwhile = true;
+static bool mapper_set = false;
 int label_counter = 0;
 
 static int old_snespos;
@@ -56,7 +55,7 @@ enum spcblock_type{
 	spcblock_custom
 };
 
-struct spcblock_data{
+static struct spcblock_data{
 	unsigned int destination;
 	spcblock_type type;
 	string macro_name;
@@ -65,7 +64,7 @@ struct spcblock_data{
 	mapper_t old_mapper;
 }spcblock;
 
-inline void verifysnespos()
+static inline void verifysnespos()
 {
 	if (!snespos_valid)
 	{
@@ -141,7 +140,7 @@ static int fixsnespos(int inaddr, int step)
 	return -1;
 }
 
-inline void step(int num)
+static inline void step(int num)
 {
 	if (disable_bank_cross_errors)
 	{
@@ -213,9 +212,6 @@ const char * safedequote(char * str)
 	return tmp;
 }
 
-extern char romtitle[30];
-extern bool stdlib;
-
 void write2(unsigned int num)
 {
 	write1(num);
@@ -237,8 +233,8 @@ void write4(unsigned int num)
 	write1(num/16777216);
 }
 
-//these are NOT used by the math parser - see math.cpp for that
-int read2(int insnespos)
+//these are NOT used by the math parser - see asar_math.cpp for that
+static int read2(int insnespos)
 {
 	int addr=snestopc(insnespos);
 	if (addr<0 || addr+2>romlen_r) return -1;
@@ -247,7 +243,7 @@ int read2(int insnespos)
 			(romdata_r[addr+1]<< 8);
 }
 
-int read3(int insnespos)
+static int read3(int insnespos)
 {
 	int addr=snestopc(insnespos);
 	if (addr<0 || addr+3>romlen_r) return -1;
@@ -278,7 +274,7 @@ autoarray<string>* macrosublabels;
 
 // randomdude999: ns is still the string to prefix to all labels, it's calculated whenever namespace_list is changed
 string ns;
-string ns_backup;
+static string ns_backup;
 autoarray<string> namespace_list;
 
 autoarray<string> includeonce;
@@ -292,7 +288,7 @@ int freespaceid;
 // start address of the current freespace, used for computing the length of the
 // current freespace.
 static int freespacestart;
-freespace_data default_freespace_settings;
+static freespace_data default_freespace_settings;
 
 bool confirmname(const char * name)
 {
@@ -452,7 +448,7 @@ static string labelname(const char ** rawname, bool define=false)
 #undef deref_rawname
 }
 
-inline bool labelvalcore(const char ** rawname, snes_label * rval, bool define, bool shouldthrow)
+static inline bool labelvalcore(const char ** rawname, snes_label * rval, bool define, bool shouldthrow)
 {
 	string name=labelname(rawname, define);
 	if (ns && labels.exists(ns+name)) {*rval = labels.find(ns+name);}
@@ -696,7 +692,7 @@ void initstuff()
 #endif
 }
 
-void parse_freespace_arguments(freespace_data& thisfs, string& arguments) {
+static void parse_freespace_arguments(freespace_data& thisfs, string& arguments) {
 	if(arguments == "") return;
 	autoptr<char**> pars=split(arguments.temp_raw(), ',');
 
@@ -739,7 +735,7 @@ void parse_freespace_arguments(freespace_data& thisfs, string& arguments) {
 	}
 }
 
-int get_freespace_pin_target(int target_id) {
+static int get_freespace_pin_target(int target_id) {
 	// union-find algorithm
 	while(freespaces[target_id].pin_target_id != target_id) {
 		// i love programming
@@ -750,7 +746,7 @@ int get_freespace_pin_target(int target_id) {
 	return target_id;
 }
 
-void resolve_pinned_freespaces() {
+static void resolve_pinned_freespaces() {
 	for(int i = 1; i < freespaces.count; i++)
 		// default to everyone being in a separate component
 		freespaces[i].pin_target_id = i;
@@ -768,7 +764,7 @@ void resolve_pinned_freespaces() {
 	}
 }
 
-void allocate_freespaces() {
+static void allocate_freespaces() {
 	// compute real size of all pinned freespace blocks
 	for(int i = 1; i < freespaces.count; i++) {
 		freespace_data& fs = freespaces[i];
@@ -808,14 +804,11 @@ void allocate_freespaces() {
 	});
 }
 
-//void nerf(const string& left, string& right){puts(S left+" = "+right);}
-
 void finishpass()
 {
 	verify_warnings();
 	pull_warnings(false);
 
-//defines.traverse(nerf);
 	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_missing_endspcblock);
 	if (in_struct || in_sub_struct) asar_throw_error(0, error_type_null, error_id_struct_without_endstruct);
 	else if (pushpcnum) asar_throw_error(0, error_type_null, error_id_pushpc_without_pullpc);
@@ -888,7 +881,6 @@ int numtrue=0;//if 1 -> increase both
 int numif = 0;  //if 0 or inside if 0 -> increase only numif
 
 autoarray<whiletracker> whilestatus;
-int single_line_for_tracker;
 
 
 static void push_pc()
@@ -915,7 +907,7 @@ static void pop_pc()
 }
 
 
-string handle_print(char* input)
+static string handle_print(char* input)
 {
 	// evaluating this math can be unsafe in pass 0
 	if(pass != 2) return "";

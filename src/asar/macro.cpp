@@ -5,7 +5,7 @@
 #include "warnings.h"
 
 assocarr<macrodata*> macros;
-string defining_macro_name;
+static string defining_macro_name;
 static macrodata * thisone;
 static int numlines;
 
@@ -15,9 +15,9 @@ int macrorecursion;
 bool inmacro;
 int numvarargs;
 
-macrodata* current_macro;
-const char* const* current_macro_args;
-int current_macro_numargs;
+static macrodata* current_macro;
+static const char* const* current_macro_args;
+static int current_macro_numargs;
 
 void startmacro(const char * line_)
 {
@@ -221,7 +221,7 @@ void callmacro(const char * data)
 	}
 }
 
-string generate_macro_arg_string(const char* named_arg, int depth)
+static string generate_macro_arg_string(const char* named_arg, int depth)
 {
 	string ret="<";
 	for (int i = 0; i < depth;++i)
@@ -233,7 +233,7 @@ string generate_macro_arg_string(const char* named_arg, int depth)
 	return ret;
 }
 
-string generate_macro_arg_string(int var_arg, int depth)
+static string generate_macro_arg_string(int var_arg, int depth)
 {
 	string ret="<";
 	for (int i = 0; i < depth;++i)
@@ -245,7 +245,7 @@ string generate_macro_arg_string(int var_arg, int depth)
 	return ret;
 }
 
-string generate_macro_hint_string(const char* named_arg, const macrodata* thismacro, int desired_depth, int current_depth=0)
+static string generate_macro_hint_string(const char* named_arg, const macrodata* thismacro, int desired_depth, int current_depth=0)
 {
 	// RPG Hacker: This only work when the incorrectly used parameter
 	// is inside the macro that is currently being defined. Not great,
@@ -286,7 +286,7 @@ string generate_macro_hint_string(const char* named_arg, const macrodata* thisma
 	return "";
 }
 
-string generate_macro_hint_string(int var_arg, const macrodata* thismacro, int desired_depth, int current_depth=0)
+static string generate_macro_hint_string(int var_arg, const macrodata* thismacro, int desired_depth, int current_depth=0)
 {
 	if (thismacro != nullptr)
 	{

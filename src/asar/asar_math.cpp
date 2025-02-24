@@ -158,7 +158,7 @@ static int data_size(const char *name)
 }
 
 
-string get_string_argument()
+static string get_string_argument()
 {
 	while (*str==' ') str++;
 	if (*str=='"')
@@ -175,7 +175,7 @@ string get_string_argument()
 }
 
 //only returns alphanumeric (and _) starting with alpha or _
-string get_symbol_argument()
+static string get_symbol_argument()
 {
 	while (*str==' ') str++;	//is this proper?  Dunno yet.
 	const char * strpos = str;
@@ -191,7 +191,7 @@ string get_symbol_argument()
 	return symbol;
 }
 
-double get_double_argument()
+static double get_double_argument()
 {
 	while (*str==' ') str++;
 	double result = eval(0);
@@ -200,7 +200,7 @@ double get_double_argument()
 }
 
 //will eat the comma
-bool has_next_parameter()
+static bool has_next_parameter()
 {
 	if (*str==',')
 	{
@@ -210,7 +210,7 @@ bool has_next_parameter()
 	return false;
 }
 
-void require_next_parameter()
+static void require_next_parameter()
 {
 	if (*str==',')
 	{
@@ -246,40 +246,40 @@ template <double (*F)(double, double)> double asar_binary_wrapper()
 	return F(first, get_double_argument());
 }
 
-double asar_bank(double a)
+static double asar_bank(double a)
 {
 	return (int)a >> 16;
 }
 
 
-double asar_logical_nand(double a, double b)
+static double asar_logical_nand(double a, double b)
 {
 	return !(a && b);
 }
 
 
-double asar_logical_nor(double a, double b)
+static double asar_logical_nor(double a, double b)
 {
 	return !(a || b);
 }
 
 
-double asar_logical_xor(double a, double b)
+static double asar_logical_xor(double a, double b)
 {
 	return !!a ^ !!b;
 }
 
-double asar_max(double a, double b)
+static double asar_max(double a, double b)
 {
 	return a > b ? a : b;
 }
 
-double asar_min(double a, double b)
+static double asar_min(double a, double b)
 {
 	return a < b ? a : b;
 }
 
-double asar_clamp()
+static double asar_clamp()
 {
 	double value = get_double_argument();
 	require_next_parameter();
@@ -290,7 +290,7 @@ double asar_clamp()
 	return asar_max(low, asar_min(high, value));
 }
 
-double asar_safediv()
+static double asar_safediv()
 {
 	double dividend = get_double_argument();
 	require_next_parameter();
@@ -301,7 +301,7 @@ double asar_safediv()
 	return divisor == 0.0 ? default_value : dividend / divisor;
 }
 
-double asar_select()
+static double asar_select()
 {
 	double selector = get_double_argument();
 	require_next_parameter();
@@ -312,23 +312,23 @@ double asar_select()
 	return selector == 0.0 ? b : a;
 }
 
-double asar_snestopc_wrapper()
+static double asar_snestopc_wrapper()
 {
 	return snestopc(get_double_argument());
 }
 
-double asar_pctosnes_wrapper()
+static double asar_pctosnes_wrapper()
 {
 	return pctosnes(get_double_argument());
 }
 
-double asar_realbase_wrapper()
+static double asar_realbase_wrapper()
 {
 	foundlabel = true;
 	return realsnespos;
 }
 
-double asar_pc_wrapper()
+static double asar_pc_wrapper()
 {
 	foundlabel = true;
 	return snespos;
@@ -523,7 +523,7 @@ static double asar_strlen()
 	return get_string_argument().length();
 }
 
-string copy_arg()
+static string copy_arg()
 {
 	if(*str == '"')
 	{
@@ -555,7 +555,7 @@ string copy_arg()
 	return result;
 }
 
-assocarr<double (*)()> builtin_functions =
+static assocarr<double (*)()> builtin_functions =
 {
 	{"sqrt", asar_unary_wrapper<sqrt>},
 	{"sin", asar_unary_wrapper<sin>},
@@ -638,7 +638,7 @@ assocarr<double (*)()> builtin_functions =
 	{"stringlength", asar_strlen}
 };
 
-assocarr<double (*)()> functions;
+static assocarr<double (*)()> functions;
 
 struct funcdat {
 	autoptr<char*> name;
@@ -739,7 +739,7 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 	functions[name] = asar_call_user_function;
 }
 
-inline const long hextable[] = {
+static const long hextable[] = {
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
         -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,
         -1,-1, 0,1,2,3,4,5,6,7,8,9,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15,-1,
@@ -872,7 +872,7 @@ static double getnumcore()
 	asar_throw_error(2, error_type_block, error_id_invalid_number);
 }
 
-inline double sanitize(double val)
+static inline double sanitize(double val)
 {
 	if (val != val) asar_throw_error(2, error_type_block, error_id_nan);
 	return val;

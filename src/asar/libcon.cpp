@@ -14,7 +14,7 @@ static int argsleft;
 bool libcon_interactive;
 static const char * usage;
 
-static volatile bool confirmclose=true;
+static bool confirmclose=true;
 void libcon_pause()
 {
 	if (confirmclose)
@@ -48,7 +48,7 @@ static const char * getarg(bool tellusage, const char * defval= nullptr)
 	return args[0];
 }
 
-bool u8_fgets(char* buffer, int buffer_size, FILE* handle)
+static bool u8_fgets(char* buffer, int buffer_size, FILE* handle)
 {
 #if defined(windows)
 	// RPG Hacker: Using buffer_size * 2 here to account for potential surrogate pairs.
