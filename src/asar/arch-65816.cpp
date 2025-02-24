@@ -14,40 +14,52 @@ void asend_65816()
 {
 }
 
-// like an address mode, but without a specific width
+// A bit of terminology i just invented:
+// "mnemonic" refers to the name of an instruction, e.g. LDA or JMP.
+// "address mode" is the form of an instruction's argument, with a specific
+//   width, e.g. [$12] or $1234,x. determining the exact mode requires knowing
+//   the width of the instruction.
+// "address kind" is like an address mode, but without a specific width. it
+//   is determined purely from the syntax of the argument.
+// "modifier" is the length suffix (the .w in LDA.w), but it's called modifier
+//   because it's a bit more general (also sets branch targeting mode).
+
 enum class addr_kind {
-	abs, // $00
-	x, // $00,x
-	y, // $00,y
-	ind, // ($00)
-	lind, // [$00]
-	xind, // ($00,x)
-	indy, // ($00),y
+	abs,   // $00
+	x,     // $00,x
+	y,     // $00,y
+	ind,   // ($00)  "indirect"
+	lind,  // [$00]  "long indirect"
+	xind,  // ($00,x)
+	indy,  // ($00),y
 	lindy, // [$00],y
-	s, // $00,s
-	sy, // ($00,s),y
-	imp, // implied (no argument)
-	a, // 'A' as argument
-	imm, // #$00
-	mvn, // special for mvn/mvp
+	s,     // $00,s
+	sy,    // ($00,s),y
+	imp,   // implied (no argument)
+	a,     // 'A' as argument
+	imm,   // #$00  "immediate"
+	mvn,   // special for mvn/mvp
 	num_addr_kinds,
 };
 // used as bitmasks
 static_assert((int)addr_kind::num_addr_kinds < 32);
 
-// this is not an `enum class` because those are annoying to use as bitmasks
+// various flags that affect parsing of specific instructions.
+// these are stored per mnemonic+kind, which is required for some of them, and
+// the rest usually have only 1 kind/width allowed anyways so it doesn't hurt.
+// this is not an `enum class` because those are annoying to use as bitmasks.
 enum mnemonic_flag {
 	// for brk,cop,wdm: implied mode = immediate with arg 0
 	flag_imm_implied_0   = 1 << 0,
 	// imm should be size 1 or 2 depending on accum size.
-	// this is not actually used in any way (other than allowing width 2)
+	// currently all this does is allow both 1- and 2-wide immediates,
 	// but could be useful for tracking rep/sep state in asar in the future.
 	flag_imm_width_a     = 1 << 1,
 	// imm should be size 1 or 2 depending on x/y size
 	flag_imm_width_xy    = 1 << 2,
 	// branch opcodes, have weird target computation rules
-	flag_branch	         = 1 << 3,
-	// for jmp/jsr/jml, sets optimizeforbank to K
+	flag_branch          = 1 << 3,
+	// for jmp/jsr, sets optimizeforbank to K
 	flag_bank_k          = 1 << 4,
 	// sets optimizeforbank to 0 (as some jumps always read from bank 0)
 	flag_bank_0          = 1 << 5,
@@ -55,17 +67,18 @@ enum mnemonic_flag {
 	flag_implied_rep     = 1 << 6,
 };
 
-struct insninfo {
+struct mnem_kind_info {
 	uint8_t allowed_widths; // bitmask, low 4 bits represent widths 0 to 3
 	uint8_t opcode_for_width[4];
 	uint32_t flags; // combination of `mnemonic_flag`s
 };
 struct mnemonicinfo {
 	// kind of a waste to have this array which most of the time only has 1 entry filled
-	insninfo types[(int)addr_kind::num_addr_kinds];
+	mnem_kind_info types[(int)addr_kind::num_addr_kinds];
 	uint32_t allowed_kinds_mask;
 };
-struct mnemonic_lookup {
+
+struct mnemonic_lookup_t {
 	std::unordered_map<string, mnemonicinfo> the_map;
 
 	// helper struct for the initializer_list
@@ -75,10 +88,7 @@ struct mnemonic_lookup {
 		addr_kind akind;
 		int width; // width of argument, not entire insn
 		uint32_t flags;
-		opcode(uint8_t byte_, const char *mnem_, addr_kind akind_, int width_)
-			: byte(byte_), mnem(mnem_), akind(akind_), width(width_),
-			flags(0) {}
-		opcode(uint8_t byte_, const char *mnem_, addr_kind akind_, int width_, uint32_t flags_)
+		opcode(uint8_t byte_, const char *mnem_, addr_kind akind_, int width_, uint32_t flags_ = 0)
 			: byte(byte_), mnem(mnem_), akind(akind_), width(width_),
 			flags(flags_) {}
 	};
@@ -92,7 +102,7 @@ struct mnemonic_lookup {
 		this_part.flags |= flags;
 	}
 
-	mnemonic_lookup(std::initializer_list<opcode> l) {
+	mnemonic_lookup_t(std::initializer_list<opcode> l) {
 		for(const auto& x : l) {
 			auto& this_mnem = the_map[x.mnem];
 			add_one(this_mnem, x.akind, x.width, x.byte, x.flags);
@@ -114,7 +124,7 @@ struct mnemonic_lookup {
 	}
 };
 
-mnemonic_lookup lookup = {
+mnemonic_lookup_t mnemonic_lookup = {
 	{ 0x00, "brk", addr_kind::imm    , 1, flag_imm_implied_0 },
 	{ 0x01, "ora", addr_kind::xind   , 1 },
 	{ 0x02, "cop", addr_kind::imm    , 1, flag_imm_implied_0 },
@@ -557,7 +567,6 @@ int64_t get_branch_value(parse_result& parsed, char modifier, int width) {
 
 bool asblock_65816(char** word, int numwords)
 {
-	if(word[0][0] == '\'') return false; // TODO hopefully unnecessary now?
 	// first find the mnemonic from the first word
 	int word_i = 0;
 	bool autoclean = false;
@@ -574,8 +583,8 @@ bool asblock_65816(char** word, int numwords)
 		mnem.truncate(mnem.length()-2);
 	}
 
-	auto it = lookup.the_map.find(mnem);
-	if(it == lookup.the_map.end()) return false;
+	auto it = mnemonic_lookup.the_map.find(mnem);
+	if(it == mnemonic_lookup.the_map.end()) return false;
 	mnemonicinfo& mnem_info = it->second;
 
 	// join together all the other arguments
@@ -607,7 +616,7 @@ bool asblock_65816(char** word, int numwords)
 		return true;
 	}
 	parse_result parse_res = parse_addr_kind(par, mnem_info.allowed_kinds_mask);
-	insninfo& kind_info = mnem_info.types[(uint32_t)parse_res.kind];
+	mnem_kind_info& kind_info = mnem_info.types[(uint32_t)parse_res.kind];
 
 	// figure out the minimum/maximum argument width for this mnemonic+addr_kind combo
 	// todo this is mildly jank
