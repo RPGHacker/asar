@@ -114,7 +114,7 @@ struct mnemonic_lookup_t {
 	}
 };
 
-mnemonic_lookup_t mnemonic_lookup = {
+static mnemonic_lookup_t mnemonic_lookup = {
 	{ 0x00, "brk", addr_kind::imm    , 1, flag_imm_implied_0 },
 	{ 0x01, "ora", addr_kind::xind   , 1 },
 	{ 0x02, "cop", addr_kind::imm    , 1, flag_imm_implied_0 },
@@ -382,7 +382,7 @@ struct parse_result {
 // checks for matching characters at the start of haystack, ignoring spaces.
 // returns index into haystack right after the match
 template<char... chars>
-int64_t startmatch(const string& haystack) {
+static int64_t startmatch(const string& haystack) {
 	static const char needle[] = {chars...};
 	size_t haystack_i = 0;
 	for(size_t i = 0; i < sizeof...(chars); i++) {
@@ -395,7 +395,7 @@ int64_t startmatch(const string& haystack) {
 // checks for matching characters at the end of haystack, ignoring spaces.
 // returns index into haystack right before the match
 template<char... chars>
-int64_t endmatch(const string& haystack) {
+static int64_t endmatch(const string& haystack) {
 	static const char needle[] = {chars...};
 	int64_t haystack_i = haystack.length()-1;
 	for(int64_t i = sizeof...(chars)-1; i >= 0; i--) {
@@ -410,7 +410,7 @@ int64_t endmatch(const string& haystack) {
 * Throws "invalid address mode" if the argument does not match any kinds.
 */
 // i still don't like this function...
-parse_result parse_addr_kind(const string& arg, uint32_t allowed_kinds_mask) {
+static parse_result parse_addr_kind(const string& arg, uint32_t allowed_kinds_mask) {
 	int64_t start_i = 0, end_i = arg.length();
 // If this addressing kind is allowed, return it, along with a trimmed version of the string.
 #define RETURN_IF_ALLOWED(kind) \
@@ -480,7 +480,7 @@ parse_result parse_addr_kind(const string& arg, uint32_t allowed_kinds_mask) {
 #undef RETURN_IF_ALLOWED
 }
 
-const char* format_valid_widths(int min, int max) {
+static const char* format_valid_widths(int min, int max) {
 	if(min == 1) {
 		if(max == 1) return "only 8-bit";
 		if(max == 2) return "only 8-bit or 16-bit";
@@ -494,7 +494,7 @@ const char* format_valid_widths(int min, int max) {
 	return "???";
 }
 
-int get_real_len(int min_len, int max_len, char modifier, const parse_result& parsed) {
+static int get_real_len(int min_len, int max_len, char modifier, const parse_result& parsed) {
 	// we can theoretically give min_len to getlen now :o
 	int arg_min_len = getlen(parsed.arg, parsed.kind == addr_kind::imm);
 	int out_len;
@@ -526,7 +526,7 @@ int get_real_len(int min_len, int max_len, char modifier, const parse_result& pa
 	return out_len;
 }
 
-int64_t get_branch_value(parse_result& parsed, char modifier, int width) {
+static int64_t get_branch_value(parse_result& parsed, char modifier, int width) {
 	int64_t num = 0;
 	num = getnum(parsed.arg);
 	bool target_is_abs = foundlabel;
