@@ -66,7 +66,7 @@ Aside from user-defined functions mentioned above, Asar also supports a number o
   endif
   ```
   
-- `canread1(pos)`, `canread2(pos)`, `canread3(pos)`, `canread4(pos)`, `canread(pos, num)`
+- `canread1(pos)`, `canread2(pos)`, `canread3(pos)`, `canread4(pos)`, `canread(num, pos)`
   
   Returns 1 if reading one/two/three/four/num bytes from the output ROM at SNES location pos would succeed and 0 otherwise.
   

@@ -632,7 +632,7 @@ bool asblock_65816(char** word, int numwords)
 	} else if(is_implied_rep) {
 		arg_len = 0;
 		rep_count = getnum(parse_res.arg);
-		if(foundlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+		if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 	} else if(parse_res.kind == addr_kind::imp || parse_res.kind == addr_kind::a) {
 		arg_len = 0;
 	} else {

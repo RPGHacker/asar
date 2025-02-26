@@ -362,7 +362,8 @@ string posneglabelname(const char ** input, bool define)
 	return output;
 }
 
-static string labelname(const char ** rawname, bool define=false)
+extern bool in_getlen;
+string labelname(const char ** rawname, bool define)
 {
 #define deref_rawname (*rawname)
 	autoarray<string>* sublabellist = &sublabels;
@@ -425,19 +426,22 @@ static string labelname(const char ** rawname, bool define=false)
 		name+=*(deref_rawname++);
 	}
 
-	if(!define && *deref_rawname == '[')
-	{
-		while (*deref_rawname && *deref_rawname != ']') deref_rawname++;
-		if(*deref_rawname != ']') asar_throw_error(2, error_type_block, error_id_invalid_label_missing_closer);
-		deref_rawname++;
-	}
+	// TODO janky hack, to be deleted when getlen is rewritten
+	if(in_getlen) {
+		if(!define && *deref_rawname == '[')
+		{
+			while (*deref_rawname && *deref_rawname != ']') deref_rawname++;
+			if(*deref_rawname != ']') asar_throw_error(2, error_type_block, error_id_invalid_label_missing_closer);
+			deref_rawname++;
+		}
 
-	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
-	{
-		name+=*(deref_rawname++);
-	}
+		while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
+		{
+			name+=*(deref_rawname++);
+		}
 
-	if(*deref_rawname == '[') asar_throw_error(2, error_type_block, error_id_invalid_subscript);
+		if(*deref_rawname == '[') asar_throw_error(2, error_type_block, error_id_invalid_subscript);
+	}
 
 	if (define && i>=0)
 	{
@@ -1784,7 +1788,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 					else
 					{
 						write2(0x0000);
-						write2((unsigned int)getnum(word[2]));
+						write2(pass == 2 ? (unsigned int)getnum(word[2]) : 0);
 					}
 				}
 				else if (numwords != 1)

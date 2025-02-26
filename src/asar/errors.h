@@ -52,7 +52,7 @@
 	ERR(function_redefined, "Function '%s' redefined.") \
 	ERR(broken_function_declaration, "Broken function declaration.") \
 	ERR(wrong_num_parameters, "Wrong number of parameters to function.") \
-	ERR(invalid_param_name, "Invalid parameter name.") \
+	ERR(invalid_param_name, "Invalid parameter name '%s'.") \
 	ERR(invalid_label_name, "Invalid label name.") \
 	ERR(label_not_found, "Label '%s' wasn't found.") \
 	ERR(label_redefined, "Label '%s' redefined.") \
@@ -187,6 +187,7 @@
 	ERR(label_before_if, "Labels are not allowed before \"%s\" commands. Suggestion: move the label to a separate line.") \
 	ERR(expected_number, "Expected number, got string instead") \
 	ERR(expected_string, "Expected string, got number instead") \
+	ERR(expected_ident, "Expected identifier") \
 	ERR(argument_count, "Wrong number of arguments. Expected %d, got %d") \
 // this line intentionally left blank
 

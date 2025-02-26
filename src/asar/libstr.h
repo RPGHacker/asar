@@ -13,6 +13,7 @@ static inline int to_lower(unsigned char c) { return c|(char_props[c]&0x20); }
 static inline int to_upper(unsigned char c) { return c&~(char_props[c]&0x20); }
 
 inline bool is_space(unsigned char c) { return char_props[c] & 0x80; } // C standard says \f \v are space, but this one disagrees
+// TODO is this opaque table lookup really faster than c >= '0' && c <= '9'?
 inline bool is_digit(unsigned char c) { return char_props[c] & 0x40; }
 inline bool is_alpha(unsigned char c) { return char_props[c] & 0x20; }
 inline bool is_lower(unsigned char c) { return char_props[c] & 0x04; }

@@ -1,14 +1,24 @@
 #include <memory>
+#include <variant>
 #include <vector>
-#include "assocarr.h"
+#include "libstr.h"
+#include "asar.h" // todo assembleblock.h sux
+#include "assembleblock.h"
+#include "errors.h"
 using std::unique_ptr;
 
 enum class math_val_type {
 	floating,
 	integer,
 	string,
+	// a resolved label with a name and value. used for datasize() and whatnot
 	identifier,
 };
+
+inline int64_t float_to_int(double f) {
+	// TODO: throw error on overflow?
+	return (int64_t)f;
+}
 
 class math_val {
 public:
@@ -38,6 +48,7 @@ public:
 		m_string_val = v;
 	}
 
+	// TODO: make all these conversions print the current type aswell instead of just expected type
 	double get_double() const {
 		switch(m_type) {
 			case math_val_type::floating:
@@ -54,17 +65,15 @@ public:
 	int64_t get_integer() const {
 		switch(m_type) {
 			case math_val_type::floating:
-				return (int64_t)m_numeric_val.double_;
+				return float_to_int(m_numeric_val.double_);
 			case math_val_type::integer:
 				return m_numeric_val.int_;
 			case math_val_type::identifier:
-				// the entire label value code here i guess
-				// structs??? i think those can always be parsed to statics and thus
-				// directly to integer values though
-				// or not???
-				// we can parse it to an expression involving simple labels
-				// maybe???
-				return labelval(m_string_val).pos;
+				if(!labels.exists(m_string_val))
+					// i'm not sure if it's even possible to reach here, anything
+					// that constructs identifiers should already check for existence...
+					asar_throw_error(2, error_type_block, error_id_label_not_found, m_string_val.data());
+				return labels.find(m_string_val).pos;
 			case math_val_type::string:
 				asar_throw_error(2, error_type_block, error_id_expected_number);
 		}
@@ -73,49 +82,76 @@ public:
 		if(m_type == math_val_type::string) return m_string_val;
 		asar_throw_error(2, error_type_block, error_id_expected_string);
 	}
+	const string& get_identifier() const {
+		if(m_type == math_val_type::identifier) return m_string_val;
+		asar_throw_error(2, error_type_block, error_id_expected_ident);
+	}
+
+	bool get_bool() const {
+		switch(m_type) {
+			case math_val_type::floating:
+				return get_double() != 0.0;
+			case math_val_type::integer:
+			case math_val_type::identifier:
+				return get_integer() != 0;
+			case math_val_type::string:
+				return get_str().length() != 0;
+		}
+	}
 };
 
 // any info that's necessary during evaluation
 class math_eval_context {
 public:
+	// TODO would it be faster to make this a reference? does that avoid any significant copies?
 	std::vector<math_val> userfunc_params;
 };
 
 class math_ast_node {
 public:
-	virtual math_val evaluate(const math_eval_context&) = 0;
+	virtual math_val evaluate(const math_eval_context&) const = 0;
 	// 0 - no label, 1 - static label, 3 - nonstatic label.
-	// actually i think doing 0 - static label, 1 - backward label, 3 - forward
-	// label would be better
-	virtual int has_label() = 0;
+	// (maybe tracking forwardlabel too would be good?)
+	virtual int has_label() const = 0;
 	virtual ~math_ast_node() = default;
 };
 
 enum class math_binop_type {
-	pow,
-	mul,
-	div,
-	mod,
-	add,
-	sub,
-	shift_left,
-	shift_right,
-	bit_and,
-	bit_or,
-	bit_xor,
-	comp_ge,
-	comp_le,
-	comp_gt,
-	comp_lt,
-	comp_eq,
-	comp_ne,
+	pow,          // **
+	mul,          // *
+	div,          // /
+	mod,          // %
+	add,          // +
+	sub,          // -
+	shift_left,   // <<
+	shift_right,  // >>
+	bit_and,      // &
+	bit_or,       // |
+	bit_xor,      // ^
+	logical_and,  // &&
+	logical_or,   // ||
+	comp_ge,      // >=
+	comp_le,      // <=
+	comp_gt,      // >
+	comp_lt,      // <
+	comp_eq,      // ==
+	comp_ne,      // !=
 };
 
-template<typename T> T eval_arith(T lhs, T rhs, math_binop_type type) {
+template<typename T>
+T evaluate_binop_arithmetic(T lhs, T rhs, math_binop_type type) {
 	switch(type) {
 		case math_binop_type::mul: return lhs * rhs;
 		case math_binop_type::add: return lhs + rhs;
 		case math_binop_type::sub: return lhs - rhs;
+		default:
+			// this should never happen
+			__builtin_trap();
+	}
+}
+template<typename T>
+bool evaluate_binop_compare(T lhs, T rhs, math_binop_type type) {
+	switch(type) {
 		case math_binop_type::comp_ge: return lhs >= rhs;
 		case math_binop_type::comp_le: return lhs <= rhs;
 		case math_binop_type::comp_gt: return lhs > rhs;
@@ -128,60 +164,97 @@ template<typename T> T eval_arith(T lhs, T rhs, math_binop_type type) {
 	}
 }
 
+static math_val evaluate_binop(math_val lhs, math_val rhs, math_binop_type type) {
+	// todo: do this a bit smarter (bit_ops shouldn't cast int->float->int)
+	if(lhs.m_type == math_val_type::floating) rhs = math_val(rhs.get_double());
+	else if(rhs.m_type == math_val_type::floating) lhs = math_val(lhs.get_double());
+	switch(type) {
+		case math_binop_type::pow: return math_val(pow(lhs.get_double(), rhs.get_double()));
+		case math_binop_type::div:
+			if(rhs.get_double() == 0.0)
+				asar_throw_error(2, error_type_block, error_id_division_by_zero);
+			return math_val(lhs.get_double() / rhs.get_double());
+		case math_binop_type::mod:
+			if(rhs.get_double() == 0.0)
+				asar_throw_error(2, error_type_block, error_id_division_by_zero);
+			// TODO: negative semantics
+			if(lhs.m_type == math_val_type::floating) {
+				return math_val(fmod(lhs.get_double(), rhs.get_double()));
+			} else {
+				return math_val(lhs.get_integer() % rhs.get_integer());
+			}
+			break;
+
+		case math_binop_type::shift_left:
+			{
+				int64_t rhs_v = rhs.get_integer();
+				if(rhs_v < 0)
+					asar_throw_error(2, error_type_block, error_id_negative_shift);
+				return math_val(lhs.get_integer() << (uint64_t)rhs_v);
+			}
+		case math_binop_type::shift_right:
+			{
+				int64_t rhs_v = rhs.get_integer();
+				if(rhs_v < 0)
+					asar_throw_error(2, error_type_block, error_id_negative_shift);
+				return math_val(lhs.get_integer() >> (uint64_t)rhs_v);
+			}
+
+		case math_binop_type::bit_and: return math_val(lhs.get_integer() & rhs.get_integer());
+		case math_binop_type::bit_or:  return math_val(lhs.get_integer() | rhs.get_integer());
+		case math_binop_type::bit_xor: return math_val(lhs.get_integer() ^ rhs.get_integer());
+
+		case math_binop_type::logical_and:
+		case math_binop_type::logical_or:
+			asar_throw_error(2, error_type_block, error_id_internal_error, "evaluate_binop() on logical ops loses short-circuiting");
+
+		case math_binop_type::mul:
+		case math_binop_type::add:
+		case math_binop_type::sub:
+			// TODO error on string (also TODO support string +)
+			if(lhs.m_type == math_val_type::floating)
+				return math_val(evaluate_binop_arithmetic<double>(lhs.get_double(), rhs.get_double(), type));
+			else
+				return math_val(evaluate_binop_arithmetic<int64_t>(lhs.get_integer(), rhs.get_integer(), type));
+
+		case math_binop_type::comp_ge:
+		case math_binop_type::comp_le:
+		case math_binop_type::comp_gt:
+		case math_binop_type::comp_lt:
+		case math_binop_type::comp_eq:
+		case math_binop_type::comp_ne:
+			if(lhs.m_type == math_val_type::floating)
+				return math_val((int64_t)evaluate_binop_compare<double>(lhs.get_double(), rhs.get_double(), type));
+			else
+				return math_val((int64_t)evaluate_binop_compare<int64_t>(lhs.get_integer(), rhs.get_integer(), type));
+	}
+}
+
 class math_ast_binop : public math_ast_node {
 public:
 	unique_ptr<math_ast_node> m_left, m_right;
 	math_binop_type m_type;
-	math_ast_binop(math_ast_node* left_in, math_ast_node* right_in, math_binop_type type_in)
-		: m_left(left_in), m_right(right_in), m_type(type_in) {}
+	math_ast_binop(std::unique_ptr<math_ast_node> left_in, std::unique_ptr<math_ast_node> right_in, math_binop_type type_in)
+		: m_left(std::move(left_in)), m_right(std::move(right_in)), m_type(type_in) {}
 
 
-	math_val evaluate(const math_eval_context& ctx) {
+	math_val evaluate(const math_eval_context& ctx) const {
 		math_val lhs = m_left->evaluate(ctx);
-		math_val rhs = m_right->evaluate(ctx);
-		if(lhs.m_type == math_val_type::floating) rhs = math_val(rhs.get_double());
-		else if(rhs.m_type == math_val_type::floating) lhs = math_val(lhs.get_double());
-		switch(m_type) {
-			case math_binop_type::pow: return math_val(pow(lhs.get_double(), rhs.get_double()));
-			case math_binop_type::div:
-				if(rhs.get_double() == 0.0) asar_throw_error(2, error_type_block, error_id_division_by_zero);
-				return math_val(lhs.get_double() / rhs.get_double());
-			case math_binop_type::mod:
-				if(rhs.get_double() == 0.0) asar_throw_error(2, error_type_block, error_id_division_by_zero);
-				// TODO: negative semantics
-				if(lhs.m_type == math_val_type::floating) {
-					return math_val(fmod(lhs.get_double(), rhs.get_double()));
-				} else {
-					return math_val(lhs.get_integer() % rhs.get_integer());
-				}
-				break;
-			
-			case math_binop_type::shift_left:
-				{
-					int64_t rhs_v = rhs.get_integer();
-					if(rhs_v < 0) asar_throw_error(2, error_type_block, error_id_negative_shift);
-					return math_val(lhs.get_integer() << (uint64_t)rhs_v);
-				}
-			case math_binop_type::shift_right:
-				{
-					int64_t rhs_v = rhs.get_integer();
-					if(rhs_v < 0) asar_throw_error(2, error_type_block, error_id_negative_shift);
-					return math_val(lhs.get_integer() >> (uint64_t)rhs_v);
-				}
-
-			case math_binop_type::bit_and: return math_val(lhs.get_integer() & rhs.get_integer());
-			case math_binop_type::bit_or:  return math_val(lhs.get_integer() | rhs.get_integer());
-			case math_binop_type::bit_xor: return math_val(lhs.get_integer() ^ rhs.get_integer());
-
-			default:
-				if(lhs.m_type == math_val_type::floating)
-					return math_val(eval_arith<double>(lhs.get_double(), rhs.get_double(), m_type));
-				else
-					return math_val(eval_arith<int64_t>(lhs.get_integer(), rhs.get_integer(), m_type));
+		if(m_type == math_binop_type::logical_or) {
+			if(lhs.get_bool() == true) return math_val((int64_t)true);
+			math_val rhs = m_right->evaluate(ctx);
+			return math_val((int64_t)rhs.get_bool());
 		}
+		if(m_type == math_binop_type::logical_and) {
+			if(lhs.get_bool() == false) return math_val((int64_t)false);
+			math_val rhs = m_right->evaluate(ctx);
+			return math_val((int64_t)rhs.get_bool());
+		}
+		math_val rhs = m_right->evaluate(ctx);
+		return evaluate_binop(lhs, rhs, m_type);
 	}
 
-	int has_label() {
+	int has_label() const {
 		return m_left->has_label() | m_right->has_label();
 	}
 };
@@ -196,9 +269,9 @@ class math_ast_unop : public math_ast_node {
 public:
 	unique_ptr<math_ast_node> m_arg;
 	math_unop_type m_type;
-	math_ast_unop(math_ast_node* arg_in, math_unop_type type_in)
-		: m_arg(arg_in), m_type(type_in) {}
-	math_val evaluate(const math_eval_context& ctx) {
+	math_ast_unop(std::unique_ptr<math_ast_node> arg_in, math_unop_type type_in)
+		: m_arg(std::move(arg_in)), m_type(type_in) {}
+	math_val evaluate(const math_eval_context& ctx) const {
 		math_val arg = m_arg->evaluate(ctx);
 		switch(m_type) {
 			case math_unop_type::neg:
@@ -208,7 +281,7 @@ public:
 			case math_unop_type::bank_extract: return math_val(arg.get_integer() >> 16);
 		}
 	}
-	int has_label() {
+	int has_label() const {
 		return m_arg->has_label();
 	}
 };
@@ -217,22 +290,21 @@ class math_ast_literal : public math_ast_node {
 	math_val m_value;
 public:
 	math_ast_literal(math_val value) : m_value(value) {}
-	math_val evaluate(const math_eval_context& ctx) { return m_value; }
-	int has_label() { return 0; }
+	math_val evaluate(const math_eval_context& ctx) const { return m_value; }
+	int has_label() const { return 0; }
 };
 
-// TODO: move this somewhere better - it's needed here though
-// (also give it a better name...)
-extern string ns;
 class math_ast_label : public math_ast_node {
 	string m_labelname;
 	// current namespace when this label was referenced
 	string m_cur_ns;
 public:
 	// this should be the output of labelname() already
-	math_ast_label(string& labelname)
-		: m_labelname(labelname), m_cur_ns(ns) {}
-	math_val evaluate(const math_eval_context& ctx) {
+	math_ast_label(string labelname)
+		: m_labelname(labelname)
+		// this is initialized with the global ns
+		, m_cur_ns(ns) {}
+	math_val evaluate(const math_eval_context& ctx) const {
 		if(m_cur_ns && labels.exists(m_cur_ns + m_labelname)) {
 			math_val v = math_val(m_cur_ns + m_labelname);
 			v.m_type = math_val_type::identifier;
@@ -248,80 +320,92 @@ public:
 			asar_throw_error(2, error_type_block, error_id_label_not_found, m_labelname.data());
 		}
 	}
-	int has_label() {
-		/*if(m_cur_ns && labels.exists(m_cur_ns + m_labelname)) {
+	int has_label() const {
+		if(m_cur_ns && labels.exists(m_cur_ns + m_labelname)) {
 			return labels.find(m_cur_ns + m_labelname).is_static ? 1 : 3;
 		}
 		else if(labels.exists(m_labelname)) {
 			return labels.find(m_labelname).is_static ? 1 : 3;
-		}*/
+		}
 		// otherwise, non-static label
 		return 3;
 	}
 };
 
-class math_function {
+class math_builtin_function {
+	using callable_t = math_val(*)(const std::vector<math_val>& args);
+	callable_t inner;
+	int m_has_label;
 public:
-	virtual math_val call(const std::vector<math_val>& args) = 0;
-	virtual int has_label() { return 0; }
-};
-
-
-template<double (*F)(double)>
-class math_unary_real_function : public math_function {
-	math_val call(const std::vector<math_val>& args) {
-		if(args.size() != 1)
-			asar_throw_error(2, error_type_block, error_id_argument_count, 1, (int)args.size());
-		double val = F(args[0].get_double());
-		if (val != val) asar_throw_error(2, error_type_block, error_id_nan);
-		return math_val(val);
+	math_builtin_function(callable_t c, int l = 0) : inner(c), m_has_label(l) {}
+	math_val call(const std::vector<math_val>& args) const {
+		return inner(args);
+	}
+	int has_label() const {
+		return m_has_label;
 	}
 };
 
-std::unordered_map<std::string, unique_ptr<math_function>> builtin_functions_ = {
-//	{"sqrt", std::make_unique<math_unary_real_function<sqrt>>()},
-};
-assocarr<math_function> all_functions;
-
-class math_user_function : public math_function {
-public:
+class math_user_function {
 	int m_arg_count;
 	unique_ptr<math_ast_node> m_func_body;
-	math_val call(const std::vector<math_val>& args) {
+public:
+	math_user_function(std::unique_ptr<math_ast_node> body, size_t arg_count)
+		: m_arg_count(arg_count), m_func_body(std::move(body)) {}
+	math_val call(const std::vector<math_val>& args) const {
 		math_eval_context new_ctx;
 		new_ctx.userfunc_params = args;
 		if(args.size() != m_arg_count)
 			asar_throw_error(2, error_type_block, error_id_argument_count, m_arg_count, (int)args.size());
 		return m_func_body->evaluate(new_ctx);
 	}
-	int has_label() {
+	int has_label() const {
 		return m_func_body->has_label();
 	}
 };
 
-class math_ast_function_call : public math_ast_node {
+class math_function_ref {
+	std::variant<const math_builtin_function*, const math_user_function*> inner;
 public:
+	math_function_ref(const math_builtin_function& fn) : inner(&fn) {}
+	math_function_ref(const math_user_function& fn) : inner(&fn) {}
+	math_val call(const std::vector<math_val>& args) const {
+		return std::visit([&](auto& i) { return i->call(args); }, inner);
+	}
+	int has_label() const {
+		return std::visit([&](auto& i) { return i->has_label(); }, inner);
+	}
+};
+
+extern std::unordered_map<string, math_user_function> user_functions;
+extern const std::unordered_map<string, math_builtin_function> builtin_functions;
+
+class math_ast_function_call : public math_ast_node {
 	std::vector<unique_ptr<math_ast_node>> m_arguments;
-	math_function* m_func;
-	math_ast_function_call(std::vector<math_ast_node*> args, string function_name) {
-		for(math_ast_node* p : args) {
-			m_arguments.push_back(unique_ptr<math_ast_node>(p));
-		}
-		if(all_functions.exists(function_name)) {
-			m_func = &all_functions.find(function_name);
+	math_function_ref m_func;
+	static math_function_ref lookup_fname(string const& function_name) {
+		if(auto it = user_functions.find(function_name); it != user_functions.end()) {
+			return it->second;
+		} else if(auto it = builtin_functions.find(function_name); it != builtin_functions.end()) {
+			return it->second;
 		} else {
-			asar_throw_error(2, error_type_block, error_id_function_not_found, function_name);
+			asar_throw_error(2, error_type_block, error_id_function_not_found, function_name.data());
 		}
 	}
-	math_val evaluate(const math_eval_context& ctx) {
+
+public:
+	math_ast_function_call(std::vector<std::unique_ptr<math_ast_node>> args, string function_name)
+		: m_arguments(std::move(args))
+		, m_func(lookup_fname(function_name)) {}
+	math_val evaluate(const math_eval_context& ctx) const {
 		std::vector<math_val> arg_vals;
 		for(auto const& p : m_arguments) {
 			arg_vals.push_back(p->evaluate(ctx));
 		}
-		return m_func->call(arg_vals);
+		return m_func.call(arg_vals);
 	}
-	int has_label() {
-		int out = m_func->has_label();
+	int has_label() const {
+		int out = m_func.has_label();
 		for(auto const& p : m_arguments) {
 			out |= p->has_label();
 		}
@@ -331,17 +415,16 @@ public:
 
 // only for use inside user function definitions
 class math_ast_function_argument : public math_ast_node {
-	int m_arg_idx;
-	math_ast_function_argument(int arg_idx) : m_arg_idx(arg_idx) {}
+	size_t m_arg_idx;
+public:
+	math_ast_function_argument(size_t arg_idx) : m_arg_idx(arg_idx) {}
 
-	math_val evaluate(const math_eval_context& ctx) {
+	math_val evaluate(const math_eval_context& ctx) const {
 		return ctx.userfunc_params[m_arg_idx];
 	}
 
 	// if a function is called with a label as an argument, that gets checked by
 	// the function call node, not here
-	int has_label() {
-		return 0;
-	}
+	int has_label() const { return 0; }
 };
 

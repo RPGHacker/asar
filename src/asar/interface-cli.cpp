@@ -172,8 +172,6 @@ void onsigxcpu(int ignored)
 #endif
 #endif
 
-void testmath();
-
 int main(int argc, const char * argv[])
 {
 #ifdef TIMELIMIT
@@ -549,13 +547,6 @@ int main(int argc, const char * argv[])
 
 		string stddefinespath = STR dir(argv[0]) + "stddefines.txt";
 		parse_std_defines(stddefinespath);
-
-		if(!strcmp(argv[1], "DEBUGMATH")) {
-			initstuff();
-			pass=2;
-			testmath();
-			return 0;
-		}
 
 		auto execute_patch = [&]()
 		{

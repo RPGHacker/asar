@@ -439,6 +439,7 @@ bool is_hex_constant(const char* str){
 	return false;
 }
 
+bool in_getlen;
 int getlen(const char * orgstr, bool optimizebankextraction)
 {
 	const char * str=orgstr;
@@ -497,6 +498,10 @@ notposneglabel:
 		else if (is_ualpha(*str) || *str=='.' || *str=='?')
 		{
 			snes_label thislabel;
+			in_getlen = true;
+			struct guard {
+				~guard() { in_getlen = false; }
+			} _g;
 			bool exists=labelval(&str, &thislabel);
 			thislen=getlenforlabel(thislabel, exists);
 		}
