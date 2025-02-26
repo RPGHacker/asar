@@ -116,6 +116,8 @@ public:
 	virtual ~math_ast_node() = default;
 };
 
+using owned_node = unique_ptr<math_ast_node>;
+
 enum class math_binop_type {
 	pow,          // **
 	mul,          // *
@@ -145,8 +147,7 @@ T evaluate_binop_arithmetic(T lhs, T rhs, math_binop_type type) {
 		case math_binop_type::add: return lhs + rhs;
 		case math_binop_type::sub: return lhs - rhs;
 		default:
-			// this should never happen
-			__builtin_trap();
+			asar_throw_error(2, error_type_block, error_id_internal_error, "evaluate_binop_arithmetic with bad type");
 	}
 }
 template<typename T>
@@ -159,8 +160,7 @@ bool evaluate_binop_compare(T lhs, T rhs, math_binop_type type) {
 		case math_binop_type::comp_eq: return lhs == rhs;
 		case math_binop_type::comp_ne: return lhs != rhs;
 		default:
-			// this should never happen
-			__builtin_trap();
+			asar_throw_error(2, error_type_block, error_id_internal_error, "evaluate_binop_compare with bad type");
 	}
 }
 
@@ -232,14 +232,16 @@ static math_val evaluate_binop(math_val lhs, math_val rhs, math_binop_type type)
 
 class math_ast_binop : public math_ast_node {
 public:
-	unique_ptr<math_ast_node> m_left, m_right;
+	owned_node m_left, m_right;
 	math_binop_type m_type;
-	math_ast_binop(std::unique_ptr<math_ast_node> left_in, std::unique_ptr<math_ast_node> right_in, math_binop_type type_in)
+	math_ast_binop(owned_node left_in, owned_node right_in, math_binop_type type_in)
 		: m_left(std::move(left_in)), m_right(std::move(right_in)), m_type(type_in) {}
 
 
 	math_val evaluate(const math_eval_context& ctx) const {
 		math_val lhs = m_left->evaluate(ctx);
+
+		// handle short-circuiting for || and &&
 		if(m_type == math_binop_type::logical_or) {
 			if(lhs.get_bool() == true) return math_val((int64_t)true);
 			math_val rhs = m_right->evaluate(ctx);
@@ -250,6 +252,7 @@ public:
 			math_val rhs = m_right->evaluate(ctx);
 			return math_val((int64_t)rhs.get_bool());
 		}
+
 		math_val rhs = m_right->evaluate(ctx);
 		return evaluate_binop(lhs, rhs, m_type);
 	}
@@ -267,9 +270,9 @@ enum class math_unop_type {
 
 class math_ast_unop : public math_ast_node {
 public:
-	unique_ptr<math_ast_node> m_arg;
+	owned_node m_arg;
 	math_unop_type m_type;
-	math_ast_unop(std::unique_ptr<math_ast_node> arg_in, math_unop_type type_in)
+	math_ast_unop(owned_node arg_in, math_unop_type type_in)
 		: m_arg(std::move(arg_in)), m_type(type_in) {}
 	math_val evaluate(const math_eval_context& ctx) const {
 		math_val arg = m_arg->evaluate(ctx);
@@ -348,9 +351,9 @@ public:
 
 class math_user_function {
 	int m_arg_count;
-	unique_ptr<math_ast_node> m_func_body;
+	owned_node m_func_body;
 public:
-	math_user_function(std::unique_ptr<math_ast_node> body, size_t arg_count)
+	math_user_function(owned_node body, size_t arg_count)
 		: m_arg_count(arg_count), m_func_body(std::move(body)) {}
 	math_val call(const std::vector<math_val>& args) const {
 		math_eval_context new_ctx;
@@ -381,7 +384,7 @@ extern std::unordered_map<string, math_user_function> user_functions;
 extern const std::unordered_map<string, math_builtin_function> builtin_functions;
 
 class math_ast_function_call : public math_ast_node {
-	std::vector<unique_ptr<math_ast_node>> m_arguments;
+	std::vector<owned_node> m_arguments;
 	math_function_ref m_func;
 	static math_function_ref lookup_fname(string const& function_name) {
 		if(auto it = user_functions.find(function_name); it != user_functions.end()) {
@@ -394,7 +397,7 @@ class math_ast_function_call : public math_ast_node {
 	}
 
 public:
-	math_ast_function_call(std::vector<std::unique_ptr<math_ast_node>> args, string function_name)
+	math_ast_function_call(std::vector<owned_node> args, string function_name)
 		: m_arguments(std::move(args))
 		, m_func(lookup_fname(function_name)) {}
 	math_val evaluate(const math_eval_context& ctx) const {

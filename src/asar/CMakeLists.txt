@@ -164,6 +164,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/macro.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/asar_math.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/math_functions.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/warnings.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/errors.cpp"
