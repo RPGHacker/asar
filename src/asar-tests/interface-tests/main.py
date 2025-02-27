@@ -276,6 +276,23 @@ class TestAsarEXE(unittest.TestCase):
         with open(rom_name, 'rb') as f:
             self.assertEqual(f.read(), b"\x42")
 
+    def testDefineOption(self):
+        patch_name = os.path.join(self.temp_dir.name, "patch.asm")
+        rom_name = os.path.join(self.temp_dir.name, "rom.sfc")
+        with open(patch_name, 'w') as f:
+            f.write("""
+org $8000
+assert defined("cmddefined")
+assert defined("cmddefined2")
+db!cmddefined3
+""")
+        out = self.runAsar("-Dcmddefined", "-D!cmddefined2=", "--define", " !cmddefined3 = 16,240,224 ", patch_name, rom_name)
+        self.assertEqual(out, (0, "", ""))
+        with open(rom_name, 'rb') as f:
+            self.assertEqual(f.read(), b"\x10\xf0\xe0")
+
+    # TODO: test more of the commandline options
+
     @unittest.skipIf(sys.platform.startswith("win"), "our windows console input doesn't work with pipes")
     def testInteractive(self):
         assert asar_exe_path is not None
