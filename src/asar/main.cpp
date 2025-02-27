@@ -354,8 +354,7 @@ virtual_file_error asar_get_last_io_error()
 	return vfe_unknown;
 }
 
-static bool freespaced;
-static int getlenforlabel(snes_label thislabel, bool exists)
+int getlenforlabel(snes_label thislabel, bool exists)
 {
 	unsigned int bank = thislabel.pos>>16;
 	unsigned int word = thislabel.pos&0xFFFF;
@@ -437,81 +436,6 @@ bool is_hex_constant(const char* str){
 		}
 	}
 	return false;
-}
-
-bool in_getlen;
-int getlen(const char * orgstr, bool optimizebankextraction)
-{
-	const char * str=orgstr;
-	freespaced=false;
-
-	const char* posneglabel = str;
-	string posnegname = posneglabelname(&posneglabel, false);
-
-	if (posnegname.length() > 0)
-	{
-		if (*posneglabel != '\0') goto notposneglabel;
-
-		if (!pass) return 2;
-		snes_label label_data;
-		// RPG Hacker: Umm... what kind of magic constant is this?
-		label_data.pos = 31415926;
-		bool found = labelval(posnegname, &label_data);
-		return getlenforlabel(label_data, found);
-	}
-notposneglabel:
-	int len=0;
-	while (*str)
-	{
-		int thislen=0;
-		bool maybebankextraction=(str==orgstr);
-		if (*str=='$')
-		{
-			str++;
-			int i;
-			for (i=0;is_xdigit(str[i]);i++);
-			//if (i&1) warn(S dec(i)+"-digit hex value");//blocked in getnum instead
-			thislen=(i+1)/2;
-			str+=i;
-		}
-		else if (*str=='%')
-		{
-			str++;
-			int i;
-			for (i=0;str[i]=='0' || str[i]=='1';i++);
-			//if (i&7) warn(S dec(i)+"-digit binary value");
-			thislen=(i+7)/8;
-			str+=i;
-		}
-		else if (str[0]=='\'' && str[2]=='\'')
-		{
-			thislen=1;
-			str+=3;
-		}
-		else if (is_digit(*str))
-		{
-			int val=strtol(str, const_cast<char**>(&str), 10);
-			if (val>=0) thislen=1;
-			if (val>=256) thislen=2;
-			if (val>=65536) thislen=3;
-		}
-		else if (is_ualpha(*str) || *str=='.' || *str=='?')
-		{
-			snes_label thislabel;
-			in_getlen = true;
-			struct guard {
-				~guard() { in_getlen = false; }
-			} _g;
-			bool exists=labelval(&str, &thislabel);
-			thislen=getlenforlabel(thislabel, exists);
-		}
-		else str++;
-		if (optimizebankextraction && maybebankextraction &&
-				(!strcmp(str, ">>16") || !strcmp(str, "/65536") || !strcmp(str, "/$10000")))
-					return 1;
-		if (thislen>len) len=thislen;
-	}
-	return len;
 }
 
 struct strcompare {

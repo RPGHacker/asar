@@ -451,7 +451,7 @@ const std::unordered_map<string, math_builtin_function> builtin_functions = {
 	{ "safediv", fixed_arity<fn_safediv> },
 
 	{ "select", fixed_arity<fn_select> },
-	{ "bank", fixed_arity<fn_bank> },
+	{ "bank", { fixed_arity<fn_bank>, 0, true } }, // hack: 3rd initializer member is "is this the bank function?", needed for get_len
 	{ "not", fixed_arity<fn_not> },
 	{ "equal", math_binop_function<math_binop_type::comp_eq> },
 	{ "notequal", math_binop_function<math_binop_type::comp_ne> },

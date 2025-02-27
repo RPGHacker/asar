@@ -53,11 +53,14 @@ static const long hextable[] = {
 owned_node parse_context::parse_atom() {
 	if(*str == '$') {
 		if (!is_xdigit(*++str)) asar_throw_error(2, error_type_block, error_id_invalid_hex_value);
+		const char* start = str;
 		int64_t ret = 0; // todo error on overflow?
 		while (hextable[0 + *str] >= 0) {
 			ret = (ret << 4) | hextable[0 + *str++];
 		}
-		return std::make_unique<math_ast_literal>(ret);
+		int len = str - start;
+		int len_bytes = (len+1)/2;
+		return std::make_unique<math_ast_literal>(ret, len_bytes);
 	}
 	if (is_ualpha(*str) || *str=='.' || *str=='?') {
 		const char * start=str;
@@ -134,8 +137,10 @@ owned_node parse_context::parse_atom() {
 	}
 	if(*str == '%') {
 		if (str[1] != '0' && str[1] != '1') asar_throw_error(2, error_type_block, error_id_invalid_binary_value);
+		const char* start = str+1;
 		uint64_t res = strtoull(str+1, const_cast<char**>(&str), 2);
-		return std::make_unique<math_ast_literal>((int64_t)res);
+		int len = str - start;
+		return std::make_unique<math_ast_literal>((int64_t)res, (len+7)/8);
 	}
 	if (*str=='\'') {
 		if (!str[1]) asar_throw_error(2, error_type_block, error_id_invalid_character);
@@ -154,7 +159,7 @@ owned_node parse_context::parse_atom() {
 			asar_throw_error(2, error_type_block, error_id_undefined_char, u8_str.data());
 		}
 		str++;
-		return std::make_unique<math_ast_literal>(rval);
+		return std::make_unique<math_ast_literal>(rval, 1);
 	}
 	if (is_digit(*str)) {
 		const char* end = str;
@@ -171,7 +176,8 @@ owned_node parse_context::parse_atom() {
 			return std::make_unique<math_ast_literal>(res);
 		} else {
 			int64_t res = strtoll(number, nullptr, 10);
-			return std::make_unique<math_ast_literal>(res);
+			int len = (res >= 0x10000) ? 3 : (res >= 0x100) ? 2 : 1; 
+			return std::make_unique<math_ast_literal>(res, len);
 		}
 	}
 	if(*str == '"') {
@@ -333,6 +339,13 @@ int64_t getnum(const char* instr)
 double getnumdouble(const char * instr)
 {
 	return math(instr);
+}
+
+int getlen(const char * orgstr, bool optimizebankextraction) {
+	parse_context parse_ctx { orgstr, {}};
+	owned_node parsed = parse_ctx.parse();
+	int letgen = parsed->get_len(optimizebankextraction);
+	return letgen;
 }
 
 void initmathcore()

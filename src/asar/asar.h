@@ -15,6 +15,7 @@
 #include "errors.h"
 #include "warnings.h"
 #include "virtualfile.h"
+#include "assembleblock.h" // for snes_label - TODO do we want this here???
 #include <cstdint>
 
 extern unsigned const char * romdata_r;
@@ -27,6 +28,7 @@ inline void verify_paren(autoptr<char **> &ptr)
 
 int getlen(const char * str, bool optimizebankextraction=false);
 bool is_hex_constant(const char * str);
+int getlenforlabel(snes_label thislabel, bool exists);
 
 bool validatedefinename(const char * name);
 

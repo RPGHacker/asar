@@ -113,6 +113,8 @@ public:
 	// 0 - no label, 1 - static label, 3 - nonstatic label.
 	// (maybe tracking forwardlabel too would be good?)
 	virtual int has_label() const = 0;
+	// how many bytes long should the result of this expression be?
+	virtual int get_len(bool could_be_bank_ex) const = 0;
 	virtual ~math_ast_node() = default;
 };
 
@@ -260,6 +262,8 @@ public:
 	int has_label() const {
 		return m_left->has_label() | m_right->has_label();
 	}
+
+	int get_len(bool could_be_bank_ex) const;
 };
 
 enum class math_unop_type {
@@ -287,14 +291,22 @@ public:
 	int has_label() const {
 		return m_arg->has_label();
 	}
+	int get_len(bool could_be_bank_ex) const {
+		if(could_be_bank_ex && m_type == math_unop_type::bank_extract)
+			return 1;
+		return m_arg->get_len(false);
+	}
 };
 
 class math_ast_literal : public math_ast_node {
 	math_val m_value;
+	int m_len;
 public:
-	math_ast_literal(math_val value) : m_value(value) {}
+	math_ast_literal(math_val value, int len=0) : m_value(value), m_len(len) {}
 	math_val evaluate(const math_eval_context& ctx) const { return m_value; }
 	int has_label() const { return 0; }
+	int get_len(bool could_be_bank_ex) const { return m_len; }
+	friend int math_ast_binop::get_len(bool) const;
 };
 
 class math_ast_label : public math_ast_node {
@@ -333,6 +345,18 @@ public:
 		// otherwise, non-static label
 		return 3;
 	}
+
+	int get_len(bool could_be_bank_ex) const {
+		snes_label label;
+		if(m_cur_ns && labels.exists(m_cur_ns + m_labelname)) {
+			label = labels.find(m_cur_ns + m_labelname);
+		}
+		else if(labels.exists(m_labelname)) {
+			label = labels.find(m_labelname);
+		}
+		else return 2;
+		return getlenforlabel(label, true);
+	}
 };
 
 class math_builtin_function {
@@ -340,7 +364,9 @@ class math_builtin_function {
 	callable_t inner;
 	int m_has_label;
 public:
-	math_builtin_function(callable_t c, int l = 0) : inner(c), m_has_label(l) {}
+	bool m_is_bank;
+	math_builtin_function(callable_t c, int l = 0, bool is_bank = false)
+		: inner(c), m_has_label(l), m_is_bank(is_bank) {}
 	math_val call(const std::vector<math_val>& args) const {
 		return inner(args);
 	}
@@ -368,8 +394,8 @@ public:
 };
 
 class math_function_ref {
-	std::variant<const math_builtin_function*, const math_user_function*> inner;
 public:
+	std::variant<const math_builtin_function*, const math_user_function*> inner;
 	math_function_ref(const math_builtin_function& fn) : inner(&fn) {}
 	math_function_ref(const math_user_function& fn) : inner(&fn) {}
 	math_val call(const std::vector<math_val>& args) const {
@@ -414,6 +440,20 @@ public:
 		}
 		return out;
 	}
+	int get_len(bool could_be_bank_ex) const {
+		if(could_be_bank_ex) {
+			auto v = std::get_if<const math_builtin_function*>(&m_func.inner);
+			if(v && (*v)->m_is_bank) return 1;
+		}
+		// have nothing to go on, good default i guess
+		// TODO for realbase this might be wrong? bc that might be in another bank?
+		if(m_arguments.size() == 0) return 2;
+		int res = 0;
+		for(auto& v : m_arguments) {
+			res = std::max(res, v->get_len(false));
+		}
+		return res;
+	}
 };
 
 // only for use inside user function definitions
@@ -429,5 +469,26 @@ public:
 	// if a function is called with a label as an argument, that gets checked by
 	// the function call node, not here
 	int has_label() const { return 0; }
+	// i don't think these should ever have their len gotten?
+	int get_len(bool could_be_bank_ex) const { return 0; }
 };
 
+inline int math_ast_binop::get_len(bool could_be_bank_ex) const {
+	if(could_be_bank_ex) {
+		int want_rhs = 0;
+		if(m_type == math_binop_type::div) {
+			want_rhs = 65536;
+		} else if(m_type == math_binop_type::shift_right) {
+			want_rhs = 16;
+		}
+		if(want_rhs) {
+			math_ast_node* right_ptr = m_right.get();
+			auto right_lit = dynamic_cast<math_ast_literal*>(right_ptr);
+			if(right_lit && right_lit->m_value.m_type == math_val_type::integer) {
+				int64_t right_val = right_lit->m_value.get_integer();
+				if(right_val == want_rhs) return 1;
+			}
+		}
+	}
+	return std::max(m_left->get_len(false), m_right->get_len(false));
+}
