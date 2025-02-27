@@ -11,3 +11,5 @@ db read1($008000)+1
 dw read2($008000)+2
 dl read3($008001)+3
 dd read4($008003)+4
+assert read1($108000, $42) == $42
+assert read1($1234, $69) == $69

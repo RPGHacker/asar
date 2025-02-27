@@ -183,7 +183,7 @@ math_val fn_str_eq(math_val va, math_val vb) {
 math_val fn_char(math_val str_, math_val ind_) {
 	const string& s = str_.get_str();
 	int64_t ind = ind_.get_integer();
-	if(ind < 0 || ind > s.length())
+	if(ind < 0 || ind >= s.length())
 		asar_throw_error(2, error_type_block, error_id_oob, (int)ind, s.length());
 	return (int64_t)(unsigned char)s[ind];
 }
