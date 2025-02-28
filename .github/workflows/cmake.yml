@@ -24,6 +24,7 @@ jobs:
             cmake_opts: '-G "Visual Studio 17 2022"'
           - name: ubuntu
             os: ubuntu-24.04
+            cmake_opts: '-DASAR_USE_SANITIZER=ON -DASAR_ASAN_PRELOAD_NAME=libasan.so.8:libubsan.so.1'
           - name: osx
             os: macos-14
     name: ${{ matrix.name }}
