@@ -86,6 +86,8 @@ set(CXX_EXTENSIONS OFF)
 add_custom_target(run-tests)
 set_property(TARGET run-tests PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
+set(ASAR_ASAN_PRELOAD_NAME "libasan.so:libubsan.so" CACHE STRING "When running interface tests under AddressSanitizer, libasan.so and libubsan.so need to be preloaded. This variable allows overriding their names.")
+
 if(ASAR_GEN_DLL_TEST)
 	add_executable(newtest
 		"${CMAKE_CURRENT_SOURCE_DIR}/newtest.cpp"
@@ -112,7 +114,7 @@ if(ASAR_GEN_DLL_TEST)
 	if(ASAR_USE_SANITIZER)
 		target_compile_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
 		target_link_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
-		set(asan_preload_env "ASAN_OPTIONS=detect_leaks=0" "LD_PRELOAD=libasan.so:libubsan.so")
+                set(asan_preload_env "ASAN_OPTIONS=detect_leaks=0" "LD_PRELOAD=${ASAR_ASAN_PRELOAD_NAME}")
 	endif()
 
 	find_package(Python3)
