@@ -158,9 +158,20 @@ template<int& variable>
 math_val fn_pc_realbase() {
 	return (int64_t)variable;
 }
+int haslabel_always() {
+	return 3;
+}
+template<int& variable>
+int getlen_pc_realbase(const std::vector<owned_node>& args, bool could_be_bank_ex) {
+	// todo : should this use freespaceid even with base active???
+	return getlenforlabel(variable, freespaceid, true);
+}
 
 math_val fn_bank(math_val arg) {
 	return (arg.get_integer() >> 16);
+}
+int getlen_bank(const std::vector<owned_node>& args, bool could_be_bank_ex) {
+	return 1;
 }
 
 math_val fn_safediv(math_val a, math_val b, math_val default_) {
@@ -441,8 +452,8 @@ const std::unordered_map<string, math_builtin_function> builtin_functions = {
 
 	{ "snestopc", fixed_arity<fn_snes_pc<snestopc>> },
 	{ "pctosnes", fixed_arity<fn_snes_pc<pctosnes>> },
-	{ "realbase", { fixed_arity<fn_pc_realbase<realsnespos>>, 3 } },
-	{ "pc", { fixed_arity<fn_pc_realbase<snespos>>, 3 } },
+	{ "realbase", { fixed_arity<fn_pc_realbase<realsnespos>>, haslabel_always, getlen_pc_realbase<realsnespos> } },
+	{ "pc", { fixed_arity<fn_pc_realbase<snespos>>, haslabel_always, getlen_pc_realbase<snespos> } },
 
 	{ "max", fixed_arity<fn_max> },
 	{ "min", fixed_arity<fn_min> },
@@ -451,7 +462,7 @@ const std::unordered_map<string, math_builtin_function> builtin_functions = {
 	{ "safediv", fixed_arity<fn_safediv> },
 
 	{ "select", fixed_arity<fn_select> },
-	{ "bank", { fixed_arity<fn_bank>, 0, true } }, // hack: 3rd initializer member is "is this the bank function?", needed for get_len
+	{ "bank", { fixed_arity<fn_bank>, getlen_bank } },
 	{ "not", fixed_arity<fn_not> },
 	{ "equal", math_binop_function<math_binop_type::comp_eq> },
 	{ "notequal", math_binop_function<math_binop_type::comp_ne> },
@@ -470,7 +481,7 @@ const std::unordered_map<string, math_builtin_function> builtin_functions = {
 
 	{ "sizeof", fixed_arity<fn_sizeof> },
 	{ "objectsize", fixed_arity<fn_objectsize> },
-	{ "datasize", { fixed_arity<fn_datasize>, 3 } },
+	{ "datasize", { fixed_arity<fn_datasize>, haslabel_always } },
 
 	{ "stringsequal", fixed_arity<fn_str_eq<strcmp>> },
 	{ "stringsequalnocase", fixed_arity<fn_str_eq<stricmp>> },

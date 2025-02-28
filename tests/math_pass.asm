@@ -28,3 +28,6 @@ assert canread(0, $8000) == 1
 assert canread(0, $6969) == 0
 ; okay never mind
 assert canread(0, $8001) == 0
+
+function test() = 10
+assert test() == $a

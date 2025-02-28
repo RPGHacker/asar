@@ -359,19 +359,37 @@ public:
 	}
 };
 
+
 class math_builtin_function {
-	using callable_t = math_val(*)(const std::vector<math_val>& args);
-	callable_t inner;
-	int m_has_label;
+	using call_t = math_val(*)(const std::vector<math_val>& args);
+	using haslabel_t = int(*)();
+	using getlen_t = int(*)(const std::vector<owned_node>& args, bool could_be_bank_ex);
+	static int default_has_label() {
+		return 0;
+	}
+	static int default_get_len(const std::vector<owned_node>& args, bool could_be_bank_ex) {
+		int res = 0;
+		for(auto& v : args) {
+			res = std::max(res, v->get_len(false));
+		}
+		return res;
+	}
+	call_t m_call;
+	haslabel_t m_haslabel;
+	getlen_t m_getlen;
 public:
-	bool m_is_bank;
-	math_builtin_function(callable_t c, int l = 0, bool is_bank = false)
-		: inner(c), m_has_label(l), m_is_bank(is_bank) {}
+	math_builtin_function(call_t c, haslabel_t l = default_has_label, getlen_t gl = default_get_len)
+		: m_call(c), m_haslabel(l), m_getlen(gl) {}
+	math_builtin_function(call_t c, getlen_t gl)
+		: m_call(c), m_haslabel(default_has_label), m_getlen(gl) {}
 	math_val call(const std::vector<math_val>& args) const {
-		return inner(args);
+		return m_call(args);
 	}
 	int has_label() const {
-		return m_has_label;
+		return m_haslabel();
+	}
+	int get_len(const std::vector<owned_node>& args, bool could_be_bank_ex) const {
+		return m_getlen(args, could_be_bank_ex);
 	}
 };
 
@@ -391,6 +409,16 @@ public:
 	int has_label() const {
 		return m_func_body->has_label();
 	}
+	int get_len(const std::vector<owned_node>& args, bool could_be_bank_ex) const {
+		// TODO: this doesn't forward could_be_bank_ex to the fn call...
+		// supporting that properly would require stringing some context through all get_len calls
+		// supporting it less properly (making a special return value of get_len signify bankextract) could be viable tho...
+		int len = m_func_body->get_len(false);
+		for(auto& arg : args) {
+			len = std::max(len, arg->get_len(false));
+		}
+		return len;
+	}
 };
 
 class math_function_ref {
@@ -403,6 +431,9 @@ public:
 	}
 	int has_label() const {
 		return std::visit([&](auto& i) { return i->has_label(); }, inner);
+	}
+	int get_len(const std::vector<owned_node>& args, bool could_be_bank_ex) const {
+		return std::visit([&](auto& i) { return i->get_len(args, could_be_bank_ex); }, inner);
 	}
 };
 
@@ -441,18 +472,7 @@ public:
 		return out;
 	}
 	int get_len(bool could_be_bank_ex) const {
-		if(could_be_bank_ex) {
-			auto v = std::get_if<const math_builtin_function*>(&m_func.inner);
-			if(v && (*v)->m_is_bank) return 1;
-		}
-		// have nothing to go on, good default i guess
-		// TODO for realbase this might be wrong? bc that might be in another bank?
-		if(m_arguments.size() == 0) return 2;
-		int res = 0;
-		for(auto& v : m_arguments) {
-			res = std::max(res, v->get_len(false));
-		}
-		return res;
+		return m_func.get_len(m_arguments, could_be_bank_ex);
 	}
 };
 

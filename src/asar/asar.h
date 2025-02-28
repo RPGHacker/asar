@@ -29,6 +29,7 @@ inline void verify_paren(autoptr<char **> &ptr)
 int getlen(const char * str, bool optimizebankextraction=false);
 bool is_hex_constant(const char * str);
 int getlenforlabel(snes_label thislabel, bool exists);
+int getlenforlabel(int labelpos, int labelfreespace, bool exists);
 
 bool validatedefinename(const char * name);
 

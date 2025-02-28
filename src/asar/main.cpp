@@ -354,11 +354,11 @@ virtual_file_error asar_get_last_io_error()
 	return vfe_unknown;
 }
 
-int getlenforlabel(snes_label thislabel, bool exists)
+int getlenforlabel(int labelpos, int label_fs_id, bool exists)
 {
-	unsigned int bank = thislabel.pos>>16;
-	unsigned int word = thislabel.pos&0xFFFF;
-	bool lblfreespace = thislabel.freespace_id > 0;
+	unsigned int bank = labelpos>>16;
+	unsigned int word = labelpos&0xFFFF;
+	bool lblfreespace = label_fs_id > 0;
 	unsigned int relaxed_bank;
 	if(optimizeforbank >= 0) {
 		relaxed_bank = optimizeforbank;
@@ -408,19 +408,22 @@ int getlenforlabel(snes_label thislabel, bool exists)
 	{
 		// if optimizing for a specific bank:
 		// if the label is in freespace, never optimize
-		if (thislabel.freespace_id > 0) return 3;
+		if (lblfreespace) return 3;
 		else if (bank==(unsigned int)optimizeforbank) return 2;
 		else return 3;
 	}
-	else if (thislabel.freespace_id > 0 || freespaceid > 0)
+	else if (lblfreespace || freespaceid > 0)
 	{
 		// optimize only if the label is in the same freespace
 		// TODO: check whether they're pinned to the same bank
-		if (thislabel.freespace_id != freespaceid) return 3;
+		if (label_fs_id != freespaceid) return 3;
 		else return 2;
 	}
 	else if ((int)bank != snespos >> 16){ return 3; }
 	else { return 2;}
+}
+int getlenforlabel(snes_label thislabel, bool exists) {
+	return getlenforlabel(thislabel.pos, thislabel.freespace_id, exists);
 }
 
 
