@@ -1,3 +1,4 @@
+# TODO this script is quite outdated.
 import zipfile
 import sys
 import urllib.request
@@ -34,7 +35,7 @@ zipf.write("license-gpl.txt")
 zipf.write("license-lgpl.txt")
 zipf.write("license-wtfpl.txt")
 
-for (dirpath, dirnames, filenames) in os.walk("src/asar-dll-bindings"):
+for (dirpath, dirnames, filenames) in os.walk("src/dll-bindings"):
 	for x in filenames:
 		if not x.endswith(".in"):
-			zipf.write(dirpath+"/"+x, dirpath.replace("src/asar-dll-bindings", "dll/bindings")+"/"+x)
+			zipf.write(dirpath+"/"+x, dirpath.replace("src/dll-bindings", "dll/bindings")+"/"+x)

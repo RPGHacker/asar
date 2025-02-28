@@ -4,7 +4,7 @@ import sys
 import unittest
 import tempfile
 
-sys.path += [os.path.join(os.path.dirname(__file__), "../../asar-dll-bindings/python")]
+sys.path += [os.path.join(os.path.dirname(__file__), "../../dll-bindings")]
 import asar
 
 asar_dll_path = None

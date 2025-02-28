@@ -33,8 +33,8 @@ to be able to include the header files. It is also recommended to turn off every
 * `ext` contains syntax highlighting files for Notepad++ and Sublime Text
 * `src`
   * `asar` contains the source code of the main app and DLL
-  * `asar-tests` contains code for the testing application (both the app test and DLL test)
-  * `asar-dll-bindings` contains bindings of the Asar DLL to other languages (currently C/C++, C# and Python)
+  * `tests` contains code for the testing application and for API tests
+  * `dll-bindings` contains bindings of the Asar DLL to other languages (currently C/C++, C# and Python)
 * `tests` contains tests to verify Asar works correctly
 
 ## Test format
@@ -53,6 +53,7 @@ These two characters should precede each test line, so that Asar sees them as co
 * 2 hex digits - a byte for it to check for 
   * You can specify more than one, like in the examples below, and it will automatically increment the offset.
 * A line starting with `+` tells the testing app to patch the SMW ROM instead of creating a new ROM
+* ``;`skip`` causes the test runner to completely skip this file and mark it as skipped in the output
 * `#{num}` tells the testing app to apply the patch `{num}` times to the same file
 * `errE{name}` and `warnW{name}` (where `{name}` is the name of an error or warning) means that the test is expected to throw that specific error or warning while patching. The test will succeed only if the number and order of errors and warnings thrown exactly matches what's specified here. Be wary that Asar uses multiple passes and throws errors and warnings across multiple of them. This can make the actual order in which errors and warnings are thrown a bit unintuitive.
 

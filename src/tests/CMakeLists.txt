@@ -89,9 +89,9 @@ set_property(TARGET run-tests PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 if(ASAR_GEN_DLL_TEST)
 	add_executable(newtest
 		"${CMAKE_CURRENT_SOURCE_DIR}/newtest.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/asardll.c"
-		"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/asardll.h")
-	target_include_directories(newtest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/")
+		"${CMAKE_CURRENT_SOURCE_DIR}/../dll-bindings/asardll.c"
+		"${CMAKE_CURRENT_SOURCE_DIR}/../dll-bindings/asardll.h")
+	target_include_directories(newtest PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../dll-bindings/")
 	set_asar_test_shared_properties(newtest)
 
 	add_custom_target(run-newtest
@@ -117,7 +117,7 @@ if(ASAR_GEN_DLL_TEST)
 
 	find_package(Python3)
 	add_custom_target(run-interface-test
-		"${CMAKE_COMMAND}" -E env ${asan_preload_env} "ASARDLL=$<TARGET_FILE:asar>" "ASAREXE=$<TARGET_FILE:asar-standalone>" "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/main.py"
+		"${CMAKE_COMMAND}" -E env ${asan_preload_env} "ASARDLL=$<TARGET_FILE:asar>" "ASAREXE=$<TARGET_FILE:asar-standalone>" "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/python-api-test/main.py"
 		VERBATIM)
 	add_dependencies(run-tests run-interface-test)
 	set_property(TARGET run-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
@@ -126,15 +126,15 @@ if(ASAR_GEN_DLL_TEST)
 
 		set(ASAR_CS_SOURCES "")
 		list(APPEND ASAR_CS_SOURCES
-			"${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/test.cs"
-			"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c_sharp/asar.cs"
+			"${CMAKE_CURRENT_SOURCE_DIR}/csharp-test/test.cs"
+			"${CMAKE_CURRENT_SOURCE_DIR}/../dll-bindings/asar.cs"
 		)
 
 		set(ASAR_DOTNET_DIR "${CMAKE_CURRENT_BINARY_DIR}/dotnet")
 		set(ASAR_CS_TEST_EXEC "${ASAR_DOTNET_DIR}/interface-tests.dll")
 
 		add_custom_command(OUTPUT "${ASAR_CS_TEST_EXEC}"
-			COMMAND dotnet build -o "${ASAR_DOTNET_DIR}" --artifacts-path "${ASAR_DOTNET_DIR}/junk" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/interface-tests.csproj"
+			COMMAND dotnet build -o "${ASAR_DOTNET_DIR}" --artifacts-path "${ASAR_DOTNET_DIR}/junk" "${CMAKE_CURRENT_SOURCE_DIR}/csharp-test/interface-tests.csproj"
 			DEPENDS "${ASAR_CS_SOURCES}"
 			VERBATIM)
 		add_custom_target(asar-csharp-test DEPENDS "${ASAR_CS_TEST_EXEC}")

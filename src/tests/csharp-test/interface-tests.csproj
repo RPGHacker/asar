@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-      <Compile Include="../../asar-dll-bindings/c_sharp/asar.cs" Link="asar.cs" />
+      <Compile Include="../../dll-bindings/asar.cs" Link="asar.cs" />
   </ItemGroup>
 
 </Project>
