@@ -85,10 +85,7 @@ owned_node parse_context::parse_atom() {
 			string name_part(start, len);
 			if(name_part == "...") {
 				// a tiny bit ugly, but whatever
-				// ...TODO also not having a constructor for identifier is ugly too
-				math_val value = name_part;
-				value.m_type = math_val_type::identifier;
-				return std::make_unique<math_ast_literal>(value);
+				return std::make_unique<math_ast_literal>(math_val::make_identifier(name_part));
 			}
 			if(!function_arg_names.empty()) {
 				auto it = function_arg_names.find(name_part);
