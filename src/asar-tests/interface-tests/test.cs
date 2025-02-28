@@ -115,6 +115,7 @@ endmacro
 
 		check(Asar.getsymbolsfile("wla")[0] == ';', "symbol file format");
 
+		Asar.close();
 		Console.WriteLine("All checks passed!");
 		return 0;
 	}
