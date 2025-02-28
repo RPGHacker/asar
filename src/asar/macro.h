@@ -1,4 +1,7 @@
 #pragma once
+#include "libstr.h"
+#include "assocarr.h"
+#include "autoarray.h"
 
 void startmacro(const char * line);
 void tomacro(const char * line);

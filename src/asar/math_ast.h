@@ -1,11 +1,9 @@
 #include <memory>
 #include <variant>
 #include <vector>
+#include <unordered_map>
 #include "libstr.h"
-#include "asar.h" // todo assembleblock.h sux
 #include "assembleblock.h"
-#include "errors.h"
-using std::unique_ptr;
 
 enum class math_val_type {
 	floating,
@@ -78,7 +76,7 @@ public:
 	virtual ~math_ast_node() = default;
 };
 
-using owned_node = unique_ptr<math_ast_node>;
+using owned_node = std::unique_ptr<math_ast_node>;
 
 enum class math_binop_type {
 	pow,          // **

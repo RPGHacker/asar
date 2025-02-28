@@ -41,6 +41,11 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 		target_link_options(${target} PRIVATE -fsanitize=address -fsanitize=undefined)
 	endif()
 
+	if(ASAR_COVERAGE)
+		target_compile_options(${target} PRIVATE --coverage)
+		target_link_options(${target} PRIVATE --coverage)
+	endif()
+
 	target_include_directories(${target} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
 
 	if(MSVC)
@@ -261,11 +266,6 @@ if(ASAR_GEN_EXE)
 
 	set_asar_shared_properties(asar-standalone "T" TRUE)
 
-	if(ASAR_COVERAGE)
-		target_compile_options(asar-standalone PRIVATE -fprofile-arcs -ftest-coverage)
-		SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lgcov --coverage -fprofile-arcs")
-	endif()
-  
 	set_target_properties(asar-standalone
 		PROPERTIES
 		OUTPUT_NAME "asar"
@@ -305,11 +305,6 @@ if(ASAR_GEN_DLL)
 	)
 
 	install(TARGETS asar)
-
-	if(ASAR_COVERAGE)
-		target_compile_options(asar PRIVATE --coverage)
-		target_link_options(asar PRIVATE --coverage)
-	endif()
 
 endif(ASAR_GEN_DLL)
 

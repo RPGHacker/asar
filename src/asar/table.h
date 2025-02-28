@@ -1,3 +1,4 @@
+#include <cstdint>
 
 // data structures for the "table" command
 

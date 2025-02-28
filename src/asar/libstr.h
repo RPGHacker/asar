@@ -1,7 +1,6 @@
 #pragma once
 
 #include "std-includes.h"
-#include "libmisc.h"
 #include <cstdint>
 #include <cstring>
 #include <utility>
@@ -242,15 +241,6 @@ string& convert_line_endings_to_native()
 	return *this;
 #endif
 }
-
-#ifdef SERIALIZER
-void serialize(serializer & s)
-{
-	s(str, allocated.bufferlen);
-	resize(strlen(str));
-}
-#endif
-#define SERIALIZER_BANNED
 
 private:
 static const int scale_factor = 4; //scale sso

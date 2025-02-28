@@ -1,4 +1,7 @@
 #include "math_ast.h"
+#include "asar.h"
+#include "errors.h"
+
 // TODO: make all these conversions print the current type aswell instead of just expected type
 double math_val::get_double() const {
 	switch(m_type) {

@@ -1,6 +1,4 @@
-#if !defined(ASAR_VIRTUALFILE_H)
-#define ASAR_VIRTUALFILE_H
-
+#pragma once
 #include "autoarray.h"
 #include "assocarr.h"
 #include "libstr.h"
@@ -67,4 +65,3 @@ private:
 	virtual_file_error m_last_error;
 };
 
-#endif

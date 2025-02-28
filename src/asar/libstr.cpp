@@ -1,6 +1,7 @@
 #include "asar.h"
 #include "virtualfile.h"
 #include "unicode.h"
+#include "libmisc.h"
 
 #include "platform/file-helpers.h"
 

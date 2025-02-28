@@ -183,19 +183,4 @@ public:
 		for (int i = 0;i < count;i++) ptr[i].~T();
 		free(ptr);
 	}
-
-#ifdef SERIALIZER
-	void serialize(serializer& s)
-	{
-		if (s.serializing) s(count);
-		else
-		{
-			int i;
-			s(i);
-			get(i - 1);
-		}
-		for (int i = 0;i < count;i++) s(ptr[i]);
-	}
-#endif
-#define SERIALIZER_BANNED
 };

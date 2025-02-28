@@ -3,7 +3,6 @@
 #include "assembleblock.h"
 #include "asar_math.h"
 #include "macro.h"
-#include "platform/file-helpers.h"
 #include "table.h"
 #include "unicode.h"
 #include <cinttypes>

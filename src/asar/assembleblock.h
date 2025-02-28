@@ -1,4 +1,7 @@
 #pragma once
+#include "libstr.h"
+#include "assocarr.h"
+#include "autoarray.h"
 
 enum { arch_65816, arch_spc700, arch_superfx };
 extern int arch;
@@ -77,16 +80,6 @@ struct freespace_data {
 	bool allow_bankcross;
 };
 extern autoarray<freespace_data> freespaces;
-
-// RPG Hacker: Really the only purpose of this struct is to support pushtable and pulltable
-// Also don't know where else to put this, so putting it in this header
-/*struct chartabledata {
-	unsigned int table[256];
-};
-
-extern chartabledata table;
-unsigned int get_table_val(int inp);
-void set_table_val(int inp, unsigned int out);*/
 
 struct whiletracker {
 	bool iswhile;
