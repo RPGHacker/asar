@@ -16,6 +16,11 @@ if "ASAREXE" in os.environ:
 
 tests_dir = os.path.dirname(os.path.abspath(__file__))
 
+# we might need LD_PRELOAD to coerce ASan into running the unmodified python,
+# but we do not want to pass that on to child processes when running exe tests.
+# (that seems to cause different asan errors...)
+os.unsetenv("LD_PRELOAD")
+
 def WB(pc, snes, len):
     return asar.writtenblockdata(asar._writtenblockdata(pc, snes, len))
 

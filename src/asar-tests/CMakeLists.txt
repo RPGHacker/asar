@@ -100,22 +100,27 @@ if(ASAR_GEN_DLL_TEST)
 	add_dependencies(run-tests run-newtest)
 	set_property(TARGET run-newtest PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
+	# using an ASan-enabled libasar.so from the python or dotnet process is a
+	# bit complicated. ASan has some runtime components that must be executed
+	# at program startup, so we unless we recompile an asan-enabled python
+	# ourselves, we must LD_PRELOAD libasan (and libubsan). however, for some
+	# reason doing this also causes LeakSanitizer to find a memory leak inside
+	# Python itself, which it considers an error, and this makes the entire
+	# test suite fail. So we also explicitly disable LeakSanitizer with another
+	# env variable.
+	set(asan_preload_env "")
 	if(ASAR_USE_SANITIZER)
 		target_compile_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
 		target_link_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
+		set(asan_preload_env "ASAN_OPTIONS=detect_leaks=0" "LD_PRELOAD=libasan.so:libubsan.so")
 	endif()
 
-	if(NOT ASAR_USE_SANITIZER)
-		# the interface tests run python, and we can't run ASan in python (or
-		# well, we can, but it has some memory leaks which ASan considers an
-		# error) so disable the interface tests in this case.
-		find_package(Python3)
-		add_custom_target(run-interface-test
-			"${CMAKE_COMMAND}" -E env "ASARDLL=$<TARGET_FILE:asar>" "ASAREXE=$<TARGET_FILE:asar-standalone>" "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/main.py"
-			VERBATIM)
-		add_dependencies(run-tests run-interface-test)
-		set_property(TARGET run-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-	endif()
+	find_package(Python3)
+	add_custom_target(run-interface-test
+		"${CMAKE_COMMAND}" -E env ${asan_preload_env} "ASARDLL=$<TARGET_FILE:asar>" "ASAREXE=$<TARGET_FILE:asar-standalone>" "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/interface-tests/main.py"
+		VERBATIM)
+	add_dependencies(run-tests run-interface-test)
+	set_property(TARGET run-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
 	if(ASAR_GEN_CS_TEST)
 
@@ -134,26 +139,23 @@ if(ASAR_GEN_DLL_TEST)
 			VERBATIM)
 		add_custom_target(asar-csharp-test DEPENDS "${ASAR_CS_TEST_EXEC}")
 
-		if(NOT ASAR_USE_SANITIZER)
-			# same concerns with sanitizer as the python test
 
-			# on Linux, mono looks for native libraries in LD_LIBRARY_PATH.
-			# on Windows, it looks in a bunch of places, but the most convenient is the current working directory.
-			# so we set the cwd to the directory with asar.dll and add it to LD_LIBRARY_PATH.
-			if(WIN32)
-				set(cs_test_cmd_prefix "")
-			elseif(APPLE)
-				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "DYLD_LIBRARY_PATH=.")
-			else()
-				set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "LD_LIBRARY_PATH=.")
-			endif()
-			add_custom_target(run-cs-interface-test
-				${cs_test_cmd_prefix} dotnet "${ASAR_CS_TEST_EXEC}"
-				WORKING_DIRECTORY "$<TARGET_FILE_DIR:asar>"
-				DEPENDS asar asar-csharp-test
-				VERBATIM)
-			add_dependencies(run-tests run-cs-interface-test)
-			set_property(TARGET run-cs-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
+		# on Linux/osx, dotnet looks for native libraries in LD_LIBRARY_PATH.
+		# on Windows, it looks in a bunch of places, but the most convenient is the current working directory.
+		# so we set the cwd to the directory with asar.dll and add it to LD_LIBRARY_PATH.
+		if(WIN32)
+			set(cs_test_cmd_prefix "")
+		elseif(APPLE)
+			set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "DYLD_LIBRARY_PATH=." ${asan_preload_env})
+		else()
+			set(cs_test_cmd_prefix "${CMAKE_COMMAND}" -E env "LD_LIBRARY_PATH=." ${asan_preload_env})
 		endif()
+		add_custom_target(run-cs-interface-test
+			${cs_test_cmd_prefix} dotnet "${ASAR_CS_TEST_EXEC}"
+			WORKING_DIRECTORY "$<TARGET_FILE_DIR:asar>"
+			DEPENDS asar asar-csharp-test
+			VERBATIM)
+		add_dependencies(run-tests run-cs-interface-test)
+		set_property(TARGET run-cs-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 	endif()
 endif()
