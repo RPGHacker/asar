@@ -1,7 +1,7 @@
 
 # Asar build rules
 
-cmake_minimum_required(VERSION 3.9.0)
+cmake_minimum_required(VERSION 3.13.0...3.31.0)
 
 option(ASAR_GEN_EXE "Build Asar standalone application" ON)
 option(ASAR_GEN_DLL "Build Asar shared library" ON)

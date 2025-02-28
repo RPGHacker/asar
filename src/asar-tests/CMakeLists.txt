@@ -1,6 +1,5 @@
-cmake_minimum_required(VERSION 3.13.0)
+cmake_minimum_required(VERSION 3.13.0...3.31.0)
 
-OPTION(ASAR_GEN_EXE_TEST "Build Asar standalone application test suite" ON)
 OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON)
 OPTION(ASAR_GEN_CS_TEST "Build the C# interface test suite" ON)
 
@@ -87,43 +86,7 @@ set(CXX_EXTENSIONS OFF)
 add_custom_target(run-tests)
 set_property(TARGET run-tests PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
-if(ASAR_GEN_EXE_TEST)
-	add_executable(
-		asar-app-test
-		
-		"${CMAKE_CURRENT_SOURCE_DIR}/test.cpp"
-	)
-
-	set_asar_test_shared_properties(asar-app-test)
-
-	add_custom_target(run-app-test
-		asar-app-test "$<TARGET_FILE:asar-standalone>" "${CMAKE_CURRENT_SOURCE_DIR}/../../tests" "${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc" "${CMAKE_CURRENT_BINARY_DIR}/tests-tmp-app"
-		VERBATIM)
-	add_dependencies(run-tests run-app-test)
-	set_property(TARGET run-app-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-endif()
-
 if(ASAR_GEN_DLL_TEST)
-	add_executable(
-		asar-dll-test
-		
-		"${CMAKE_CURRENT_SOURCE_DIR}/test.cpp"
-		
-		"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/asardll.c"
-		"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/asardll.h"
-	)
-
-	target_include_directories(asar-dll-test PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/")
-	target_compile_definitions(asar-dll-test PRIVATE ASAR_TEST_DLL)
-
-	set_asar_test_shared_properties(asar-dll-test)
-
-	add_custom_target(run-dll-test
-		asar-dll-test "$<TARGET_FILE:asar>" "${CMAKE_CURRENT_SOURCE_DIR}/../../tests" "${CMAKE_CURRENT_SOURCE_DIR}/../../dummy_rom.sfc" "${CMAKE_CURRENT_BINARY_DIR}/tests-tmp-dll"
-		VERBATIM)
-	add_dependencies(run-tests run-dll-test)
-	set_property(TARGET run-dll-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-
 	add_executable(newtest
 		"${CMAKE_CURRENT_SOURCE_DIR}/newtest.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/../asar-dll-bindings/c/asardll.c"
@@ -138,8 +101,6 @@ if(ASAR_GEN_DLL_TEST)
 	set_property(TARGET run-newtest PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
 	if(ASAR_USE_SANITIZER)
-		target_compile_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
-		target_link_options(asar-dll-test PRIVATE -fsanitize=address -fsanitize=undefined)
 		target_compile_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
 		target_link_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
 	endif()
