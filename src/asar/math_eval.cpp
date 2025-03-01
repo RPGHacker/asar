@@ -18,14 +18,14 @@ double math_val::get_double() const {
 int64_t math_val::get_integer() const {
 	switch(m_type) {
 		case math_val_type::floating:
-			return float_to_int(m_numeric_val.double_);
+			// TODO: throw error on overflow?
+			return (int64_t)m_numeric_val.double_;
 		case math_val_type::integer:
 			return m_numeric_val.int_;
 		case math_val_type::identifier:
-			if(!labels.exists(m_string_val))
-				// i'm not sure if it's even possible to reach here, anything
-				// that constructs identifiers should already check for existence...
-				asar_throw_error(2, error_type_block, error_id_label_not_found, m_string_val.data());
+			if(!labels.exists(m_string_val)) {
+				asar_throw_error(pass, error_type_block, error_id_internal_error, "evaluating nonexistent label");
+			}
 			return labels.find(m_string_val).pos;
 		case math_val_type::string:
 			asar_throw_error(2, error_type_block, error_id_expected_number);
@@ -154,7 +154,7 @@ math_val evaluate_binop(math_val lhs, math_val rhs,
 	}
 }
 
-math_val math_ast_binop::evaluate(const math_eval_context &ctx) const {
+math_val math_ast_binop::evaluate(const eval_context &ctx) const {
 	math_val lhs = m_left->evaluate(ctx);
 
 	// handle short-circuiting for || and &&
@@ -199,7 +199,7 @@ int math_ast_binop::get_len(bool could_be_bank_ex) const {
 	}
 	return std::max(m_left->get_len(false), m_right->get_len(false));
 }
-math_val math_ast_unop::evaluate(const math_eval_context &ctx) const {
+math_val math_ast_unop::evaluate(const eval_context &ctx) const {
 	math_val arg = m_arg->evaluate(ctx);
 	switch (m_type) {
 		case math_unop_type::neg:
@@ -222,7 +222,7 @@ int math_ast_unop::get_len(bool could_be_bank_ex) const {
 	return m_arg->get_len(false);
 }
 
-math_val math_ast_label::evaluate(const math_eval_context &ctx) const {
+math_val math_ast_label::evaluate(const eval_context &ctx) const {
 	if (m_cur_ns && labels.exists(m_cur_ns + m_labelname)) {
 		return math_val::make_identifier(m_cur_ns + m_labelname);
 	} else if (labels.exists(m_labelname)) {
@@ -253,8 +253,7 @@ int math_ast_label::get_len(bool could_be_bank_ex) const {
 		label = labels.find(m_cur_ns + m_labelname);
 	} else if (labels.exists(m_labelname)) {
 		label = labels.find(m_labelname);
-	} else
-	return 2;
+	} else return 2;
 	return getlenforlabel(label, true);
 }
 
@@ -271,7 +270,7 @@ math_ast_function_call::lookup_fname(string const &function_name) {
 				   function_name.data());
 	}
 }
-math_val math_ast_function_call::evaluate(const math_eval_context &ctx) const {
+math_val math_ast_function_call::evaluate(const eval_context &ctx) const {
 	std::vector<math_val> arg_vals;
 	for (auto const &p : m_arguments) {
 		arg_vals.push_back(p->evaluate(ctx));
@@ -292,7 +291,7 @@ int math_ast_function_call::get_len(bool could_be_bank_ex) const {
 }
 
 math_val math_user_function::call(const std::vector<math_val> &args) const {
-	math_eval_context new_ctx;
+	math_ast_node::eval_context new_ctx;
 	new_ctx.userfunc_params = args;
 	if (args.size() != m_arg_count)
 		asar_throw_error(2, error_type_block, error_id_argument_count, m_arg_count,

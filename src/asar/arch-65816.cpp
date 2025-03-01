@@ -494,9 +494,7 @@ static const char* format_valid_widths(int min, int max) {
 	return "???";
 }
 
-static int get_real_len(int min_len, int max_len, char modifier, const parse_result& parsed) {
-	// we can theoretically give min_len to getlen now :o
-	int arg_min_len = getlen(parsed.arg, parsed.kind == addr_kind::imm);
+static int get_real_len(int min_len, int max_len, int arg_min_len, char modifier, const parse_result& parsed) {
 	int out_len;
 	if(modifier != 0) {
 		out_len = getlenfromchar(modifier);
@@ -527,12 +525,14 @@ static int get_real_len(int min_len, int max_len, char modifier, const parse_res
 }
 
 static int64_t get_branch_value(parse_result& parsed, char modifier, int width) {
-	int64_t num = 0;
-	num = getnum(parsed.arg);
-	bool target_is_abs = foundlabel;
+	auto expr = parse_math_expr(parsed.arg);
+	int64_t num = expr->evaluate().get_integer();
+	bool target_is_abs = expr->has_label() > 0;
 	if(modifier != 0) {
 		if(to_lower(modifier) == 'a') target_is_abs = true;
 		else if(to_lower(modifier) == 'r') target_is_abs = false;
+		// ignore for backwards compat
+		else if(to_lower(modifier) == 'b') {}
 		// TODO: better error message
 		else asar_throw_error(2, error_type_block, error_id_invalid_opcode_length);
 	}
@@ -631,17 +631,18 @@ bool asblock_65816(char** word, int numwords)
 		arg_value = pass == 2 ? get_branch_value(parse_res, modifier, arg_len) : 0;
 	} else if(is_implied_rep) {
 		arg_len = 0;
-		rep_count = getnum(parse_res.arg);
-		if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+		rep_count = parse_math_expr(parse_res.arg)->evaluate_static().get_integer();
 	} else if(parse_res.kind == addr_kind::imp || parse_res.kind == addr_kind::a) {
 		arg_len = 0;
 	} else {
 		int old_optimize = optimizeforbank;
 		if(kind_info.flags & flag_bank_0) optimizeforbank = 0;
 		else if(kind_info.flags & flag_bank_k) optimizeforbank = -1;
-		arg_len = get_real_len(min_w, max_w, modifier, parse_res);
+		auto math_parsed = parse_math_expr(parse_res.arg);
+		int arg_min_len = math_parsed->get_len(parse_res.kind == addr_kind::imm);
+		arg_len = get_real_len(min_w, max_w, arg_min_len, modifier, parse_res);
 		optimizeforbank = old_optimize;
-		arg_value = pass == 2 ? getnum(parse_res.arg) : 0;
+		arg_value = pass == 2 ? math_parsed->evaluate().get_integer() : 0;
 	}
 
 	assert((kind_info.allowed_widths & 1<<arg_len) != 0);

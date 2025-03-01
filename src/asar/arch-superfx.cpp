@@ -187,15 +187,16 @@ bool asblock_superfx(char** word, int numwords)
 			if (byte!=-1)
 			{
 				ret=true;
-				int len=getlen(par);
-				unsigned int num=getnum_ck(par);
+				auto par_expr = parse_math_expr(par);
+				int len = par_expr->get_len(false);
+				unsigned int num = pass == 2 ? par_expr->evaluate().get_integer() : 0;
 				if (len==1)
 				{
 					write1((unsigned int)byte); write1(num);
 				}
 				else
 				{
-					int pos=(int)getnum_ck(par)-((snespos&0xFFFFFF)+2);
+					int pos = (int)num - ((snespos&0xFFFFFF)+2);
 					write1((unsigned int)byte); write1((unsigned int)pos);
 					if (pass==2 && (pos<-128 || pos>127))
 					{

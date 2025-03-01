@@ -621,8 +621,7 @@ void resolvedefines(string& out, const char * start)
 					{
 						string newval;
 						resolvedefines(newval, val);
-						double num= getnumdouble(newval);
-						if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_line, error_id_define_label_math);
+						double num= parse_math_expr(newval)->evaluate_static().get_double();
 						defines.create(defname) = ftostr(num);
 						break;
 					}

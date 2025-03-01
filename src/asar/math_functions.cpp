@@ -124,7 +124,7 @@ math_val fn_rounding(const std::vector<math_val>& args) {
 	double val = F(args[0].get_double());
 	// TODO where should we check this? math_val(double) constructor maybe?
 	if (val != val) asar_throw_error(2, error_type_block, error_id_nan);
-	return float_to_int(val);
+	return math_val(val).get_integer();
 };
 
 template<math_binop_type OP>

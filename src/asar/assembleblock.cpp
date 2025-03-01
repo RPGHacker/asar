@@ -697,13 +697,11 @@ static void parse_freespace_arguments(freespace_data& thisfs, string& arguments)
 		else if (!stricmp(pars[i], "nobankcross")) { thisfs.allow_bankcross = false; }
 		else if (stribegin(pars[i], "bank="))
 		{
-			thisfs.bank = getnum(pars[i] + 5);
-			if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			thisfs.bank = parse_math_expr(pars[i] + 5)->evaluate_static().get_integer();
 		}
 		else if (stribegin(pars[i], "start="))
 		{
-			thisfs.search_start = getnum(pars[i] + 6);
-			if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			thisfs.search_start = parse_math_expr(pars[i] + 6)->evaluate_static().get_integer();
 		}
 		else if (stribegin(pars[i], "pin="))
 		{
@@ -968,7 +966,8 @@ static string handle_print(char* input)
 			else if (!stricmp(pars[i], "double"))
 			{
 				if (!hasprec) precision = 5;
-				out += ftostrvar(getnumdouble(params[0]), precision);
+				double val = parse_math_expr(params[0])->evaluate().get_double();
+				out += ftostrvar(val, precision);
 			}
 		}
 		else asar_throw_error(2, error_type_block, error_id_unknown_variable);
@@ -1066,8 +1065,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if(!is("for"))
 		{
 			if(word[1] == NULL) asar_throw_error(0, error_type_block, error_id_broken_command, word[0], "Missing condition.");
-			cond = getnum(word[1]);
-			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_label_in_conditional, word[0]);
+			cond = parse_math_expr(word[1])->evaluate_static().get_integer();
 		}
 
 		if (is("for"))
@@ -1100,12 +1098,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				string for_end(range_sep+2);
 				strip_whitespace(for_end);
 
-				addedwstatus.for_start = getnum(for_start);
-				if(foundlabel && !foundlabel_static)
-					asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
-				addedwstatus.for_end = getnum(for_end);
-				if(foundlabel && !foundlabel_static)
-					asar_throw_error(0, error_type_block, error_id_label_in_conditional, "for");
+				addedwstatus.for_start = parse_math_expr(for_start)->evaluate_static().get_integer();
+				addedwstatus.for_end = parse_math_expr(for_end)->evaluate_static().get_integer();
 
 				addedwstatus.for_variable = varname;
 				addedwstatus.for_cur = addedwstatus.for_start;
@@ -1516,14 +1510,13 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			const char* after = char_start + utf8_val(&codepoint, char_start);
 			if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
 			if(after[0] == '\'' && after[1] == '\0') {
-				thetable.set_val(codepoint, getnum(word[2]));
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+				thetable.set_val(codepoint, parse_math_expr(word[2])->evaluate_static().get_integer());
 				return;
 			} // todo: error checking here
 		}
-		int num=(int)getnum(word[2]);
-		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
-		bool is_static = foundlabel_static;
+		auto expr = parse_math_expr(word[2]);
+		int num = expr->evaluate_non_forward().get_integer();
+		bool is_static = expr->has_label() <= 1;
 
 		const char* newlabelname = word[0];
 		bool ismacro = false;
@@ -1557,8 +1550,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	{
 		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
 		freespaceend();
-		unsigned int num=getnum(par);
-		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_label_forward);
+		auto math_expr = parse_math_expr(par);
+		int64_t num = math_expr->evaluate_non_forward().get_integer();
 		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex(num, 6).data());
 		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) asar_throw_warning(0, warning_id_set_middle_byte);
 		snespos=(int)num;
@@ -1588,9 +1581,10 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (numwords == 3)
 		{
 			static_struct = true;
-			base = getnum(word[2]);
+			auto base_expr = parse_math_expr(word[2]);
+			base = base_expr->evaluate().get_integer();
 
-			if (foundlabel && !foundlabel_static) static_struct = false;
+			if (base_expr->has_label() > 1) static_struct = false;
 			if (pass > 0) {
 				// foundlabel_static isn't accurate anymore
 				if(structs.exists(word[1])) static_struct &= structs.find(word[1]).is_static;
@@ -1796,8 +1790,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			snespos_valid = realsnespos >= 0;
 			return;
 		}
-		unsigned int num=getnum(par);
-		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
+		unsigned int num=parse_math_expr(par)->evaluate_non_forward().get_integer();
 		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num).data());
 		snespos=(int)num;
 		startpos=(int)num;
@@ -1806,8 +1799,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("dpbase"))
 	{
-		unsigned int num=(int)getnum(par);
-		if (forwardlabel) asar_throw_error(0, error_type_block, error_id_base_label_invalid);
+		unsigned int num=parse_math_expr(par)->evaluate_non_forward().get_integer();
 		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex((unsigned int)num, 6).data());
 		dp_base = (int)num;
 	}
@@ -1964,7 +1956,6 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		write1((unsigned int)(num*3));
 		for (int i=0;i<num;i++)
 		{
-			//int num=getnum(pars[i]);
 			const char * labeltest=pars[i];
 			string testlabel = labeltest;
 			snes_label lblval = labelval(&labeltest);
@@ -1990,19 +1981,18 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			string testlabel = labeltest;
 			if(!stricmpwithlower(word[1], "dl")) {
 				handle_autoclean(testlabel, -1, snespos);
-				write3(pass==2 ? getnum(testlabel.data()) : 0);
+				write3(pass==2 ? labelval(testlabel).pos : 0);
 				add_addr_to_line(addrToLinePos);
 			} else {
 				// other ones are handled in arch-65816
 				asar_throw_error(0, error_type_block, error_id_broken_autoclean);
 			}
 		}
-		else if (pass==0) removerats((int)getnum(word[1]), freespacebyte);
+		else if (pass==0) removerats(parse_math_expr(word[1])->evaluate_static().get_integer(), freespacebyte);
 	}
 	else if (is1("freespacebyte"))
 	{
-		freespacebyte = getnum(word[1]);
-		if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+		freespacebyte = parse_math_expr(word[1])->evaluate_static().get_integer();
 	}
 	else if (is0("pushpc"))
 	{
@@ -2161,12 +2151,10 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			if(!split) asar_throw_error(0, error_type_block, error_id_broken_incbin);
 			string start_str(lengths, split-lengths);
 			if(start_str == "") asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			start = getnum(start_str);
-			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			start = parse_math_expr(start_str)->evaluate_static().get_integer();
 			string end_str(split+2);
 			if(end_str == "") asar_throw_error(0, error_type_block, error_id_broken_incbin);
-			end = getnum(end_str);
-			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			end = parse_math_expr(end_str)->evaluate_static().get_integer();
 		}
 		const char* current_file = get_current_file_name();
 		string name;
@@ -2195,13 +2183,11 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		int amount;
 		if(numwords > 2)
 		{
-			int alignment = getnum(word[2]);
-			if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			int alignment = parse_math_expr(word[2])->evaluate_static().get_integer();
 			int offset = 0;
 			if(numwords==5)
 			{
-				offset = getnum(word[4]);
-				if(foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+				offset = parse_math_expr(word[4])->evaluate_static().get_integer();
 			}
 			if(alignment > 0x800000) asar_throw_error(0, error_type_block, error_id_alignment_too_big);
 			if(alignment < 1) asar_throw_error(0, error_type_block, error_id_alignment_too_small);
@@ -2211,8 +2197,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		else
 		{
-			amount = (int)getnum(par);
-			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			amount = parse_math_expr(par)->evaluate_static().get_integer();
 		}
 		if(is("skip")) step(amount);
 		else
@@ -2279,8 +2264,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (is("padword")) len=2;
 		if (is("padlong")) len=3;
 		if (is("paddword")) len=4;
-		unsigned int val=getnum(par);
-		if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+		unsigned int val = parse_math_expr(par)->evaluate_static().get_integer();
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;
@@ -2312,8 +2296,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if (is("fillword")) len=2;
 		if (is("filllong")) len=3;
 		if (is("filldword")) len=4;
-		unsigned int val= getnum(par);
-		if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+		unsigned int val = parse_math_expr(par)->evaluate_static().get_integer();
 		for (int i=0;i<12;i+=len)
 		{
 			unsigned int tmpval=val;

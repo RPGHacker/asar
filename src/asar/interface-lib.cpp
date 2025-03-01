@@ -661,7 +661,7 @@ EXPORT double asar_math(const char * math_, const char ** error)
 	double rval=0;
 	try
 	{
-		rval=(double)math(math_);
+		rval = parse_math_expr(math_)->evaluate().get_double();
 	}
 	catch(errfatal&)
 	{

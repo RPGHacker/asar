@@ -26,7 +26,6 @@ inline void verify_paren(autoptr<char **> &ptr)
 	 if(!ptr) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
 }
 
-int getlen(const char * str, bool optimizebankextraction=false);
 bool is_hex_constant(const char * str);
 int getlenforlabel(snes_label thislabel, bool exists);
 int getlenforlabel(int labelpos, int labelfreespace, bool exists);

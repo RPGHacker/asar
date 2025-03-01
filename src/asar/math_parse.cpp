@@ -308,39 +308,23 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 	user_functions.emplace(name, std::move(userfunc));
 }
 
-double math(const char * str)
-{
+owned_node parse_math_expr(const char * str) {
 	parse_context parse_ctx { str, {}};
-	owned_node parsed = parse_ctx.parse();
+	return parse_ctx.parse();
+}
+
+int64_t getnum(const char * str) {
+	owned_node parsed = parse_math_expr(str);
 	int haslabel = parsed->has_label();
 	foundlabel = haslabel > 0;
 	foundlabel_static = haslabel < 2;
 	forwardlabel = haslabel == 7;
-	math_eval_context ctx;
-	math_val rval = parsed->evaluate(ctx);
-	return rval.get_double();
-}
-
-int64_t getnum(const char* instr)
-{
-	double num = math(instr);
-	if(num < (double)INT64_MIN) {
-		return INT64_MIN;
-	} else if(num > (double)INT64_MAX) {
-		return INT64_MAX;
-	}
-	return (int64_t)num;
-}
-
-// RPG Hacker: Same function as above, but doesn't truncate our number via int conversion
-double getnumdouble(const char * instr)
-{
-	return math(instr);
+	math_val rval = parsed->evaluate();
+	return rval.get_integer();
 }
 
 int getlen(const char * orgstr, bool optimizebankextraction) {
-	parse_context parse_ctx { orgstr, {}};
-	owned_node parsed = parse_ctx.parse();
+	owned_node parsed = parse_math_expr(orgstr);
 	int letgen = parsed->get_len(optimizebankextraction);
 	return letgen;
 }

@@ -3,77 +3,8 @@
 #include <vector>
 #include <unordered_map>
 #include "libstr.h"
+#include "asar_math.h"
 #include "assembleblock.h"
-
-enum class math_val_type {
-	floating,
-	integer,
-	string,
-	// a resolved label with a name and value. used for datasize() and whatnot
-	identifier,
-};
-
-inline int64_t float_to_int(double f) {
-	// TODO: throw error on overflow?
-	return (int64_t)f;
-}
-
-class math_val {
-public:
-	math_val_type m_type;
-	union {
-		double double_;
-		int64_t int_;
-	} m_numeric_val;
-	// slightly hacky but this is used for both labelname in case of
-	// m_type=identifier, and string value in case of m_type=string
-	string m_string_val;
-
-	math_val() {
-		m_type = math_val_type::integer;
-		m_numeric_val.int_ = 0;
-	}
-	math_val(double v) {
-		m_type = math_val_type::floating;
-		m_numeric_val.double_ = v;
-	}
-	math_val(int64_t v) {
-		m_type = math_val_type::integer;
-		m_numeric_val.int_ = v;
-	}
-	math_val(string v) {
-		m_type = math_val_type::string;
-		m_string_val = v;
-	}
-	static math_val make_identifier(string v) {
-		math_val res(v);
-		res.m_type = math_val_type::identifier;
-		return res;
-	}
-
-	double get_double() const;
-	int64_t get_integer() const;
-	const string &get_str() const;
-	const string &get_identifier() const;
-	bool get_bool() const;
-};
-
-// any info that's necessary during evaluation
-class math_eval_context {
-public:
-	// TODO would it be faster to make this a reference? does that avoid any significant copies?
-	std::vector<math_val> userfunc_params;
-};
-
-class math_ast_node {
-public:
-	virtual math_val evaluate(const math_eval_context&) const = 0;
-	// 0 - no label, 1 - static label, 3 - nonstatic label, 7 - forward label
-	virtual int has_label() const = 0;
-	// how many bytes long should the result of this expression be?
-	virtual int get_len(bool could_be_bank_ex) const = 0;
-	virtual ~math_ast_node() = default;
-};
 
 using owned_node = std::unique_ptr<math_ast_node>;
 
@@ -108,7 +39,7 @@ public:
 	math_ast_binop(owned_node left_in, owned_node right_in, math_binop_type type_in)
 	: m_left(std::move(left_in)), m_right(std::move(right_in)), m_type(type_in) {}
 
-	math_val evaluate(const math_eval_context &ctx) const;
+	math_val evaluate(const eval_context &ctx) const;
 	int has_label() const;
 	int get_len(bool could_be_bank_ex) const;
 };
@@ -125,7 +56,7 @@ public:
 	math_unop_type m_type;
 	math_ast_unop(owned_node arg_in, math_unop_type type_in)
 	: m_arg(std::move(arg_in)), m_type(type_in) {}
-	math_val evaluate(const math_eval_context &ctx) const;
+	math_val evaluate(const eval_context &ctx) const;
 	int has_label() const;
 	int get_len(bool could_be_bank_ex) const;
 };
@@ -135,7 +66,7 @@ class math_ast_literal : public math_ast_node {
 	int m_len;
 public:
 	math_ast_literal(math_val value, int len=0) : m_value(value), m_len(len) {}
-	math_val evaluate(const math_eval_context& ctx) const { return m_value; }
+	math_val evaluate(const eval_context& ctx) const { return m_value; }
 	int has_label() const { return 0; }
 	int get_len(bool could_be_bank_ex) const { return m_len; }
 	friend int math_ast_binop::get_len(bool) const;
@@ -151,7 +82,7 @@ public:
 		: m_labelname(labelname)
 		// this is initialized with the global ns
 		, m_cur_ns(ns) {}
-	math_val evaluate(const math_eval_context &ctx) const;
+	math_val evaluate(const eval_context &ctx) const;
 	int has_label() const;
 	int get_len(bool could_be_bank_ex) const;
 };
@@ -229,7 +160,7 @@ public:
 	math_ast_function_call(std::vector<owned_node> args, string function_name)
 		: m_arguments(std::move(args))
 		, m_func(lookup_fname(function_name)) {}
-	math_val evaluate(const math_eval_context &ctx) const;
+	math_val evaluate(const eval_context &ctx) const;
 	int has_label() const;
 	int get_len(bool could_be_bank_ex) const;
 };
@@ -240,7 +171,7 @@ class math_ast_function_argument : public math_ast_node {
 public:
 	math_ast_function_argument(size_t arg_idx) : m_arg_idx(arg_idx) {}
 
-	math_val evaluate(const math_eval_context& ctx) const {
+	math_val evaluate(const eval_context& ctx) const {
 		return ctx.userfunc_params[m_arg_idx];
 	}
 
