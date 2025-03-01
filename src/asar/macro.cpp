@@ -407,8 +407,7 @@ string replace_macro_args(const char* line) {
 			}
 			else
 			{
-				// TODO: are we sure this shouldn't be evaluate_static instead????
-				int arg_num = parse_math_expr(in)->evaluate_non_forward().get_integer();
+				int arg_num = parse_math_expr(in)->evaluate_static().get_integer();
 
 				if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), "");
 				if (arg_num > current_macro_numargs-current_macro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), generate_macro_hint_string(arg_num, current_macro, depth).raw());
