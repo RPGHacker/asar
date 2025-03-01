@@ -68,8 +68,7 @@ public:
 class math_ast_node {
 public:
 	virtual math_val evaluate(const math_eval_context&) const = 0;
-	// 0 - no label, 1 - static label, 3 - nonstatic label.
-	// (maybe tracking forwardlabel too would be good?)
+	// 0 - no label, 1 - static label, 3 - nonstatic label, 7 - forward label
 	virtual int has_label() const = 0;
 	// how many bytes long should the result of this expression be?
 	virtual int get_len(bool could_be_bank_ex) const = 0;

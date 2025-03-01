@@ -315,7 +315,7 @@ double math(const char * str)
 	int haslabel = parsed->has_label();
 	foundlabel = haslabel > 0;
 	foundlabel_static = haslabel < 2;
-	forwardlabel=false; // TODO
+	forwardlabel = haslabel == 7;
 	math_eval_context ctx;
 	math_val rval = parsed->evaluate(ctx);
 	return rval.get_double();

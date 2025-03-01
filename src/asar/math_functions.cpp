@@ -369,7 +369,8 @@ math_val fn_objectsize(math_val val) {
 math_val fn_datasize(math_val val) {
 	string name = val.get_identifier();
 	int label;
-	if(!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_not_found, name.data());
+	if(pass && !labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_not_found, name.data());
+	else if(!labels.exists(name)) return (int64_t)0;
 	snes_label label_data = labels.find(name);
 
 	label = label_data.id;

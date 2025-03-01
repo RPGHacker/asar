@@ -228,7 +228,10 @@ math_val math_ast_label::evaluate(const math_eval_context &ctx) const {
 	} else if (labels.exists(m_labelname)) {
 		return math_val::make_identifier(m_labelname);
 	} else {
-		// i think in this context we always should throw???
+		// possibly forward label, assume without namespace.
+		// TODO: this assumption can cause moving labels :)))))
+		if(pass == 0) return math_val::make_identifier(m_labelname);
+		// if not pass 0, we know it's not a forward label and can throw the error
 		asar_throw_error(2, error_type_block, error_id_label_not_found,
 				   m_labelname.data());
 	}
@@ -240,8 +243,8 @@ int math_ast_label::has_label() const {
 	} else if (labels.exists(m_labelname)) {
 		return labels.find(m_labelname).is_static ? 1 : 3;
 	}
-	// otherwise, non-static label
-	return 3;
+	// otherwise, non-static forward label
+	return 7;
 }
 
 int math_ast_label::get_len(bool could_be_bank_ex) const {
