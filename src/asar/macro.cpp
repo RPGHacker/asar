@@ -228,9 +228,8 @@ static string generate_macro_arg_string(const char* named_arg, int depth)
 	{
 		ret += '^';
 	}
-	ret += "...[";
 	ret += named_arg;
-	ret += "]>";
+	ret += ">";
 	return ret;
 }
 
@@ -241,8 +240,9 @@ static string generate_macro_arg_string(int var_arg, int depth)
 	{
 		ret += '^';
 	}
+	ret += "...[";
 	ret += dec(var_arg);
-	ret += ">";
+	ret += "]>";
 	return ret;
 }
 
