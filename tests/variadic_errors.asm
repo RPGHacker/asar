@@ -2,7 +2,7 @@
 ;`errEinvalid_macro_param_name
 ;`errEinvalid_macro_param_name
 ;`errEunclosed_vararg
-;`errEinvalid_vararg
+;`errEno_labels_here
 ;`errEmacro_not_varadic
 ;`errEvararg_out_of_bounds
 ;`errEvararg_out_of_bounds
