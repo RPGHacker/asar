@@ -13,7 +13,7 @@ def escape(s):
 def get_errors():
     yield "| Error name | Message |"
     yield "| ---------- | ------- |"
-    with open("../../src/asar/errors.h") as f:
+    with open("../src/asar/errors.h") as f:
         for line in f:
             if line.startswith('ERR('):
                 name, description = re.findall(error_pattern, line)[0]
@@ -22,7 +22,7 @@ def get_errors():
 def get_warnings():
     yield "| Warning name | Message | Enabled by default |"
     yield "| ------------ | ------- | ------------------ |"
-    with open("../../src/asar/warnings.h") as f:
+    with open("../src/asar/warnings.h") as f:
         for line in f:
             if line.startswith('WRN('):
                 name, description, enabled = re.findall(warning_pattern, line)[0]
