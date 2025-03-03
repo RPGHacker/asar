@@ -17,6 +17,7 @@
 #include "virtualfile.h"
 #include "assembleblock.h" // for snes_label - TODO do we want this here???
 #include <cstdint>
+#include <vector>
 
 extern unsigned const char * romdata_r;
 extern int romlen_r;
@@ -138,30 +139,21 @@ extern assocarr<string> defines;
 extern assocarr<string> builtindefines;
 
 
-namespace callstack_entry_type {
-	enum e : int {
-		FILE,
-		MACRO_CALL,
-		LINE,
-		BLOCK,
-	};
-}
+enum class callstack_entry_type : int {
+	FILE,
+	MACRO_CALL,
+	LINE,
+	BLOCK,
+};
 
 struct callstack_entry {
-	callstack_entry_type::e type;
-	string content;
+	callstack_entry_type type;
+	const char* content;
 	int lineno;
 	
-	callstack_entry(callstack_entry_type::e type, const char* content, int lineno)
-	{
-		this->type = type;
-		this->content = content;
-		this->lineno = lineno;
-	}
-	
-	callstack_entry()
-	{
-	}
+	callstack_entry(callstack_entry_type type, const char* content, int lineno)
+	: type(type), content(content), lineno(lineno)
+	{}
 };
 
 
@@ -173,19 +165,20 @@ struct printable_callstack_entry {
 };
 
 
-extern autoarray<callstack_entry> callstack;
+extern std::vector<callstack_entry> callstack;
 extern bool simple_callstacks;
 
 class callstack_push {
 public:
-	callstack_push(callstack_entry_type::e type, const char* content, int lineno=-1)
+	// the `content` here MUST outlive the callstack_push object, and must not be mutated after passing it to callstack_push.
+	callstack_push(callstack_entry_type type, const char* content, int lineno=-1)
 	{
-		callstack.append(callstack_entry(type, content, lineno));
+		callstack.emplace_back(callstack_entry(type, content, lineno));
 	}
 	
 	~callstack_push()
 	{
-		callstack.remove(callstack.count-1);
+		callstack.pop_back();
 	}
 };
 

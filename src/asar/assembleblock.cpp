@@ -671,7 +671,7 @@ void initstuff()
 	default_freespace_settings.write_rats = true;
 	// rest are initialized to false/0/empty string
 
-	callstack.reset();
+	callstack.clear();
 #if defined(_WIN32) || !defined(NO_USE_THREADS)
 	init_stack_use_check();
 #endif

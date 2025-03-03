@@ -312,7 +312,8 @@ static void asar_patch_main(const char * patchloc)
 			initstuff();
 			assemblefile(patchloc);
 			// RPG Hacker: Necessary, because finishpass() can throws warning and errors.
-			callstack_push cs_push(callstack_entry_type::FILE, filesystem->create_absolute_path(nullptr, patchloc));
+			string asmpath = filesystem->create_absolute_path(nullptr, patchloc);
+			callstack_push cs_push(callstack_entry_type::FILE, asmpath);
 			finishpass();
 		}
 	}

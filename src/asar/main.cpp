@@ -33,7 +33,7 @@ int optimize_dp = optimize_dp_flag::ALWAYS;
 int dp_base = 0;
 int optimize_address = optimize_address_flag::MIRRORS;
 
-autoarray<callstack_entry> callstack;
+std::vector<callstack_entry> callstack;
 
 bool errored=false;
 bool ignoretitleerrors=false;
@@ -109,7 +109,7 @@ static string shorten_to_relative_path(const char* base_path, const char* target
 static string get_top_level_directory()
 {
 	string top_level_file_dir;
-	for (int i = 0; i < callstack.count; ++i)
+	for (int i = 0; i < callstack.size(); ++i)
 	{
 		if (callstack[i].type == callstack_entry_type::FILE)
 		{
@@ -181,7 +181,7 @@ void get_current_line_details(string* location, string* details, bool exclude_bl
 	const char* current_block = nullptr;
 	const char* current_call = nullptr;
 	int current_line_no = -1;
-	for (int i = callstack.count-1; i >= 0 ; --i)
+	for (int i = callstack.size()-1; i >= 0 ; --i)
 	{
 		switch (callstack[i].type)
 		{
@@ -214,7 +214,7 @@ void get_full_printable_callstack(autoarray<printable_callstack_entry>* out, int
 	const char* current_block = nullptr;
 	const char* current_call = nullptr;
 	int current_line_no = -1;
-	for (int i = 0; i < callstack.count; ++i)
+	for (int i = 0; i < callstack.size(); ++i)
 	{
 		switch (callstack[i].type)
 		{
@@ -266,7 +266,7 @@ static string get_simple_callstack()
 {
 	int i;
 	const char* current_call = nullptr;
-	for (i = callstack.count-1; i >= 0 ; --i)
+	for (i = callstack.size()-1; i >= 0 ; --i)
 	{
 		if (callstack[i].type == callstack_entry_type::MACRO_CALL)
 		{
@@ -1173,7 +1173,7 @@ string create_symbols_file(string format, uint32_t romCrc){
 bool in_top_level_file()
 {
 	int num_files = 0;
-	for (int i = callstack.count-1; i >= 0; --i)
+	for (int i = callstack.size()-1; i >= 0; --i)
 	{
 		if (callstack[i].type == callstack_entry_type::FILE)
 		{
@@ -1186,17 +1186,17 @@ bool in_top_level_file()
 
 const char* get_current_file_name()
 {
-	for (int i = callstack.count-1; i >= 0; --i)
+	for (int i = callstack.size()-1; i >= 0; --i)
 	{
 		if (callstack[i].type == callstack_entry_type::FILE)
-			return callstack[i].content.raw();
+			return callstack[i].content;
 	}
 	return nullptr;
 }
 
 int get_current_line()
 {
-	for (int i = callstack.count-1; i >= 0; --i)
+	for (int i = callstack.size()-1; i >= 0; --i)
 	{
 		if (callstack[i].type == callstack_entry_type::LINE) return callstack[i].lineno;
 	}
@@ -1205,9 +1205,9 @@ int get_current_line()
 
 const char* get_current_block()
 {
-	for (int i = callstack.count-1; i >= 0; --i)
+	for (int i = callstack.size()-1; i >= 0; --i)
 	{
-		if (callstack[i].type == callstack_entry_type::LINE || callstack[i].type == callstack_entry_type::BLOCK) return callstack[i].content.raw();
+		if (callstack[i].type == callstack_entry_type::LINE || callstack[i].type == callstack_entry_type::BLOCK) return callstack[i].content;
 	}
 	return nullptr;
 }
@@ -1249,7 +1249,7 @@ void reseteverything()
 		free(const_cast<unsigned char*>(romdata_r));
 	#endif
 
-	callstack.reset();
+	callstack.clear();
 	simple_callstacks = true;
 #undef free
 }
