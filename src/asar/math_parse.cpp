@@ -179,12 +179,20 @@ owned_node parse_context::parse_atom() {
 	}
 	if(*str == '"') {
 		const char * strpos = str + 1;
-		while (*str!='"' && *str!='\0') str++;
-		str = strchr(str + 1, '"'); // TODO don't we have string escapes????
-		string tempname(strpos , (int)(str - strpos));
+		str = strchr(strpos, '"');
+		if(!str) throw_err_block(2, err_mismatched_quotes);
+		string output(strpos, str - strpos);
+		while(str && str[1] == '"') {
+			// we hit an escaped quote
+			output += '"';
+			strpos = str+2;
+			str = strchr(strpos, '"');
+			if(!str) throw_err_block(2, err_mismatched_quotes);
+			output.append(strpos, 0, str - strpos);
+		}
 		str++;
 		while (*str==' ') str++;	//eat space
-		return std::make_unique<math_ast_literal>(tempname);
+		return std::make_unique<math_ast_literal>(output);
 	}
 	throw_err_block(2, err_invalid_number);
 }

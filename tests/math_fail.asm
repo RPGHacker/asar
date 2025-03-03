@@ -23,3 +23,12 @@ assert read1($1234, $42, 123)
 assert readfile1("data/filename with spaces.bin", -1)
 ;`errEfile_offset_out_of_bounds
 assert readfile1("data/filename with spaces.bin", 16)
+
+;`errEbad_type
+assert "1" + 2
+;`errEbad_type
+assert datasize(2)
+;`errEbad_type
+assert "1" - "2"
+;`errEbad_type
+assert "1"%"2"

@@ -12,7 +12,7 @@ double math_val::get_double() const {
 		case math_val_type::identifier:
 			return (double)get_integer();
 		case math_val_type::string:
-			throw_err_block(2, err_expected_number);
+			throw_err_block(2, err_bad_type, "number", "string");
 	}
 }
 int64_t math_val::get_integer() const {
@@ -28,19 +28,20 @@ int64_t math_val::get_integer() const {
 			}
 			return labels.find(m_string_val).pos;
 		case math_val_type::string:
-			throw_err_block(2, err_expected_number);
+			throw_err_block(2, err_bad_type, "number", "string");
 	}
 }
 const string &math_val::get_str() const {
 	if (m_type == math_val_type::string)
 		return m_string_val;
-	throw_err_block(2, err_expected_string);
+	throw_err_block(2, err_bad_type, "string", "number"); // TODO is "number" a good name for identifier/int/float?
 }
 
 const string &math_val::get_identifier() const {
 	if (m_type == math_val_type::identifier)
 		return m_string_val;
-	throw_err_block(2, err_expected_ident);
+	const char* type_name = (m_type == math_val_type::string) ? "string" : "number";
+	throw_err_block(2, err_bad_type, "identifier", type_name);
 }
 bool math_val::get_bool() const {
 	switch (m_type) {
@@ -55,36 +56,40 @@ bool math_val::get_bool() const {
 }
 
 template<typename T>
-T evaluate_binop_arithmetic(T lhs, T rhs, math_binop_type type) {
-	switch(type) {
-		case math_binop_type::mul: return lhs * rhs;
-		case math_binop_type::add: return lhs + rhs;
-		case math_binop_type::sub: return lhs - rhs;
-		default:
-			throw_err_block(2, err_internal_error, "evaluate_binop_arithmetic with bad type");
-	}
-}
-template<typename T>
-bool evaluate_binop_compare(T lhs, T rhs, math_binop_type type) {
+bool evaluate_binop_compare(const T& lhs, const T& rhs, math_binop_type type) {
 	switch(type) {
 		case math_binop_type::comp_ge: return lhs >= rhs;
 		case math_binop_type::comp_le: return lhs <= rhs;
 		case math_binop_type::comp_gt: return lhs > rhs;
 		case math_binop_type::comp_lt: return lhs < rhs;
-		case math_binop_type::comp_eq: return lhs == rhs;
-		case math_binop_type::comp_ne: return lhs != rhs;
 		default:
 			throw_err_block(2, err_internal_error, "evaluate_binop_compare with bad type");
 	}
 }
 
+static bool evaluate_eq(math_val lhs, math_val rhs) {
+	// if only one is string, they can never be equal
+	if((lhs.m_type == math_val_type::string) ^ (rhs.m_type == math_val_type::string)) {
+		return false;
+	}
+	if(lhs.m_type == math_val_type::string) {
+		// both strings: compare as strings
+		return lhs.get_str() == rhs.get_str();
+	} else {
+		// both non strings: compare as numbers
+		if(lhs.m_type == math_val_type::floating || rhs.m_type == math_val_type::floating)
+			// one floating: compare as floats
+			return lhs.get_double() == rhs.get_double();
+		else
+			// both ints: compare as ints
+			return lhs.get_integer() == rhs.get_integer();
+	}
+}
+
 math_val evaluate_binop(math_val lhs, math_val rhs,
 						math_binop_type type) {
-	// todo: do this a bit smarter (bit_ops shouldn't cast int->float->int)
-	if (lhs.m_type == math_val_type::floating)
-		rhs = math_val(rhs.get_double());
-	else if (rhs.m_type == math_val_type::floating)
-		lhs = math_val(lhs.get_double());
+	bool has_string = (lhs.m_type == math_val_type::string) || (rhs.m_type == math_val_type::string);
+	bool has_float = (lhs.m_type == math_val_type::floating) || (rhs.m_type == math_val_type::floating);
 	switch (type) {
 		case math_binop_type::pow:
 			return math_val(pow(lhs.get_double(), rhs.get_double()));
@@ -96,7 +101,7 @@ math_val evaluate_binop(math_val lhs, math_val rhs,
 			if (rhs.get_double() == 0.0)
 				throw_err_block(2, err_division_by_zero);
 			// TODO: negative semantics
-			if (lhs.m_type == math_val_type::floating) {
+			if (has_float) {
 				return math_val(fmod(lhs.get_double(), rhs.get_double()));
 			} else {
 				return math_val(lhs.get_integer() % rhs.get_integer());
@@ -127,29 +132,27 @@ math_val evaluate_binop(math_val lhs, math_val rhs,
 		case math_binop_type::logical_or:
 			throw_err_block(2, err_internal_error, "evaluate_binop() on logical ops loses short-circuiting");
 
-		case math_binop_type::mul:
 		case math_binop_type::add:
+			if(has_string) return math_val(lhs.get_str() + rhs.get_str());
+			else if(has_float) return math_val(lhs.get_double() + rhs.get_double());
+			else return math_val(lhs.get_integer() + rhs.get_integer());
+		case math_binop_type::mul:
+			if(has_float) return math_val(lhs.get_double() * rhs.get_double());
+			else return math_val(lhs.get_integer() * rhs.get_integer());
 		case math_binop_type::sub:
-			// TODO error on string (also TODO support string +)
-			if (lhs.m_type == math_val_type::floating)
-				return math_val(evaluate_binop_arithmetic<double>(
-					lhs.get_double(), rhs.get_double(), type));
-			else
-				return math_val(evaluate_binop_arithmetic<int64_t>(
-					lhs.get_integer(), rhs.get_integer(), type));
+			if(has_float) return math_val(lhs.get_double() - rhs.get_double());
+			else return math_val(lhs.get_integer() - rhs.get_integer());
 
 		case math_binop_type::comp_ge:
 		case math_binop_type::comp_le:
 		case math_binop_type::comp_gt:
 		case math_binop_type::comp_lt:
-		case math_binop_type::comp_eq:
-		case math_binop_type::comp_ne:
-			if (lhs.m_type == math_val_type::floating)
-				return math_val((int64_t)evaluate_binop_compare<double>(
-					lhs.get_double(), rhs.get_double(), type));
-			else
-				return math_val((int64_t)evaluate_binop_compare<int64_t>(
-					lhs.get_integer(), rhs.get_integer(), type));
+			if(has_string) return (int64_t)evaluate_binop_compare(lhs.get_str(), rhs.get_str(), type);
+			else if(has_float) return (int64_t)evaluate_binop_compare(lhs.get_double(), rhs.get_double(), type);
+			else return (int64_t)evaluate_binop_compare(lhs.get_integer(), rhs.get_integer(), type);
+
+		case math_binop_type::comp_eq: return (int64_t)evaluate_eq(lhs, rhs);
+		case math_binop_type::comp_ne: return (int64_t)!evaluate_eq(lhs, rhs);
 	}
 }
 
