@@ -117,7 +117,7 @@ static void reset_text_color(FILE* output_loc, string* in_out_str)
 
 static int max_num_errors = 20;
 
-void error_interface(int errid, int whichpass, const char * e_)
+void error_interface(const char* errid, int whichpass, const char * e_)
 {
 	errored = true;
 	if (pass == whichpass)
@@ -125,18 +125,18 @@ void error_interface(int errid, int whichpass, const char * e_)
 		errnum++;
 		const char* current_block = get_current_block();
 		// don't show current block if the error came from an error command or limit reached
-		bool show_block = (current_block && (errid != error_id_error_command && errid != error_id_limit_reached));
-		bool show_stack = (errid != error_id_limit_reached);
+		bool show_block = (current_block && (strcmp(errid, "error_command") != 0 && strcmp(errid, "limit_reached") != 0));
+		bool show_stack = strcmp(errid, "limit_reached") != 0;
 		string location;
 		string details;
 		get_current_line_details(&location, &details, !show_block);
-		string error_string = (show_stack ? location+": " : STR "") + "error: (" + get_error_name((asar_error_id)errid) + "): " + e_;
+		string error_string = (show_stack ? location+": " : STR "") + "error: (" + errid + "): " + e_;
 		string details_string = (show_stack ? details + get_callstack() : "") + "\n";
 		set_text_color(errloc, &error_string, ansi_text_color::BRIGHT_RED);
 		fputs(error_string, errloc);
 		reset_text_color(errloc, &details_string);
 		fputs(details_string, errloc);
-		if (errnum == max_num_errors + 1) asar_throw_error(pass, error_type_fatal, error_id_limit_reached, max_num_errors);
+		if (errnum == max_num_errors + 1) throw_err_fatal(pass, err_limit_reached, max_num_errors);
 	}
 }
 
@@ -237,7 +237,7 @@ int main(int argc, const char * argv[])
 	{
 		if (!utf16_to_utf8(&u8_argv_arr[i], argv_w[i]))
 		{
-			asar_throw_error(pass, error_type_null, error_id_cmdl_utf16_to_utf8_failed, "Command line arguments on Windows must be valid UTF-16.");
+			throw_err_null(pass, err_cmdl_utf16_to_utf8_failed, "Command line arguments on Windows must be valid UTF-16.");
 			pause(err);
 			return 1;
 		}
@@ -432,10 +432,10 @@ int main(int argc, const char * argv[])
 					strip_whitespace(name);
 					name.strip_prefix('!'); // remove leading ! if present
 
-					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
+					if (!validatedefinename(name)) throw_err_null(pass, err_cmdl_define_invalid, "command line defines", name.data());
 
 					if (clidefines.exists(name)) {
-						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.data());
+						throw_err_null(pass, err_cmdl_define_override, "Command line define", name.data());
 						pause(err);
 						return 1;
 					}
@@ -448,10 +448,10 @@ int main(int argc, const char * argv[])
 					strip_whitespace(name);
 					name.strip_prefix('!'); // remove leading ! if present
 
-					if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "command line defines", name.data());
+					if (!validatedefinename(name)) throw_err_null(pass, err_cmdl_define_invalid, "command line defines", name.data());
 
 					if (clidefines.exists(name)) {
-						asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Command line define", name.data());
+						throw_err_null(pass, err_cmdl_define_override, "Command line define", name.data());
 						pause(err);
 						return 1;
 					}
@@ -485,13 +485,12 @@ int main(int argc, const char * argv[])
 			FileHandleType f = open_file(romname, FileOpenMode_Write);
 			if (f == InvalidFileHandle)
 			{
-				asar_throw_error(pass, error_type_fatal, error_id_create_rom_failed);
+				throw_err_fatal(pass, err_create_rom_failed);
 			}
 			close_file(f);
 		}
 		if (!openrom(romname, false))
 		{
-			asar_throw_error(pass, error_type_null, openromerror);
 			pause(err);
 			return 1;
 		}
@@ -581,13 +580,13 @@ int main(int argc, const char * argv[])
 		new_filesystem.destroy();
 		filesystem = nullptr;
 
-		if (werror && warned) asar_throw_error(pass, error_type_null, error_id_werror);
+		if (werror && warned) throw_err_null(pass, err_werror);
 		if (checksum_fix_enabled) fixchecksum();
 		//if (pcpos>romlen) romlen=pcpos;
 		if (errored)
 		{
 			if (errnum==0)
-				asar_throw_error(pass, error_type_null, error_id_internal_error, "phantom error");
+				throw_err_null(pass, err_internal_error, "phantom error");
 			puts("Errors were detected while assembling the patch. Assembling aborted. Your ROM has not been modified.");
 			closerom(false);
 			reseteverything();

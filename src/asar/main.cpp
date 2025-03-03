@@ -325,23 +325,23 @@ string get_callstack()
 		return get_full_callstack();
 }
 
-asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error)
+void throw_vfile_error(int whichpass, virtual_file_error vfile_error, const char* filename)
 {
 	switch (vfile_error)
 	{
 	case vfe_doesnt_exist:
-		return error_id_file_not_found;
+		throw_err_block(whichpass, err_file_not_found, filename);
 	case vfe_access_denied:
-		return error_id_failed_to_open_file_access_denied;
+		throw_err_block(whichpass, err_failed_to_open_file_access_denied, filename);
 	case vfe_not_regular_file:
-		return error_id_failed_to_open_not_regular_file;
+		throw_err_block(whichpass, err_failed_to_open_not_regular_file, filename);
 	case vfe_unknown:
 	case vfe_none:
 	case vfe_num_errors:
-		return error_id_failed_to_open_file;
+		throw_err_block(whichpass, err_failed_to_open_file, filename);
 	}
 
-	return error_id_failed_to_open_file;
+	throw_err_block(whichpass, err_failed_to_open_file, filename);
 }
 
 virtual_file_error asar_get_last_io_error()
@@ -520,7 +520,7 @@ void resolvedefines(string& out, const char * start)
 			{
 				out += '!';
 				for (int i=0; i < depth; ++i) out += '^';
-				if (depth > in_macro_def) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "define", "define", depth, in_macro_def);
+				if (depth > in_macro_def) throw_err_line(0, err_invalid_depth_resolve, "define", "define", depth, in_macro_def);
 				continue;
 			}
 
@@ -533,13 +533,13 @@ void resolvedefines(string& out, const char * start)
 				{
 					if (*here=='{') braces++;
 					if (*here=='}') braces--;
-					if (!*here) asar_throw_error(0, error_type_line, error_id_mismatched_braces);
+					if (!*here) throw_err_line(0, err_mismatched_braces);
 					if (!braces) break;
 					unprocessedname+=*here++;
 				}
 				here++;
 				resolvedefines(defname, unprocessedname);
-				if (!validatedefinename(defname)) asar_throw_error(0, error_type_line, error_id_invalid_define_name);
+				if (!validatedefinename(defname)) throw_err_line(0, err_invalid_define_name);
 			}
 			else
 			{
@@ -572,7 +572,7 @@ void resolvedefines(string& out, const char * start)
 						{
 							if (!here[1] || here[1]==' ') break;
 							else if (here[1]=='"') here++;
-							else asar_throw_error(0, error_type_line, error_id_broken_define_declaration);
+							else throw_err_line(0, err_broken_define_declaration);
 						}
 						val+=*here++;
 					}
@@ -583,7 +583,7 @@ void resolvedefines(string& out, const char * start)
 					while (*here && *here!=' ') val+=*here++;
 				}
 				//if (strqchr(val.data(), ';')) *strqchr(val.data(), ';')=0;
-				if (*here && !stribegin(here, " : ")) asar_throw_error(0, error_type_line, error_id_broken_define_declaration);
+				if (*here && !stribegin(here, " : ")) throw_err_line(0, err_broken_define_declaration);
 				// RPG Hacker: Is it really a good idea to normalize
 				// the content of defines? That kinda violates their
 				// functionality as a string replacement mechanism.
@@ -592,7 +592,7 @@ void resolvedefines(string& out, const char * start)
 				// RPG Hacker: throw an error if we're trying to overwrite built-in defines.
 				if (builtindefines.exists(defname))
 				{
-					asar_throw_error(0, error_type_line, error_id_overriding_builtin_define, defname.data());
+					throw_err_line(0, err_overriding_builtin_define, defname.data());
 				}
 
 				switch (mode)
@@ -604,7 +604,7 @@ void resolvedefines(string& out, const char * start)
 					}
 					case append:
 					{
-						if (!defines.exists(defname)) asar_throw_error(0, error_type_line, error_id_define_not_found, defname.data());
+						if (!defines.exists(defname)) throw_err_line(0, err_define_not_found, defname.data());
 						string oldval = defines.find(defname);
 						val=oldval+val;
 						defines.create(defname) = val;
@@ -638,7 +638,7 @@ void resolvedefines(string& out, const char * start)
 				if (!defname) out+="!";
 				else
 				{
-					if (!defines.exists(defname)) asar_throw_error(0, error_type_line, error_id_define_not_found, defname.data());
+					if (!defines.exists(defname)) throw_err_line(0, err_define_not_found, defname.data());
 					else {
 						string thisone = defines.find(defname);
 						resolvedefines(out, thisone);
@@ -648,7 +648,7 @@ void resolvedefines(string& out, const char * start)
 		}
 		else out+=*here++;
 	}
-	if (!confirmquotes(out)) { asar_throw_error(0, error_type_null, error_id_mismatched_quotes); out = ""; }
+	if (!confirmquotes(out)) { throw_err_null(0, err_mismatched_quotes); out = ""; }
 }
 
 bool moreonline;
@@ -749,8 +749,7 @@ void assemblefile(const char * filename)
 		char * temp = readfile(absolutepath, "");
 		if (!temp)
 		{
-			asar_throw_error(0, error_type_null, vfile_error_to_error_id(asar_get_last_io_error()), filename);
-
+			throw_vfile_error(0, asar_get_last_io_error(), filename);
 			return;
 		}
 		sourcefile& newfile = filecontents.create(absolutepath);
@@ -772,7 +771,7 @@ void assemblefile(const char * filename)
 						char* new_line = newfile.contents[i_temp];
 						if(new_line == nullptr) {
 							callstack_push cs_push(callstack_entry_type::LINE, line, i);
-							asar_throw_error(0, error_type_null, error_id_unclosed_block_comment);
+							throw_err_null(0, err_unclosed_block_comment);
 							// make sure this line is still parsed correctly
 							*comment = 0;
 							// but don't go looking at any other lines
@@ -802,7 +801,7 @@ void assemblefile(const char * filename)
 		break_outer:
 			if (!confirmquotes(line)) {
 				callstack_push cs_push(callstack_entry_type::LINE, line, i);
-				asar_throw_error(0, error_type_null, error_id_mismatched_quotes);
+				throw_err_null(0, err_mismatched_quotes);
 				line[0] = '\0';
 			}
 			newfile.contents[i] = strip_whitespace(line);
@@ -841,7 +840,7 @@ void assemblefile(const char * filename)
 	}
 	while (in_macro_def > 0)
 	{
-		asar_throw_error(0, error_type_null, error_id_unclosed_macro, macro_defs[in_macro_def-1].data());
+		throw_err_null(0, err_unclosed_macro, macro_defs[in_macro_def-1].data());
 		if (!pass && in_macro_def == 1) endmacro(false);
 		in_macro_def--;
 		macro_defs.remove(in_macro_def);
@@ -850,7 +849,7 @@ void assemblefile(const char * filename)
 	{
 		numif=startif;
 		numtrue=startif;
-		asar_throw_error(0, error_type_null, error_id_unclosed_if);
+		throw_err_null(0, err_unclosed_if);
 	}
 	incsrcdepth--;
 }
@@ -872,7 +871,7 @@ bool do_line_logic(const char* line, const char* filename, int lineno)
 			string tmp=replace_macro_args(line);
 			tmp.qnormalize();
 			resolvedefines(current_line, tmp);
-			if (!confirmquotes(current_line)) asar_throw_error(0, error_type_line, error_id_mismatched_quotes);
+			if (!confirmquotes(current_line)) throw_err_line(0, err_mismatched_quotes);
 		}
 		else current_line=line;
 
@@ -900,7 +899,7 @@ bool do_line_logic(const char* line, const char* filename, int lineno)
 		}
 		else if (!stricmp(current_line, "endmacro") && numif==numtrue)
 		{
-			if (in_macro_def == 0) asar_throw_error(0, error_type_line, error_id_misplaced_endmacro);
+			if (in_macro_def == 0) throw_err_line(0, err_misplaced_endmacro);
 			else
 			{
 				in_macro_def--;
@@ -1009,10 +1008,10 @@ void parse_std_defines(const char* textfile)
 					continue;
 				}
 
-				asar_throw_error(pass, error_type_null, error_id_stddefines_no_identifier);
+				throw_err_null(pass, err_stddefines_no_identifier);
 			}
 
-			if (!validatedefinename(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "stddefines.txt", define_name.data());
+			if (!validatedefinename(define_name)) throw_err_null(pass, err_cmdl_define_invalid, "stddefines.txt", define_name.data());
 
 			// clean define_val
 			const char* defval = define_val.data();
@@ -1020,7 +1019,7 @@ void parse_std_defines(const char* textfile)
 
 			if (*defval == 0) {
 				// no value
-				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.data());
+				if (clidefines.exists(define_name)) throw_err_null(pass, err_cmdl_define_override, "Std define", define_name.data());
 				clidefines.create(define_name) = "";
 				continue;
 			}
@@ -1032,14 +1031,14 @@ void parse_std_defines(const char* textfile)
 					cleaned_defval += *defval++;
 
 				if (*defval == 0) {
-					asar_throw_error(pass, error_type_null, error_id_mismatched_quotes);
+					throw_err_null(pass, err_mismatched_quotes);
 				}
 				defval++; // skip closing quote
 				while (*defval == ' ' || *defval == '\t') defval++; // skip whitespace
 				if (*defval != 0 && *defval != '\n')
-					asar_throw_error(pass, error_type_null, error_id_stddefine_after_closing_quote);
+					throw_err_null(pass, err_stddefine_after_closing_quote);
 
-				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.data());
+				if (clidefines.exists(define_name)) throw_err_null(pass, err_cmdl_define_override, "Std define", define_name.data());
 				clidefines.create(define_name) = cleaned_defval;
 				continue;
 			}
@@ -1052,7 +1051,7 @@ void parse_std_defines(const char* textfile)
 				while (*defval_end == ' ' || *defval_end == '\t') defval_end--;
 				cleaned_defval = string(defval, (int)(defval_end - defval + 1));
 
-				if (clidefines.exists(define_name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "Std define", define_name.data());
+				if (clidefines.exists(define_name)) throw_err_null(pass, err_cmdl_define_override, "Std define", define_name.data());
 				clidefines.create(define_name) = cleaned_defval;
 				continue;
 			}

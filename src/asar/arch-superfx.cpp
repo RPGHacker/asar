@@ -9,7 +9,7 @@ static int64_t getnum_ck(const char* math)
 
 static void range(int min, int mid, int max)
 {
-	if (mid<min || mid>max) asar_throw_error(0, error_type_block, error_id_superfx_invalid_register, min, max);
+	if (mid<min || mid>max) throw_err_block(0, err_superfx_invalid_register, min, max);
 }
 
 enum reg_t {
@@ -46,7 +46,7 @@ static bool getreg(const char * par, int * reg, reg_t type)
 //for LMS and SMS short addressing forms, check range & evenness
 static bool check_short_addr(int num) {
 	if (num % 2 > 0 || num < 0 || num > 0x1FE) {
-		asar_throw_error(0, error_type_block, error_id_superfx_invalid_short_address, hex((unsigned int)num).data());
+		throw_err_block(0, err_superfx_invalid_short_address, hex((unsigned int)num).data());
 		return false;
 	}
 	return true;
@@ -200,7 +200,7 @@ bool asblock_superfx(char** word, int numwords)
 					write1((unsigned int)byte); write1((unsigned int)pos);
 					if (pass==2 && (pos<-128 || pos>127))
 					{
-						asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(pos).data());
+						throw_err_block(2, err_relative_branch_out_of_bounds, dec(pos).data());
 					}
 				}
 			}

@@ -13,8 +13,6 @@ static bool header;
 unsigned char freespacebyte;
 static FileHandleType thisfile = InvalidFileHandle;
 
-asar_error_id openromerror;
-
 autoarray<writtenblockdata> writtenblocks;
 static int last_writtenblock_ind = 0;
 // not immediately put into writtenblocks to allow the freespace finder to use
@@ -536,7 +534,7 @@ bool openrom(const char * filename, bool confirm)
 	thisfile = open_file(filename, FileOpenMode_ReadWrite);
 	if (thisfile == InvalidFileHandle)
 	{
-		openromerror = error_id_open_rom_failed;
+		throw_err_null(pass, err_open_rom_failed);
 		return false;
 	}
 	header=false;
@@ -552,15 +550,16 @@ bool openrom(const char * filename, bool confirm)
 	int truelen=(int)read_file(thisfile, (void*)romdata, (uint32_t)romlen);
 	if (truelen!=romlen)
 	{
-		openromerror = error_id_open_rom_failed;
 		free(const_cast<unsigned char*>(romdata));
+		throw_err_null(pass, err_open_rom_failed);
 		return false;
 	}
 	memset(const_cast<unsigned char*>(romdata)+romlen, 0x00, (size_t)(16*1024*1024-romlen));
 	if (confirm && snestopc(0x00FFC0)+21<(int)romlen && strncmp((const char*)romdata+snestopc(0x00FFC0), "SUPER MARIOWORLD     ", 21))
 	{
 		closerom(false);
-		openromerror = header ? error_id_open_rom_not_smw_extension : error_id_open_rom_not_smw_header;
+		if(header) throw_err_null(pass, err_open_rom_not_smw_extension);
+		else throw_err_null(pass, err_open_rom_not_smw_header);
 		return false;
 	}
 

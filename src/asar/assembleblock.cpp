@@ -67,7 +67,7 @@ static inline void verifysnespos()
 {
 	if (!snespos_valid)
 	{
-		asar_throw_error(0, error_type_block, error_id_missing_org);
+		throw_err_block(0, err_missing_org);
 		snespos=0x008000;
 		realsnespos=0x008000;
 		startpos=0x008000;
@@ -171,7 +171,7 @@ void write1(unsigned int num)
 		if (pcpos<0)
 		{
 			movinglabelspossible=true;
-			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
+			throw_err_block(2, err_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
 		}
 		writeromdata_byte(pcpos, (unsigned char)num, freespaceid != 0);
 		if (pcpos>=romlen) {
@@ -184,7 +184,7 @@ void write1(unsigned int num)
 		if(pcpos < 0)
 		{
 			movinglabelspossible=true;
-			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
+			throw_err_block(2, err_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
 		}
 		addromwrite(pcpos, 1);
 		if (pcpos>=romlen) {
@@ -207,7 +207,7 @@ static bool asblock_pick(char** word, int numwords)
 const char * safedequote(char * str)
 {
 	const char * tmp=dequote(str);
-	if (!tmp) asar_throw_error(0, error_type_block, error_id_garbage_near_quoted_string);
+	if (!tmp) throw_err_block(0, err_garbage_near_quoted_string);
 	return tmp;
 }
 
@@ -258,7 +258,7 @@ int getlenfromchar(char c)
 	if (c=='b') return 1;
 	if (c=='w') return 2;
 	if (c=='l') return 3;
-	asar_throw_error(0, error_type_block, error_id_invalid_opcode_length);
+	throw_err_block(0, err_invalid_opcode_length);
 }
 
 assocarr<snes_label> labels;
@@ -338,7 +338,7 @@ string posneglabelname(const char ** input, bool define)
 		{
 			if (macrorecursion == 0 || macroposlabels == nullptr || macroneglabels == nullptr)
 			{
-				if (!macrorecursion) asar_throw_error(0, error_type_block, error_id_macro_label_outside_of_macro);
+				if (!macrorecursion) throw_err_block(0, err_macro_label_outside_of_macro);
 			}
 			else
 			{
@@ -378,7 +378,7 @@ string labelname(const char ** rawname, bool define, bool is_addlabel)
 	string name;
 	int i=-1;
 
-	if (is_digit(*deref_rawname)) asar_throw_error(2, error_type_block, error_id_invalid_label_name);
+	if (is_digit(*deref_rawname)) throw_err_block(2, err_invalid_label_name);
 	if (*deref_rawname ==':')
 	{
 		deref_rawname++;
@@ -387,10 +387,10 @@ string labelname(const char ** rawname, bool define, bool is_addlabel)
 	else if (!in_struct && !in_sub_struct)
 	{
 		for (i=0;(*deref_rawname =='.');i++) deref_rawname++;
-		if (!is_ualnum(*deref_rawname)) asar_throw_error(2, error_type_block, error_id_invalid_label_name);
+		if (!is_ualnum(*deref_rawname)) throw_err_block(2, err_invalid_label_name);
 		if (i)
 		{
-			if (!sublabellist || !(*sublabellist)[i - 1]) asar_throw_error(2, error_type_block, error_id_label_missing_parent);
+			if (!sublabellist || !(*sublabellist)[i - 1]) throw_err_block(2, err_label_missing_parent);
 			name+=STR(*sublabellist)[i-1]+"_";
 			issublabel = true;
 		}
@@ -400,14 +400,14 @@ string labelname(const char ** rawname, bool define, bool is_addlabel)
 	{
 		// RPG Hacker: Don't add the prefix for sublabels, because they already inherit it from
 		// their parents' names.
-		if (!macrorecursion || macrosublabels == nullptr) asar_throw_error(2, error_type_block, error_id_macro_label_outside_of_macro);
+		if (!macrorecursion || macrosublabels == nullptr) throw_err_block(2, err_macro_label_outside_of_macro);
 		name = STR":macro_" + dec(calledmacros) + "_" + name;
 	}
 
 
 	if (in_struct || in_sub_struct)
 	{
-		if(is_addlabel && *deref_rawname != '.') asar_throw_error(2, error_type_block, error_id_invalid_label_name);  //probably should be a better error. TODO!!!
+		if(is_addlabel && *deref_rawname != '.') throw_err_block(2, err_invalid_label_name);  //probably should be a better error. TODO!!!
 		if(*deref_rawname == '.') {
 			deref_rawname++;
 			if(in_sub_struct)
@@ -419,7 +419,7 @@ string labelname(const char ** rawname, bool define, bool is_addlabel)
 		}
 	}
 
-	if (!is_ualnum(*deref_rawname)) asar_throw_error(2, error_type_block, error_id_invalid_label_name);
+	if (!is_ualnum(*deref_rawname)) throw_err_block(2, err_invalid_label_name);
 
 	while (is_ualnum(*deref_rawname) || *deref_rawname == '.')
 	{
@@ -444,7 +444,7 @@ static inline bool labelvalcore(const char ** rawname, snes_label * rval, bool d
 	{
 		if (shouldthrow && pass)
 		{
-			asar_throw_error(2, error_type_block, error_id_label_not_found, name.data());
+			throw_err_block(2, err_label_not_found, name.data());
 		}
 		rval->pos = (unsigned int)-1;
 		rval->freespace_id = 0;
@@ -503,7 +503,7 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 		if (labels.exists(name))
 		{
 			movinglabelspossible=true;
-			asar_throw_error(0, error_type_block, error_id_label_redefined, name.data());
+			throw_err_block(0, err_label_redefined, name.data());
 		}
 		labels.create(name) = label_data;
 	}
@@ -514,14 +514,14 @@ static void setlabel(string name, int loc=-1, bool is_static=false)
 	else if (pass==2)
 	{
 		//all label locations are known at this point, add a sanity check
-		if (!labels.exists(name)) asar_throw_error(2, error_type_block, error_id_internal_error, "label created on 3rd pass");
+		if (!labels.exists(name)) throw_err_block(2, err_internal_error, "label created on 3rd pass");
 		labelpos = labels.find(name).pos;
 		if ((int)labelpos != loc && !movinglabelspossible)
 		{
-			if((unsigned int)loc>>16 != labelpos>>16)  asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
-			else if(labelpos == (dp_base + 0xFFu))   asar_throw_error(2, error_type_block, error_id_label_ambiguous, name.raw());
+			if((unsigned int)loc>>16 != labelpos>>16)  throw_err_block(2, err_label_ambiguous, name.raw());
+			else if(labelpos == (dp_base + 0xFFu))   throw_err_block(2, err_label_ambiguous, name.raw());
 			else if(errored) return;
-			else asar_throw_error(2, error_type_block, error_id_internal_error, "moving label");
+			else throw_err_block(2, err_internal_error, "moving label");
 		}
 	}
 }
@@ -575,12 +575,12 @@ void checkbankcross()
 	unsigned int mask = 0x7FFF0000 | (check_half_banks_crossed ? 0x8000 : 0);
 	if (((snespos^startpos) & mask) && (((snespos - 1) ^ startpos) & mask))
 	{
-		asar_throw_error(pass, error_type_fatal, error_id_bank_border_crossed, snespos);
+		throw_err_fatal(pass, err_bank_border_crossed, snespos);
 	}
 	// don't verify realsnespos when using norom. this allows making custom mappers where the file layout doesn't follow bank borders
 	else if (mapper != norom && ((realsnespos^realstartpos) & mask) && (((realsnespos - 1) ^ realstartpos) & mask))
 	{
-		asar_throw_error(pass, error_type_fatal, error_id_bank_border_crossed, realsnespos);
+		throw_err_fatal(pass, err_bank_border_crossed, realsnespos);
 	}
 }
 
@@ -711,12 +711,12 @@ static void parse_freespace_arguments(freespace_data& thisfs, string& arguments)
 			string pin_to = pars[i] + 4;
 			const char* pin_to_c = pin_to.data();
 			thisfs.pin_target = labelname(&pin_to_c);
-			if(*pin_to_c) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+			if(*pin_to_c) throw_err_block(0, err_invalid_label_name);
 			// this is to throw an "undefined label" error with the proper callstack
 			if(pass) labelval(pin_to);
 			thisfs.pin_target_ns = ns;
 		}
-		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		else throw_err_block(0, err_invalid_freespace_request);
 	}
 }
 
@@ -794,10 +794,10 @@ void finishpass()
 	verify_warnings();
 	pull_warnings(false);
 
-	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_missing_endspcblock);
-	if (in_struct || in_sub_struct) asar_throw_error(0, error_type_null, error_id_struct_without_endstruct);
-	else if (pushpcnum) asar_throw_error(0, error_type_null, error_id_pushpc_without_pullpc);
-	else if (pushnsnum) asar_throw_error(0, error_type_null, error_id_pushns_without_pullns);
+	if(in_spcblock) throw_err_block(0, err_missing_endspcblock);
+	if (in_struct || in_sub_struct) throw_err_null(0, err_struct_without_endstruct);
+	else if (pushpcnum) throw_err_null(0, err_pushpc_without_pullpc);
+	else if (pushnsnum) throw_err_null(0, err_pushns_without_pullns);
 	freespaceend();
 
 	deinitmathcore();
@@ -822,7 +822,7 @@ static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 	if (posnegname.length() > 0)
 	{
 		if (global_label) return false;
-		if (*posneglabel != '\0' && *posneglabel != ':') asar_throw_error(0, error_type_block, error_id_broken_label_definition);
+		if (*posneglabel != '\0' && *posneglabel != ':') throw_err_block(0, err_broken_label_definition);
 		setlabel(posnegname, pos);
 		return true;
 	}
@@ -845,9 +845,9 @@ static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 		bool requirecolon = (label[0] != '.' && label[1] != '.') && (in_struct || in_sub_struct);
 		string name=labelname(&label, define, true);
 		if (label[0]==':') label++;
-		else if (requirecolon) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
+		else if (requirecolon) throw_err_block(0, err_broken_label_definition);
 		else if (global_label) return false;
-		if (label[0]) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
+		if (label[0]) throw_err_block(0, err_broken_label_definition);
 		if (ns && !global_label) name=ns+name;
 		setlabel(name, pos, ((in_struct || in_sub_struct) && static_struct));
 		return true;
@@ -914,13 +914,13 @@ static string handle_print(char* input)
 			char * arg1pos = strchr(pars[i], '(') + 1;
 			char * endpos = strchr(arg1pos, '\0');
 			while (*endpos == ' ' || *endpos == '\0') endpos--;
-			if (*endpos != ')') asar_throw_error(2, error_type_block, error_id_invalid_print_function_syntax);
+			if (*endpos != ')') throw_err_block(2, err_invalid_print_function_syntax);
 			string paramstr = string(arg1pos, (int)(endpos - arg1pos));
 
 			int numargs;
 			autoptr<char**> params = qpsplit(paramstr.temp_raw(), ',', &numargs);
 			verify_paren(params);
-			if (numargs > 2) asar_throw_error(2, error_type_block, error_id_wrong_num_parameters);
+			if (numargs > 2) throw_err_block(2, err_wrong_num_parameters);
 			int precision = 0;
 			bool hasprec = numargs == 2;
 			if (hasprec)
@@ -972,18 +972,18 @@ static string handle_print(char* input)
 				out += ftostrvar(val, precision);
 			}
 		}
-		else asar_throw_error(2, error_type_block, error_id_unknown_variable);
+		else throw_err_block(2, err_unknown_variable);
 	}
 	return out;
 }
 
 void handle_autoclean(string& arg, int checkbyte, int write_pos)
 {
-	if(freespaceid > 0) asar_throw_error(0, error_type_block, error_id_autoclean_in_freespace);
+	if(freespaceid > 0) throw_err_block(0, err_autoclean_in_freespace);
 
 	const char* labeltest = arg.data();
 	snes_label lblval = labelval(&labeltest);
-	if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, arg.data());
+	if (*labeltest) throw_err_block(0, err_label_not_found, arg.data());
 	int num = lblval.pos;
 	auto& targetfs = freespaces[lblval.freespace_id];
 
@@ -1002,7 +1002,7 @@ void handle_autoclean(string& arg, int checkbyte, int write_pos)
 		}
 	} else if(pass == 2) {
 		int start = ratsstart(num);
-		if(start >= num || start < 0) asar_throw_error(2, error_type_block, error_id_autoclean_label_at_freespace_end);
+		if(start >= num || start < 0) throw_err_block(2, err_autoclean_label_at_freespace_end);
 	}
 }
 
@@ -1066,34 +1066,34 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		bool cond;
 		if(!is("for"))
 		{
-			if(word[1] == NULL) asar_throw_error(0, error_type_block, error_id_broken_command, word[0], "Missing condition.");
+			if(word[1] == NULL) throw_err_block(0, err_broken_command, word[0], "Missing condition.");
 			cond = parse_math_expr(word[1])->evaluate_static().get_integer();
 		}
 
 		if (is("for"))
 		{
-			if(word[1] == NULL) asar_throw_error(0, error_type_block, error_id_broken_command, word[0], "Missing loop range.");
+			if(word[1] == NULL) throw_err_block(0, err_broken_command, word[0], "Missing loop range.");
 			if(single_line_for_tracker != 1)
 			{
 				numif--;
-				asar_throw_error(0, error_type_line, error_id_bad_single_line_for);
+				throw_err_line(0, err_bad_single_line_for);
 			}
 
 			if(!is_for_cont)
 			{
 				char* past_eq = strchr(word[1], '=');
 				if(!past_eq)
-					asar_throw_error(0, error_type_block, error_id_broken_for_loop, "missing loop range");
+					throw_err_block(0, err_broken_for_loop, "missing loop range");
 
 				string varname(word[1], past_eq - word[1]);
 				past_eq += 1;
 				strip_whitespace(varname);
 				if(!validatedefinename(varname))
-					asar_throw_error(0, error_type_block, error_id_broken_for_loop, "invalid define name");
+					throw_err_block(0, err_broken_for_loop, "invalid define name");
 
 				char* range_sep = strqpstr(past_eq, "..");
 				if(!range_sep)
-					asar_throw_error(0, error_type_block, error_id_broken_for_loop, "invalid loop range");
+					throw_err_block(0, err_broken_for_loop, "invalid loop range");
 
 				string for_start(past_eq, range_sep - past_eq);
 				strip_whitespace(for_start);
@@ -1137,8 +1137,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		else if (is("elseif"))
 		{
-			if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_elseif);
-			if (whilestatus[numif - 1].iswhile) asar_throw_error(1, error_type_block, error_id_elseif_in_while);
+			if (!numif) throw_err_block(1, err_misplaced_elseif);
+			if (whilestatus[numif - 1].iswhile) throw_err_block(1, err_elseif_in_while);
 			if (numif==numtrue) numtrue--;
 			if (cond && !elsestatus[numif])
 			{
@@ -1151,13 +1151,13 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (is0("endif") || is0("endwhile") || is0("endfor"))
 	{
 		if (!numif)
-			asar_throw_error(1, error_type_block, error_id_misplaced_endif);
+			throw_err_block(1, err_misplaced_endif);
 		whiletracker& thisws = whilestatus[numif - 1];
 
 		if((!thisws.is_for && !thisws.iswhile && !is("endif")) ||
 				(thisws.iswhile && !is("endwhile")) ||
 				(thisws.is_for && !is("endfor")))
-			asar_throw_error(1, error_type_block, error_id_misplaced_endif);
+			throw_err_block(1, err_misplaced_endif);
 
 		if (numif==numtrue) numtrue--;
 		numif--;
@@ -1171,7 +1171,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				// and spamming more of the same error
 				thisws.for_cur = thisws.for_end;
 				thisws.cond = false;
-				asar_throw_error(0, error_type_block, error_id_bad_single_line_for);
+				throw_err_block(0, err_bad_single_line_for);
 			}
 
 			if(thisws.cond)
@@ -1186,8 +1186,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is0("else"))
 	{
-		if (!numif) asar_throw_error(1, error_type_block, error_id_misplaced_else);
-		if (whilestatus[numif - 1].iswhile || whilestatus[numif - 1].is_for) asar_throw_error(1, error_type_block, error_id_else_in_while_loop);
+		if (!numif) throw_err_block(1, err_misplaced_else);
+		if (whilestatus[numif - 1].iswhile || whilestatus[numif - 1].is_for) throw_err_block(1, err_else_in_while_loop);
 		else if (numif==numtrue) numtrue--;
 		else if (numif==numtrue+1 && !elsestatus[numif])
 		{
@@ -1209,7 +1209,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	if(is("if") || is("elseif") || is("while") || is("for")
 		|| is0("endif") || is0("endwhile") || is0("endfor") || is0("else"))
 	{
-		asar_throw_error(0, error_type_block, error_id_label_before_if, word[0]);
+		throw_err_block(0, err_label_before_if, word[0]);
 	}
 	else if (asblock_pick(word, numwords))
 	{
@@ -1244,7 +1244,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 					do_write(thetable.get_val(codepoint));
 					str += utf8_val(&codepoint, str);
 				}
-				if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+				if (codepoint == -1) throw_err_block(0, err_invalid_utf8);
 			}
 			else
 			{
@@ -1279,12 +1279,12 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			}
 		}
 
-		if(word[1] == NULL) asar_throw_error(0, error_type_block, error_id_broken_command, "assert", "Missing condition.");
+		if(word[1] == NULL) throw_err_block(0, err_broken_command, "assert", "Missing condition.");
 		bool cond = getnum(word[1]);
 		if (pass == 2 && !cond)
 		{
-			if (errmsg) asar_throw_error(2, error_type_block, error_id_assertion_failed, (string(": ") + handle_print(errmsg.raw())).data());
-			else asar_throw_error(2, error_type_block, error_id_assertion_failed, ".");
+			if (errmsg) throw_err_block(2, err_assertion_failed, (string(": ") + handle_print(errmsg.raw())).data());
+			else throw_err_block(2, err_assertion_failed, ".");
 		}
 	}
 	else if(word[0][0]=='%')
@@ -1301,12 +1301,12 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		else
 		{
-			asar_throw_error(0, error_type_block, error_id_define_not_found, def.data());
+			throw_err_block(0, err_define_not_found, def.data());
 		}
 	}
 	else if (is0("error"))
 	{
-		asar_throw_error(0, error_type_block, error_id_error_command, ".");
+		throw_err_block(0, err_error_command, ".");
 	}
 	else if (is0("warn"))
 	{
@@ -1318,7 +1318,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		// RPG Hacker: This used to be on pass 0, which had its merits (you don't want to miss a potentially critical
 		// user-generated error, just because a bazillion other errors are thrown in passes before it). However, I
 		// don't see how to support print functions with this without moving it to pass 2. Suggestions are welcome.
-		asar_throw_error(2, error_type_block, error_id_error_command, (string(": ") + out).data());
+		throw_err_block(2, err_error_command, (string(": ") + out).data());
 	}
 	else if (is1("warn"))
 	{
@@ -1337,7 +1337,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		else
 		{
-			asar_throw_error(0, error_type_block, error_id_broken_command, "warnings", "Unknown parameter");
+			throw_err_block(0, err_broken_command, "warnings", "Unknown parameter");
 		}
 	}
 	else if (is2("warnings"))
@@ -1370,14 +1370,14 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		}
 		else
 		{
-			asar_throw_error(0, error_type_block, error_id_broken_command, "warnings", "Unknown parameter");
+			throw_err_block(0, err_broken_command, "warnings", "Unknown parameter");
 		}
 	}
 	else if(is1("global"))
 	{
 		if (!addlabel(word[1], -1, true))
 		{
-			asar_throw_error(1, error_type_block, error_id_invalid_global_label, word[1]);
+			throw_err_block(1, err_invalid_global_label, word[1]);
 		}
 	}
 	else if (is2("check"))
@@ -1393,7 +1393,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			if (romlen < ((mapper == hirom || mapper == exhirom) ? 0x10000 : 0x8000)) // too short
 			{
 				if (!ignoretitleerrors) // title errors shouldn't be ignored
-					asar_throw_error(0, error_type_block, error_id_rom_too_short, expected_title.data());
+					throw_err_block(0, err_rom_too_short, expected_title.data());
 				else // title errors should be ignored, throw a warning anyways
 					asar_throw_warning(0, warning_id_rom_too_short, expected_title.data());
 			}
@@ -1416,7 +1416,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				if (strncmp(expected_title, actual_title, 21) != 0)
 				{
 					if (!ignoretitleerrors) // title errors shouldn't be ignored
-						asar_throw_error(0, error_type_block, error_id_rom_title_incorrect, expected_title.data(), actual_display_title.data());
+						throw_err_block(0, err_rom_title_incorrect, expected_title.data(), actual_display_title.data());
 					else // title errors should be ignored, throw a warning anyways
 						asar_throw_warning(0, warning_id_rom_title_incorrect, expected_title.data(), actual_display_title.data());
 				}
@@ -1439,17 +1439,17 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				disable_bank_cross_errors = false;
 				check_half_banks_crossed = false;
 			}
-			else asar_throw_error(0, error_type_block, error_id_invalid_check);
+			else throw_err_block(0, err_invalid_check);
 
 		}
 		else
 		{
-			asar_throw_error(0, error_type_block, error_id_invalid_check);
+			throw_err_block(0, err_invalid_check);
 		}
 	}
 	else if (is0("asar") || is1("asar"))
 	{
-		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
+		if (!asarverallowed) throw_err_block(0, err_start_of_file);
 		if (!par) return;
 		int dots=0;
 		int dig=0;
@@ -1457,42 +1457,42 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		{
 			if (par[i]=='.')
 			{
-				if (!dig) asar_throw_error(0, error_type_block, error_id_invalid_version_number);
+				if (!dig) throw_err_block(0, err_invalid_version_number);
 				dig=0;
 				dots++;
 			}
 			else if (is_digit(par[i])) dig++;
-			else asar_throw_error(0, error_type_block, error_id_invalid_version_number);
+			else throw_err_block(0, err_invalid_version_number);
 		}
-		if (!dig || !dots || dots>2) asar_throw_error(0, error_type_block, error_id_invalid_version_number);
+		if (!dig || !dots || dots>2) throw_err_block(0, err_invalid_version_number);
 		autoptr<char**> vers=split(par, '.');
 		int vermaj=atoi(vers[0]);
-		if (vermaj > asarver_maj) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
+		if (vermaj > asarver_maj) throw_err_fatal(pass, err_asar_too_old);
 		if (vermaj<asarver_maj) return;
 		if (dots==1)
 		{
-			if (strlen(vers[1])!=2) asar_throw_error(0, error_type_block, error_id_invalid_version_number);
+			if (strlen(vers[1])!=2) throw_err_block(0, err_invalid_version_number);
 			//if (asarver_min<10 && asarver_bug<10 && strlen(vers[1])>2) error(0, "This version of Asar is too old for this patch.");
 			int verminbug=atoi(vers[1]);
 			int tmpver=asarver_bug;
 			if (tmpver>9) tmpver=9;
-			if (asarver_min*10+tmpver<verminbug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
+			if (asarver_min*10+tmpver<verminbug) throw_err_fatal(pass, err_asar_too_old);
 		}
 		else
 		{
 			int vermin=atoi(vers[1]);
-			if (vermin>asarver_min) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
+			if (vermin>asarver_min) throw_err_fatal(pass, err_asar_too_old);
 			int verbug=atoi(vers[2]);
-			if (vermin==asarver_min && verbug>asarver_bug) asar_throw_error(pass, error_type_fatal, error_id_asar_too_old);
+			if (vermin==asarver_min && verbug>asarver_bug) throw_err_fatal(pass, err_asar_too_old);
 		}
 	}
 	else if (is0("include") || is1("includefrom"))
 	{
-		if (!asarverallowed) asar_throw_error(0, error_type_block, error_id_start_of_file);
+		if (!asarverallowed) throw_err_block(0, err_start_of_file);
 		if (in_top_level_file())
 		{
-			if (par) asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, (string(" The main file is '") + par + "'.").data());
-			else asar_throw_error(pass, error_type_fatal, error_id_cant_be_main_file, "");
+			if (par) throw_err_fatal(pass, err_cant_be_main_file, (string(" The main file is '") + par + "'.").data());
+			else throw_err_fatal(pass, err_cant_be_main_file, "");
 		}
 	}
 	else if (is0("includeonce"))
@@ -1510,7 +1510,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			int codepoint;
 			const char* char_start = word[0]+1;
 			const char* after = char_start + utf8_val(&codepoint, char_start);
-			if (codepoint == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+			if (codepoint == -1) throw_err_block(0, err_invalid_utf8);
 			if(after[0] == '\'' && after[1] == '\0') {
 				thetable.set_val(codepoint, parse_math_expr(word[2])->evaluate_static().get_integer());
 				return;
@@ -1531,10 +1531,10 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 
 		if (ismacro && macrorecursion == 0)
 		{
-			asar_throw_error(0, error_type_block, error_id_macro_label_outside_of_macro);
+			throw_err_block(0, err_macro_label_outside_of_macro);
 		}
 
-		if (!confirmname(newlabelname)) asar_throw_error(0, error_type_block, error_id_invalid_label_name);
+		if (!confirmname(newlabelname)) throw_err_block(0, err_invalid_label_name);
 
 		string completename;
 
@@ -1550,11 +1550,11 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (assemblemapper(word, numwords)) {}
 	else if (is1("org"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
 		freespaceend();
 		auto math_expr = parse_math_expr(par);
 		int64_t num = math_expr->evaluate_non_forward().get_integer();
-		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex(num, 6).data());
+		if (num&~0xFFFFFF) throw_err_block(1, err_snes_address_out_of_bounds, hex(num, 6).data());
 		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) asar_throw_warning(0, warning_id_set_middle_byte);
 		snespos=(int)num;
 		realsnespos=(int)num;
@@ -1562,17 +1562,15 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		realstartpos=(int)num;
 		snespos_valid = true;
 	}
-#define ret_error(errid) { asar_throw_error(0, error_type_block, errid); return; }
-#define ret_error_params(errid, ...) { asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
 	else if (is("struct"))
 	{
 		//verifysnespos();
-		if (in_struct || in_sub_struct) ret_error(error_id_nested_struct);
-		if (numwords < 2) ret_error(error_id_missing_struct_params);
-		if (numwords > 4) ret_error(error_id_too_many_struct_params);
-		if (!confirmname(word[1])) ret_error(error_id_invalid_struct_name);
+		if (in_struct || in_sub_struct) throw_err_block(0, err_nested_struct);
+		if (numwords < 2) throw_err_block(0, err_missing_struct_params);
+		if (numwords > 4) throw_err_block(0, err_too_many_struct_params);
+		if (!confirmname(word[1])) throw_err_block(0, err_invalid_struct_name);
 
-		if (structs.exists(word[1]) && pass == 0) ret_error_params(error_id_struct_redefined, word[1]);
+		if (structs.exists(word[1]) && pass == 0) throw_err_block(0, err_struct_redefined, word[1]);
 
 		static_struct = false;
 		old_snespos = snespos;
@@ -1598,22 +1596,21 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		in_struct = numwords == 2 || numwords == 3;
 		in_sub_struct = numwords == 4;
 
-#define ret_error_cleanup(errid) { in_struct = old_in_struct; in_sub_struct = old_in_sub_struct; asar_throw_error(0, error_type_block, errid); return; }
-#define ret_error_params_cleanup(errid, ...) { in_struct = old_in_struct; in_sub_struct = old_in_sub_struct; asar_throw_error(0, error_type_block, errid, __VA_ARGS__); return; }
+#define cleanup() (in_struct = old_in_struct, in_sub_struct = old_in_sub_struct)
 
 		if (numwords == 3)
 		{
-			if (base&~0xFFFFFF) ret_error_params_cleanup(error_id_snes_address_out_of_bounds, hex((unsigned int)base, 6).data());
+			if (base&~0xFFFFFF) cleanup(), throw_err_block(0, err_snes_address_out_of_bounds, hex((unsigned int)base, 6).data());
 			snespos = (int)base;
 			startpos = (int)base;
 		}
 		else if (numwords == 4)
 		{
-			if (strcasecmp(word[2], "extends")) ret_error_cleanup(error_id_missing_extends);
-			if (!confirmname(word[3])) ret_error_cleanup(error_id_struct_invalid_parent_name);
+			if (strcasecmp(word[2], "extends")) cleanup(), throw_err_block(0, err_missing_extends);
+			if (!confirmname(word[3])) cleanup(), throw_err_block(0, err_struct_invalid_parent_name);
 			string tmp_struct_parent = word[3];
 
-			if (!structs.exists(tmp_struct_parent)) ret_error_params_cleanup(error_id_struct_not_found, tmp_struct_parent.data());
+			if (!structs.exists(tmp_struct_parent)) cleanup(), throw_err_block(0, err_struct_not_found, tmp_struct_parent.data());
 			snes_struct structure = structs.find(tmp_struct_parent);
 
 			static_struct = structure.is_static;
@@ -1639,17 +1636,16 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			setlabel(ns + struct_name, snespos, static_struct);
 		}
 
-#undef ret_error_cleanup
-#undef ret_error_params_cleanup
+#undef cleanup
 	}
 	else if (is("endstruct"))
 	{
-		if (numwords != 1 && numwords != 3) ret_error(error_id_invalid_endstruct_count);
-		if (numwords == 3 && strcasecmp(word[1], "align")) ret_error(error_id_expected_align);
-		if (!in_struct && !in_sub_struct) ret_error(error_id_endstruct_without_struct);
+		if (numwords != 1 && numwords != 3) throw_err_block(0, err_invalid_endstruct_count);
+		if (numwords == 3 && strcasecmp(word[1], "align")) throw_err_block(0, err_expected_align);
+		if (!in_struct && !in_sub_struct) throw_err_block(0, err_endstruct_without_struct);
 
 		int alignment = numwords == 3 ? (int)getnum(word[2]) : 1;
-		if (alignment < 1) ret_error(error_id_alignment_too_small);
+		if (alignment < 1) throw_err_block(0, err_alignment_too_small);
 
 		snes_struct structure;
 		structure.base_end = snespos;
@@ -1683,39 +1679,38 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		snespos_valid = old_snespos_valid;
 		static_struct = false;
 	}
-#undef ret_error
 	else if(is("spcblock"))
 	{
 		//banned features when active: org, freespace(and variants), arch, mapper,namespace,pushns
-		if(in_struct || in_sub_struct) asar_throw_error(0, error_type_block, error_id_spcblock_inside_struct);
-		if(numwords < 2)  asar_throw_error(0, error_type_block, error_id_spcblock_too_few_args);
-		if(numwords > 4)  asar_throw_error(0, error_type_block, error_id_spcblock_too_many_args);
+		if(in_struct || in_sub_struct) throw_err_block(0, err_spcblock_inside_struct);
+		if(numwords < 2)  throw_err_block(0, err_spcblock_too_few_args);
+		if(numwords > 4)  throw_err_block(0, err_spcblock_too_many_args);
 
 		spcblock.destination = getnum(par);
 		spcblock.type = spcblock_nspc;
 		spcblock.macro_name = "";
 
-		if (spcblock.destination&~0xFFFF) asar_throw_error(0, error_type_block, error_id_snes_address_out_of_bounds, hex(spcblock.destination, 6).data());
+		if (spcblock.destination&~0xFFFF) throw_err_block(0, err_snes_address_out_of_bounds, hex(spcblock.destination, 6).data());
 
 		if(numwords == 3)
 		{
 			if(!stricmp(word[2], "nspc")) spcblock.type = spcblock_nspc;
-			else if(!stricmp(word[2], "custom")) asar_throw_error(0, error_type_block, error_id_custom_spcblock_missing_macro);
-			else asar_throw_error(0, error_type_block, error_id_unknown_spcblock_type);
+			else if(!stricmp(word[2], "custom")) throw_err_block(0, err_custom_spcblock_missing_macro);
+			else throw_err_block(0, err_unknown_spcblock_type);
 		}
 		else if(numwords == 4)
 		{
 			if(!stricmp(word[2], "custom")) spcblock.type = spcblock_custom;
-			else asar_throw_error(0, error_type_block, error_id_extra_spcblock_arg_for_type);
+			else throw_err_block(0, err_extra_spcblock_arg_for_type);
 
 			if(macros.exists(word[3]))
 			{
 				macrodata *macro = macros.find(word[3]);
-				if(!macro->variadic) asar_throw_error(0, error_type_block, error_id_spcblock_macro_must_be_varadic);
-				if(macro->numargs != 3) asar_throw_error(0, error_type_block, error_id_spcblock_macro_invalid_static_args);
+				if(!macro->variadic) throw_err_block(0, err_spcblock_macro_must_be_varadic);
+				if(macro->numargs != 3) throw_err_block(0, err_spcblock_macro_invalid_static_args);
 				spcblock.macro_name = word[3];
 			}
-			else asar_throw_error(0, error_type_block, error_id_spcblock_macro_doesnt_exist);
+			else throw_err_block(0, err_spcblock_macro_doesnt_exist);
 		}
 
 		switch(spcblock.type)
@@ -1731,13 +1726,13 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			case spcblock_custom:
 				//this is a todo that probably won't be ready for 1.9
 				//mostly so we can leverage some cleanups we make in 2.0 for practicality
-				asar_throw_error(0, error_type_block, error_id_spcblock_custom_types_incomplete);
+				throw_err_block(0, err_spcblock_custom_types_incomplete);
 				push_pc();
 				spcblock.old_mapper = mapper;
 				mapper = norom;
 			break;
 			default:
-				asar_throw_error(0, error_type_fatal, error_id_internal_error, "invalid spcblock type");
+				throw_err_fatal(0, err_internal_error, "invalid spcblock type");
 		}
 
 		ns_backup = ns;
@@ -1746,7 +1741,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if(is("endspcblock"))
 	{
-		if(!in_spcblock) asar_throw_error(0, error_type_block, error_id_endspcblock_without_spcblock);
+		if(!in_spcblock) throw_err_block(0, err_endspcblock_without_spcblock);
 
 		switch(spcblock.type)
 		{
@@ -1754,14 +1749,14 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				if (pass==2)
 				{
 					int pcpos=snestopc(spcblock.size_address&0xFFFFFF);
-					if (pcpos<0) asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
+					if (pcpos<0) throw_err_block(2, err_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
 					int num=snespos-startpos;
 					writeromdata_byte(pcpos, (unsigned char)num);
 					writeromdata_byte(pcpos+1, (unsigned char)(num >> 8));
 				}
 				if (numwords == 3)
 				{
-					if (strcmp(par, "execute")) asar_throw_error(0, error_type_null, error_id_invalid_endspcblock_arg, par);
+					if (strcmp(par, "execute")) throw_err_null(0, err_invalid_endspcblock_arg, par);
 					else
 					{
 						write2(0x0000);
@@ -1770,7 +1765,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				}
 				else if (numwords != 1)
 				{
-					asar_throw_error(0, error_type_null, error_id_unknown_endspcblock_format);
+					throw_err_null(0, err_unknown_endspcblock_format);
 				}
 			break;
 			case spcblock_custom:
@@ -1778,7 +1773,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				pop_pc();
 			break;
 			default:
-				asar_throw_error(0, error_type_fatal, error_id_internal_error, "invalid spcblock type");
+				throw_err_fatal(0, err_internal_error, "invalid spcblock type");
 		}
 		ns = ns_backup;
 		in_spcblock = false;
@@ -1793,7 +1788,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			return;
 		}
 		unsigned int num=parse_math_expr(par)->evaluate_non_forward().get_integer();
-		if (num&~0xFFFFFF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num).data());
+		if (num&~0xFFFFFF) throw_err_block(1, err_snes_address_out_of_bounds, hex((unsigned int)num).data());
 		snespos=(int)num;
 		startpos=(int)num;
 		optimizeforbank=-1;
@@ -1802,7 +1797,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (is1("dpbase"))
 	{
 		unsigned int num=parse_math_expr(par)->evaluate_non_forward().get_integer();
-		if (num&~0xFF00) asar_throw_error(1, error_type_block, error_id_bad_dp_base, hex((unsigned int)num, 6).data());
+		if (num&~0xFF00) throw_err_block(1, err_bad_dp_base, hex((unsigned int)num, 6).data());
 		dp_base = (int)num;
 	}
 	else if (is2("optimize"))
@@ -1824,7 +1819,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				optimize_dp = optimize_dp_flag::ALWAYS;
 				return;
 			}
-			asar_throw_error(1, error_type_block, error_id_bad_dp_optimize, word[2]);
+			throw_err_block(1, err_bad_dp_optimize, word[2]);
 		}
 		if (!stricmp(par, "address"))
 		{
@@ -1843,9 +1838,9 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				optimize_address = optimize_address_flag::MIRRORS;
 				return;
 			}
-			asar_throw_error(1, error_type_block, error_id_bad_address_optimize, word[2]);
+			throw_err_block(1, err_bad_address_optimize, word[2]);
 		}
-		asar_throw_error(1, error_type_block, error_id_bad_optimize, par);
+		throw_err_block(1, err_bad_optimize, par);
 	}
 	else if (is1("bank"))
 	{
@@ -1862,12 +1857,12 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		unsigned int num=getnum(par);
 		//if (forwardlabel) error(0, "bank Label is not valid");
 		//if (foundlabel) num>>=16;
-		if (num&~0x0000FF) asar_throw_error(1, error_type_block, error_id_snes_address_out_of_bounds, hex((unsigned int)num, 6).data());
+		if (num&~0x0000FF) throw_err_block(1, err_snes_address_out_of_bounds, hex((unsigned int)num, 6).data());
 		optimizeforbank=(int)num;
 	}
 	else if (is("freespace") || is("freecode") || is("freedata") || is("segment"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
 
 		freespace_data this_fs_settings = default_freespace_settings;
 		if (is("freecode")) this_fs_settings.bank = -2;
@@ -1877,15 +1872,15 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		string parstr;
 		if (numwords==1) parstr="";
 		else if (numwords==2) parstr=word[1];
-		else asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		else throw_err_block(0, err_invalid_freespace_request);
 		parse_freespace_arguments(this_fs_settings, parstr);
 
 		if(this_fs_settings.bank == -3 && !this_fs_settings.write_rats) this_fs_settings.bank = -1;
-		if(this_fs_settings.bank == -3) asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+		if(this_fs_settings.bank == -3) throw_err_block(0, err_invalid_freespace_request);
 		// no point specifying anything about cleaning when not writing a rats tag
 		if(!this_fs_settings.write_rats &&
 			(this_fs_settings.flag_cleaned || this_fs_settings.is_static))
-			asar_throw_error(0, error_type_block, error_id_invalid_freespace_request);
+			throw_err_block(0, err_invalid_freespace_request);
 		if(!this_fs_settings.write_rats) this_fs_settings.flag_cleaned = true;
 		freespaceend();
 		freespaceid = freespaceidnext++;
@@ -1905,7 +1900,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			{
 				thisfs.pos = 0;
 				thisfs.leaked = false;//mute some other errors
-				asar_throw_error(1, error_type_block, error_id_static_freespace_autoclean);
+				throw_err_block(1, err_static_freespace_autoclean);
 			}
 			snespos = 0;
 		}
@@ -1919,8 +1914,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			// add a mapping for the start of the rats tag
 			if (thisfs.write_rats) add_addr_to_line(snespos-8);
 		}
-		if (snespos < 0 && mapper == sa1rom) asar_throw_error(pass, error_type_fatal, error_id_no_freespace_in_mapped_banks, dec(thisfs.len).data());
-		if (snespos < 0) asar_throw_error(pass, error_type_fatal, error_id_no_freespace, dec(thisfs.len).data());
+		if (snespos < 0 && mapper == sa1rom) throw_err_fatal(pass, err_no_freespace_in_mapped_banks, dec(thisfs.len).data());
+		if (snespos < 0) throw_err_fatal(pass, err_no_freespace, dec(thisfs.len).data());
 		bytes+=thisfs.write_rats ? 8 : 0;
 		freespacestart=snespos;
 		startpos=snespos;
@@ -1935,7 +1930,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		//happened to be very close to the end of a bank or something, but
 		//whatever
 		if (pass == 2 && thisfs.is_static && thisfs.orgpos > 0 && thisfs.len > thisfs.orglen)
-			asar_throw_error(2, error_type_block, error_id_static_freespace_growing);
+			throw_err_block(2, err_static_freespace_growing);
 	}
 	else if (is1("freespace_settings"))
 	{
@@ -1944,8 +1939,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("prot"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-		if (!ratsmetastate) asar_throw_error(2, error_type_block, error_id_prot_not_at_freespace_start);
+		if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
+		if (!ratsmetastate) throw_err_block(2, err_prot_not_at_freespace_start);
 		if (ratsmetastate==ratsmeta_used) step(-5);
 		int num;
 		autoptr<char**> pars=qpsplit(par, ',', &num);
@@ -1954,14 +1949,14 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		write1('R');
 		write1('O');
 		write1('T');
-		if (num * 3 > 255) asar_throw_error(0, error_type_block, error_id_prot_too_many_entries);
+		if (num * 3 > 255) throw_err_block(0, err_prot_too_many_entries);
 		write1((unsigned int)(num*3));
 		for (int i=0;i<num;i++)
 		{
 			const char * labeltest=pars[i];
 			string testlabel = labeltest;
 			snes_label lblval = labelval(&labeltest);
-			if (*labeltest) asar_throw_error(0, error_type_block, error_id_label_not_found, testlabel.data());
+			if (*labeltest) throw_err_block(0, err_label_not_found, testlabel.data());
 			write3(lblval.pos);
 			if (pass==1) freespaces[lblval.freespace_id].leaked = false;
 		}
@@ -1976,7 +1971,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("autoclean") || is2("autoclean"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
 		if (numwords==3)
 		{
 			const char * labeltest = word[2];
@@ -1987,7 +1982,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				add_addr_to_line(addrToLinePos);
 			} else {
 				// other ones are handled in arch-65816
-				asar_throw_error(0, error_type_block, error_id_broken_autoclean);
+				throw_err_block(0, err_broken_autoclean);
 			}
 		}
 		else if (pass==0) removerats(parse_math_expr(word[1])->evaluate_static().get_integer(), freespacebyte);
@@ -2015,10 +2010,10 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is0("pullpc"))
 	{
-		if (!pushpcnum) asar_throw_error(0, error_type_block, error_id_pullpc_without_pushpc);
+		if (!pushpcnum) throw_err_block(0, err_pullpc_without_pushpc);
 		pushpcnum--;
 		freespaceend();
-		if (arch != pushpc[pushpcnum].arch) asar_throw_error(0, error_type_block, error_id_pullpc_different_arch);
+		if (arch != pushpc[pushpcnum].arch) throw_err_block(0, err_pullpc_different_arch);
 		snespos=pushpc[pushpcnum].snespos;
 		startpos=pushpc[pushpcnum].snesstart;
 		realsnespos=pushpc[pushpcnum].snesposreal;
@@ -2034,7 +2029,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is0("pullbase"))
 	{
-		if (!basestacknum) asar_throw_error(0, error_type_block, error_id_pullbase_without_pushbase);
+		if (!basestacknum) throw_err_block(0, err_pullbase_without_pushbase);
 		basestacknum--;
 		snespos = basestack[basestacknum];
 		startpos = basestack[basestacknum];
@@ -2046,7 +2041,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is0("pushns"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
 		pushns[pushnsnum].ns = ns;
 		for(int i = 0; i < namespace_list.count; i++)
 		{
@@ -2061,8 +2056,8 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is0("pullns"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
-		if (!pushnsnum) asar_throw_error(0, error_type_block, error_id_pullns_without_pushns);
+		if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
+		if (!pushnsnum) throw_err_block(0, err_pullns_without_pushns);
 		pushnsnum--;
 		ns = pushns[pushnsnum].ns;
 		nested_namespaces = pushns[pushnsnum].nested_namespaces;
@@ -2074,26 +2069,26 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("namespace") || is2("namespace"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
 		bool leave = false;
 		if (par)
 		{
 			if (!stricmp(par, "off"))
 			{
-				if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
+				if (word[2]) throw_err_block(0, err_invalid_namespace_use);
 				leave = true;
 			}
 			else if (!stricmp(par, "nested"))
 			{
-				if (!word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
+				if (!word[2]) throw_err_block(0, err_invalid_namespace_use);
 				else if (!stricmp(word[2], "on")) nested_namespaces = true;
 				else if (!stricmp(word[2], "off")) nested_namespaces = false;
 			}
 			else
 			{
-				if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_namespace_use);
+				if (word[2]) throw_err_block(0, err_invalid_namespace_use);
 				const char * tmpstr= safedequote(par);
-				if (!confirmname(tmpstr)) asar_throw_error(0, error_type_block, error_id_invalid_namespace_name);
+				if (!confirmname(tmpstr)) throw_err_block(0, err_invalid_namespace_name);
 				if (!nested_namespaces)
 				{
 					namespace_list.reset();
@@ -2133,7 +2128,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		// E.g., on something starting with C:/ or whatever.
 		if (strchr(par, '\\'))
 		{
-			asar_throw_error(0, error_type_block, error_id_platform_paths);
+			throw_err_block(0, err_platform_paths);
 		}
 		name=safedequote(par);
 		assemblefile(name);
@@ -2150,12 +2145,12 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			lengths++;
 
 			char* split = strqpstr(lengths, "..");
-			if(!split) asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			if(!split) throw_err_block(0, err_broken_incbin);
 			string start_str(lengths, split-lengths);
-			if(start_str == "") asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			if(start_str == "") throw_err_block(0, err_broken_incbin);
 			start = parse_math_expr(start_str)->evaluate_static().get_integer();
 			string end_str(split+2);
-			if(end_str == "") asar_throw_error(0, error_type_block, error_id_broken_incbin);
+			if(end_str == "") throw_err_block(0, err_broken_incbin);
 			end = parse_math_expr(end_str)->evaluate_static().get_integer();
 		}
 		const char* current_file = get_current_file_name();
@@ -2164,24 +2159,24 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		// E.g., on something starting with C:/ or whatever.
 		if (strchr(par, '\\'))
 		{
-			asar_throw_error(0, error_type_block, error_id_platform_paths);
+			throw_err_block(0, err_platform_paths);
 		}
 		name = safedequote(par);
 		char * data;//I couldn't find a way to get this into an autoptr
-		if (!readfile(name, current_file, &data, &len)) asar_throw_error(0, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
+		if (!readfile(name, current_file, &data, &len)) throw_vfile_error(0, asar_get_last_io_error(), name.data());
 		autoptr<char*> datacopy=data;
 		if (!end) end=len;
-		if(start < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(start).data(), name.data());
-		if (end < start || end > len || end < 0) asar_throw_error(0, error_type_block, error_id_file_offset_out_of_bounds, dec(end).data(), name.data());
+		if(start < 0) throw_err_block(0, err_file_offset_out_of_bounds, dec(start).data(), name.data());
+		if (end < start || end > len || end < 0) throw_err_block(0, err_file_offset_out_of_bounds, dec(end).data(), name.data());
 
 		for (int i=start;i<end;i++) write1((unsigned int)data[i]);
 		add_addr_to_line(addrToLinePos);
 	}
 	else if (is("skip") || is("fill"))
 	{
-		if(numwords != 2 && numwords != 3 && numwords != 5) asar_throw_error(0, error_type_block, error_id_unknown_command);
-		if(numwords > 2 && stricmp(word[1], "align")) asar_throw_error(0, error_type_block, error_id_unknown_command);
-		if(numwords == 5 && stricmp(word[3], "offset")) asar_throw_error(0, error_type_block, error_id_unknown_command);
+		if(numwords != 2 && numwords != 3 && numwords != 5) throw_err_block(0, err_unknown_command);
+		if(numwords > 2 && stricmp(word[1], "align")) throw_err_block(0, err_unknown_command);
+		if(numwords == 5 && stricmp(word[3], "offset")) throw_err_block(0, err_unknown_command);
 		int amount;
 		if(numwords > 2)
 		{
@@ -2191,9 +2186,9 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			{
 				offset = parse_math_expr(word[4])->evaluate_static().get_integer();
 			}
-			if(alignment > 0x800000) asar_throw_error(0, error_type_block, error_id_alignment_too_big);
-			if(alignment < 1) asar_throw_error(0, error_type_block, error_id_alignment_too_small);
-			if(alignment & (alignment-1)) asar_throw_error(0, error_type_block, error_id_invalid_alignment);
+			if(alignment > 0x800000) throw_err_block(0, err_alignment_too_big);
+			if(alignment < 1) throw_err_block(0, err_alignment_too_small);
+			if(alignment & (alignment-1)) throw_err_block(0, err_invalid_alignment);
 			// i just guessed this formula but it seems to work
 			amount = (alignment - ((snespos - offset) & (alignment-1))) & (alignment-1);
 		}
@@ -2219,24 +2214,24 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is0("pulltable"))
 	{
-		if (tablestack.count <= 0) asar_throw_error(0, error_type_block, error_id_pulltable_without_table);
+		if (tablestack.count <= 0) throw_err_block(0, err_pulltable_without_table);
 		thetable=tablestack[tablestack.count-1];
 		tablestack.remove(tablestack.count-1);
 	}
 	else if (is("function") && numwords >= 3)
 	{
-		if (stricmp(word[2], "=")) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
-		if (!confirmqpar(word[1])) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
+		if (stricmp(word[2], "=")) throw_err_block(0, err_broken_function_declaration);
+		if (!confirmqpar(word[1])) throw_err_block(0, err_broken_function_declaration);
 		string line=word[1];
 		line.qnormalize();
 		char * startpar=strqchr(line.data(), '(');
-		if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
+		if (!startpar) throw_err_block(0, err_broken_function_declaration);
 		*startpar=0;
 		startpar++;
-		if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_invalid_function_name);
+		if (!confirmname(line)) throw_err_block(0, err_invalid_function_name);
 		char * endpar=strqchr(startpar, ')');
 		//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nulls
-		if (endpar[1]) asar_throw_error(0, error_type_block, error_id_broken_function_declaration);
+		if (endpar[1]) throw_err_block(0, err_broken_function_declaration);
 		*endpar=0;
 
 		string pars;
@@ -2257,7 +2252,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		if(0);
 		else if (!stricmp(par, "bytes")) bytes=0;
 		else if (!stricmp(par, "freespaceuse")) freespaceuse=0;
-		else asar_throw_error(2, error_type_block, error_id_unknown_variable);
+		else throw_err_block(2, err_unknown_variable);
 	}
 	else if (is1("padbyte") || is1("padword") || is1("padlong") || is1("paddword"))
 	{
@@ -2279,9 +2274,9 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("pad"))
 	{
-		if (freespaceid > 0) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
+		if (freespaceid > 0) throw_err_block(0, err_pad_in_freespace);
 		int num=(int)getnum(par);
-		if ((unsigned int)num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex((unsigned int)num, 6).data());
+		if ((unsigned int)num & 0xFF000000) throw_err_block(0, err_snes_address_doesnt_map_to_rom, hex((unsigned int)num, 6).data());
 		if (num>realsnespos)
 		{
 			int end=snestopc(num);
@@ -2311,16 +2306,16 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is1("arch"))
 	{
-		if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+		if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
 		if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 		if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
 		if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
-		asar_throw_error(0, error_type_block, error_id_broken_command, "arch", "Invalid architecture, expected one of 65816, spc700, superfx");
+		throw_err_block(0, err_broken_command, "arch", "Invalid architecture, expected one of 65816, spc700, superfx");
 	}
 	else if (is0("{") || is0("}")) {}
 	else
 	{
-		asar_throw_error(1, error_type_block, error_id_unknown_command);
+		throw_err_block(1, err_unknown_command);
 	}
 
 }
@@ -2366,15 +2361,15 @@ bool assemblemapper(char** word, int numwords)
 	{
 		if (par)
 		{
-			if (word[2]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
+			if (word[2]) throw_err_block(0, err_invalid_mapper);
 			if (!is_digit(par[0]) || par[1]!=',' ||
 					!is_digit(par[2]) || par[3]!=',' ||
 					!is_digit(par[4]) || par[5]!=',' ||
-					!is_digit(par[6]) || par[7]) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
+					!is_digit(par[6]) || par[7]) throw_err_block(0, err_invalid_mapper);
 			int len;
 			autoptr<char**> pars=qpsplit(par, ',', &len);
 			verify_paren(pars);
-			if (len!=4) asar_throw_error(0, error_type_block, error_id_invalid_mapper);
+			if (len!=4) throw_err_block(0, err_invalid_mapper);
 			sa1banks[0]=(par[0]-'0')<<20;
 			sa1banks[1]=(par[2]-'0')<<20;
 			sa1banks[4]=(par[4]-'0')<<20;
@@ -2391,7 +2386,7 @@ bool assemblemapper(char** word, int numwords)
 	}
 	else return false;
 
-	if(in_spcblock) asar_throw_error(0, error_type_block, error_id_feature_unavaliable_in_spcblock);
+	if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
 	if(!mapper_set){
 		mapper_set = true;
 	}else if(previous_mapper != mapper){

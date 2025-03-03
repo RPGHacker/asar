@@ -52,7 +52,7 @@ static const long hextable[] = {
 // "atom" = literal, parenthesized expression, or label reference
 owned_node parse_context::parse_atom() {
 	if(*str == '$') {
-		if (!is_xdigit(*++str)) asar_throw_error(2, error_type_block, error_id_invalid_hex_value);
+		if (!is_xdigit(*++str)) throw_err_block(2, err_invalid_hex_value);
 		const char* start = str;
 		int64_t ret = 0; // todo error on overflow?
 		while (hextable[0 + *str] >= 0) {
@@ -76,7 +76,7 @@ owned_node parse_context::parse_atom() {
 				while (*str==' ') str++;
 				arguments.emplace_back(parse_binops());
 				// is "invalid number" good here?
-				if(*str != ',' && *str != ')') asar_throw_error(2, error_type_block, error_id_invalid_number);
+				if(*str != ',' && *str != ')') throw_err_block(2, err_invalid_number);
 				if(*str == ',') str++;
 			}
 			str++;
@@ -99,7 +99,7 @@ owned_node parse_context::parse_atom() {
 				// struct array indexing
 				str++;
 				auto index = parse_binops();
-				if(*str != ']') asar_throw_error(2, error_type_block, error_id_invalid_label_missing_closer);
+				if(*str != ']') throw_err_block(2, err_invalid_label_missing_closer);
 				str++;
 				string subname = name;
 				if(*str == '.') {
@@ -128,24 +128,24 @@ owned_node parse_context::parse_atom() {
 	if(*str == '(') {
 		str++;
 		auto res = parse_binops();
-		if(*str != ')') asar_throw_error(2, error_type_block, error_id_mismatched_parentheses);
+		if(*str != ')') throw_err_block(2, err_mismatched_parentheses);
 		str++;
 		return res;
 	}
 	if(*str == '%') {
-		if (str[1] != '0' && str[1] != '1') asar_throw_error(2, error_type_block, error_id_invalid_binary_value);
+		if (str[1] != '0' && str[1] != '1') throw_err_block(2, err_invalid_binary_value);
 		const char* start = str+1;
 		uint64_t res = strtoull(str+1, const_cast<char**>(&str), 2);
 		int len = str - start;
 		return std::make_unique<math_ast_literal>((int64_t)res, (len+7)/8);
 	}
 	if (*str=='\'') {
-		if (!str[1]) asar_throw_error(2, error_type_block, error_id_invalid_character);
+		if (!str[1]) throw_err_block(2, err_invalid_character);
 		int orig_val;
 		str++;
 		str += utf8_val(&orig_val, str);
-		if (orig_val == -1) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
-		if (*str != '\'') asar_throw_error(2, error_type_block, error_id_invalid_character);
+		if (orig_val == -1) throw_err_block(0, err_invalid_utf8);
+		if (*str != '\'') throw_err_block(2, err_invalid_character);
 		int64_t rval=thetable.get_val(orig_val);
 		if (rval == -1)
 		{
@@ -153,7 +153,7 @@ owned_node parse_context::parse_atom() {
 			// our error cases above already made sure that orig_val contains valid data at this point.
 			string u8_str;
 			codepoint_to_utf8(&u8_str, orig_val);
-			asar_throw_error(2, error_type_block, error_id_undefined_char, u8_str.data());
+			throw_err_block(2, err_undefined_char, u8_str.data());
 		}
 		str++;
 		return std::make_unique<math_ast_literal>(rval, 1);
@@ -186,7 +186,7 @@ owned_node parse_context::parse_atom() {
 		while (*str==' ') str++;	//eat space
 		return std::make_unique<math_ast_literal>(tempname);
 	}
-	asar_throw_error(2, error_type_block, error_id_invalid_number);
+	throw_err_block(2, err_invalid_number);
 }
 
 owned_node parse_context::parse_unops() {
@@ -262,7 +262,7 @@ owned_node parse_context::parse_binops(int depth) {
 		oper("<", 1, math_binop_type::comp_lt);
 		oper("==", 1, math_binop_type::comp_eq);
 		oper("!=", 1, math_binop_type::comp_ne);
-		asar_throw_error(2, error_type_block, error_id_unknown_operator);
+		throw_err_block(2, err_unknown_operator);
 #undef oper
 	}
 	return left;
@@ -271,15 +271,15 @@ owned_node parse_context::parse_binops(int depth) {
 owned_node parse_context::parse() {
 	auto res = parse_binops();
 	if(*str) {
-		if(*str == ',') asar_throw_error(2, error_type_block, error_id_invalid_input);
-		else asar_throw_error(2, error_type_block, error_id_mismatched_parentheses);
+		if(*str == ',') throw_err_block(2, err_invalid_input);
+		else throw_err_block(2, err_mismatched_parentheses);
 	}
 	return res;
 }
 
 void createuserfunc(const char * name, const char * arguments, const char * content) {
 	if(user_functions.count(name) != 0 || builtin_functions.count(name) != 0) {
-		asar_throw_error(0, error_type_block, error_id_function_redefined, name);
+		throw_err_block(0, err_function_redefined, name);
 	}
 	string arguments_buf = arguments;
 	// TODO: if we want to be more lenient with spaces in the `function`
@@ -294,10 +294,10 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 	for(size_t i = 0; i < arg_count; i++) {
 		string argname = spl[i];
 		if(arg_indices.count(argname)) {
-			asar_throw_error(0, error_type_block, error_id_duplicate_param_name, argname.data(), name);
+			throw_err_block(0, err_duplicate_param_name, argname.data(), name);
 		}
 		if(!confirmname(argname)) {
-			asar_throw_error(0, error_type_block, error_id_invalid_param_name, argname.data());
+			throw_err_block(0, err_invalid_param_name, argname.data());
 		}
 		arg_indices.emplace(std::move(argname), i);
 	}

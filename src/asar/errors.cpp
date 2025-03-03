@@ -5,49 +5,10 @@
 #include "errors.h"
 #include "interface-shared.h"
 
-#if defined(__clang__) || defined(__GNUC__)
-// silences the Wformat-nonliteral
-[[gnu::format(printf, 3, 0)]]
-#endif
-static void fmt_error(int whichpass, asar_error_id errid, const char* fmt, va_list args) {
-	assert(errid >= 0 && errid < error_id_end);
-
+void error_impl(const char* error_id, const char* fmt_string, int whichpass, ...) {
+	va_list args; va_start(args, whichpass);
 	char error_buffer[1024];
-	vsnprintf(error_buffer, sizeof(error_buffer), fmt, args);
+	vsnprintf(error_buffer, sizeof(error_buffer), fmt_string, args);
 
-	error_interface((int)errid, whichpass, error_buffer);
-}
-
-// this is uncomfortably much to copy paste,,, but whatever
-void asar_throw_error_impl_error_type_null(int whichpass, asar_error_id errid, const char* fmt, ...) {
-	va_list args; va_start(args, fmt);
-	fmt_error(whichpass, errid, fmt, args);
-	va_end(args);
-}
-void asar_throw_error_impl_error_type_block(int whichpass, asar_error_id errid, const char* fmt, ...) {
-	va_list args; va_start(args, fmt);
-	fmt_error(whichpass, errid, fmt, args);
-	va_end(args);
-	throw errblock{};
-}
-void asar_throw_error_impl_error_type_line(int whichpass, asar_error_id errid, const char* fmt, ...) {
-	va_list args; va_start(args, fmt);
-	fmt_error(whichpass, errid, fmt, args);
-	va_end(args);
-	throw errline{};
-}
-void asar_throw_error_impl_error_type_fatal(int whichpass, asar_error_id errid, const char* fmt, ...) {
-	va_list args; va_start(args, fmt);
-	fmt_error(whichpass, errid, fmt, args);
-	va_end(args);
-	throw errfatal{};
-}
-
-const char* get_error_name(asar_error_id errid)
-{
-	assert(errid >= 0 && errid < error_id_end);
-
-	const asar_error_mapping& error = asar_all_errors[errid];
-
-	return error.name;
+	error_interface(error_id, whichpass, error_buffer);
 }

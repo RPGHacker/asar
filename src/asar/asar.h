@@ -24,7 +24,7 @@ extern int romlen_r;
 
 inline void verify_paren(autoptr<char **> &ptr)
 {
-	 if(!ptr) asar_throw_error(0, error_type_block, error_id_mismatched_parentheses);
+	 if(!ptr) throw_err_block(0, err_mismatched_parentheses);
 }
 
 bool is_hex_constant(const char * str);
@@ -56,7 +56,7 @@ bool file_included_once(const char* file);
 void get_current_line_details(string* location, string* details, bool exclude_block=false);
 string get_callstack();
 
-asar_error_id vfile_error_to_error_id(virtual_file_error vfile_error);
+void throw_vfile_error(int whichpass, virtual_file_error vfile_error, const char* filename);
 
 virtual_file_error asar_get_last_io_error();
 
@@ -77,7 +77,7 @@ public:
 #else
 		if(!have_enough_stack_left() || recursioncount > 5000)
 #endif
-			asar_throw_error(pass, error_type_fatal, error_id_recursion_limit);
+			throw_err_fatal(pass, err_recursion_limit);
 	}
 	~recurseblock()
 	{

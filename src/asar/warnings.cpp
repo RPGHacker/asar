@@ -124,7 +124,7 @@ void pull_warnings(bool warnings_command)
 	}
 	else
 	{
-		asar_throw_error(0, error_type_block, error_id_pullwarnings_without_pushwarnings);
+		throw_err_block(0, err_pullwarnings_without_pushwarnings);
 	}
 }
 
@@ -132,7 +132,7 @@ void verify_warnings()
 {
 	if (warnings_state_stack.count > 0)
 	{
-		asar_throw_error(0, error_type_null, error_id_pushwarnings_without_pullwarnings);
+		throw_err_null(0, err_pushwarnings_without_pullwarnings);
 
 		warnings_state_stack.reset();
 	}

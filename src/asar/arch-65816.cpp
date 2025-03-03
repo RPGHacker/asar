@@ -420,21 +420,21 @@ static parse_result parse_addr_kind(const string& arg, uint32_t allowed_kinds_ma
 		}
 	if((start_i = startmatch<'#'>(arg)) >= 0) {
 		RETURN_IF_ALLOWED(imm);
-		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		throw_err_block(1, err_bad_addr_mode);
 	}
 	if((start_i = startmatch<'('>(arg)) >= 0) {
 		// TODO check if the end of this paren is where it should be
 		if((end_i = endmatch<',', 's', ')', ',', 'y'>(arg)) >= 0) {
 			RETURN_IF_ALLOWED(sy);
-			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+			throw_err_block(1, err_bad_addr_mode);
 		}
 		if((end_i = endmatch<')', ',', 'y'>(arg)) >= 0) {
 			RETURN_IF_ALLOWED(indy);
-			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+			throw_err_block(1, err_bad_addr_mode);
 		}
 		if((end_i = endmatch<',', 'x', ')'>(arg)) >= 0) {
 			RETURN_IF_ALLOWED(xind);
-			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+			throw_err_block(1, err_bad_addr_mode);
 		}
 		if((end_i = endmatch<')'>(arg)) >= 0) {
 			RETURN_IF_ALLOWED(ind);
@@ -444,39 +444,39 @@ static parse_result parse_addr_kind(const string& arg, uint32_t allowed_kinds_ma
 	if((start_i = startmatch<'['>(arg)) >= 0) {
 		if((end_i = endmatch<']', ',', 'y'>(arg)) >= 0) {
 			RETURN_IF_ALLOWED(lindy);
-			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+			throw_err_block(1, err_bad_addr_mode);
 		}
 		if((end_i = endmatch<']'>(arg)) >= 0) {
 			RETURN_IF_ALLOWED(lind);
-			asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+			throw_err_block(1, err_bad_addr_mode);
 		}
 	}
 	start_i = 0;
 	if((end_i = endmatch<',', 'x'>(arg)) >= 0) {
 		RETURN_IF_ALLOWED(x);
-		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		throw_err_block(1, err_bad_addr_mode);
 	}
 	if((end_i = endmatch<',', 'y'>(arg)) >= 0) {
 		RETURN_IF_ALLOWED(y);
-		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		throw_err_block(1, err_bad_addr_mode);
 	}
 	if((end_i = endmatch<',', 's'>(arg)) >= 0) {
 		RETURN_IF_ALLOWED(s);
-		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		throw_err_block(1, err_bad_addr_mode);
 	}
 	end_i = arg.length();
 	// hoping that by now, something would have stripped whitespace lol
 	if(arg.length() == 0) {
 		RETURN_IF_ALLOWED(imp);
-		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		throw_err_block(1, err_bad_addr_mode);
 	}
 	if(arg == "a" || arg == "A") {
 		RETURN_IF_ALLOWED(a);
 		// todo: some hint for "don't name your label "a" "?
-		asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+		throw_err_block(1, err_bad_addr_mode);
 	}
 	RETURN_IF_ALLOWED(abs);
-	asar_throw_error(1, error_type_block, error_id_bad_addr_mode);
+	throw_err_block(1, err_bad_addr_mode);
 #undef RETURN_IF_ALLOWED
 }
 
@@ -499,7 +499,7 @@ static int get_real_len(int min_len, int max_len, int arg_min_len, char modifier
 	if(modifier != 0) {
 		out_len = getlenfromchar(modifier);
 		if(out_len < min_len || out_len > max_len)
-			asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(min_len, max_len), out_len*8);
+			throw_err_block(2, err_bad_access_width, format_valid_widths(min_len, max_len), out_len*8);
 	} else {
 		if(parsed.kind == addr_kind::imm) {
 			if(!is_hex_constant(parsed.arg.data()))
@@ -516,7 +516,7 @@ static int get_real_len(int min_len, int max_len, int arg_min_len, char modifier
 			// in that case return some valid width to silence the error.
 			if(pass == 0) return max_len;
 
-			asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(min_len, max_len), arg_min_len*8);
+			throw_err_block(2, err_bad_access_width, format_valid_widths(min_len, max_len), arg_min_len*8);
 		}
 		// todo warn about widening when dpbase != 0
 		out_len = std::max(arg_min_len, min_len);
@@ -534,22 +534,22 @@ static int64_t get_branch_value(parse_result& parsed, char modifier, int width) 
 		// ignore for backwards compat
 		else if(to_lower(modifier) == 'b') {}
 		// TODO: better error message
-		else asar_throw_error(2, error_type_block, error_id_invalid_opcode_length);
+		else throw_err_block(2, err_invalid_opcode_length);
 	}
 	if(target_is_abs) {
 		// cast delta to signed 16-bit, this makes it possible to handle bank-border-wrapping automatically
 		int16_t delta = num - (snespos + width + 1);
 		if((num & ~0xffff) != (snespos & ~0xffff)) {
 			// todo: should throw error "can't branch to different bank"
-			asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(delta).data());
+			throw_err_block(2, err_relative_branch_out_of_bounds, dec(delta).data());
 		}
 		if(width==1 && (delta < -128 || delta > 127)) {
-			asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(delta).data());
+			throw_err_block(2, err_relative_branch_out_of_bounds, dec(delta).data());
 		}
 		return delta;
 	} else {
 		if(num & ~(width==2 ? 0xffff : 0xff)) {
-			asar_throw_error(2, error_type_block, error_id_relative_branch_out_of_bounds, dec(num).data());
+			throw_err_block(2, err_relative_branch_out_of_bounds, dec(num).data());
 		}
 		return (int16_t)(width==2 ? num : (int8_t)num);
 	}
@@ -589,7 +589,7 @@ bool asblock_65816(char** word, int numwords)
 	if(mnem_info.allowed_kinds_mask & 1<<(uint32_t)addr_kind::mvn) {
 		int count = 0;
 		autoptr<char**> parts = qpsplit(par.raw(), ',', &count);
-		if(count != 2) asar_throw_error(2, error_type_block, error_id_bad_addr_mode);
+		if(count != 2) throw_err_block(2, err_bad_addr_mode);
 		uint8_t opcode = mnem_info.types[(int)addr_kind::mvn].opcode_for_width[2];
 		write1(opcode);
 		int64_t num1 = 0, num2 = 0;
@@ -597,12 +597,12 @@ bool asblock_65816(char** word, int numwords)
 			num1 = getnum(parts[0]);
 			num2 = getnum(parts[1]);
 		}
-		if(num1 < 0 || num1 > 255) asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(1, 1), num1 > 65535 ? 24 : 16);
-		if(num2 < 0 || num2 > 255) asar_throw_error(2, error_type_block, error_id_bad_access_width, format_valid_widths(1, 1), num2 > 65535 ? 24 : 16);
+		if(num1 < 0 || num1 > 255) throw_err_block(2, err_bad_access_width, format_valid_widths(1, 1), num1 > 65535 ? 24 : 16);
+		if(num2 < 0 || num2 > 255) throw_err_block(2, err_bad_access_width, format_valid_widths(1, 1), num2 > 65535 ? 24 : 16);
 		write1(num1);
 		write1(num2);
 		// a bit hacky to check this here, but we kinda do need to early-return here
-		if(autoclean) asar_throw_error(2, error_type_block, error_id_broken_autoclean);
+		if(autoclean) throw_err_block(2, err_broken_autoclean);
 		return true;
 	}
 	parse_result parse_res = parse_addr_kind(par, mnem_info.allowed_kinds_mask);
@@ -665,7 +665,7 @@ bool asblock_65816(char** word, int numwords)
 
 	if(autoclean && pass > 0) {
 		// should be changed to "can't use autoclean on this instruction"?
-		if(arg_len != 3) asar_throw_error(2, error_type_block, error_id_broken_autoclean);
+		if(arg_len != 3) throw_err_block(2, err_broken_autoclean);
 		handle_autoclean(parse_res.arg, opcode, snespos - 4);
 	}
 	return true;

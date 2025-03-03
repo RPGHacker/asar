@@ -12,7 +12,7 @@ double math_val::get_double() const {
 		case math_val_type::identifier:
 			return (double)get_integer();
 		case math_val_type::string:
-			asar_throw_error(2, error_type_block, error_id_expected_number);
+			throw_err_block(2, err_expected_number);
 	}
 }
 int64_t math_val::get_integer() const {
@@ -24,23 +24,23 @@ int64_t math_val::get_integer() const {
 			return m_numeric_val.int_;
 		case math_val_type::identifier:
 			if(!labels.exists(m_string_val)) {
-				asar_throw_error(pass, error_type_block, error_id_internal_error, "evaluating nonexistent label");
+				throw_err_block(pass, err_internal_error, "evaluating nonexistent label");
 			}
 			return labels.find(m_string_val).pos;
 		case math_val_type::string:
-			asar_throw_error(2, error_type_block, error_id_expected_number);
+			throw_err_block(2, err_expected_number);
 	}
 }
 const string &math_val::get_str() const {
 	if (m_type == math_val_type::string)
 		return m_string_val;
-	asar_throw_error(2, error_type_block, error_id_expected_string);
+	throw_err_block(2, err_expected_string);
 }
 
 const string &math_val::get_identifier() const {
 	if (m_type == math_val_type::identifier)
 		return m_string_val;
-	asar_throw_error(2, error_type_block, error_id_expected_ident);
+	throw_err_block(2, err_expected_ident);
 }
 bool math_val::get_bool() const {
 	switch (m_type) {
@@ -61,7 +61,7 @@ T evaluate_binop_arithmetic(T lhs, T rhs, math_binop_type type) {
 		case math_binop_type::add: return lhs + rhs;
 		case math_binop_type::sub: return lhs - rhs;
 		default:
-			asar_throw_error(2, error_type_block, error_id_internal_error, "evaluate_binop_arithmetic with bad type");
+			throw_err_block(2, err_internal_error, "evaluate_binop_arithmetic with bad type");
 	}
 }
 template<typename T>
@@ -74,7 +74,7 @@ bool evaluate_binop_compare(T lhs, T rhs, math_binop_type type) {
 		case math_binop_type::comp_eq: return lhs == rhs;
 		case math_binop_type::comp_ne: return lhs != rhs;
 		default:
-			asar_throw_error(2, error_type_block, error_id_internal_error, "evaluate_binop_compare with bad type");
+			throw_err_block(2, err_internal_error, "evaluate_binop_compare with bad type");
 	}
 }
 
@@ -90,11 +90,11 @@ math_val evaluate_binop(math_val lhs, math_val rhs,
 			return math_val(pow(lhs.get_double(), rhs.get_double()));
 		case math_binop_type::div:
 			if (rhs.get_double() == 0.0)
-				asar_throw_error(2, error_type_block, error_id_division_by_zero);
+				throw_err_block(2, err_division_by_zero);
 			return math_val(lhs.get_double() / rhs.get_double());
 		case math_binop_type::mod:
 			if (rhs.get_double() == 0.0)
-				asar_throw_error(2, error_type_block, error_id_division_by_zero);
+				throw_err_block(2, err_division_by_zero);
 			// TODO: negative semantics
 			if (lhs.m_type == math_val_type::floating) {
 				return math_val(fmod(lhs.get_double(), rhs.get_double()));
@@ -106,13 +106,13 @@ math_val evaluate_binop(math_val lhs, math_val rhs,
 		case math_binop_type::shift_left: {
 			int64_t rhs_v = rhs.get_integer();
 			if (rhs_v < 0)
-				asar_throw_error(2, error_type_block, error_id_negative_shift);
+				throw_err_block(2, err_negative_shift);
 			return math_val(lhs.get_integer() << (uint64_t)rhs_v);
 		}
 		case math_binop_type::shift_right: {
 			int64_t rhs_v = rhs.get_integer();
 			if (rhs_v < 0)
-				asar_throw_error(2, error_type_block, error_id_negative_shift);
+				throw_err_block(2, err_negative_shift);
 			return math_val(lhs.get_integer() >> (uint64_t)rhs_v);
 		}
 
@@ -125,8 +125,7 @@ math_val evaluate_binop(math_val lhs, math_val rhs,
 
 		case math_binop_type::logical_and:
 		case math_binop_type::logical_or:
-			asar_throw_error(2, error_type_block, error_id_internal_error,
-					"evaluate_binop() on logical ops loses short-circuiting");
+			throw_err_block(2, err_internal_error, "evaluate_binop() on logical ops loses short-circuiting");
 
 		case math_binop_type::mul:
 		case math_binop_type::add:
@@ -232,8 +231,7 @@ math_val math_ast_label::evaluate(const eval_context &ctx) const {
 		// TODO: this assumption can cause moving labels :)))))
 		if(pass == 0) return math_val::make_identifier(m_labelname);
 		// if not pass 0, we know it's not a forward label and can throw the error
-		asar_throw_error(2, error_type_block, error_id_label_not_found,
-				   m_labelname.data());
+		throw_err_block(2, err_label_not_found, m_labelname.data());
 	}
 }
 
@@ -266,8 +264,7 @@ math_ast_function_call::lookup_fname(string const &function_name) {
 		it != builtin_functions.end()) {
 		return it->second;
 	} else {
-		asar_throw_error(2, error_type_block, error_id_function_not_found,
-				   function_name.data());
+		throw_err_block(2, err_function_not_found, function_name.data());
 	}
 }
 math_val math_ast_function_call::evaluate(const eval_context &ctx) const {
@@ -294,8 +291,7 @@ math_val math_user_function::call(const std::vector<math_val> &args) const {
 	math_ast_node::eval_context new_ctx;
 	new_ctx.userfunc_params = args;
 	if (args.size() != m_arg_count)
-		asar_throw_error(2, error_type_block, error_id_argument_count, m_arg_count,
-				   (int)args.size());
+		throw_err_block(2, err_argument_count, m_arg_count, (int)args.size());
 	return m_func_body->evaluate(new_ctx);
 }
 

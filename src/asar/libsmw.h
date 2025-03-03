@@ -8,7 +8,6 @@
 extern const unsigned char * romdata;
 extern int romlen;
 extern unsigned char freespacebyte;
-extern asar_error_id openromerror;
 bool openrom(const char * filename, bool confirm=true);
 uint32_t closerom(bool save = true);
 

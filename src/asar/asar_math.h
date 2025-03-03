@@ -82,13 +82,13 @@ public:
 	// evaluate an expression that doesn't allow non-static label references
 	math_val evaluate_static() {
 		if(has_label() > 1)
-			asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			throw_err_block(0, err_no_labels_here);
 		return evaluate();
 	}
 	// evaluate an expression that doesn't allow forward label references
 	math_val evaluate_non_forward() {
 		if(has_label() > 3)
-			asar_throw_error(0, error_type_block, error_id_label_forward);
+			throw_err_block(0, err_label_forward);
 		return evaluate();
 	}
 };

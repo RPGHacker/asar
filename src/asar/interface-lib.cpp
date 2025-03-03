@@ -133,14 +133,14 @@ static void fillerror(errordata& myerr, const char* errname, const char * type, 
 static bool ismath=false;
 static string matherror;
 
-void error_interface(int errid, int whichpass, const char * e_)
+void error_interface(const char* errid, int whichpass, const char * e_)
 {
 	errored = true;
 	if (ismath) matherror = e_;
 	else if (pass == whichpass) {
 		// don't show current block if the error came from an error command
-		bool show_block = (errid != error_id_error_command);
-		fillerror(errors[numerror++], get_error_name((asar_error_id)errid), STR "error: (" + get_error_name((asar_error_id)errid) + "): ", e_, show_block);
+		bool show_block = (strcmp(errid, "error_command") != 0);
+		fillerror(errors[numerror++], errid, STR "error: (" + errid + "): ", e_, show_block);
 	}
 	else {}//ignore anything else
 }
@@ -324,11 +324,11 @@ static bool asar_patch_end(char * romdata_, int buflen, int * romlen_)
 {
 	if (checksum_fix_enabled) fixchecksum();
 	if (romdata_ != (const char*)romdata_r) free(const_cast<unsigned char*>(romdata_r));
-	if (buflen < romlen) asar_throw_error(pass, error_type_null, error_id_buffer_too_small);
+	if (buflen < romlen) throw_err_null(pass, err_buffer_too_small);
 	if (errored)
 	{
 		if (numerror==0)
-			asar_throw_error(pass, error_type_null, error_id_internal_error, "phantom error");
+			throw_err_null(pass, err_internal_error, "phantom error");
 		free(const_cast<unsigned char*>(romdata));
 		return false;
 	}
@@ -410,12 +410,12 @@ EXPORT bool asar_patch(const struct patchparams_base *params)
 	auto execute_patch = [&]() {
 		if (params == nullptr)
 		{
-			asar_throw_error(pass, error_type_null, error_id_params_null);
+			throw_err_null(pass, err_params_null);
 		}
 
 		if (params->structsize != sizeof(patchparams_v200))
 		{
-			asar_throw_error(pass, error_type_null, error_id_params_invalid_size);
+			throw_err_null(pass, err_params_invalid_size);
 		}
 
 		patchparams paramscurrent;
@@ -464,9 +464,9 @@ EXPORT bool asar_patch(const struct patchparams_base *params)
 			string name = (paramscurrent.additional_defines[i].name != nullptr ? paramscurrent.additional_defines[i].name : "");
 			strip_whitespace(name);
 			name.strip_prefix('!'); // remove leading ! if present
-			if (!validatedefinename(name)) asar_throw_error(pass, error_type_null, error_id_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
+			if (!validatedefinename(name)) throw_err_null(pass, err_cmdl_define_invalid, "asar_patch_ex() additional defines", name.data());
 			if (clidefines.exists(name)) {
-				asar_throw_error(pass, error_type_null, error_id_cmdl_define_override, "asar_patch_ex() additional define", name.data());
+				throw_err_null(pass, err_cmdl_define_override, "asar_patch_ex() additional define", name.data());
 				return false;
 			}
 			string contents = (paramscurrent.additional_defines[i].contents != nullptr ? paramscurrent.additional_defines[i].contents : "");

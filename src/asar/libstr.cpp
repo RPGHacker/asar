@@ -60,7 +60,7 @@ char * readfile(const char * fname, const char * basepath)
 	if (!is_valid_utf8(data))
 	{
 		free(data);
-		asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+		throw_err_block(0, err_invalid_utf8);
 	}
 	if(check_bom(data)){
 		data[0] = ' ';
@@ -81,7 +81,7 @@ char * readfilenative(const char * fname)
 	data[read_file(myfile, data, datalen)] = 0;
 	close_file(myfile);
 
-	if (!is_valid_utf8(data)) asar_throw_error(0, error_type_block, error_id_invalid_utf8);
+	if (!is_valid_utf8(data)) throw_err_block(0, err_invalid_utf8);
 	if(check_bom(data)){
 		data[0] = ' ';
 		data[1] = ' ';

@@ -72,7 +72,7 @@ cachedfile * opencachedfile(string fname, bool should_error)
 
 	if ((cachedfilehandle == nullptr || cachedfilehandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) && should_error)
 	{
-		asar_throw_error(2, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.data());
+		throw_vfile_error(2, asar_get_last_io_error(), fname.data());
 	}
 
 	return cachedfilehandle;
@@ -83,7 +83,7 @@ cachedfile * opencachedfile(string fname, bool should_error)
 
 void assert_argc(const std::vector<math_val>& args, int expected_args) {
 	if(args.size() != expected_args) {
-		asar_throw_error(2, error_type_block, error_id_argument_count, expected_args, (int)args.size());
+		throw_err_block(2, err_argument_count, expected_args, (int)args.size());
 	}
 }
 
@@ -114,7 +114,7 @@ template<double (*F)(double)>
 math_val fn_unary_real(const std::vector<math_val>& args) {
 	assert_argc(args, 1);
 	double val = F(args[0].get_double());
-	if (val != val) asar_throw_error(2, error_type_block, error_id_nan);
+	if (val != val) throw_err_block(2, err_nan);
 	return val;
 };
 
@@ -123,7 +123,7 @@ math_val fn_rounding(const std::vector<math_val>& args) {
 	assert_argc(args, 1);
 	double val = F(args[0].get_double());
 	// TODO where should we check this? math_val(double) constructor maybe?
-	if (val != val) asar_throw_error(2, error_type_block, error_id_nan);
+	if (val != val) throw_err_block(2, err_nan);
 	return math_val(val).get_integer();
 };
 
@@ -195,7 +195,7 @@ math_val fn_char(math_val str_, math_val ind_) {
 	const string& s = str_.get_str();
 	int64_t ind = ind_.get_integer();
 	if(ind < 0 || ind >= s.length())
-		asar_throw_error(2, error_type_block, error_id_oob, (int)ind, s.length());
+		throw_err_block(2, err_oob, (int)ind, s.length());
 	return (int64_t)(unsigned char)s[ind];
 }
 math_val fn_strlen(math_val val) {
@@ -206,7 +206,7 @@ template<int count>
 math_val fn_read(const std::vector<math_val>& args) {
 	if(args.size() < 1 || args.size() > 2) {
 		// TODO expected amount should be string to show the range
-		asar_throw_error(2, error_type_block, error_id_argument_count, 2, (int)args.size());
+		throw_err_block(2, err_argument_count, 2, (int)args.size());
 	}
 	int64_t target = args[0].get_integer();
 	int addr = snestopc(target);
@@ -217,9 +217,9 @@ math_val fn_read(const std::vector<math_val>& args) {
 		if(addr + count > romlen_r) return default_val;
 	} else {
 		if (addr < 0)
-			asar_throw_error(2, error_type_block, error_id_snes_address_doesnt_map_to_rom, (hex((unsigned int)target, 6) + " in read function").data());
+			throw_err_block(2, err_snes_address_doesnt_map_to_rom, (hex((unsigned int)target, 6) + " in read function").data());
 		else if (addr + count > romlen_r)
-			asar_throw_error(2, error_type_block, error_id_snes_address_out_of_bounds, (hex(target, 6) + " in read function").data());
+			throw_err_block(2, err_snes_address_out_of_bounds, (hex(target, 6) + " in read function").data());
 	}
 
 	int64_t value = 0;
@@ -250,7 +250,7 @@ template<int count>
 math_val fn_readfile(const std::vector<math_val>& args) {
 	if(args.size() < 2 || args.size() > 3) {
 		// TODO expected amount should be string to show the range
-		asar_throw_error(2, error_type_block, error_id_argument_count, 3, (int)args.size());
+		throw_err_block(2, err_argument_count, 3, (int)args.size());
 	}
 	string fname = args[0].get_str();
 	int64_t offset = args[1].get_integer();
@@ -264,9 +264,9 @@ math_val fn_readfile(const std::vector<math_val>& args) {
 		if(offset + count > fhandle->filesize) return default_val;
 	} else {
 		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) 
-			asar_throw_error(2, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), fname.data());
+			throw_vfile_error(2, asar_get_last_io_error(), fname.data());
 		if (offset < 0 || offset + count > fhandle->filesize)
-			asar_throw_error(2, error_type_block, error_id_file_offset_out_of_bounds, dec(offset).data(), fname.data());
+			throw_err_block(2, err_file_offset_out_of_bounds, dec(offset).data(), fname.data());
 	}
 
 	unsigned char data[4] = { 0, 0, 0, 0 };
@@ -332,7 +332,7 @@ math_val fn_filesize(math_val fname) {
 	string name = fname.get_str();
 	cachedfile * fhandle = opencachedfile(name, false);
 	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) 
-		asar_throw_error(2, error_type_block, vfile_error_to_error_id(asar_get_last_io_error()), name.data());
+		throw_vfile_error(2, asar_get_last_io_error(), name.data());
 	return (int64_t)fhandle->filesize;
 }
 
@@ -350,18 +350,18 @@ math_val fn_sizeof(math_val val) {
 	string symbol = val.get_identifier();
 	// TODO: do we have a better spot where to parse this...?
 	if(symbol == "..."){
-		if(!inmacro) asar_throw_error(2, error_type_block, error_id_vararg_sizeof_nomacro);
-		if(numvarargs == -1) asar_throw_error(2, error_type_block, error_id_macro_not_varadic, "sizeof(...)");
+		if(!inmacro) throw_err_block(2, err_vararg_sizeof_nomacro);
+		if(numvarargs == -1) throw_err_block(2, err_macro_not_varadic, "sizeof(...)");
 		return (int64_t)numvarargs;
 	}
-	if(pass && !structs.exists(symbol)) asar_throw_error(2, error_type_block, error_id_struct_not_found, symbol.data());
+	if(pass && !structs.exists(symbol)) throw_err_block(2, err_struct_not_found, symbol.data());
 	else if(!structs.exists(symbol)) return (int64_t)0;
 	return (int64_t)structs.find(symbol).struct_size;
 }
 
 math_val fn_objectsize(math_val val) {
 	string symbol = val.get_identifier();
-	if(pass && !structs.exists(symbol)) asar_throw_error(2, error_type_block, error_id_struct_not_found, symbol.data());
+	if(pass && !structs.exists(symbol)) throw_err_block(2, err_struct_not_found, symbol.data());
 	else if(!structs.exists(symbol)) return (int64_t)0;
 	return (int64_t)structs.find(symbol).object_size;
 }
@@ -369,7 +369,7 @@ math_val fn_objectsize(math_val val) {
 math_val fn_datasize(math_val val) {
 	string name = val.get_identifier();
 	int label;
-	if(pass && !labels.exists(name)) asar_throw_error(2, error_type_block, error_id_label_not_found, name.data());
+	if(pass && !labels.exists(name)) throw_err_block(2, err_label_not_found, name.data());
 	else if(!labels.exists(name)) return (int64_t)0;
 	snes_label label_data = labels.find(name);
 

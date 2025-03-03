@@ -22,33 +22,33 @@ static int current_macro_numargs;
 void startmacro(const char * line_)
 {
 	thisone= nullptr;
-	if (!confirmqpar(line_)) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+	if (!confirmqpar(line_)) throw_err_block(0, err_broken_macro_declaration);
 	string line=line_;
 	line.qnormalize();
 	char * startpar=(char *)strchr(line.data(), '(');
-	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+	if (!startpar) throw_err_block(0, err_broken_macro_declaration);
 	*startpar=0;
 	startpar++;
-	if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_invalid_macro_name);
+	if (!confirmname(line)) throw_err_block(0, err_invalid_macro_name);
 	defining_macro_name=line;
 	char * endpar=startpar+strlen(startpar)-1;
 	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nullptrs
-	if (*endpar != ')') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+	if (*endpar != ')') throw_err_block(0, err_broken_macro_declaration);
 	*endpar=0;
 	for (int i=0;startpar[i];i++)
 	{
 		char c=startpar[i];
-		if (!is_ualnum(c)&& c!=','&& c!='.'&& c!=' ') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
-		if (c==',' && is_digit(startpar[i+1])) asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+		if (!is_ualnum(c)&& c!=','&& c!='.'&& c!=' ') throw_err_block(0, err_broken_macro_declaration);
+		if (c==',' && is_digit(startpar[i+1])) throw_err_block(0, err_broken_macro_declaration);
 	}
-	if (*startpar==',' || is_digit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') asar_throw_error(0, error_type_block, error_id_broken_macro_declaration);
+	if (*startpar==',' || is_digit(*startpar) || strstr(startpar, ",,") || endpar[-1]==',') throw_err_block(0, err_broken_macro_declaration);
 	if (macros.exists(defining_macro_name))
 	{
 		const auto macro = macros[defining_macro_name];
 		// i think theoretically it would be "more correct" to print the entire
 		// callstack here, but this should be good enough for an error message.
 		// needs +1 because startline is 0-indexed
-		asar_throw_error(0, error_type_block, error_id_macro_redefined, defining_macro_name.data(), macro->fname, macro->startline + 1);
+		throw_err_block(0, err_macro_redefined, defining_macro_name.data(), macro->fname, macro->startline + 1);
 	}
 	thisone=(macrodata*)malloc(sizeof(macrodata));
 	new(thisone) macrodata;
@@ -80,12 +80,12 @@ void startmacro(const char * line_)
 	for (int i=0;thisone->arguments[i];i++)
 	{
 		if(!strcmp(thisone->arguments[i], "...") && !thisone->arguments[i+1]) thisone->variadic = true;
-		else if(!strcmp(thisone->arguments[i], "...")) asar_throw_error(0, error_type_block, error_id_vararg_must_be_last);
-		else if(strchr(thisone->arguments[i], '.')) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
-		else if (!confirmname(thisone->arguments[i])) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
+		else if(!strcmp(thisone->arguments[i], "...")) throw_err_block(0, err_vararg_must_be_last);
+		else if(strchr(thisone->arguments[i], '.')) throw_err_block(0, err_invalid_macro_param_name);
+		else if (!confirmname(thisone->arguments[i])) throw_err_block(0, err_invalid_macro_param_name);
 		for (int j=i+1;thisone->arguments[j];j++)
 		{
-			if (!strcmp(thisone->arguments[i], thisone->arguments[j])) asar_throw_error(0, error_type_block, error_id_macro_param_redefined, thisone->arguments[i]);
+			if (!strcmp(thisone->arguments[i], thisone->arguments[j])) throw_err_block(0, err_macro_param_redefined, thisone->arguments[i]);
 		}
 	}
 	numlines=0;
@@ -125,30 +125,30 @@ void callmacro(const char * data)
 {
 	int prev_numvarargs = numvarargs;
 	macrodata * thismacro;
-	if (!confirmqpar(data)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
+	if (!confirmqpar(data)) throw_err_block(0, err_broken_macro_usage);
 	string line=data;
 	line.qnormalize();
 	char * startpar=(char *)strchr(line.data(), '(');
-	if (!startpar) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
+	if (!startpar) throw_err_block(0, err_broken_macro_usage);
 	*startpar=0;
 	startpar++;
-	if (!confirmname(line)) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
-	if (!macros.exists(line)) asar_throw_error(0, error_type_block, error_id_macro_not_found, line.data());
+	if (!confirmname(line)) throw_err_block(0, err_broken_macro_usage);
+	if (!macros.exists(line)) throw_err_block(0, err_macro_not_found, line.data());
 	thismacro = macros.find(line);
 	char * endpar=startpar+strlen(startpar)-1;
 	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nullptrs
-	if (*endpar != ')') asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
+	if (*endpar != ')') throw_err_block(0, err_broken_macro_usage);
 	*endpar=0;
 	autoptr<const char * const*> args;
 	int numargs=0;
 	if (*startpar) {
 		args=(const char* const*)qpsplit(startpar, ',', &numargs);
 		// qpsplit returns a nullptr when the input is broken, e.g. closing paren before opening or whatnot
-		if(args == nullptr) asar_throw_error(0, error_type_block, error_id_broken_macro_usage);
+		if(args == nullptr) throw_err_block(0, err_broken_macro_usage);
 	}
-	if (numargs != thismacro->numargs && !thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_num_params);
+	if (numargs != thismacro->numargs && !thismacro->variadic) throw_err_block(1, err_macro_wrong_num_params);
 	// RPG Hacker: -1, because the ... is also counted as an argument, yet we want it to be entirely optional.
-	if (numargs < thismacro->numargs - 1 && thismacro->variadic) asar_throw_error(1, error_type_block, error_id_macro_wrong_min_params);
+	if (numargs < thismacro->numargs - 1 && thismacro->variadic) throw_err_block(1, err_macro_wrong_min_params);
 
 	macrorecursion++;
 	inmacro=true;
@@ -217,7 +217,7 @@ void callmacro(const char * data)
 	{
 		numif=startif;
 		numtrue=startif;
-		asar_throw_error(0, error_type_block, error_id_unclosed_if);
+		throw_err_block(0, err_unclosed_if);
 	}
 }
 
@@ -360,28 +360,28 @@ string replace_macro_args(const char* line) {
 				in=end+1;
 				if (depth > in_macro_def)
 				{
-					if (in_macro_def > 0) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
-					//else asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
+					if (in_macro_def > 0) throw_err_line(0, err_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
+					//else throw_err_block(0, err_macro_param_outside_macro);
 				}
 				continue;
 			}
 
-			if (depth > 0 && !inmacro) asar_throw_error(0, error_type_line, error_id_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
+			if (depth > 0 && !inmacro) throw_err_line(0, err_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
 			in += depth+1;
 
 			bool is_variadic_arg = false;
 			if (in[0] == '.' && in[1] == '.' && in[2] == '.' && in[3] == '[')
 			{
 				if (end[-1] != ']')
-					asar_throw_error(0, error_type_block, error_id_unclosed_vararg);
+					throw_err_block(0, err_unclosed_vararg);
 
 				is_variadic_arg = true;
 				in += 4;
 				end--;
 			}
 
-			//if(!inmacro) asar_throw_error(0, error_type_block, error_id_macro_param_outside_macro);
-			if(is_variadic_arg && !current_macro->variadic) asar_throw_error(0, error_type_block, error_id_macro_not_varadic, "<...[math]>");
+			//if(!inmacro) throw_err_block(0, err_macro_param_outside_macro);
+			if(is_variadic_arg && !current_macro->variadic) throw_err_block(0, err_macro_not_varadic, "<...[math]>");
 			//*end=0;
 			string param;
 			string temp(in, end-in);
@@ -390,7 +390,7 @@ string replace_macro_args(const char* line) {
 			bool valid_named_param = confirmname(in);
 			if (!is_variadic_arg)
 			{
-				if (!valid_named_param) asar_throw_error(0, error_type_block, error_id_invalid_macro_param_name);
+				if (!valid_named_param) throw_err_block(0, err_invalid_macro_param_name);
 				bool found=false;
 				for (int j=0;current_macro->arguments[j];j++)
 				{
@@ -403,15 +403,15 @@ string replace_macro_args(const char* line) {
 				}
 				if (!found)
 				{
-					asar_throw_error(0, error_type_block, error_id_macro_param_not_found, generate_macro_arg_string(in, depth).raw(), generate_macro_hint_string(in, current_macro, depth).raw());
+					throw_err_block(0, err_macro_param_not_found, generate_macro_arg_string(in, depth).raw(), generate_macro_hint_string(in, current_macro, depth).raw());
 				}
 			}
 			else
 			{
 				int arg_num = parse_math_expr(in)->evaluate_static().get_integer();
 
-				if (arg_num < 0) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), "");
-				if (arg_num > current_macro_numargs-current_macro->numargs) asar_throw_error(1, error_type_block, error_id_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), generate_macro_hint_string(arg_num, current_macro, depth).raw());
+				if (arg_num < 0) throw_err_block(1, err_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), "");
+				if (arg_num > current_macro_numargs-current_macro->numargs) throw_err_block(1, err_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), generate_macro_hint_string(arg_num, current_macro, depth).raw());
 				out+=current_macro_args[arg_num+current_macro->numargs-1];
 			}
 			in=end+1;
