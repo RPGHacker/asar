@@ -159,7 +159,7 @@ virtual_file_handle virtual_filesystem::open_file(const char* path, const char* 
 
 	if (vft != vft_memory_file)
 	{
-		asar_throw_warning(0, warning_id_check_memory_file, path, (int)warning_id_check_memory_file);
+		throw_warning(0, warn_check_memory_file, path);
 	}
 
 	switch (vft)

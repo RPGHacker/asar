@@ -438,7 +438,7 @@ static parse_result parse_addr_kind(const string& arg, uint32_t allowed_kinds_ma
 		}
 		if((end_i = endmatch<')'>(arg)) >= 0) {
 			RETURN_IF_ALLOWED(ind);
-			asar_throw_warning(1, warning_id_assuming_address_mode, "($00)", "$00", " (if this was intentional, add a +0 after the parentheses.)");
+			throw_warning(1, warn_assuming_address_mode, "($00)", "$00", " (if this was intentional, add a +0 after the parentheses.)");
 		}
 	}
 	if((start_i = startmatch<'['>(arg)) >= 0) {
@@ -503,7 +503,7 @@ static int get_real_len(int min_len, int max_len, int arg_min_len, char modifier
 	} else {
 		if(parsed.kind == addr_kind::imm) {
 			if(!is_hex_constant(parsed.arg.data()))
-				asar_throw_warning(2, warning_id_implicitly_sized_immediate);
+				throw_warning(2, warn_implicitly_sized_immediate);
 			if(arg_min_len == 3 && max_len == 2) {
 				// lda #label
 				// todo: throw pedantic warning

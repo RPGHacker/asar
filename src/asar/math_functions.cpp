@@ -382,8 +382,8 @@ math_val fn_datasize(math_val val) {
 			selected_label = current_label;
 		}
 	});
-	if(selected_label.id == 0xFFFFFF) asar_throw_warning(2, warning_id_datasize_last_label, name.data());
-	if(selected_label.pos-label_data.pos > 0xFFFF) asar_throw_warning(2, warning_id_datasize_exceeds_size, name.data());
+	if(selected_label.id == 0xFFFFFF) throw_warning(2, warn_datasize_last_label, name.data());
+	if(selected_label.pos-label_data.pos > 0xFFFF) throw_warning(2, warn_datasize_exceeds_size, name.data());
 	return (int64_t)(selected_label.pos-label_data.pos);
 }
 

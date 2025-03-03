@@ -148,7 +148,7 @@ void error_interface(const char* errid, int whichpass, const char * e_)
 void warn(int errid, const char * str)
 {
 	// don't show current block if the warning came from a warn command
-	bool show_block = (errid != warning_id_warn_command);
+	bool show_block = (errid != warn_id_warn_command);
 	fillerror(warnings[numwarn++], get_warning_name((asar_warning_id)errid), STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
 }
 
@@ -303,7 +303,7 @@ static void asar_patch_begin(char * romdata_, int buflen, int * romlen_)
 
 static void asar_patch_main(const char * patchloc)
 {
-	if (!path_is_absolute(patchloc)) asar_throw_warning(pass, warning_id_relative_path_used, "patch file");
+	if (!path_is_absolute(patchloc)) throw_warning(pass, warn_relative_path_used, "patch file");
 
 	try
 	{
@@ -432,13 +432,13 @@ EXPORT bool asar_patch(const struct patchparams_base *params)
 
 		for (int i = 0; i < paramscurrent.numincludepaths; ++i)
 		{
-			if (!path_is_absolute(paramscurrent.includepaths[i])) asar_throw_warning(pass, warning_id_relative_path_used, "include search");
+			if (!path_is_absolute(paramscurrent.includepaths[i])) throw_warning(pass, warn_relative_path_used, "include search");
 			string& newpath = includepaths.append(paramscurrent.includepaths[i]);
 			includepath_cstrs.append((const char*)newpath);
 		}
 
 		if (paramscurrent.stdincludesfile != nullptr) {
-			if (!path_is_absolute(paramscurrent.stdincludesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std includes file");
+			if (!path_is_absolute(paramscurrent.stdincludesfile)) throw_warning(pass, warn_relative_path_used, "std includes file");
 			string stdincludespath = paramscurrent.stdincludesfile;
 			parse_std_includes(stdincludespath, includepaths);
 		}
@@ -474,7 +474,7 @@ EXPORT bool asar_patch(const struct patchparams_base *params)
 		}
 
 		if (paramscurrent.stddefinesfile != nullptr) {
-			if (!path_is_absolute(paramscurrent.stddefinesfile)) asar_throw_warning(pass, warning_id_relative_path_used, "std defines file");
+			if (!path_is_absolute(paramscurrent.stddefinesfile)) throw_warning(pass, warn_relative_path_used, "std defines file");
 			string stddefinespath = paramscurrent.stddefinesfile;
 			parse_std_defines(stddefinespath);
 		} else {
@@ -491,7 +491,7 @@ EXPORT bool asar_patch(const struct patchparams_base *params)
 			}
 			else
 			{
-				asar_throw_warning(pass, warning_id_invalid_warning_id, paramscurrent.warning_settings[i].warnid, "asar_patch_ex() warning_settings");
+				throw_warning(pass, warn_invalid_warning_id, paramscurrent.warning_settings[i].warnid, "asar_patch_ex() warning_settings");
 			}
 		}
 

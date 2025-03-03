@@ -40,7 +40,7 @@ static size_t check_bom(const char* str)
 	// so that's why I have added this.
 	if (str[0u] == '\xEF' && str[1u] == '\xBB' && str[2u] == '\xBF')
 	{
-		asar_throw_warning(0, warning_id_byte_order_mark_utf8);
+		throw_warning(0, warn_byte_order_mark_utf8);
 		return 3u;
 	}
 

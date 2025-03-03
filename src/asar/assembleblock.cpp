@@ -1310,7 +1310,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	}
 	else if (is0("warn"))
 	{
-		asar_throw_warning(2, warning_id_warn_command, ".");
+		throw_warning(2, warn_warn_command, ".");
 	}
 	else if (is1("error"))
 	{
@@ -1323,7 +1323,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (is1("warn"))
 	{
 		string out = handle_print(par);
-		asar_throw_warning(2, warning_id_warn_command, (string(": ") + out).data());
+		throw_warning(2, warn_warn_command, (string(": ") + out).data());
 	}
 	else if (is1("warnings"))
 	{
@@ -1352,7 +1352,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			}
 			else
 			{
-				asar_throw_warning(0, warning_id_invalid_warning_id, word[2], "warnings enable");
+				throw_warning(0, warn_invalid_warning_id, word[2], "warnings enable");
 			}
 		}
 		else if (stricmp(word[1], "disable") == 0)
@@ -1365,7 +1365,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			}
 			else
 			{
-				asar_throw_warning(0, warning_id_invalid_warning_id, word[2], "warnings disable");
+				throw_warning(0, warn_invalid_warning_id, word[2], "warnings disable");
 			}
 		}
 		else
@@ -1395,7 +1395,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 				if (!ignoretitleerrors) // title errors shouldn't be ignored
 					throw_err_block(0, err_rom_too_short, expected_title.data());
 				else // title errors should be ignored, throw a warning anyways
-					asar_throw_warning(0, warning_id_rom_too_short, expected_title.data());
+					throw_warning(0, warn_rom_too_short, expected_title.data());
 			}
 			else {
 				string actual_title;
@@ -1418,7 +1418,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 					if (!ignoretitleerrors) // title errors shouldn't be ignored
 						throw_err_block(0, err_rom_title_incorrect, expected_title.data(), actual_display_title.data());
 					else // title errors should be ignored, throw a warning anyways
-						asar_throw_warning(0, warning_id_rom_title_incorrect, expected_title.data(), actual_display_title.data());
+						throw_warning(0, warn_rom_title_incorrect, expected_title.data(), actual_display_title.data());
 				}
 			}
 		}
@@ -1555,7 +1555,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		auto math_expr = parse_math_expr(par);
 		int64_t num = math_expr->evaluate_non_forward().get_integer();
 		if (num&~0xFFFFFF) throw_err_block(1, err_snes_address_out_of_bounds, hex(num, 6).data());
-		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) asar_throw_warning(0, warning_id_set_middle_byte);
+		if ((mapper==lorom || mapper==exlorom) && (num&0x408000)==0x400000 && (num&0x700000)!=0x700000) throw_warning(0, warn_set_middle_byte);
 		snespos=(int)num;
 		realsnespos=(int)num;
 		startpos=(int)num;
@@ -1908,7 +1908,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		{
 			if (thisfs.is_static && thisfs.orgpos == -2) return;//to kill some errors (supposedly????)
 			snespos=thisfs.pos;
-			if (thisfs.leaked && !thisfs.flag_cleaned) asar_throw_warning(2, warning_id_freespace_leaked);
+			if (thisfs.leaked && !thisfs.flag_cleaned) throw_warning(2, warn_freespace_leaked);
 			freespaceuse += (thisfs.write_rats ? 8 : 0) + thisfs.len;
 
 			// add a mapping for the start of the rats tag
@@ -2390,7 +2390,7 @@ bool assemblemapper(char** word, int numwords)
 	if(!mapper_set){
 		mapper_set = true;
 	}else if(previous_mapper != mapper){
-		asar_throw_warning(1, warning_id_mapper_already_set);
+		throw_warning(1, warn_mapper_already_set);
 	}
 	return true;
 }

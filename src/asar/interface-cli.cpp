@@ -147,7 +147,7 @@ void warn(int errid, const char * e_)
 {
 	const char* current_block = get_current_block();
 	// don't show current block if the warning came from a warn command
-	bool show_block = (current_block && (errid != warning_id_warn_command));
+	bool show_block = (current_block && (errid != warn_id_warn_command));
 	string location;
 	string details;
 	get_current_line_details(&location, &details, !show_block);
@@ -397,7 +397,7 @@ int main(int argc, const char * argv[])
 					}
 					else
 					{
-						asar_throw_warning(pass, warning_id_invalid_warning_id, name_start, "-wno");
+						throw_warning(pass, warn_invalid_warning_id, name_start, "-wno");
 					}
 				}
 				else
@@ -410,7 +410,7 @@ int main(int argc, const char * argv[])
 					}
 					else
 					{
-						asar_throw_warning(pass, warning_id_invalid_warning_id, w_param, "-w");
+						throw_warning(pass, warn_invalid_warning_id, w_param, "-w");
 					}
 				}
 

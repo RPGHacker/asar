@@ -1,3 +1,23 @@
+#include <vector>
+
+// construct a mapping between warning ids and warning names.
+struct warn_t;
+std::vector<warn_t> all_warnings;
+int warning_id_end = 0;
+struct warn_t {
+	const char *name;
+	bool exists;
+	bool is_default_enabled;
+	warn_t() : name(nullptr), exists(false), is_default_enabled(false) {}
+	warn_t(int id, const char *name, bool is_default_enabled)
+	: name(name), exists(true), is_default_enabled(is_default_enabled) {
+		if(all_warnings.size() <= id) all_warnings.resize(id + 1);
+		all_warnings[id] = *this;
+		warning_id_end = all_warnings.size();
+	}
+};
+
+#define SAVE_WARN_NAME(id, name, is_enabled) static warn_t _useless_##id { id, name, is_enabled }
 #include "warnings.h"
 
 #include "asar.h"
@@ -8,14 +28,15 @@
 
 struct warnings_state
 {
-	bool enabled[warning_id_end];
+	std::vector<bool> enabled;
+	warnings_state() : enabled(all_warnings.size(), false) {}
 };
 
 static warnings_state current_warnings_state;
 static autoarray<warnings_state> warnings_state_stack;
 static warnings_state main_warnings_state;
 
-void asar_throw_warning_impl(int whichpass, asar_warning_id warnid, const char* fmt, ...)
+void warn_impl(int warnid, const char* fmt, int whichpass, ...)
 {
 	if (pass == whichpass)
 	{
@@ -39,7 +60,8 @@ const char* get_warning_name(asar_warning_id warnid)
 {
 	assert(warnid >= 0 && warnid < warning_id_end);
 
-	const asar_warning_mapping& warning = asar_all_warnings[warnid];
+	const warn_t& warning = all_warnings[warnid];
+	assert(warning.exists);
 
 	return warning.name;
 }
@@ -49,6 +71,7 @@ const char* get_warning_name(asar_warning_id warnid)
 void set_warning_enabled(asar_warning_id warnid, bool enabled)
 {
 	assert(warnid >= 0 && warnid < warning_id_end);
+	assert(all_warnings[warnid].exists);
 
 	current_warnings_state.enabled[warnid] = enabled;
 }
@@ -69,7 +92,7 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 	}
 	for(int i = 0; i < warning_id_end; i++)
 	{
-		if(!stricmpwithlower(pos, asar_all_warnings[i].name+1))
+		if(all_warnings[i].exists && !stricmpwithlower(pos, all_warnings[i].name+1))
 		{
 			return asar_warning_id(i);
 		}
@@ -82,9 +105,9 @@ void reset_warnings_to_default()
 {
 	for (int i = 0; i < (int)warning_id_end; ++i)
 	{
-		const asar_warning_mapping& warning = asar_all_warnings[i];
+		const warn_t& warning = all_warnings[i];
 
-		current_warnings_state.enabled[i] = warning.default_enabled;
+		current_warnings_state.enabled[i] = warning.is_default_enabled;
 	}
 }
 
