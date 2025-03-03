@@ -64,6 +64,11 @@ struct DMA $4300
 		.size_high: skip 1
 endstruct align $10
 
+struct wat $1234
+	.x: skip sizeof(sprite)
+	.y: skip .y-.x
+endstruct
+
 lda #$0040
 sta DMA[2].size
 

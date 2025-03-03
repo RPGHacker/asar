@@ -361,7 +361,7 @@ string posneglabelname(const char ** input, bool define)
 	return output;
 }
 
-string labelname(const char ** rawname, bool define)
+string labelname(const char ** rawname, bool define, bool is_addlabel)
 {
 #define deref_rawname (*rawname)
 	autoarray<string>* sublabellist = &sublabels;
@@ -407,14 +407,16 @@ string labelname(const char ** rawname, bool define)
 
 	if (in_struct || in_sub_struct)
 	{
-		if(in_sub_struct)
-		{
-			name += struct_parent + ".";
+		if(is_addlabel && *deref_rawname != '.') asar_throw_error(2, error_type_block, error_id_invalid_label_name);  //probably should be a better error. TODO!!!
+		if(*deref_rawname == '.') {
+			deref_rawname++;
+			if(in_sub_struct)
+			{
+				name += struct_parent + ".";
+			}
+			name += struct_name;
+			name += '.';
 		}
-		name += struct_name;
-		name += '.';
-		if(*deref_rawname != '.') asar_throw_error(2, error_type_block, error_id_invalid_label_name);  //probably should be a better error. TODO!!!
-		deref_rawname++;
 	}
 
 	if (!is_ualnum(*deref_rawname)) asar_throw_error(2, error_type_block, error_id_invalid_label_name);
@@ -841,7 +843,7 @@ static bool addlabel(const char * label, int pos=-1, bool global_label = false)
 		// Also, apparently this here doesn't account for main labels. I guess because
 		// we don't even get here in the first place if they don't include a colon?
 		bool requirecolon = (label[0] != '.' && label[1] != '.') && (in_struct || in_sub_struct);
-		string name=labelname(&label, define);
+		string name=labelname(&label, define, true);
 		if (label[0]==':') label++;
 		else if (requirecolon) asar_throw_error(0, error_type_block, error_id_broken_label_definition);
 		else if (global_label) return false;
@@ -1582,7 +1584,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		{
 			static_struct = true;
 			auto base_expr = parse_math_expr(word[2]);
-			base = base_expr->evaluate().get_integer();
+			base = base_expr->evaluate_non_forward().get_integer();
 
 			if (base_expr->has_label() > 1) static_struct = false;
 			if (pass > 0) {

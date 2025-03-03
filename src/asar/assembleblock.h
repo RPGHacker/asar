@@ -108,7 +108,7 @@ int snestopc(int addr);
 
 int getlenfromchar(char c);
 
-string labelname(const char ** rawname, bool define=false);
+string labelname(const char ** rawname, bool define=false, bool is_addlabel=false);
 snes_label labelval(const char ** rawname, bool define = false);
 snes_label labelval(string name, bool define = false);
 bool labelval(const char ** rawname, snes_label * rval, bool define = false);
