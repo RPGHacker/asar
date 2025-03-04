@@ -122,7 +122,7 @@ public:
 };
 
 class math_user_function {
-	int m_arg_count;
+	size_t m_arg_count;
 	owned_node m_func_body;
 public:
 	math_user_function(owned_node body, size_t arg_count)

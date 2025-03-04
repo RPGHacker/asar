@@ -294,7 +294,7 @@ math_val math_user_function::call(const std::vector<math_val> &args) const {
 	math_ast_node::eval_context new_ctx;
 	new_ctx.userfunc_params = args;
 	if (args.size() != m_arg_count)
-		throw_err_block(2, err_argument_count, m_arg_count, (int)args.size());
+		throw_err_block(2, err_argument_count, (int)m_arg_count, (int)args.size());
 	return m_func_body->evaluate(new_ctx);
 }
 

@@ -11,7 +11,7 @@ struct warn_t {
 	warn_t() : name(nullptr), exists(false), is_default_enabled(false) {}
 	warn_t(int id, const char *name, bool is_default_enabled)
 	: name(name), exists(true), is_default_enabled(is_default_enabled) {
-		if(all_warnings.size() <= id) all_warnings.resize(id + 1);
+		if((int)all_warnings.size() <= id) all_warnings.resize(id + 1);
 		all_warnings[id] = *this;
 		warning_id_end = all_warnings.size();
 	}

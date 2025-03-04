@@ -83,7 +83,7 @@ cachedfile * opencachedfile(string fname, bool should_error)
 
 
 void assert_argc(const std::vector<math_val>& args, int expected_args) {
-	if(args.size() != expected_args) {
+	if((int)args.size() != expected_args) {
 		throw_err_block(2, err_argument_count, expected_args, (int)args.size());
 	}
 }
@@ -243,11 +243,11 @@ math_val fn_canread(const std::vector<math_val>& args) {
 		addr = args[0].get_integer();
 	}
 	int addr_pc = snestopc(addr);
-	if (addr_pc<0 || addr_pc+length-1>=romlen_r) return (int64_t)0;
+	if (addr_pc < 0 || addr_pc + length > romlen_r) return (int64_t)0;
 	else return (int64_t)1;
 }
 
-template<int count>
+template<unsigned int count>
 math_val fn_readfile(const std::vector<math_val>& args) {
 	if(args.size() < 2 || args.size() > 3) {
 		// TODO expected amount should be string to show the range
@@ -262,11 +262,11 @@ math_val fn_readfile(const std::vector<math_val>& args) {
 		math_val default_val = args[2];
 		if(fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return default_val;
 		if(offset < 0) return default_val;
-		if(offset + count > fhandle->filesize) return default_val;
+		if((size_t)offset + count > fhandle->filesize) return default_val;
 	} else {
 		if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) 
 			throw_vfile_error(2, asar_get_last_io_error(), fname.data());
-		if (offset < 0 || offset + count > fhandle->filesize)
+		if (offset < 0 || (size_t)offset + count > fhandle->filesize)
 			throw_err_block(2, err_file_offset_out_of_bounds, dec(offset).data(), fname.data());
 	}
 
@@ -282,7 +282,7 @@ math_val fn_readfile(const std::vector<math_val>& args) {
 	return value;
 }
 
-template<int count>
+template<unsigned int count>
 math_val fn_canreadfile(const std::vector<math_val>& args) {
 	string fname;
 	int64_t length = count;
@@ -300,7 +300,7 @@ math_val fn_canreadfile(const std::vector<math_val>& args) {
 	
 	cachedfile * fhandle = opencachedfile(fname, false);
 	if (fhandle == nullptr || fhandle->filehandle == INVALID_VIRTUAL_FILE_HANDLE) return (int64_t)0;
-	if (offset < 0 || offset + length > fhandle->filesize) return (int64_t)0;
+	if (offset < 0 || offset + length > (int64_t)fhandle->filesize) return (int64_t)0;
 	return (int64_t)1;
 }
 
