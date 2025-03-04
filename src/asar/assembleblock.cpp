@@ -1230,6 +1230,9 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 	else if (is1("undef"))
 	{
 		string def = safedequote(par);
+		if (builtindefines.exists(def)) {
+			throw_err_line(0, err_overriding_builtin_define, def.data());
+		}
 
 		if (defines.exists(def))
 		{
