@@ -7,6 +7,5 @@ assert "a" != "a" + "b"
 assert "2" != 2
 
 assert char( "a""b" , 1 ) == '"'
-; todo rewrite print to use more math
-;;P>asdf""x
-;print "asdf""""x"
+;P>asdf"""x
+print "asdf""""""x"

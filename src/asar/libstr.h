@@ -435,7 +435,10 @@ inline const char * dequote(char * str)
 	{
 		*end = 0;
 		char *quote = str+1;
-		while((quote = strstr(quote, "\"\""))) memmove(quote, quote+1, strlen(quote));
+		while((quote = strstr(quote, "\"\""))) {
+			memmove(quote, quote+1, strlen(quote));
+			quote++;
+		}
 		return str + 1;
 	}
 	return nullptr;
