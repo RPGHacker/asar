@@ -112,9 +112,17 @@ if(ASAR_GEN_DLL_TEST)
 	# env variable.
 	set(asan_preload_env "")
 	if(ASAR_USE_SANITIZER)
-		target_compile_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
-		target_link_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
-                set(asan_preload_env "ASAN_OPTIONS=detect_leaks=0" "LD_PRELOAD=${ASAR_ASAN_PRELOAD_NAME}")
+		if(MSVC)
+			# msvc's asan implementation doesn't have ubsan or leaksan, so
+			# 1) don't pass sanitize=undefined, 2) i hope the ASAN_OPTIONS
+			# shenanigans aren't needed
+			target_compile_options(newtest PRIVATE /fsanitize=address)
+			target_link_options(newtest PRIVATE /fsanitize=address)
+		else()
+			set(asan_preload_env "ASAN_OPTIONS=detect_leaks=0" "LD_PRELOAD=${ASAR_ASAN_PRELOAD_NAME}")
+			target_compile_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
+			target_link_options(newtest PRIVATE -fsanitize=address -fsanitize=undefined)
+		endif()
 	endif()
 
 	find_package(Python3)
