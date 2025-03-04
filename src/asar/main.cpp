@@ -621,8 +621,12 @@ void resolvedefines(string& out, const char * start)
 					{
 						string newval;
 						resolvedefines(newval, val);
-						double num= parse_math_expr(newval)->evaluate_static().get_double();
-						defines.create(defname) = ftostr(num);
+						math_val num = parse_math_expr(newval)->evaluate_static();
+						string num_str;
+						if(num.m_type == math_val_type::string) num_str = num.get_str();
+						else if(num.m_type == math_val_type::floating) num_str = ftostr(num.get_double());
+						else num_str = dec(num.get_integer());
+						defines.create(defname) = std::move(num_str);
 						break;
 					}
 					case setifnotset:

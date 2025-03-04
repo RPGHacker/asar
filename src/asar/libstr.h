@@ -5,6 +5,7 @@
 #include <cstring>
 #include <utility>
 #include <string_view>
+#include <cinttypes>
 
 //ty alcaro
 extern const unsigned char char_props[256];
@@ -329,13 +330,14 @@ inline string hex(unsigned int value, int width)
 	return buffer;
 }
 
-inline string dec(int value)
+inline string dec(int64_t value)
 {
 	char buffer[64];
-	snprintf(buffer, sizeof(buffer), "%i", value);
+	snprintf(buffer, sizeof(buffer), "%" PRId64, value);
 	return buffer;
 }
 
+// todo this function sucks, replace with std::to_chars
 inline string ftostr(double value)
 {
 	// randomdude999: With 100 digits of precision, the buffer needs to be approx. 311+100,

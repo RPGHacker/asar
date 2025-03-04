@@ -5,7 +5,6 @@
 #include "macro.h"
 #include "table.h"
 #include "unicode.h"
-#include <cinttypes>
 
 #include "interface-shared.h"
 #include "arch-shared.h"
@@ -902,77 +901,14 @@ static string handle_print(char* input)
 	for (int i = 0; pars[i]; i++)
 	{
 		if (0);
-		else if (pars[i][0] == '"') out += safedequote(pars[i]);
+		// leaving these here is kinda hacky, but whatever...
 		else if (!stricmp(pars[i], "bytes")) out += dec(bytes);
 		else if (!stricmp(pars[i], "freespaceuse")) out += dec(freespaceuse);
 		else if (!stricmp(pars[i], "pc")) out += hex((unsigned int)(snespos & 0xFFFFFF), 6);
-		else if (!strncasecmp(pars[i], "bin(", strlen("bin(")) ||
-			!strncasecmp(pars[i], "dec(", strlen("dec(")) ||
-			!strncasecmp(pars[i], "hex(", strlen("hex(")) ||
-			!strncasecmp(pars[i], "double(", strlen("double(")))
-		{
-			char * arg1pos = strchr(pars[i], '(') + 1;
-			char * endpos = strchr(arg1pos, '\0');
-			while (*endpos == ' ' || *endpos == '\0') endpos--;
-			if (*endpos != ')') throw_err_block(2, err_invalid_print_function_syntax);
-			string paramstr = string(arg1pos, (int)(endpos - arg1pos));
-
-			int numargs;
-			autoptr<char**> params = qpsplit(paramstr.temp_raw(), ',', &numargs);
-			verify_paren(params);
-			if (numargs > 2) throw_err_block(2, err_wrong_num_parameters);
-			int precision = 0;
-			bool hasprec = numargs == 2;
-			if (hasprec)
-			{
-				precision = getnum(params[1]);
-				if (precision < 0) precision = 0;
-				if (precision > 64) precision = 64;
-			}
-			*(arg1pos - 1) = '\0'; // allows more convenient comparsion functions
-			if (!stricmp(pars[i], "bin"))
-			{
-				// sadly printf doesn't have binary, so let's roll our own
-				int64_t value = getnum(params[0]);
-				char buffer[65];
-				if (value < 0) {
-					out += '-';
-					value = -value;
-					// decrement precision because we've output one char already
-					precision -= 1;
-					if (precision<0) precision = 0;
-				}
-				for (int j = 0; j < 64; j++) {
-					buffer[63 - j] = '0' + ((value & (1ull << j)) >> j);
-				}
-				buffer[64] = 0;
-				int startidx = 0;
-				while (startidx < 64 - precision && buffer[startidx] == '0') startidx++;
-				if (startidx == 64) startidx--; // always want to print at least one digit
-				out += buffer + startidx;
-			}
-			else if (!stricmp(pars[i], "dec"))
-			{
-				int64_t value = getnum(params[0]);
-				char buffer[65];
-				snprintf(buffer, 65, "%0*" PRId64, precision, value);
-				out += buffer;
-			}
-			else if (!stricmp(pars[i], "hex"))
-			{
-				int64_t value = getnum(params[0]);
-				char buffer[65];
-				snprintf(buffer, 65, "%0*" PRIX64, precision, value);
-				out += buffer;
-			}
-			else if (!stricmp(pars[i], "double"))
-			{
-				if (!hasprec) precision = 5;
-				double val = parse_math_expr(params[0])->evaluate().get_double();
-				out += ftostrvar(val, precision);
-			}
+		else {
+			math_val value = parse_math_expr(pars[i])->evaluate();
+			out += value.get_str();
 		}
-		else throw_err_block(2, err_unknown_variable);
 	}
 	return out;
 }
@@ -1236,7 +1172,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 		{
 			if (pars[i][0]=='"')
 			{
-				char * str=const_cast<char*>(safedequote(pars[i]));
+				const char * str = safedequote(pars[i]);
 				int codepoint = 0u;
 				str += utf8_val(&codepoint, str);
 				while ( codepoint != 0 && codepoint != -1 )
@@ -1248,7 +1184,7 @@ void assembleblock(const char * block, int& single_line_for_tracker)
 			}
 			else
 			{
-				do_write((pass==2)?getnum(pars[i]):0);
+				do_write((pass==2) ? parse_math_expr(pars[i])->evaluate().get_integer() : 0);
 			}
 		}
 		add_addr_to_line(addrToLinePos);

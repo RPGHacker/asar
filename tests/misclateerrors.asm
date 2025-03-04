@@ -1,5 +1,5 @@
 ;`errElabel_not_found
-;`errEunknown_variable
+;`errElabel_not_found
 org $008000
 lda qwer
 

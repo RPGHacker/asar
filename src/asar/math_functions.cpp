@@ -3,6 +3,7 @@
 #include "math_ast.h"
 #include "platform/file-helpers.h"
 #include "macro.h"
+#include <cinttypes>
 
 namespace {
 struct cachedfile {
@@ -387,6 +388,58 @@ math_val fn_datasize(math_val val) {
 	return (int64_t)(selected_label.pos-label_data.pos);
 }
 
+template<string (*inner)(math_val, int), int defaultprec = 0>
+math_val fn_fmt_num(const std::vector<math_val>& args) {
+	if(args.size() < 1 || args.size() > 2) {
+		throw_err_block(2, err_argument_count, 3, (int)args.size());
+	}
+	math_val num = args[0];
+	int64_t prec = args.size() == 2 ? args[1].get_integer() : defaultprec;
+	if (prec < 0) prec = 0;
+	if (prec > 64) prec = 64;
+	return inner(num, prec);
+}
+
+string fmt_bin(math_val value, int precision) {
+	int64_t num = value.get_integer();
+	char buffer[65];
+	string out;
+	if (num < 0) {
+		out += '-';
+		num = -num;
+		// decrement precision because we've output one char already
+		precision -= 1;
+		if (precision<0) precision = 0;
+	}
+	for (int j = 0; j < 64; j++) {
+		buffer[63 - j] = '0' + ((num & (1ull << j)) >> j);
+	}
+	buffer[64] = 0;
+	int startidx = 0;
+	while (startidx < 64 - precision && buffer[startidx] == '0') startidx++;
+	if (startidx == 64) startidx--; // always want to print at least one digit
+	out += (buffer + startidx);
+	return out;
+}
+
+string fmt_dec(math_val value, int precision) {
+	int64_t num = value.get_integer();
+	char buffer[66];
+	snprintf(buffer, 66, "%0*" PRId64, precision, num);
+	return string(buffer);
+}
+
+string fmt_hex(math_val value, int precision) {
+	int64_t num = value.get_integer();
+	char buffer[66];
+	snprintf(buffer, 66, "%0*" PRIX64, precision, num);
+	return string(buffer);
+}
+
+string fmt_double(math_val value, int precision) {
+	return ftostrvar(value.get_double(), precision);
+}
+
 } // namespace
 
 void closecachedfiles()
@@ -488,4 +541,9 @@ const std::unordered_map<string, math_builtin_function> builtin_functions = {
 	{ "stringsequalnocase", fixed_arity<fn_str_eq<stricmp>> },
 	{ "char", fixed_arity<fn_char> },
 	{ "stringlength", fixed_arity<fn_strlen> },
+
+	{ "bin", fn_fmt_num<fmt_bin> },
+	{ "dec", fn_fmt_num<fmt_dec> },
+	{ "hex", fn_fmt_num<fmt_hex> },
+	{ "double", fn_fmt_num<fmt_double, 5> },
 };
