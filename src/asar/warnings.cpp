@@ -46,7 +46,7 @@ void warn_impl(int warnid, const char* fmt, int whichpass, ...)
 		{
 			char warning_buffer[1024];
 			va_list args;
-			va_start(args, fmt);
+			va_start(args, whichpass);
 
 			vsnprintf(warning_buffer, sizeof(warning_buffer), fmt, args);
 
