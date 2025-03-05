@@ -2,7 +2,6 @@
 #include "asar.h"
 #include "errors.h"
 
-// TODO: make all these conversions print the current type aswell instead of just expected type
 double math_val::get_double() const {
 	switch(m_type) {
 		case math_val_type::floating:
@@ -14,6 +13,10 @@ double math_val::get_double() const {
 		case math_val_type::string:
 			throw_err_block(2, err_bad_type, "number", "string");
 	}
+	// this is actually unreachable because the switch case above is
+	// exhaustive, but c++ standard allows storing invalid values inside
+	// enums, so everything except clang complains about it...
+	throw_err_block(pass, err_internal_error, "math_val invalid type");
 }
 int64_t math_val::get_integer() const {
 	switch(m_type) {
@@ -30,6 +33,7 @@ int64_t math_val::get_integer() const {
 		case math_val_type::string:
 			throw_err_block(2, err_bad_type, "number", "string");
 	}
+	throw_err_block(pass, err_internal_error, "math_val invalid type");
 }
 const string &math_val::get_str() const {
 	if (m_type == math_val_type::string)
@@ -53,6 +57,7 @@ bool math_val::get_bool() const {
 		case math_val_type::string:
 			return get_str().length() != 0;
 	}
+	throw_err_block(pass, err_internal_error, "math_val invalid type");
 }
 
 template<typename T>
@@ -154,6 +159,7 @@ math_val evaluate_binop(math_val lhs, math_val rhs,
 		case math_binop_type::comp_eq: return (int64_t)evaluate_eq(lhs, rhs);
 		case math_binop_type::comp_ne: return (int64_t)!evaluate_eq(lhs, rhs);
 	}
+	throw_err_block(pass, err_internal_error, "evaluate_binop invalid binop");
 }
 
 math_val math_ast_binop::evaluate(const eval_context &ctx) const {
@@ -214,6 +220,7 @@ math_val math_ast_unop::evaluate(const eval_context &ctx) const {
 		case math_unop_type::bank_extract:
 			return math_val(arg.get_integer() >> 16);
 	}
+	throw_err_block(pass, err_internal_error, "evaluate_unop invalid unop");
 }
 
 int math_ast_unop::has_label() const { return m_arg->has_label(); }
@@ -304,7 +311,7 @@ int math_user_function::get_len(const std::vector<owned_node> &args,
 								bool could_be_bank_ex) const {
 	// TODO: this doesn't forward could_be_bank_ex to the fn call...
 	// supporting that properly would require stringing some context through all
-	// get_len calls supporting it less properly (making a special return value of
+	// get_len calls; supporting it less properly (making a special return value of
 	// get_len signify bankextract) could be viable tho...
 	int len = m_func_body->get_len(false);
 	for (auto &arg : args) {
