@@ -1248,11 +1248,6 @@ void reseteverything()
 
 	in_macro_def = 0;
 
-	#ifndef ASAR_SHARED
-		free(const_cast<unsigned char*>(romdata_r));
-	#endif
-
 	callstack.clear();
 	simple_callstacks = true;
-#undef free
 }
