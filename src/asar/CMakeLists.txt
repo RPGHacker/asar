@@ -134,11 +134,14 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 	else()
 		target_compile_options(${target} PRIVATE -Wall -pedantic
 			-Wno-varargs # passing an object that undergoes default argument promotion to 'va_start' has undefined behavior
-			-Wno-nested-anon-types
 		)
 		if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 			# doesn't exist on clang, and clang yells about unknown options
 			target_compile_options(${target} PRIVATE -Wno-class-memaccess)
+		endif()
+		if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+			# doesn't exist on gcc
+			target_compile_options(${target} PRIVATE -Wno-nested-anon-types)
 		endif()
 
 		# Static link for MinGW
