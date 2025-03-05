@@ -1,3 +1,5 @@
+
+// Use this file when statically linking against Asar.
 #pragma once
 #ifndef ASAR_SHARED
 #define expectedapiversion $APIVERSION$

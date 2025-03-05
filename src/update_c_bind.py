@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# generates dll-bindings/asardll.h, asardll.c, and asar/interface-lib.h,
+# generates dll-bindings/asardll.h, asardll.c, and asar.h,
 # based on asar/interface-lib.cpp
 
 import os
@@ -106,5 +106,5 @@ def fmt(dir, fname, replacements):
     print("wrote to",fname)
 
 fmt(["dll-bindings"], "asardll.h", {"$STRUCTS$": structs, "$FUNCTIONS$": asardll_h_funcs, "$APIVERSION$": api_version})
-fmt(["asar"], "interface-lib.h", {"$STRUCTS$": structs, "$FUNCTIONS$": interface_lib_funcs, "$APIVERSION$": api_version})
+fmt(["dll-bindings"], "asar.h", {"$STRUCTS$": structs, "$FUNCTIONS$": interface_lib_funcs, "$APIVERSION$": api_version})
 fmt(["dll-bindings"], "asardll.c", {"$FUNCTIONPROTOS$": asardll_c_protos, "$FUNCTIONLOADS$": asardll_c_loads})
