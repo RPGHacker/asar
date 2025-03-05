@@ -199,8 +199,8 @@ string& string::qnormalize()
 {
 	string& thisstring =*this;
 	string out;
-	char *startstr = thisstring.raw();
-	char *str = startstr;
+	const char *startstr = thisstring.data();
+	const char *str = startstr;
 	while((str = strpbrk(str, "'\" \t,\r")))
 	{
 		if(is_space(*str))
@@ -231,11 +231,11 @@ string& string::qnormalize()
 			str++;
 		}
 	}
-	if(startstr != thisstring.raw())
+	if(startstr != thisstring.data())
 	{
-		out.append(startstr, 0, strlen(startstr)); //the remaining
+		out.append(startstr, 0, (thisstring.data() + thisstring.length()) - startstr); //the remaining
 
-		thisstring = out;
+		thisstring = std::move(out);
 	}
 	return thisstring;
 }

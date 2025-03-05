@@ -47,9 +47,9 @@ int get_version_int();
 bool setmapper();
 
 void assemblefile(const char * filename);
-void assembleline(const char * fname, int linenum, const char * line, int& single_line_for_tracker);
+void assembleline(const char * fname, int linenum, const string& line, int& single_line_for_tracker);
 
-bool do_line_logic(const char* line, const char* filename, int lineno);
+bool do_line_logic(const string& line, const char* filename, int lineno);
 
 bool file_included_once(const char* file);
 

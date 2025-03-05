@@ -4,10 +4,10 @@
 #include "autoarray.h"
 
 void startmacro(const char * line);
-void tomacro(const char * line);
+void tomacro(string line);
 void endmacro(bool insert);
 void callmacro(const char * data);
-string replace_macro_args(const char* line);
+string replace_macro_args(const string& line);
 
 extern int macrorecursion;
 extern int calledmacros;

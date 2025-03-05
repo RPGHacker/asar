@@ -91,10 +91,10 @@ void startmacro(const char * line_)
 	numlines=0;
 }
 
-void tomacro(const char * line)
+void tomacro(string line)
 {
 	if (!thisone) return;
-	thisone->lines[numlines++]=line;
+	thisone->lines[numlines++]=std::move(line);
 }
 
 void endmacro(bool insert)
@@ -304,13 +304,12 @@ static string generate_macro_hint_string(int var_arg, const macrodata* thismacro
 	return "";
 }
 
-string replace_macro_args(const char* line) {
-	string out;
+string replace_macro_args(const string& line) {
 	if(!inmacro)
 	{
-		out += line;
-		return out;
+		return line;
 	}
+	string out;
 	for (const char * in=line;*in;)
 	{
 		if (*in=='<' && in[1]=='<' && in[2] != ':')

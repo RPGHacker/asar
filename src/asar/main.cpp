@@ -658,7 +658,7 @@ void resolvedefines(string& out, const char * start)
 bool moreonline;
 bool asarverallowed = false;
 
-void assembleline(const char * fname, int linenum, const char * line, int& single_line_for_tracker)
+void assembleline(const char * fname, int linenum, const string& line, int& single_line_for_tracker)
 {
 	recurseblock rec;
 	bool moreonlinetmp=moreonline;
@@ -862,7 +862,7 @@ void assemblefile(const char * filename)
 // into assembleline(), since the two names just cause
 // confusion otherwise.
 // return value is "did a loop end on this line"
-bool do_line_logic(const char* line, const char* filename, int lineno)
+bool do_line_logic(const string& line, const char* filename, int lineno)
 {
 	int prevnumif = numif;
 	int single_line_for_tracker = 1;

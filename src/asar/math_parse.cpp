@@ -121,7 +121,7 @@ owned_node parse_context::parse_atom() {
 				auto node_add = std::make_unique<math_ast_binop>(std::move(node_mul), std::move(node_sub), math_binop_type::add);
 				return node_add;
 			} else {
-				return std::make_unique<math_ast_label>(name);
+				return std::make_unique<math_ast_label>(std::move(name));
 			}
 		}
 	}
@@ -192,7 +192,7 @@ owned_node parse_context::parse_atom() {
 		}
 		str++;
 		while (*str==' ') str++;	//eat space
-		return std::make_unique<math_ast_literal>(output);
+		return std::make_unique<math_ast_literal>(std::move(output));
 	}
 	throw_err_block(2, err_invalid_number);
 }
