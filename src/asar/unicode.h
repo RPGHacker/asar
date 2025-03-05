@@ -13,7 +13,7 @@ size_t utf8_val(int* codepoint, const char* inp);
 bool codepoint_to_utf8(string* out, unsigned int codepoint);
 
 // checks if input string contains only valid UTF-8
-bool is_valid_utf8(const char* inp);
+bool is_valid_utf8(const char* inp, size_t inp_len);
 
 
 // RPG Hacker: UTF-16 functions below expect wchar_t to be at least 16-bit wide.

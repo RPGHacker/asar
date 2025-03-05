@@ -75,10 +75,19 @@ bool codepoint_to_utf8(string* out, unsigned int codepoint) {
 	return true;
 }
 
-bool is_valid_utf8(const char* inp) {
-	while (*inp != '\0') {
+bool is_valid_utf8(const char* inp, size_t inp_len) {
+	for(size_t i = 0; i < inp_len;) {
+		// optimization: if next 8 bytes are ascii, skip them
+		if(i + 8 <= inp_len) {
+			uint64_t buf;
+			memcpy(&buf, inp+i, sizeof(buf));
+			if((buf & 0x8080808080808080ull) == 0) {
+				i += 8; continue;
+			}
+		}
+
 		int codepoint;
-		inp += utf8_val(&codepoint, inp);
+		i += utf8_val(&codepoint, inp+i);
 
 		if (codepoint == -1) return false;
 	}

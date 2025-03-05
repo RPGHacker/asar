@@ -57,7 +57,7 @@ char * readfile(const char * fname, const char * basepath)
 	data[filesystem->read_file(myfile, data, 0u, datalen)] = 0;
 	filesystem->close_file(myfile);
 
-	if (!is_valid_utf8(data))
+	if (!is_valid_utf8(data, datalen))
 	{
 		free(data);
 		throw_err_block(0, err_invalid_utf8);
@@ -81,7 +81,7 @@ char * readfilenative(const char * fname)
 	data[read_file(myfile, data, datalen)] = 0;
 	close_file(myfile);
 
-	if (!is_valid_utf8(data)) throw_err_block(0, err_invalid_utf8);
+	if (!is_valid_utf8(data, datalen)) throw_err_block(0, err_invalid_utf8);
 	if(check_bom(data)){
 		data[0] = ' ';
 		data[1] = ' ';
