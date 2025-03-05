@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 #if defined(_WIN32)
 #	if defined(_MSC_VER)
