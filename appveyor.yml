@@ -6,16 +6,15 @@ environment:
     - JOB_NAME: "win32"
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "Win32"
-      CMAKE_ARCH: "-A Win32 -DASAR_GEN_CS_TEST=OFF"
+      CMAKE_FLAGS: "-A Win32"
     - JOB_NAME: "win64"
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "x64"
-      CMAKE_ARCH: "-A x64 -DPython3_EXECUTABLE=C:\\Python311-x64\\python.exe"
+      CMAKE_FLAGS: "-A x64 -DPython3_EXECUTABLE=C:\\Python311-x64\\python.exe -DASAR_GEN_CS_TEST=ON"
     - JOB_NAME: "clang"
       CMAKE_TARGET: "Visual Studio 16 2019"
       PLATFORM: "x64"
-      CMAKE_ARCH: "-A x64 -DPython3_EXECUTABLE=C:\\Python311-x64\\python.exe"
-      CMAKE_PLATFORM_TOOLSET: "-T ClangCL"
+      CMAKE_FLAGS: "-T ClangCL -A x64 -DPython3_EXECUTABLE=C:\\Python311-x64\\python.exe -DASAR_GEN_CS_TEST=ON"
 
 install:
 - cmd: >-
@@ -25,7 +24,7 @@ install:
 
     vcpkg integrate remove
     
-    cmake %CMAKE_EXTRA_FLAGS% -G "%CMAKE_TARGET%" %CMAKE_PLATFORM_TOOLSET% %CMAKE_ARCH% ..\src
+    cmake -G "%CMAKE_TARGET%" %CMAKE_FLAGS% ..\src
 
 on_failure:
 - cmd: >-
