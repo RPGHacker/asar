@@ -9,6 +9,7 @@
 
 #include "autoarray.h"
 #include "libstr.h"
+#include <unordered_map>
 
 class AddressToLineMapping
 {
@@ -41,8 +42,7 @@ private:
 	int getFileIndex(const char* filename);
 
 	autoarray<FileInfo> m_fileList;
-	// parallel list of crcs of the filenames in fileList, to speed up lookups
-	autoarray<uint32_t> m_filenameCrcs;
+	std::unordered_map<string, int> m_file_indices_map;
 
 
 	autoarray<AddrToLineInfo> m_addrToLineInfo;

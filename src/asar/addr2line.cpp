@@ -11,7 +11,7 @@
 void AddressToLineMapping::reset()
 {
 	m_fileList.reset();
-	m_filenameCrcs.reset();
+	m_file_indices_map.clear();
 	m_addrToLineInfo.reset();
 }
 
@@ -30,13 +30,8 @@ void AddressToLineMapping::includeMapping(const char* filename, int line, int ad
 int AddressToLineMapping::getFileIndex(const char* filename)
 {
 	// check if the file exists first
-	uint32_t filenameCrc = crc32((const uint8_t*)filename, (unsigned int)strlen(filename));
-	for (int i = 0; i < m_filenameCrcs.count; ++i)
-	{
-		if (m_filenameCrcs[i] == filenameCrc)
-		{
-			return i;
-		}
+	if(auto it = m_file_indices_map.find(filename); it != m_file_indices_map.end()) {
+		return it->second;
 	}
 
 	// file doesn't exist, so start tracking it
@@ -49,8 +44,9 @@ int AddressToLineMapping::getFileIndex(const char* filename)
 	}
 	free(data);
 
+	int result = m_fileList.count;
 	m_fileList.append({ string(filename), fileCrc });
-	m_filenameCrcs.append(filenameCrc);
+	m_file_indices_map.emplace(filename, result);
 
-	return m_fileList.count - 1;
+	return result;
 }
