@@ -8,15 +8,13 @@ option(ASAR_GEN_DLL "Build Asar shared library" ON)
 option(ASAR_GEN_LIB "Build Asar static library" ON)
 option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
 option(ASAR_USE_THREADS "Run Asar in a new thread to alleviate stack usage problems" ON)
-if (MSVC)
-	message(STATUS "In MSVC you can override MSVC_LIB_TYPE, valid values are D for dynamic and T for static")
-endif()
+set(MSVC_LIB_TYPE "" CACHE STRING "In MSVC, set the type of the runtime library: options are D for dynamic and T for static")
 
 
 set (CMAKE_CXX_STANDARD 17)
 
-set(ASAR_API_VERSION_MAJOR 3)
-set(ASAR_API_VERSION_MINOR 3)
+set(ASAR_API_VERSION_MAJOR 4)
+set(ASAR_API_VERSION_MINOR 0)
 set(ASAR_API_VERSION_PATCH 0)
 set(ASAR_API_VERSION ${ASAR_API_VERSION_MAJOR}.${ASAR_API_VERSION_MINOR}.${ASAR_API_VERSION_PATCH})
 
@@ -30,7 +28,7 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 	# so we create a new variable
 	set(msvc_lib_type_var ${msvc_lib_type_param})
 	if (MSVC)
-		if (MSVC_LIB_TYPE)
+		if (NOT MSVC_LIB_TYPE STREQUAL "")
 			set(msvc_lib_type_var ${MSVC_LIB_TYPE})
 		endif()
 		if ("${msvc_lib_type_var}" STREQUAL "D")
@@ -214,7 +212,6 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-shared.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/virtualfile.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/table.h"
-	"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/std-includes.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/file-helpers.h"
 	"${CMAKE_CURRENT_SOURCE_DIR}/platform/thread-helpers.h"
@@ -370,9 +367,9 @@ endif()
 
 if (ASAR_GEN_DLL OR ASAR_GEN_LIB)
 	set (ASAR_PROJECT_NAME "asar")
-	set (ASAR_PKGCONFIG_NAME "lib/lib${ASAR_PROJECT_NAME}.pc")
+	set (ASAR_PKGCONFIG_NAME "res/pkgconfig/libasar.pc")
 
-	include(lib/JoinPaths.cmake)
+	include(../../cmake/JoinPaths.cmake)
 
 	join_paths(
 		ASAR_PKGCONF_LIBDIR "\${prefix}" "${CMAKE_INSTALL_LIBDIR}"

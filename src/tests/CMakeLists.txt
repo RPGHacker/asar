@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.13.0...3.31.0)
 
 OPTION(ASAR_GEN_DLL_TEST "Build Asar shared library test suite" ON)
-OPTION(ASAR_GEN_CS_TEST "Build the C# interface test suite" ON)
+OPTION(ASAR_GEN_CS_TEST "Build the C# interface test suite (requires dotnet 8)" OFF)
+set(ASAR_ASAN_PRELOAD_NAME "libasan.so:libubsan.so" CACHE STRING "When running interface tests under AddressSanitizer, libasan.so and libubsan.so need to be preloaded. This variable allows overriding their names.")
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -85,8 +86,6 @@ set(CXX_EXTENSIONS OFF)
 
 add_custom_target(run-tests)
 set_property(TARGET run-tests PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
-
-set(ASAR_ASAN_PRELOAD_NAME "libasan.so:libubsan.so" CACHE STRING "When running interface tests under AddressSanitizer, libasan.so and libubsan.so need to be preloaded. This variable allows overriding their names.")
 
 if(ASAR_GEN_DLL_TEST)
 	add_executable(newtest
