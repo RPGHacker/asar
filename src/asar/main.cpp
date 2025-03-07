@@ -171,7 +171,7 @@ static void push_stack_line(autoarray<printable_callstack_entry>* out, const cha
 	new_entry.fullpath = current_file;
 	new_entry.prettypath = get_pretty_filename(current_file);
 	new_entry.lineno = current_line_no;
-	new_entry.details = generate_call_details_string(current_block, current_call, indentation, add_lines).raw();
+	new_entry.details = generate_call_details_string(current_block, current_call, indentation, add_lines);
 	out->append(new_entry);
 }
 
@@ -671,9 +671,9 @@ void assembleline(const char * fname, int linenum, const string& line, int& sing
 		string out=line;
 		autoptr<char**> blocks=qsplitstr(out.temp_raw(), " : ");
 		moreonline=true;
-		for (int block=0;moreonline;block++)
+		for (int block_i=0;moreonline;block_i++)
 		{
-			moreonline=(blocks[block+1] != nullptr);
+			moreonline=(blocks[block_i+1] != nullptr);
 			try
 			{
 				// it's possible that our input looks something like:
@@ -683,28 +683,28 @@ void assembleline(const char * fname, int linenum, const string& line, int& sing
 				// : nop :
 				// after qsplit, we still need to deal with possibly a single ": " from a preceding empty block,
 				// and if it's the last block, possibly a following " :".
-				string stripped_block = strip_whitespace(blocks[block]);
-				int i = 0;
+				char* thisblock = strip_whitespace(blocks[block_i]);
 				// if the block starts with ": "
-				if(stripped_block[i] == ':' && stripped_block[i+1] == ' ') {
-					i++;
-					while(stripped_block[i] == ' ') i++;
+				if(thisblock[0] == ':' && thisblock[1] == ' ') {
+					thisblock++;
+					while(*thisblock == ' ') thisblock++;
 				}
 				// if the block is a single :, skip that too.
-				if(stripped_block[i] == ':' && stripped_block[i+1] == 0) i++;
+				if(thisblock[0] == ':' && thisblock[1] == 0) thisblock++;
 
+				int len_blk = strlen(thisblock);
 				// last block - strip trailing " :" if present.
-				if(!moreonline && stripped_block.length() >= 2 && stripped_block[stripped_block.length()-2] == ' ' && stripped_block[stripped_block.length()-1] == ':') {
-					stripped_block.truncate(stripped_block.length()-2);
+				if(!moreonline && len_blk >= 2 && thisblock[len_blk-2] == ' ' && thisblock[len_blk-1] == ':') {
+					thisblock[len_blk - 2] = 0;
 				}
 
-				callstack_push cs_push(callstack_entry_type::BLOCK, stripped_block.data() + i);
+				callstack_push cs_push(callstack_entry_type::BLOCK, thisblock);
 
-				assembleblock(stripped_block.data() + i, single_line_for_tracker);
+				assembleblock(thisblock, single_line_for_tracker);
 				checkbankcross();
 			}
 			catch (errblock&) {}
-			if (blocks[block][0]!='\0') asarverallowed=false;
+			if (blocks[block_i][0]!='\0') asarverallowed=false;
 			if(single_line_for_tracker == 1) single_line_for_tracker = 0;
 		}
 	}

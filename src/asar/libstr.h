@@ -176,7 +176,7 @@ string(const char * newstr, int newlen) : string()
 }
 string(const string& old) : string()
 {
-	assign(old.data());
+	assign(old.data(), old.length());
 }
 
 string(string &&move) noexcept : string()
@@ -311,6 +311,8 @@ bool confirmquotes(const char * str);
 bool confirmqpar(const char * str);
 char* strqpchr(char* str, char key);
 char* strqpstr(char* str, const char* key);
+inline const char* strqpchr(const char* str, char key) { return strqpchr(const_cast<char*>(str), key); };
+inline const char* strqpstr(const char* str, const char* key) { return strqpstr(const_cast<char*>(str), key); };
 
 inline string hex(unsigned int value)
 {
@@ -435,6 +437,8 @@ inline const char * dequote(char * str)
 	char *end = strrchr(str, '"');
 	if (end)
 	{
+		// make sure the closing quote is at the end of the argument
+		if(end[1] != 0) return nullptr;
 		*end = 0;
 		char *quote = str+1;
 		while((quote = strstr(quote, "\"\""))) {
@@ -500,6 +504,18 @@ inline char *strip_whitespace(char *str)
 inline void strip_whitespace(string &str)
 {
 	str = string(strip_whitespace(str.temp_raw()));
+}
+
+inline void grab_until_space(string& to, const char*& from) {
+	// i tried to use strchr here as an optimization, but it wasn't even faster....
+	const char* params = strqchr(from, ' ');
+	if(params) {
+		to.assign(from, params - from);
+		from = params+1;
+	} else {
+		to.assign(from);
+		from += to.length(); // now from points at a null byte
+	}
 }
 
 string &itrim(string &str, const char * left, const char * right);

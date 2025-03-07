@@ -30,7 +30,7 @@ void startmacro(const char * line_)
 	*startpar=0;
 	startpar++;
 	if (!confirmname(line)) throw_err_block(0, err_invalid_macro_name);
-	defining_macro_name=line;
+	defining_macro_name=(const char*)line; // force strcpy, line's .length() is wrong right now
 	char * endpar=startpar+strlen(startpar)-1;
 	//confirmqpar requires that all parentheses are matched, and a starting one exists, therefore it is harmless to not check for nullptrs
 	if (*endpar != ')') throw_err_block(0, err_broken_macro_declaration);
@@ -402,15 +402,15 @@ string replace_macro_args(const string& line) {
 				}
 				if (!found)
 				{
-					throw_err_block(0, err_macro_param_not_found, generate_macro_arg_string(in, depth).raw(), generate_macro_hint_string(in, current_macro, depth).raw());
+					throw_err_block(0, err_macro_param_not_found, generate_macro_arg_string(in, depth).data(), generate_macro_hint_string(in, current_macro, depth).data());
 				}
 			}
 			else
 			{
 				int arg_num = parse_math_expr(in)->evaluate_static().get_integer();
 
-				if (arg_num < 0) throw_err_block(1, err_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), "");
-				if (arg_num > current_macro_numargs-current_macro->numargs) throw_err_block(1, err_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).raw(), generate_macro_hint_string(arg_num, current_macro, depth).raw());
+				if (arg_num < 0) throw_err_block(1, err_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).data(), "");
+				if (arg_num > current_macro_numargs-current_macro->numargs) throw_err_block(1, err_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).data(), generate_macro_hint_string(arg_num, current_macro, depth).data());
 				out+=current_macro_args[arg_num+current_macro->numargs-1];
 			}
 			in=end+1;

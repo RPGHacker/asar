@@ -106,7 +106,7 @@ struct mnemonicinfo {
 	}
 };
 
-static std::unordered_map<string, mnemonicinfo> mnemonic_lookup = {
+static const std::unordered_map<string, mnemonicinfo> mnemonic_lookup = {
 	{ "adc", { { 0x65, addr_kind::abs    , 1 },
 	           { 0x6d, addr_kind::abs    , 2 },
 	           { 0x6f, addr_kind::abs    , 3 },
@@ -547,17 +547,18 @@ static int64_t get_branch_value(parse_result& parsed, char modifier, int width) 
 	}
 }
 
-bool asblock_65816(char** word, int numwords)
+bool asblock_65816(const string& firstword, const char* par)
 {
 	// first find the mnemonic from the first word
-	int word_i = 0;
 	bool autoclean = false;
-	if(!stricmpwithlower(word[0], "autoclean")) {
-		word_i++;
+	string mnem;
+	if(!stricmpwithlower(firstword, "autoclean")) {
 		autoclean = true;
+		grab_until_space(mnem, par);
+	} else {
+		mnem = firstword;
 	}
-	string mnem = word[word_i++];
-	for(int i = 0; i < mnem.length(); i++) mnem.raw()[i] = to_lower(mnem[i]);
+	lower(mnem);
 
 	char modifier = 0;
 	if(mnem.length() >= 2 && mnem[mnem.length()-2] == '.') {
@@ -567,20 +568,14 @@ bool asblock_65816(char** word, int numwords)
 
 	auto it = mnemonic_lookup.find(mnem);
 	if(it == mnemonic_lookup.end()) return false;
-	mnemonicinfo& mnem_info = it->second;
-
-	// join together all the other arguments
-	string par;
-	for(int i = word_i; i < numwords; i++){
-		if(i > word_i) par += " ";
-		par += word[i];
-	}
+	const mnemonicinfo& mnem_info = it->second;
 
 	// check if we're doing mvn/mvp, and if yes, parse completely differently
 	// this is a little hacky, sorry...
 	if(mnem_info.allowed_kinds_mask & 1<<(uint32_t)addr_kind::mvn) {
 		int count = 0;
-		autoptr<char**> parts = qpsplit(par.raw(), ',', &count);
+		string parbuf = par;
+		autoptr<char**> parts = qpsplit(parbuf.raw(), ',', &count);
 		if(count != 2) throw_err_block(2, err_bad_addr_mode);
 		uint8_t opcode = mnem_info.types[(int)addr_kind::mvn].opcode_for_width[2];
 		write1(opcode);
@@ -598,7 +593,7 @@ bool asblock_65816(char** word, int numwords)
 		return true;
 	}
 	parse_result parse_res = parse_addr_kind(par, mnem_info.allowed_kinds_mask);
-	mnem_kind_info& kind_info = mnem_info.types[(uint32_t)parse_res.kind];
+	const mnem_kind_info& kind_info = mnem_info.types[(uint32_t)parse_res.kind];
 
 	// figure out the minimum/maximum argument width for this mnemonic+addr_kind combo
 	// todo this is mildly jank

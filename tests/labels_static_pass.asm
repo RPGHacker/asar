@@ -59,10 +59,10 @@ OtherFunStuff = FunStuff
 db 'a'
 db OtherFunStuff
 
-FillByte = $EE
+FillBruh = $EE
 FillCount = 3
 
-fillbyte FillByte
+fillbyte FillBruh
 fill FillCount
 
 !adefine #= FillCount
@@ -80,6 +80,6 @@ endmacro
 
 org $00FFFE
 
-padbyte FillByte
+padbyte FillBruh
 pad $018000
 

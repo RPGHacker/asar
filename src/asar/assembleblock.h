@@ -6,8 +6,6 @@
 enum { arch_65816, arch_spc700, arch_superfx };
 extern int arch;
 
-bool assemblemapper(char** word, int numwords);
-
 struct snes_struct {
 	string parent;
 	int base_end;
