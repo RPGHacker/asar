@@ -1387,7 +1387,9 @@ void cmd_endspcblock(char** words, int num_words) {
 			{
 				int pcpos=snestopc(spcblock.size_address&0xFFFFFF);
 				if (pcpos<0) throw_err_block(2, err_snes_address_doesnt_map_to_rom, hex((unsigned int)realsnespos, 6).data());
-				int num=snespos-startpos;
+				// compute number of bytes written;
+				// offset by 4 for the spcblock header itself
+				int num = realsnespos - ((int)spcblock.size_address + 4);
 				writeromdata_byte(pcpos, (unsigned char)num);
 				writeromdata_byte(pcpos+1, (unsigned char)(num >> 8));
 			}
