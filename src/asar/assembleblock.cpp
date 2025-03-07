@@ -1415,6 +1415,8 @@ void cmd_endspcblock(char** words, int num_words) {
 	}
 	ns = ns_backup;
 	in_spcblock = false;
+	snespos=realsnespos;
+	startpos=realstartpos;
 }
 
 void cmd_base(const char* par) {
