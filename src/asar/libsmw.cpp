@@ -147,9 +147,9 @@ void writeromdata_bytes(int pcoffset, unsigned char indata, int numbytes, bool a
 int ratsstart(int snesaddr)
 {
 	int pcaddr=snestopc(snesaddr);
-	if (pcaddr<0x7FFF8) return -1;
+	if (pcaddr<0) return -1;
 	const unsigned char * start=romdata+pcaddr-0x10000;
-	for (int i=0x10000;i>=0;i--)
+	for (int i=0x10000;i>=0 && start+i >= romdata;i--)
 	{
 		if (!strncmp((const char*)start+i, "STAR", 4) &&
 				(start[i+4]^start[i+6])==0xFF && (start[i+5]^start[i+7])==0xFF)

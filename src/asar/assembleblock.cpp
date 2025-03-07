@@ -953,6 +953,13 @@ void handle_autoclean(string& arg, int checkbyte, int write_pos)
 			}
 		}
 	} else if(pass == 2) {
+		if(targetfs.pos < 0) {
+			// this freespace failed to allocate.
+			// ratsstart is obviously not going to find a nonexistent freespace,
+			// and would error too, we don't need 2 errors about the same thing.
+			// especially if one of them is as weird as this one.
+			return;
+		}
 		int start = ratsstart(num);
 		if(start >= num || start < 0) throw_err_block(2, err_autoclean_label_at_freespace_end);
 	}
