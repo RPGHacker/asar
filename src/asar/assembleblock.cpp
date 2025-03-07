@@ -2022,7 +2022,7 @@ template<void (*F)(char**, int)>
 void wrap_split(const char* par) {
 	string temp(par);
 	int num_words;
-	char** word = qsplit(temp.raw(), ' ', &num_words);
+	autoptr<char**> word = qsplit(temp.raw(), ' ', &num_words);
 	if(num_words == 1 && word[0][0] == 0) num_words--;
 	F(word, num_words);
 }
