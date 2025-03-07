@@ -3,6 +3,8 @@
 #include "asar_math.h"
 #include <cassert>
 #include <initializer_list>
+#include "frozen/string.h"
+#include "frozen/unordered_map.h"
 
 // A bit of terminology i just invented:
 // "mnemonic" refers to the name of an instruction, e.g. LDA or JMP.
@@ -106,7 +108,7 @@ struct mnemonicinfo {
 	}
 };
 
-static const std::unordered_map<string, mnemonicinfo> mnemonic_lookup = {
+static constexpr auto mnemonic_lookup = frozen::make_unordered_map<frozen::string, mnemonicinfo>({
 	{ "adc", { { 0x65, addr_kind::abs    , 1 },
 	           { 0x6d, addr_kind::abs    , 2 },
 	           { 0x6f, addr_kind::abs    , 3 },
@@ -364,7 +366,7 @@ static const std::unordered_map<string, mnemonicinfo> mnemonic_lookup = {
 	{ "wdm", { { 0x42, addr_kind::imm    , 1, flag_imm_implied_0 } } },
 	{ "xba", { { 0xeb, addr_kind::imp    , 0 } } },
 	{ "xce", { { 0xfb, addr_kind::imp    , 0 } } },
-};
+});
 
 struct parse_result {
 	addr_kind kind;
@@ -566,7 +568,8 @@ bool asblock_65816(const string& firstword, const char* par)
 		mnem.truncate(mnem.length()-2);
 	}
 
-	auto it = mnemonic_lookup.find(mnem);
+	frozen::string mnem2(mnem.data(), mnem.length());
+	auto it = mnemonic_lookup.find(mnem2);
 	if(it == mnemonic_lookup.end()) return false;
 	const mnemonicinfo& mnem_info = it->second;
 

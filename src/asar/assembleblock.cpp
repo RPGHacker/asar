@@ -5,6 +5,8 @@
 #include "macro.h"
 #include "table.h"
 #include "unicode.h"
+#include "frozen/string.h"
+#include "frozen/unordered_map.h"
 
 #include "interface-shared.h"
 #include "arch-shared.h"
@@ -2027,7 +2029,7 @@ void wrap_split(const char* par) {
 
 }
 
-static const std::unordered_map<string, command_fn_t> normal_commands = {
+static constexpr auto normal_commands = frozen::make_unordered_map<frozen::string, command_fn_t>({
 	{ "db", cmd_write_data<write1> },
 	{ "dw", cmd_write_data<write2> },
 	{ "dl", cmd_write_data<write3> },
@@ -2098,7 +2100,7 @@ static const std::unordered_map<string, command_fn_t> normal_commands = {
 	{ "norom", wrap_mapper<mapper_norom> },
 	{ "sa1rom", wrap_mapper<mapper_sa1rom> },
 	{ "fullsa1rom", wrap_mapper<mapper_simple<bigsa1rom>> },
-};
+});
 
 namespace control_flow {
 
@@ -2278,7 +2280,7 @@ void cf_else(const char* par, int& single_line_for_tracker) {
 
 }
 
-static const std::unordered_map<string, void(*)(const char*, int&)> control_flow_commands = {
+static constexpr auto control_flow_commands = frozen::make_unordered_map<frozen::string, void(*)(const char*, int&)>({
 	{ "if", control_flow::cf_start<control_flow::c_if> },
 	{ "elseif", control_flow::cf_start<control_flow::c_elseif> },
 	{ "while", control_flow::cf_start<control_flow::c_while> },
@@ -2287,7 +2289,7 @@ static const std::unordered_map<string, void(*)(const char*, int&)> control_flow
 	{ "endwhile", control_flow::cf_end<control_flow::c_while> },
 	{ "endfor", control_flow::cf_end<control_flow::c_for> },
 	{ "else", control_flow::cf_else },
-};
+});
 
 static void cmd_label_assign(const char* firstword, const char* params) {
 	if (firstword[0] == '\'' && firstword[1]) {
@@ -2356,7 +2358,7 @@ void assembleblock(const char *block, int &single_line_for_tracker) {
 	string firstword_lower = firstword;
 	lower(firstword_lower);
 
-	if (auto it = control_flow_commands.find(firstword_lower); it != control_flow_commands.end()) {
+	if (auto it = control_flow_commands.find(frozen::string(firstword_lower.data(), firstword_lower.length())); it != control_flow_commands.end()) {
 		return it->second(params, single_line_for_tracker);
 	} else if (numif != numtrue) {
 		return;
@@ -2381,7 +2383,7 @@ void assembleblock(const char *block, int &single_line_for_tracker) {
 	lower(firstword_lower);
 
 	// recheck for any of the conditionals tested above
-	if (addlabeled && control_flow_commands.find(firstword_lower) != control_flow_commands.end()) {
+	if (addlabeled && control_flow_commands.find(frozen::string(firstword_lower.data(), firstword_lower.length())) != control_flow_commands.end()) {
 		throw_err_block(0, err_label_before_if, firstword.data());
 	}
 
@@ -2396,7 +2398,7 @@ void assembleblock(const char *block, int &single_line_for_tracker) {
 		return callmacro(strchr(block, '%') + 1);
 	}
 
-	if (auto it = normal_commands.find(firstword_lower); it != normal_commands.end()) {
+	if (auto it = normal_commands.find(frozen::string(firstword_lower.data(), firstword_lower.length())); it != normal_commands.end()) {
 		return it->second(params);
 	}
 
