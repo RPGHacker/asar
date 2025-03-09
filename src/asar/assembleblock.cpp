@@ -1819,10 +1819,10 @@ void cmd_incbin(const char* par) {
 		if(!split) throw_err_block(0, err_broken_incbin);
 		string start_str(lengths, split-lengths);
 		if(start_str == "") throw_err_block(0, err_broken_incbin);
-		start = parse_math_expr(start_str)->evaluate_static().get_integer();
+		start = parse_math_expr(start_str)->evaluate_non_forward().get_integer();
 		string end_str(split+2);
 		if(end_str == "") throw_err_block(0, err_broken_incbin);
-		end = parse_math_expr(end_str)->evaluate_static().get_integer();
+		end = parse_math_expr(end_str)->evaluate_non_forward().get_integer();
 	}
 	const char* current_file = get_current_file_name();
 	// RPG Hacker: Should this also throw on absolute paths?
@@ -1838,8 +1838,8 @@ void cmd_incbin(const char* par) {
 	if (!readfile(name, current_file, &data, &len)) throw_vfile_error(0, asar_get_last_io_error(), name);
 	autoptr<char*> datacopy=data;
 	if (!end) end=len;
-	if(start < 0) throw_err_block(0, err_file_offset_out_of_bounds, dec(start).data(), name);
-	if (end < start || end > len || end < 0) throw_err_block(0, err_file_offset_out_of_bounds, dec(end).data(), name);
+	if(start < 0) throw_err_block(1, err_file_offset_out_of_bounds, dec(start).data(), name);
+	if (end < start || end > len || end < 0) throw_err_block(1, err_file_offset_out_of_bounds, dec(end).data(), name);
 
 	for (int i=start;i<end;i++) write1((unsigned int)data[i]);
 	add_addr_to_line(addrToLinePos);
@@ -1869,7 +1869,7 @@ void cmd_skip_fill(char** words, int num_words) {
 	}
 	else
 	{
-		amount = parse_math_expr(words[0])->evaluate_static().get_integer();
+		amount = parse_math_expr(words[0])->evaluate_non_forward().get_integer();
 	}
 	if(!is_fill) step(amount);
 	else
@@ -1948,7 +1948,7 @@ void cmd_padbytes(const char* par) {
 
 void cmd_pad(const char* par) {
 	if (freespaceid > 0) throw_err_block(0, err_pad_in_freespace);
-	int num=(int)getnum(par);
+	int num = parse_math_expr(par)->evaluate_non_forward().get_integer();
 	if ((unsigned int)num & 0xFF000000) throw_err_block(0, err_snes_address_doesnt_map_to_rom, hex((unsigned int)num, 6).data());
 	if (num>realsnespos)
 	{
