@@ -2370,10 +2370,10 @@ void assembleblock(const char * block, bool isspecialline)
 				char* split = strqpstr(lengths, "..");
 				string start_str(lengths, split-lengths);
 				start = getnum(start_str);
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+				if (forwardlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 				string end_str(split+2);
 				end = getnum(end_str);
-				if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+				if (forwardlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 			}
 			else
 			{
@@ -2383,7 +2383,7 @@ void assembleblock(const char * block, bool isspecialline)
 					char* tmp = strqpchr(lengths, '-');
 					if(!tmp || (*(tmp-1)!=')')) asar_throw_error(0, error_type_block, error_id_broken_incbin);
 					start = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
-					if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+					if (forwardlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 					lengths = tmp;
 				} else {
 					start=(int)strtoul(lengths, &lengths, 16);
@@ -2394,7 +2394,7 @@ void assembleblock(const char * block, bool isspecialline)
 					char* tmp = strchr(lengths, '\0');
 					if(*(tmp-1)!=')') asar_throw_error(0, error_type_block, error_id_broken_incbin);
 					end = (int)getnum64(string(lengths+1, tmp-1-lengths-1));
-					if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+					if (forwardlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 					// no need to check end-of-string here
 				} else {
 					end=(int)strtoul(lengths, &lengths, 16);
@@ -2501,7 +2501,7 @@ void assembleblock(const char * block, bool isspecialline)
 		else
 		{
 			amount = (int)getnum64(par);
-			if (foundlabel && !foundlabel_static) asar_throw_error(0, error_type_block, error_id_no_labels_here);
+			if (forwardlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		}
 		if(is("skip")) step(amount);
 		else
@@ -2616,6 +2616,7 @@ void assembleblock(const char * block, bool isspecialline)
 	{
 		if ((unsigned int)realsnespos & 0xFF000000) asar_throw_error(0, error_type_block, error_id_pad_in_freespace);
 		int num=(int)getnum(par);
+		if(forwardlabel) asar_throw_error(0, error_type_block, error_id_no_labels_here);
 		if ((unsigned int)num & 0xFF000000) asar_throw_error(0, error_type_block, error_id_snes_address_doesnt_map_to_rom, hex6((unsigned int)num).data());
 		if (num>realsnespos)
 		{
