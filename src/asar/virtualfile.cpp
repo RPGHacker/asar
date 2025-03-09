@@ -82,13 +82,13 @@ public:
 				{
 					return vfe_doesnt_exist;
 				}
-				else if (error == FileOpenError_AccessDenied)
-				{
-					return vfe_access_denied;
-				}
 				else if(!check_is_regular_file((const char*)path))
 				{
 					return vfe_not_regular_file;
+				}
+				else if (error == FileOpenError_AccessDenied)
+				{
+					return vfe_access_denied;
 				}
 				else
 				{
