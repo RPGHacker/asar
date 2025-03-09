@@ -195,6 +195,10 @@ string& string::qreplace(const char * instr, const char * outstr)
 	return thisstring;
 }
 
+// * convert tabs to spaces
+// * collapse multiple consecutive spaces into one
+// * delete spaces after comma
+// in total, this means that after qnormalize, splitting by spaces will split the input into "words".
 string& string::qnormalize()
 {
 	string& thisstring =*this;
