@@ -72,10 +72,6 @@ public:
 	{
 		if (path != "")
 		{
-			// randomdude999: checking this before file regularity to improve error messages
-			if(!file_exists((const char*)path)) return vfe_doesnt_exist;
-			if(!check_is_regular_file((const char*)path)) return vfe_not_regular_file;
-
 			FileOpenError error = FileOpenError_None;
 
 			m_file_handle = open_file((const char*)path, FileOpenMode_Read, &error);
@@ -89,6 +85,10 @@ public:
 				else if (error == FileOpenError_AccessDenied)
 				{
 					return vfe_access_denied;
+				}
+				else if(!check_is_regular_file((const char*)path))
+				{
+					return vfe_not_regular_file;
 				}
 				else
 				{

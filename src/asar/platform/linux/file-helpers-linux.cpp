@@ -33,6 +33,10 @@ bool check_is_regular_file(const char* path)
 
 FileHandleType open_file(const char* path, FileOpenMode mode, FileOpenError* error)
 {
+	// ban fopen(".")
+	// this calls stat twice instead of once but whatever lol
+	if(file_exists(path) && !check_is_regular_file(path)) return NULL;
+
 	FILE* out_handle = NULL;
 	const char* open_mode;
 
