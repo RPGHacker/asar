@@ -38,7 +38,7 @@ macro(set_asar_shared_properties target msvc_lib_type_param enable_sanitizer)
 		endif()
 	endif()
 
-	if (enable_sanitizer)
+	if (${enable_sanitizer} AND ${ASAR_USE_SANITIZER})
 		target_compile_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
 		target_link_options(${target} PRIVATE "$<$<CONFIG:Debug>:-fsanitize=address>")
 	endif()
