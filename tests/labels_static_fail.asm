@@ -1,15 +1,3 @@
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
-;`errEno_labels_here
 org $008000
 ANonStaticLabel:
 
@@ -24,39 +12,36 @@ struct NewStruct extends TestStruct
 endstruct
 
 
+;`errEno_labels_here
 if ANonStaticLabel == $008000
 	; This should fail
 endif
 
+;`errEno_labels_here
 if TestStruct.count == 2
 	; This should fail
 endif
 
+;`errEno_labels_here
 if TestStruct[0].count == 2
 	; This should fail
 endif
 
+;`errEno_labels_here
 if TestStruct.NewStruct.new == 3
 	; This should fail
 endif
 
+;`errEno_labels_here
 if TestStruct.NewStruct[0].new == 3
 	; This should fail
 endif
 
-incbin "data/64kb.bin":ANonStaticLabel..$8002
-incbin "data/64kb.bin":$8000..ANonStaticLabel+2
-
-Here:
-fillbyte Here
-fill ANonStaticLabel
-
-padbyte Here
-pad ANonStaticLabel
-
 OtherLabel = ANonStaticLabel ; this should be fine
+;`errEno_labels_here
 if OtherLabel == $008000
   ; but this should not
 endif
 
+;`errEno_labels_here
 !adefine #= ANonStaticLabel
