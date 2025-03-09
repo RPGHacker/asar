@@ -24,7 +24,7 @@ bool check_is_regular_file(const char* path)
 	if (stat(path, &finfo) == 0)
 	{
 		// either regular file or symlink
-		if (finfo.st_mode & (S_IFREG | S_IFLNK))
+		if ((finfo.st_mode & S_IFMT) == S_IFREG)
 			return true;
 	}
 	return false;
@@ -35,7 +35,12 @@ FileHandleType open_file(const char* path, FileOpenMode mode, FileOpenError* err
 {
 	// ban fopen(".")
 	// this calls stat twice instead of once but whatever lol
-	if(file_exists(path) && !check_is_regular_file(path)) return NULL;
+	if(file_exists(path) && !check_is_regular_file(path)) {
+		// this error has a vfe error id, but not a file-helpers error id for some reason?????
+		// why do we have 2 different error enums in the first place????????
+		*error = FileOpenError_Unknown;
+		return NULL;
+	}
 
 	FILE* out_handle = NULL;
 	const char* open_mode;
