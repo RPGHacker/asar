@@ -1809,13 +1809,13 @@ void cmd_incbin(const char* par) {
 	int len;
 	int start=0;
 	int end=0;
-	if (strqchr(par, ':'))
+	string temp = par;
+	const char* lengths = strqchr(temp, ':');
+	if (lengths)
 	{
-		char * lengths=strqchr(par, ':');
-		*lengths=0;
 		lengths++;
 
-		char* split = strqpstr(lengths, "..");
+		const char* split = strqpstr(lengths, "..");
 		if(!split) throw_err_block(0, err_broken_incbin);
 		string start_str(lengths, split-lengths);
 		if(start_str == "") throw_err_block(0, err_broken_incbin);
@@ -1823,6 +1823,8 @@ void cmd_incbin(const char* par) {
 		string end_str(split+2);
 		if(end_str == "") throw_err_block(0, err_broken_incbin);
 		end = parse_math_expr(end_str)->evaluate_non_forward().get_integer();
+		// make temp just the filename without the lengths
+		temp.truncate(lengths-1 - temp.data());
 	}
 	const char* current_file = get_current_file_name();
 	// RPG Hacker: Should this also throw on absolute paths?
@@ -1831,7 +1833,6 @@ void cmd_incbin(const char* par) {
 	{
 		throw_err_block(0, err_platform_paths);
 	}
-	string temp = par;
 	const char* name = safedequote(temp.raw());
 
 	char * data;//I couldn't find a way to get this into an autoptr
