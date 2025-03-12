@@ -183,6 +183,7 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 	auto check_expect_lists =
 		[&](std::vector<std::string> output,
 			std::vector<std::string> expected,
+			std::vector<int32_t> expected_linenos,
 			std::vector<std::string> fullmsgs,
 			std::string name,
 			bool expected_with_commas) {
