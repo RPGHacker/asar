@@ -47,10 +47,16 @@ size_t parse_num(std::string in, int base) {
 
 TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 	std::vector<uint8_t> expected_rom;
+	// this might be a bit memory-heavy, but i'm
+	// too lazy to think of something better
+	std::vector<int32_t> expected_rom_linenos;
 	std::vector<uint8_t> output_rom;
 
 	std::vector<std::string> expected_errors;
+	std::vector<int32_t> expected_error_linenos;
 	std::vector<std::string> expected_warnings;
+	std::vector<int32_t> expected_warn_linenos;
+
 	std::vector<std::string> expected_prints;
 	std::vector<std::string> expected_error_prints;
 	std::vector<std::string> expected_warn_prints;
@@ -64,7 +70,9 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 	if(testcase.contents.substr(0, 3) == "\xEF\xBB\xBF") {
 		asm_ss.ignore(3);
 	}
+	int32_t lineno = 0;
 	for(std::string line; std::getline(asm_ss, line); ) {
+		lineno++;
 		// remove trailing \r, artifact of windows newlines here
 		if(!line.empty() && line.back() == '\r') line.erase(line.end()-1);
 		if(line.substr(0, 2) == ";`") {
@@ -73,25 +81,36 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 				if(w == "+") {
 					expected_rom = base_rom;
 					output_rom = base_rom;
+					expected_rom_linenos.clear();
+					expected_rom_linenos.resize(expected_rom.size(), lineno);
 				} else if(w == "skip") {
 					return TestResult { true, false, "" };
 				} else if(w[0] == '#') {
 					num_iterations = parse_num(w.substr(1), 10);
 				} else if(w.substr(0, 4) == "errE") {
 					expected_errors.push_back(w.substr(3));
+					expected_error_linenos.push_back(lineno);
 				} else if(w.substr(0, 5) == "warnW") {
 					expected_warnings.push_back(w.substr(4));
+					expected_warn_linenos.push_back(lineno);
 				} else {
 					size_t num = parse_num(w, 16);
 					if(w.size() == 2) {
-						if(rompos >= expected_rom.size()) expected_rom.resize(rompos+1);
+						if(rompos >= expected_rom.size()) {
+							expected_rom.resize(rompos+1);
+							expected_rom_linenos.resize(rompos+1, -1);
+						}
+						expected_rom_linenos[rompos] = lineno;
 						expected_rom[rompos++] = num;
 					} else if(w.size() == 5 || w.size() == 6) {
 						rompos = num;
 					} else {
 						throw std::invalid_argument("Unexpected command " + w);
 					}
-					if(rompos > expected_rom.size()) expected_rom.resize(rompos);
+					if(rompos > expected_rom.size()) {
+						expected_rom.resize(rompos);
+						expected_rom_linenos.resize(rompos, -1);
+					}
 				}
 			}
 		// do we even want to verify these here???
@@ -171,6 +190,9 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 			ok = false;
 			if(expected.empty()) {
 				fail_reason << "Expected no " + name + ", got " + name + ":\n";
+				for(auto& msg : fullmsgs) {
+					fail_reason << msg << "\n";
+				}
 			} else {
 				fail_reason << "Expected " + name + (expected_with_commas ? ": " : ":\n");
 				if(expected_with_commas) {
@@ -182,16 +204,28 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 				}
 
 				fail_reason << "Actual " + name + ":\n";
-			}
-			for(auto& msg : fullmsgs) {
-				fail_reason << msg << "\n";
+				for(auto& msg : fullmsgs) {
+					fail_reason << msg << "\n";
+				}
+				size_t first_mismatch = 0;
+				while(first_mismatch < output.size()
+					&& first_mismatch < expected.size()
+					&& output[first_mismatch] == expected[first_mismatch]) {
+					first_mismatch++;
+				}
+				const std::string& exp = first_mismatch < expected.size() ? expected[first_mismatch] : "<nothing>";
+				const std::string& got = first_mismatch < output.size() ? output[first_mismatch] : "<nothing>";
+				fail_reason << "First mismatch: expected " << exp << ", got " << got << "\n";
+				if(first_mismatch < expected_linenos.size()) {
+					fail_reason << "Expected from line " << std::dec << expected_linenos[first_mismatch] << "\n";
+				}
 			}
 		}
 	};
 
-	check_expect_lists(output_errors, expected_errors, output_error_strs, "errors", true);
-	check_expect_lists(output_warns, expected_warnings, output_warn_strs, "warnings", true);
-	check_expect_lists(output_prints, expected_prints, output_prints, "prints", false);
+	check_expect_lists(output_errors, expected_errors, expected_error_linenos, output_error_strs, "errors", true);
+	check_expect_lists(output_warns, expected_warnings, expected_warn_linenos, output_warn_strs, "warnings", true);
+	check_expect_lists(output_prints, expected_prints, {}, output_prints, "prints", false);
 
 	// don't check this if we already have errors,
 	// as in that case the output rom is blank anyways
@@ -201,30 +235,32 @@ TestResult run_testcase(std::vector<uint8_t> base_rom, Testcase& testcase) {
 			fail_reason << "ROM size mismatch, expected 0x" <<
 				std::hex << expected_rom.size() <<
 				", got 0x" << output_rom.size() << "\n";
-		} else {
-			std::vector<std::pair<size_t, size_t>> mismatches;
-			for(size_t pos = 0; pos < output_rom.size(); pos++) {
-				if(output_rom[pos] != expected_rom[pos]) {
-					// merge together consecutive mismatches, but don't do more than 32 bytes at a time
-					if(!mismatches.empty() &&
-							mismatches.back().first + mismatches.back().second == pos &&
-							mismatches.back().second < 32) {
-						mismatches.back().second++;
-					} else {
-						mismatches.push_back(std::make_pair(pos, 1));
-					}
+		}
+		std::vector<std::pair<size_t, size_t>> mismatches;
+		for(size_t pos = 0; pos < output_rom.size() && pos < expected_rom.size(); pos++) {
+			if(output_rom[pos] != expected_rom[pos]) {
+				// merge together consecutive mismatches, but don't do more than 32 bytes at a time
+				if(!mismatches.empty() &&
+					mismatches.back().first + mismatches.back().second == pos &&
+					mismatches.back().second < 32) {
+					mismatches.back().second++;
+				} else {
+					mismatches.push_back(std::make_pair(pos, 1));
 				}
 			}
-			for(auto m : mismatches) {
-				fail_reason << "ROM data mismatch at ";
-				fail_reason << "0x" << std::hex << std::setw(0) << m.first << ":\n";
-				fail_reason << "Expected:";
-				for(size_t i = m.first; i < m.first+m.second; i++)
-					fail_reason << ' ' << std::setfill('0') << std::setw(2) << (unsigned int)expected_rom[i];
-				fail_reason << "\nActual:  ";
-				for(size_t i = m.first; i < m.first+m.second; i++)
-					fail_reason << ' ' << std::setfill('0') << std::setw(2) << (unsigned int)output_rom[i];
-				fail_reason << '\n';
+		}
+		for(auto m : mismatches) {
+			fail_reason << "ROM data mismatch at ";
+			fail_reason << "0x" << std::hex << std::setw(0) << m.first << ":\n";
+			fail_reason << "Expected:";
+			for(size_t i = m.first; i < m.first+m.second; i++)
+				fail_reason << ' ' << std::setfill('0') << std::setw(2) << (unsigned int)expected_rom[i];
+			fail_reason << "\nActual:  ";
+			for(size_t i = m.first; i < m.first+m.second; i++)
+				fail_reason << ' ' << std::setfill('0') << std::setw(2) << (unsigned int)output_rom[i];
+			fail_reason << '\n';
+			if(expected_rom_linenos[m.first] != -1) {
+				fail_reason << "Expected from line " << std::dec << expected_rom_linenos[m.first] << "\n";
 			}
 		}
 	}
