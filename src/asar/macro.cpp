@@ -2,7 +2,6 @@
 #include "assembleblock.h"
 #include "macro.h"
 #include "asar_math.h"
-#include "warnings.h"
 
 assocarr<macrodata*> macros;
 static string defining_macro_name;
@@ -146,9 +145,9 @@ void callmacro(const char * data)
 		// qpsplit returns a nullptr when the input is broken, e.g. closing paren before opening or whatnot
 		if(args == nullptr) throw_err_block(0, err_broken_macro_usage);
 	}
-	if (numargs != thismacro->numargs && !thismacro->variadic) throw_err_block(1, err_macro_wrong_num_params);
+	if (numargs != thismacro->numargs && !thismacro->variadic) throw_err_block(0, err_macro_wrong_num_params);
 	// RPG Hacker: -1, because the ... is also counted as an argument, yet we want it to be entirely optional.
-	if (numargs < thismacro->numargs - 1 && thismacro->variadic) throw_err_block(1, err_macro_wrong_min_params);
+	if (numargs < thismacro->numargs - 1 && thismacro->variadic) throw_err_block(0, err_macro_wrong_min_params);
 
 	macrorecursion++;
 	inmacro=true;
@@ -312,111 +311,92 @@ string replace_macro_args(const string& line) {
 	string out;
 	for (const char * in=line;*in;)
 	{
-		if (*in=='<' && in[1]=='<' && in[2] != ':')
-		{
-			if (in[2] == '^')
-			{
-				out+="<";
-				in+=1;
+		if (*in != '<') {
+			out += *in++;
+			continue;
+		}
+
+		const char * end=in+1;
+		int depth = 0;
+		for (; *end=='^'; end++) {
+			depth++;
+		}
+
+		const char* name_start = end;
+		bool is_variadic = false;
+
+		if(is_ualpha(*end)) {
+			// must be a named arg ref
+			while(is_ualnum(*end)) end++;
+			if(*end != '>') {
+				// not a valid param ref
+				out += *in++;
+				continue;
 			}
-			else
-			{
-				out+="<<";
-				in+=2;
+		} else if(end[0] == '.' && end[1] == '.' && end[2] == '.' && end[3] == '[') {
+			// must be a <...[something]>
+			end += 4;
+			end = strqpchr(end, ']');
+			if(!end || end[1] != '>') throw_err_line(0, err_unclosed_vararg);
+			end++;
+			is_variadic = true;
+		} else {
+			// not a macro param
+			out += *in++;
+			continue;
+		}
+
+		// end is now pointing at '>'
+		if (depth != in_macro_def)
+		{
+			if (depth > in_macro_def && in_macro_def > 0) {
+				throw_err_line(0, err_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
+			}
+			// valid param ref, but not meant to be resolved at this depth.
+			// copy it over in its entirety (including the last '>')
+			out.append(in, 0, end + 1 - in);
+			in = end + 1;
+			continue;
+		}
+
+		if (depth > 0 && !inmacro) {
+			throw_err_line(0, err_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
+		}
+
+		if(is_variadic) {
+			if(!current_macro->variadic) throw_err_block(0, err_macro_not_varadic, "<...[math]>");
+			const char* num_start = name_start + 4;
+			const char* num_end = end - 1;
+			string num_str(num_start, num_end - num_start);
+			string num_resolved;
+			resolvedefines(num_resolved, num_str);
+			int arg_num = parse_math_expr(num_resolved)->evaluate_static().get_integer();
+			if (arg_num < 0) {
+				throw_err_block(0, err_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).data(), "");
+			}
+			if (arg_num > current_macro_numargs-current_macro->numargs) {
+				string argstr = generate_macro_arg_string(arg_num, depth);
+				string hintstr = generate_macro_hint_string(arg_num, current_macro, depth);
+				throw_err_block(0, err_vararg_out_of_bounds, argstr.data(), hintstr.data());
+			}
+			out += current_macro_args[arg_num + current_macro->numargs - 1];
+		} else {
+			string name(name_start, end - name_start);
+			bool found = false;
+			for (int j=0; current_macro->arguments[j]; j++) {
+				if(name == current_macro->arguments[j]) {
+					found = true;
+					out += current_macro_args[j];
+					break;
+				}
+			}
+			if (!found) {
+				string argstr = generate_macro_arg_string(name, depth);
+				string hintstr = generate_macro_hint_string(name, current_macro, depth);
+				throw_err_block(0, err_macro_param_not_found, argstr.data(), hintstr.data());
 			}
 		}
-		else if (*in=='<')
-		{
-			const char * end=in+1;
-			// RPG Hacker: Added checking for space here, because this code would consider
-			// if a < b && a > c
-			// a macro arg expansion. In practice, this is still a sloppy solution and is
-			// likely to fail in some edge case I can't think of right now. Should parse
-			// this in a much more robust way at some point...
-			if (*end==' ')
-			{
-				out += *(in++);
-				continue;
-			}
-
-			while (*end && *end!='>'&& *end!='<' && *(end+1)!=':') end++; //allow for conditionals and <:
-			if (*end!='>')
-			{
-				out+=*(in++);
-				continue;
-			}
-
-			int depth = 0;
-			for (const char* depth_str = in+1; *depth_str=='^'; depth_str++)
-			{
-				depth++;
-			}
-
-			if (depth != in_macro_def)
-			{
-				string temp(in, end-in+1);
-				out+=temp;
-				in=end+1;
-				if (depth > in_macro_def)
-				{
-					if (in_macro_def > 0) throw_err_line(0, err_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
-					//else throw_err_block(0, err_macro_param_outside_macro);
-				}
-				continue;
-			}
-
-			if (depth > 0 && !inmacro) throw_err_line(0, err_invalid_depth_resolve, "macro parameter", "macro parameter", depth, in_macro_def-1);
-			in += depth+1;
-
-			bool is_variadic_arg = false;
-			if (in[0] == '.' && in[1] == '.' && in[2] == '.' && in[3] == '[')
-			{
-				if (end[-1] != ']')
-					throw_err_block(0, err_unclosed_vararg);
-
-				is_variadic_arg = true;
-				in += 4;
-				end--;
-			}
-
-			//if(!inmacro) throw_err_block(0, err_macro_param_outside_macro);
-			if(is_variadic_arg && !current_macro->variadic) throw_err_block(0, err_macro_not_varadic, "<...[math]>");
-			//*end=0;
-			string param;
-			string temp(in, end-in);
-			resolvedefines(param, temp);
-			in = param.data();
-			bool valid_named_param = confirmname(in);
-			if (!is_variadic_arg)
-			{
-				if (!valid_named_param) throw_err_block(0, err_invalid_macro_param_name);
-				bool found=false;
-				for (int j=0;current_macro->arguments[j];j++)
-				{
-					if (!strcmp(in, current_macro->arguments[j]))
-					{
-						found=true;
-						out+=current_macro_args[j];
-						break;
-					}
-				}
-				if (!found)
-				{
-					throw_err_block(0, err_macro_param_not_found, generate_macro_arg_string(in, depth).data(), generate_macro_hint_string(in, current_macro, depth).data());
-				}
-			}
-			else
-			{
-				int arg_num = parse_math_expr(in)->evaluate_static().get_integer();
-
-				if (arg_num < 0) throw_err_block(1, err_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).data(), "");
-				if (arg_num > current_macro_numargs-current_macro->numargs) throw_err_block(1, err_vararg_out_of_bounds, generate_macro_arg_string(arg_num, depth).data(), generate_macro_hint_string(arg_num, current_macro, depth).data());
-				out+=current_macro_args[arg_num+current_macro->numargs-1];
-			}
-			in=end+1;
-			if (is_variadic_arg) in++;
-		}
-		else out+=*(in++);
+		in = end+1;
 	}
 	return out;
 }
