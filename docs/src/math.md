@@ -9,7 +9,7 @@ lda #(5+6)*2    ; the same as "lda #22"
 
 ## Literals
 
-Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use `$` as a prefix, binary literals use `%` as a prefix. Number literals can be made positive or negative by prefixing a `+` or a `-` (without a sign, positive is assumed). They can also be prefixed with a `~` to get their unary complement (an integer with all the bits inverted).
+Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use `$` as a prefix, binary literals use `%` as a prefix. Number literals can be made positive or negative by prefixing a `+` or a `-` (without a sign, positive is assumed).
 
 ```asar
 lda $00
@@ -33,25 +33,30 @@ db '💩'
 
 ## Operators
 
-TODO: document operator precedence
+Math statements in Asar support the following unary (i.e. prefix) operators:
 
-Math statements in Asar support the following operators:  
-  
-| Op | Action                                                                 |
-|----|------------------------------------------------------------------------|
-| `+`  | Addition (Also valid as prefix, but a no-op)                         |
-| `-`  | Subtraction (Or negation prefix)                                     |
-| `*`  | Multiplication                                                       |
-| `/`  | Division                                                             |
-| `%`  | Modulo (the remainder of a division, fmod() in C)                    |
-| `<<` | Left-shift ( `x << y` formula: x = x * 2^y )                         |
-| `>>` | Right-shift ( `x >> y` formula: x = x / 2^y )                        |
-| `&`  | Bitwise AND                                                          |
-| <code>\|</code> | Bitwise OR                                                |
-| `^`  | Bitwise XOR (Note: not exponentials)                                 |
-| `~`  | Bitwise NOT (Prefix)                                                 |
-| `<:` | Bitshift right 16, shorthand for isolating address bank (Prefix)     |
-| `**` | Exponentials (2\*\*4 = 2\*2\*2\*2 = pow(2, 4) in C)                  |
+| Op | Action |
+| -- | ------ |
+| `+a`  | No-op (same as just `a`) |
+| `-a`  | Negation |
+| `~a`  | Bitwise NOT |
+| `<:a` | Bitshift right 16, shorthand for isolating address bank |
+
+and the following binary operators:
+
+| Op | Action |
+| -- | ------ |
+| `a + b`  | Addition |
+| `a - b`  | Subtraction |
+| `a * b`  | Multiplication |
+| `a / b`  | Division |
+| `a % b`  | Modulo (the remainder of a division, fmod() in C) |
+| `a << b` | Left-shift (formula: result = a * 2^b ) |
+| `a >> b` | Right-shift (formula: result = a / 2^b ) |
+| `a & b`  | Bitwise AND |
+| <code>a \| b</code> | Bitwise OR |
+| `a ^ b`  | Bitwise XOR (Note: not exponentials) |
+| `a ** b` | Exponentials (2\*\*4 = 2\*2\*2\*2 = pow(2, 4) in C) |
 
 ## Comparison operators
 
@@ -74,6 +79,20 @@ Asar supports the 6 usual comparison operators:
 | `a && b` | Returns 1 if both of `a` and `b` evaluate to true |
 
 These operators are lazy: they will not evaluate the right-hand argument if the result is already determined by the left-hand argument. (Specifically, `1 || anything` immediately returns `1` and doesn't evaluate `anything`, and similarly, `0 && anything` immediately returns `0`.)
+
+## Operator precedence
+
+The unary operators have higher precedence than any binary operators. The binary operators have the following precedence, highest to lowest:
+
+- `**`
+- `*`, `/`, `%`
+- `+`, `-`
+- `<<`, `>>`
+- `&`, `|`, `^`
+- `==`, `!=`, `>`, `<`, `>=`, `<=`
+- `&&`, `||`
+
+For example, `a+b*c` is parsed as `a+(b*c)`. Operators at the same level are always parsed left-to-right: `a | b & c` is the same as `(a | b) & c`. Note that unlike some programming languages, all of the bitwise operators have the same precedence.
 
 ## Strings in math
 
