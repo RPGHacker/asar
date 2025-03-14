@@ -15,27 +15,9 @@ if {condition}
 endif
 ```
 
-To construct condition statements, you can also make use of a number of comparison operators specific to conditionals. They return 1 if their respective comparison is true and 0 otherwise.  
-  
-| Operator | Details |
-| --- | --- |
-| `a == b` | Returns 1 if `a` is equal to `b` |
-| `a != b` | Returns 1 if `a` is not equal to `b` |
-| `a > b` | Returns 1 if `a` is greater than `b` |
-| `a < b` | Returns 1 if `a` is less than `b` |
-| `a >= b` | Returns 1 if `a` is greater than or equal to `b` |
-| `a <= b` | Returns 1 if `a` is less than or equal to `b` |
-  
-You can use logical operators to chain multiple conditions.  
-  
-| Operator | Details |
-| --- | --- |
-| <code>a \|\| b</code> | Returns 1 if at least one of `a` and `b` evaluates to 1 |
-| `a && b` | Returns 1 if both of `a` and `b` evaluate to 1 |
+The conditions can be any valid [math expression](./math.md). If the expression evaluates to zero, the condition is considered false, any other number is true (additionally, an empty string is false and any other string is true). The [comparison operators](./math.md#comparison-operators) and [logical operators](./math.md#logical-operators) are especially useful in conditions.
 
-Evaluation is lazy (TODO it's not anymore, is it?) which means that the assembler will stop evaluating a condition as soon as the result can be determined (for example, in the condition `0 && my_function()`, my\_function() will never be called). Note that only one kind of logical operator can be used in a single condition, but conditionals themselves can be nested to an arbitrary depth, which can be used as a workaround here.
-
-Optionally, if conditionals can contain an arbitrary number of elseif branches as well as a single else branch. The assembler checks the if and all elseif branches in succession until a single condition evaluates to `> 0` - if none does, the code inside the else branch is compiled.
+Optionally, if conditionals can contain an arbitrary number of elseif branches as well as a single else branch. The assembler checks the if and all elseif branches in succession until a single condition evaluates to a truthy value - if none does, the code inside the else branch is compiled.
 
 ```asar
 !mode = 0       ; Supported modes: 0, 1, 2, 3
@@ -99,7 +81,7 @@ while {condition}
 endwhile
 ```
 
-A special variation of if conditionals are while loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to `<= 0`. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.
+A special variation of if conditionals are while loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to false. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.
 
 ```asar
 !counter = 0
@@ -141,4 +123,6 @@ You can also put for loops on a single line, however in this case due to the ord
 
 ```asar
 for i = 0..10 : nop : endfor
+; not allowed due to internal limitations:
+for i = 0..10 : db !i : endfor
 ```

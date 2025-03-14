@@ -18,31 +18,6 @@ arch spc700
 mov a,$00
 ```
 
-## Number Literals
-
-<!-- TODO: move this to math.md instead?? -->
-
-Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use `$` as a prefix, binary literals use `%` as a prefix. Number literals can be made positive or negative by prefixing a `+` or a `-` (without a sign, positive is assumed). They can also be prefixed with a `~` to get their unary complement (a 32-bit integer with all the bits inverted).
-
-```asar
-lda $00
-clc
-adc #-10
-and #%01111111
-lda #~$80   ; Equal to lda #$FFFFFF7F
-```
-
-Aditionally, Asar supports character literals by delimiting a single Unicode character with `'`. Asar will automatically convert them to the integer value currently mapped to them (by default their Unicode code point). They can be used in all places where number literals can be used. See section [Tables](#tables) for details on character mapping.
-
-```asar
-lda #'a'
-sta $00
-
-db 'x','x'+1,'x'+2
-
-db '💩'
-```
-
 ## Opcode Length Specification
 
 By appending `.b`, `.w` or `.l` to an opcode, you can specify that opcode's length. This is recommended in cases where the length could be ambiguous.

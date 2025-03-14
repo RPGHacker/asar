@@ -6,20 +6,16 @@ Text output functions allow you to communicate certain information, states, warn
 
 The `print` command lets you output general-purpose text to the user. Most commonly this is used to inform the user about certain states or to output debug information. Usage:
 
-{{# syn: print {text_or_function}[,text_or_function...] #}}
+{{# syn: print {text_or_math}[,text_or_math...] #}}
 
-where `text_or_function` can be either a string delimited by double quotes or one of the print-specific functions below:  
+where `text_or_math` can either be a string literal in double-quotes, a math expression that evaluates to a string (see [String formatting functions](./functions.md#string-formatting-functions)), or one of the following special values:
   
 
-| Function | Details |
+| Value | Details |
 | --- | --- |
-| `bin(x[, width])` | Prints x as a binary (base-2) integer, where x can be any math statement. If width is provided, the output is padded to at least this many digits using zeroes. |
-| `dec(x[, width])` | Prints x as a decimal (base-10) integer, where x can be any math statement. If width is provided, the output is padded to at least this many digits using zeroes. |
-| `hex(x[, width])` | Prints x as a hexadecimal (base-16) integer, where x can be any math statement. If width is provided, the output is padded to at least this many digits using zeroes. |
-| `double(x[, precision])` | Prints x as a decimal number with precision decimal places (default: 5), where x can be any math statement. |
-| `pc` | Prints the current PC. |
-| `freespaceuse` | Prints the total number of bytes used by commands that acquire freespace (such as freespace, freecode, freedata etc.). You can use the command {{# cmd: reset freespaceuse #}} to reset this value. |
-| `bytes` | Prints the total number of bytes written to the output ROM. You can use the command {{# cmd: reset bytes #}} to reset this value. |
+| `pc` | Prints the current PC, as an unprefixed 6-digit hexadecimal number. |
+| `freespaceuse` | Prints the total number of bytes used by commands that acquire freespace (such as freespace, freecode, freedata etc.), in decimal. You can use the command {{# cmd: reset freespaceuse #}} to reset this value. |
+| `bytes` | Prints the total number of bytes written to the output ROM, in decimal. You can use the command {{# cmd: reset bytes #}} to reset this value. |
 
 ## `warn`
 

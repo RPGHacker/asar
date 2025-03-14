@@ -28,14 +28,7 @@ lda .Data+data_index_to_offset(2)    ; Will load $0002 into A
     dw $0002
 ```
 
-Function definitions must be on a single line and can't include whitespace in their math statements, except when using the [multi-line operator `\`](./formatting.md#multi-line-operators), which can be used to split long function definitions into multiple lines.
-
-Note that user-defined functions can't use string parameters themselves. However, they can take strings as arguments and pass them on to built-in functions.
-
-```asar
-function readfilenormalized(filename, pos) = readfile4(filename, pos)/2147483648.0
-db readfilenormalizd("datafile.bin", 0)
-```
+Function definitions must be on a single line, except when using the [multi-line operator `\`](./formatting.md#multi-line-operators), which can be used to split long function definitions into multiple lines. The function's body can contain any amount of spaces, but there can't be any between the function name and argument list, and there must be spaces around the `=` after the argument list.
 
 ## Built-in Functions
 
@@ -132,7 +125,7 @@ Aside from user-defined functions mentioned above, Asar also supports a number o
   Functions for converting between SNES and PC addresses. Affected by the current [mapping mode](./mapping-modes.md).
   
   ```asar
-  print "SNES address $018000 in the current mapping mode is equivalent to PC address 0x",dec(snestopc($018000))
+  print "SNES address $018000 in the current mapping mode is equivalent to PC address 0x",hex(snestopc($018000))
   ```
   
 - `min(a, b)`, `max(a, b)`
@@ -187,7 +180,7 @@ Aside from user-defined functions mentioned above, Asar also supports a number o
   
 - `equal(value, comparand)`, `notequal(value, comparand)`, `less(value, comparand)`, `lessequal(value, comparand)`, `greater(value, comparand)`, `greaterequal(value, comparand)`
   
-  Comparison functions. Return 1 if the respective comparison is true and 0 otherwise. Useful as statements in the `select()` function.
+  Comparison functions. Return 1 if the respective comparison is true and 0 otherwise. These are exactly equivalent to the built-in [comparison operators](./math.md#comparison-operators) and are only kept for backwards compatibility.
   
   ```asar
   function abs(num) = select(less(num, 0), num*-1, num)
@@ -195,7 +188,7 @@ Aside from user-defined functions mentioned above, Asar also supports a number o
   
 - `and(a, b)`, `or(a, b)`, `nand(a, b)`, `nor(a, b)`, `xor(a, b)`
   
-  Perform the respective logical operation with a and b. Useful for chaining statements in the `select()` function.
+  Perform the respective logical operation with a and b. Note that `and` and `or` are equivalent to `&&` and `||` respectively, except that these functions aren't short-circuiting.
   
   ```asar
   function total_sprite_extra_bytes(num_sprites) = select(and(not(!sprites_disabled), !extra_bytes_enabled), 4, 0)*num_sprites
@@ -250,7 +243,7 @@ Aside from user-defined functions mentioned above, Asar also supports a number o
   
 - `objectsize(identifier)`
   
-  Takes the identifier of a struct as a parameter and returns the object size of that struct. In the case of an extended struct, this will be the base size of the struct plus the size of its largest extension struct. Throws an error if a struct with that name doesn't exist.
+  Takes the identifier of a struct as a parameter and returns the object size of that struct. In the case of an extended struct, this will be the base size of the struct plus the size of its largest extension struct.
   
   ```asar
   struct parent $0000
@@ -285,7 +278,7 @@ Aside from user-defined functions mentioned above, Asar also supports a number o
   
 - `stringsequal(string1, string2)`
   
-  Returns 1 if the given string parameters are equal and 0 otherwise.
+  Returns 1 if the given string parameters are equal and 0 otherwise. This is the same as the `==` operator on strings and is provided for backwards compatibility.
   
   ```asar
   if not(stringsequal("!assembler", "asar"))
@@ -317,4 +310,23 @@ Aside from user-defined functions mentioned above, Asar also supports a number o
 - `realbase()`
   
   Returns the current address in the ROM being written to. This is not the same as the value of a nearby label when the `base` command is active: it returns the actual address the code will end up at.
-    
+
+## String formatting functions
+
+These functions return strings, and are especially useful for the `print` command or its friends.
+
+- `bin(x[, width])`
+
+  Prints x as a binary (base-2) integer. If width is provided, the output is padded to at least this many digits using zeroes.
+
+- `dec(x[, width])`
+
+  Prints x as a decimal (base-10) integer. If width is provided, the output is padded to at least this many digits using zeroes.
+
+- `hex(x[, width])`
+
+  Prints x as a hexadecimal (base-16) integer. If width is provided, the output is padded to at least this many digits using zeroes.
+
+- `double(x[, precision])`
+
+  Prints x as a decimal number with precision decimal places (default: 5).
