@@ -2317,10 +2317,6 @@ static void cmd_label_assign(const char* firstword, const char* params) {
 			throw_err_block(0, err_invalid_character);
 		}
 	}
-	auto expr = parse_math_expr(params + 2);
-	int num = expr->evaluate_non_forward().get_integer();
-	bool is_static = expr->has_label() <= 1;
-
 	const char* newlabelname = firstword;
 	bool ismacro = false;
 
@@ -2343,6 +2339,12 @@ static void cmd_label_assign(const char* firstword, const char* params) {
 	}
 
 	completename += newlabelname;
+
+	auto expr = parse_math_expr(params + 2);
+	int64_t num = expr->evaluate_non_forward().get_integer();
+	bool is_static = expr->has_label() <= 1;
+
+	if (num&~0xFFFFFF) throw_err_block(1, err_snes_address_out_of_bounds, hex(num, 6).data());
 
 	setlabel(ns + completename, num, is_static);
 }
