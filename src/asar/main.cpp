@@ -925,7 +925,7 @@ bool do_line_logic(const string& line, const char* filename, int lineno)
 		}
 	}
 	catch (errline&) {}
-	return (numif != prevnumif || single_line_for_tracker == 3)
+	return (numif < prevnumif || single_line_for_tracker == 3)
 		&& (whilestatus[numif].iswhile || whilestatus[numif].is_for);
 }
 
