@@ -526,7 +526,7 @@ static int64_t get_branch_value(parse_result& parsed, char modifier, int width) 
 		if(to_lower(modifier) == 'a') target_is_abs = true;
 		else if(to_lower(modifier) == 'r') target_is_abs = false;
 		// ignore for backwards compat
-		else if(to_lower(modifier) == 'b') {}
+		else if(to_lower(modifier) == (width == 2 ? 'w' : 'b')) {}
 		// TODO: better error message
 		else throw_err_block(2, err_invalid_opcode_length);
 	}
