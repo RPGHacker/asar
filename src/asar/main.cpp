@@ -189,6 +189,7 @@ void get_current_line_details(string* location, string* details, bool exclude_bl
 				current_file = callstack[i].content;
 				if (exclude_block) current_block = nullptr;
 				*location = generate_filename_and_line(get_pretty_filename(current_file), current_line_no);
+				*location += ": ";
 				*details = generate_call_details_string(current_block, current_call, 4, false);
 				return;
 			case callstack_entry_type::MACRO_CALL:

@@ -110,7 +110,7 @@ static void fillerror(errordata& myerr, const char* errname, const char * type, 
 	string location;
 	string details;
 	get_current_line_details(&location, &details);
-	myerr.fullerrdata= duplicate_string(location+": "+type+str+details+get_callstack());
+	myerr.fullerrdata= duplicate_string(location+type+str+details+get_callstack());
 	myerr.errname = duplicate_string(errname);
 
 	autoarray<printable_callstack_entry> printable_stack;
