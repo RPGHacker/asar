@@ -742,7 +742,9 @@ void assemblefile(const char * filename)
 		return;
 	}
 
-	callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
+	// don't do this yet; we want "file not found" errors to show the location
+	// that called assemblefile
+	//callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
 
 	sourcefile file;
 	file.contents = nullptr;
@@ -756,6 +758,8 @@ void assemblefile(const char * filename)
 			throw_vfile_error(0, asar_get_last_io_error(), filename);
 			return;
 		}
+		callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
+
 		sourcefile& newfile = filecontents.create(absolutepath);
 		newfile.contents =split(temp, '\n');
 		newfile.data = temp;
@@ -829,6 +833,8 @@ void assemblefile(const char * filename)
 	} else { // filecontents.exists(absolutepath)
 		file = filecontents.find(absolutepath);
 	}
+	// previous callstack_push got dropped by the end of the if scope
+	callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
 	asarverallowed=true;
 	for (int i=0;file.contents[i] && i<file.numlines;i++)
 	{
