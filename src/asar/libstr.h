@@ -450,11 +450,11 @@ inline const char * dequote(char * str)
 	return nullptr;
 }
 
-inline char * strqchr(const char * str, char key)
+inline char * strqchr(char * str, char key)
 {
 	while (*str != '\0')
 	{
-		if (*str == key) { return const_cast<char*>(str); }
+		if (*str == key) { return str; }
 		else if (*str == '"' || *str == '\'')
 		{
 			// Special case hack for ''', which is currently our official way of handling the ' character.
@@ -480,6 +480,10 @@ inline char * strqchr(const char * str, char key)
 	}
 
 	return nullptr;
+}
+
+inline const char * strqchr(const char * str, char key) {
+	return strqchr(const_cast<char*>(str), key);
 }
 
 inline string substr(const char * str, int len)

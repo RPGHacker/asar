@@ -889,7 +889,7 @@ bool do_line_logic(const string& line, const char* filename, int lineno)
 			// RPG Hacker: Slight redundancy here with code that is
 			// also in startmacro(). Could improve this for Asar 2.0.
 			string macro_name = current_line.data()+6;
-			char * startpar=strqchr(macro_name.data(), '(');
+			char * startpar=strqchr(macro_name.raw(), '(');
 			if (startpar) *startpar=0;
 			macro_defs.append(macro_name);
 
