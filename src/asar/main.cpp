@@ -653,7 +653,6 @@ void resolvedefines(string& out, const char * start)
 		}
 		else out+=*here++;
 	}
-	if (!confirmquotes(out)) { throw_err_null(0, err_mismatched_quotes); out = ""; }
 }
 
 bool moreonline;
