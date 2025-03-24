@@ -1448,7 +1448,9 @@ void assembleblock(const char * block, bool isspecialline)
 			if (0);
 			else if (!stricmp(word[2], "on"))
 			{
-				asar_throw_warning(0, warning_id_feature_deprecated, "bankcheck on", "bankcheck full or bankcheck half");
+				asar_throw_warning(0, warning_id_feature_deprecated, "check bankcross on", "check bankcross full or check bankcross half");
+				disable_bank_cross_errors = false;
+				check_half_banks_crossed = false;
 			}
 			else if (!stricmp(word[2], "off"))
 			{
