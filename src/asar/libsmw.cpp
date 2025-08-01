@@ -339,6 +339,14 @@ static inline int trypcfreespace(int start, int alt_start, int end, int size, in
 	return -1;
 }
 
+static void expandrom(int newromlen) {
+	writeromdata_bytes(romlen, freespacebyte, newromlen - romlen, false);
+	romlen = newromlen;
+	int log_len = 0;
+	for(; 1<<log_len < romlen; log_len++);
+	writeromdata_byte(snestopc(0xffd7), log_len - 10);
+}
+
 //This function finds a block of freespace. -1 means "no freespace found", anything else is a PC address.
 //isforcode=false tells it to favor banks 40+, true tells it to avoid them entirely.
 //It automatically adds a RATS tag.
@@ -380,25 +388,11 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 		if (autoexpand)
 		{
 			if(0);
-			else if (romlen==0x080000)
-			{
-				writeromdata_bytes(romlen, freespacebyte, 0x100000 - romlen, false);
-				romlen=0x100000;
-				writeromdata_byte(snestopc(0x00FFD7), 0x0A);
-			}
-			else if (romlen==0x100000)
-			{
-				writeromdata_bytes(romlen, freespacebyte, 0x200000 - romlen, false);
-				romlen=0x200000;
-				writeromdata_byte(snestopc(0x00FFD7), 0x0B);
-			}
+			else if (romlen==0x080000) expandrom(0x10'0000);
+			else if (romlen==0x100000) expandrom(0x20'0000);
 			else if (isforcode) return -1;//no point creating freespace that can't be used
 			else if (romlen==0x200000 || romlen==0x300000)
-			{
-				writeromdata_bytes(romlen, freespacebyte, 0x400000 - romlen, false);
-				romlen=0x400000;
-				writeromdata_byte(snestopc(0x00FFD7), 0x0C);
-			}
+				expandrom(0x40'0000);
 			else return -1;
 			autoexpand=false;
 			goto rebootlorom;
@@ -407,15 +401,23 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 	if (mapper==hirom)
 	{
 		if(target_bank >= 0) return find_for_fixed_bank(0xffff);
-		if (isforcode)
-		{
-			for(int i = 0x8000; i < min(romlen, 0x400000); i += 0x10000){
-				int space = trypcfreespace(i, search_start, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte, write_rats);
+		while(true) {
+			if (isforcode) {
+				for(int i = 0x8000; i < min(romlen, 0x40'0000); i += 0x1'0000){
+					int space = trypcfreespace(i, search_start, min(i+0x7FFF, romlen), size, 0x7FFF, align?0xFFFF:0, freespacebyte, write_rats);
+					if(space != -1) return space;
+				}
+			} else {
+				int space = trypcfreespace(0, search_start, romlen, size, respectbankborders?0xFFFF:0xFFFFFF, align?0xFFFF:0, freespacebyte, write_rats);
 				if(space != -1) return space;
 			}
-			return -1;
+			if(!autoexpand || romlen >= 0x40'0000) break;
+			// new len = next power of 2 from current romlen (but at least a bank....)
+			int newlen = 0x1'0000;
+			for(; newlen <= romlen; newlen*=2);
+			expandrom(newlen);
 		}
-		return trypcfreespace(0, search_start, romlen, size, respectbankborders?0xFFFF:0xFFFFFF, align?0xFFFF:0, freespacebyte, write_rats);
+		return -1;
 	}
 	if (mapper==exlorom)
 	{
@@ -466,10 +468,7 @@ int getpcfreespace(int size, int target_bank, bool autoexpand, bool respectbankb
 		}
 		if (autoexpand && nextbank>=0)
 		{
-			unsigned char x7FD7[]={0, 0x0A, 0x0B, 0x0C, 0x0C, 0x0D, 0x0D, 0x0D, 0x0D};
-			writeromdata_bytes(romlen, freespacebyte, nextbank + 0x100000 - romlen, false);
-			romlen=nextbank+0x100000;
-			writeromdata_byte(0x7FD7, x7FD7[romlen>>20]);
+			expandrom(nextbank+0x10'0000);
 			autoexpand=false;
 			goto rebootsa1rom;
 		}
