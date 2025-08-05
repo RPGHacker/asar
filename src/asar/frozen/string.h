@@ -54,11 +54,16 @@ public:
 #ifdef FROZEN_LETITGO_HAS_STRING_VIEW
   constexpr basic_string(std::basic_string_view<chr_t> data)
       : data_(data.data()), size_(data.size()) {}
+
+  explicit constexpr operator std::basic_string_view<chr_t>() const {
+    return std::basic_string_view<chr_t>(data_, size_);
+  }
 #endif
 
   constexpr basic_string(const basic_string &) noexcept = default;
   constexpr basic_string &operator=(const basic_string &) noexcept = default;
 
+  constexpr std::size_t length() const { return size_; }
   constexpr std::size_t size() const { return size_; }
 
   constexpr chr_t operator[](std::size_t i) const { return data_[i]; }
@@ -89,6 +94,12 @@ public:
   friend constexpr bool operator>(const basic_string& lhs, const basic_string& rhs) {
     return rhs < lhs;
   }
+  friend constexpr bool operator>=(const basic_string& lhs, const basic_string& rhs) {
+    return !(lhs < rhs);
+  }
+  friend constexpr bool operator<=(const basic_string& lhs, const basic_string& rhs) {
+    return !(lhs > rhs);
+  }
 
   constexpr const chr_t *data() const { return data_; }
   constexpr const chr_t *begin() const { return data(); }
@@ -115,24 +126,24 @@ using u8string = basic_string<char8_t>;
 
 namespace string_literals {
 
-constexpr string operator"" _s(const char *data, std::size_t size) {
+constexpr string operator""_s(const char *data, std::size_t size) {
   return {data, size};
 }
 
-constexpr wstring operator"" _s(const wchar_t *data, std::size_t size) {
+constexpr wstring operator""_s(const wchar_t *data, std::size_t size) {
   return {data, size};
 }
 
-constexpr u16string operator"" _s(const char16_t *data, std::size_t size) {
+constexpr u16string operator""_s(const char16_t *data, std::size_t size) {
   return {data, size};
 }
 
-constexpr u32string operator"" _s(const char32_t *data, std::size_t size) {
+constexpr u32string operator""_s(const char32_t *data, std::size_t size) {
   return {data, size};
 }
 
 #ifdef FROZEN_LETITGO_HAS_CHAR8T
-constexpr u8string operator"" _s(const char8_t *data, std::size_t size) {
+constexpr u8string operator""_s(const char8_t *data, std::size_t size) {
   return {data, size};
 }
 #endif

@@ -1,3 +1,3 @@
 Vendored from https://github.com/serge-sans-paille/frozen
-commit 83a5604b86f114daf2eaf26567b8e04b6c67ddad
+commit 61dce5ae18ca59931e27675c468e64118aba8744
 with unnecessary files deleted
