@@ -82,7 +82,7 @@ private:
 			ptr[i] = static_cast<T &&>(old[i]);
 		}
 		free(old);
-		memset(ptr + oldlen, 0, (size_t)(bufferlen - oldlen) * sizeof(T));
+		memset((void*)(ptr + oldlen), 0, (size_t)(bufferlen - oldlen) * sizeof(T));
 	}
 
 public:
@@ -91,7 +91,7 @@ public:
 	{
 		if (keep >= count) return;
 		for (int i = keep;i < count;i++) ptr[i].~T();
-		memset(ptr + keep, 0, (size_t)(count - keep) * sizeof(T));
+		memset((void*)(ptr + keep), 0, (size_t)(count - keep) * sizeof(T));
 		if (keep < bufferlen / 2)
 		{
 			while (keep < bufferlen / 2 && bufferlen>8) bufferlen /= 2;
@@ -141,7 +141,7 @@ public:
 			resize(count);
 		}
 		memmove(ptr + pos + 1, ptr + pos, sizeof(T)*(count - pos));
-		memset(ptr + pos, 0, sizeof(T));
+		memset((void*)(ptr + pos), 0, sizeof(T));
 		new(ptr + pos) T();
 		count++;
 	}
@@ -154,7 +154,7 @@ public:
 			resize(count);
 		}
 		memmove(ptr + pos + 1, ptr + pos, sizeof(T)*(size_t)(count - pos));
-		memset(ptr + pos, 0, sizeof(T));
+		memset((void*)(ptr + pos), 0, sizeof(T));
 		new(ptr + pos) T();
 		ptr[pos] = item;
 		count++;
@@ -173,7 +173,7 @@ public:
 	autoarray()
 	{
 		ptr = (T*)malloc(sizeof(T) * default_size);
-		memset(ptr, 0, default_size*sizeof(T));
+		memset((void*)ptr, 0, default_size*sizeof(T));
 		bufferlen = default_size;
 		count = 0;
 	}
