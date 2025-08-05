@@ -2162,7 +2162,7 @@ void cf_start(const char* par, int& single_line_for_tracker) {
 	if(type != c_for)
 	{
 		if(!*par) throw_err_block(0, err_broken_command, typ_name, "Missing condition.");
-		cond = parse_math_expr(par)->evaluate_static().get_integer();
+		cond = parse_math_expr(par)->evaluate_static().get_bool();
 	}
 
 	if (type == c_for)
