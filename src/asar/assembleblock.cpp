@@ -1000,17 +1000,19 @@ void cmd_assert(const char* par) {
 	// todo optimize after adding some math helpers
 	const char* message_start = strqpchr(par, ',');
 
-	bool cond;
+	string cond_str;
 	if(message_start) {
-		string cond_str(par, message_start - par);
-		cond = getnum(cond_str);
+		cond_str.assign(par, message_start - par);
 		message_start++; // eat the comma
 	} else {
-		cond = getnum(par);
+		cond_str = par;
 	}
 
-	if (pass == 2 && !cond)
-	{
+	if(pass != 2) return;
+
+	bool cond = parse_math_expr(cond_str)->evaluate().get_bool();
+
+	if(!cond) {
 		if (message_start) throw_err_block(2, err_assertion_failed, (string(": ") + handle_print(message_start)).data());
 		else throw_err_block(2, err_assertion_failed, ".");
 	}
