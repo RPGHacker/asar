@@ -2466,7 +2466,7 @@ macro example1(...)
 	while !a &lt; sizeof(...)
 		db &lt;...[!a]&gt;		;01 02 03
 		!a #= !a+1
-	endif
+	endwhile
 endmacro
 
 macro example2(named_parameter, ...)
@@ -2474,7 +2474,7 @@ macro example2(named_parameter, ...)
 	while !a &lt; sizeof(...)
 		db &lt;...[!a]&gt;		;02 03 04 05 06 07
 		!a #= !a+1
-	endif
+	endwhile
 	db &lt;named_parameter&gt;	;01
 endmacro
 
@@ -2588,7 +2588,7 @@ while !fpos &lt; !fsize
 	;...
 	
 	!fpos #= !fpos+1
-endif</code></pre></td>
+endwhile</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">getfilestatus(filename)</code></td>
