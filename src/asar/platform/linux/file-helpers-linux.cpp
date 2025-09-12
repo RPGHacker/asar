@@ -56,6 +56,8 @@ FileHandleType open_file(const char* path, FileOpenMode mode, FileOpenError* err
 	case FileOpenMode_Write:
 		open_mode = "wb";
 		break;
+	default:
+		__builtin_unreachable();
 	}
 
 	out_handle = fopen(path, open_mode);
