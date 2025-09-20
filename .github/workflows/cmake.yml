@@ -50,7 +50,12 @@ jobs:
 
     - uses: actions/upload-artifact@v4
       with:
-        name: binaries-${{ matrix.name }}
+        # only on windows:
+        # on osx, the binaries wouldn't be easily runnable anyways due to code
+        # signing bullshit; on linux, the test binaries are built with asan and
+        # i don't want to distribute those
+        name: win-binaries
+        if: ${{ matrix.name == 'windows' }}
         path: |
-          ${{ github.workspace }}/build/asar/bin/**/asar*
-          ${{ github.workspace }}/build/asar/lib/**/*asar.*
+          ${{ github.workspace }}/build/asar/bin/**/asar.exe
+          ${{ github.workspace }}/build/asar/lib/**/asar.dll
