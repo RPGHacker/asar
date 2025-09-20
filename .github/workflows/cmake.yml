@@ -11,7 +11,7 @@ on:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  BUILD_TYPE: MinSizeRel
 
 jobs:
   build:
@@ -47,3 +47,10 @@ jobs:
 
     - name: Tests
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target run-tests
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: binaries-${{ matrix.name }}
+        path: |
+          ${{ github.workspace }}/build/asar/bin/**/asar*
+          ${{ github.workspace }}/build/asar/lib/**/*asar.*
