@@ -74,7 +74,7 @@ bool evaluate_binop_compare(const T& lhs, const T& rhs, math_binop_type type) {
 
 static bool evaluate_eq(math_val lhs, math_val rhs) {
 	// if only one is string, they can never be equal
-	if((lhs.m_type == math_val_type::string) ^ (rhs.m_type == math_val_type::string)) {
+	if((lhs.m_type == math_val_type::string) != (rhs.m_type == math_val_type::string)) {
 		return false;
 	}
 	if(lhs.m_type == math_val_type::string) {
