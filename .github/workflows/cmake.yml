@@ -8,29 +8,53 @@ on:
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
-  BUILD_TYPE: Release
+  BUILD_TYPE: MinSizeRel
 
 jobs:
   build:
     strategy:
       matrix:
-        config: ['windows-msvc-2019']
-        os: ['windows-2019']
-        generator: ['-G "Visual Studio 16 2019"']
-        toolset: ['-T v142']
         include:
-          - config: ubuntu-20
-            os: ubuntu-20.04
+          - name: win64
+            os: windows-2022
+            cmake_opts: '-G "Visual Studio 17 2022"'
+          - name: win32
+            os: windows-2022
+            cmake_opts: '-G "Visual Studio 17 2022" -A Win32'
+          - name: ubuntu
+            os: ubuntu-24.04
+            cmake_opts: '-DASAR_USE_SANITIZER=ON'
+          - name: osx
+            os: macos-14
+    name: ${{ matrix.name }}
     runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
 
     - name: Configure CMake
-      run: cmake -S ${{github.workspace}}/src -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{ matrix.generator }} ${{ matrix.toolset }}
+      run: cmake -S ${{github.workspace}}/src -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} ${{ matrix.cmake_opts }}
 
     - name: Build
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
+    # Uncomment this to get a debug shell on the actions runner
+    #- name: debug stuff
+    #  uses: mxschmitt/action-tmate@v3
+
     - name: Tests
       run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target run-tests
+
+    - uses: actions/upload-artifact@v4
+      if: ${{ matrix.name == 'win64' || matrix.name == 'win32' }}
+      with:
+        # only on windows:
+        # on osx, the binaries wouldn't be easily runnable anyways due to code
+        # signing bullshit; on linux, the test binaries are built with asan and
+        # i don't want to distribute those
+        name: ${{ matrix.name }}-binaries
+        path: |
+          ${{ github.workspace }}/build/asar/bin/**/asar.exe
+          ${{ github.workspace }}/build/asar/lib/**/asar.dll
