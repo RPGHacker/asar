@@ -43,7 +43,7 @@ FileHandleType open_file(const char* path, FileOpenMode mode, FileOpenError* err
 	}
 
 	FILE* out_handle = NULL;
-	const char* open_mode;
+	const char* open_mode = "";
 
 	switch (mode)
 	{
