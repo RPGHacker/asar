@@ -377,6 +377,8 @@ int getlenforlabel(int labelpos, int label_fs_id, bool exists)
 			else cur_effective_bank = relaxed_bank = target_bank;
 		}
 	}
+	// hirom has non-mirrored sram in 6000-7fff, so optimize mirrors shouldn't cover it
+	int mirror_bound = (mapper == hirom || mapper == exhirom) ? 0x6000 : 0x8000;
 
 	if(lbl_is_freespace) {
 		bank = freespaces[label_fs_id].bank;
@@ -410,7 +412,7 @@ int getlenforlabel(int labelpos, int label_fs_id, bool exists)
 		// we're in a bank with ram mirrors...
 		&& !(relaxed_bank & 0x40)
 		// and the label is in a mirrored section
-		&& !(bank & 0x40) && word < 0x8000 && !lbl_is_freespace)
+		&& !(bank & 0x40) && word < mirror_bound && !lbl_is_freespace)
 	{
 		return 2;
 	}
