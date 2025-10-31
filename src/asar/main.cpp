@@ -357,31 +357,40 @@ virtual_file_error asar_get_last_io_error()
 
 int getlenforlabel(int labelpos, int label_fs_id, bool exists)
 {
-	unsigned int bank = labelpos>>16;
+	int bank = labelpos>>16;
 	unsigned int word = labelpos&0xFFFF;
-	bool lblfreespace = label_fs_id > 0;
+	bool lbl_is_freespace = label_fs_id > 0;
+	// bank number for mirroring considerations.
+	// this is the number of a bank which has the same "layout" as the current bank.
 	unsigned int relaxed_bank;
+	// nonnegative if we know that DBR is pointing at a certain bank
+	int cur_effective_bank = -1;
 	if(optimizeforbank >= 0) {
-		relaxed_bank = optimizeforbank;
+		cur_effective_bank = relaxed_bank = optimizeforbank;
 	} else {
 		if(freespaceid == 0) {
-			relaxed_bank = snespos >> 16;
+			cur_effective_bank = relaxed_bank = snespos >> 16;
 		} else {
 			int target_bank = freespaces[freespaceid].bank;
 			if(target_bank == -2) relaxed_bank = 0;
 			else if(target_bank == -1) relaxed_bank = 0x40;
-			else relaxed_bank = target_bank;
+			else cur_effective_bank = relaxed_bank = target_bank;
 		}
 	}
+
+	if(lbl_is_freespace) {
+		bank = freespaces[label_fs_id].bank;
+	}
+
 	if (!exists)
 	{
 		return 2;
 	}
-	else if((optimize_dp == optimize_dp_flag::RAM) && bank == 0x7E && (word-dp_base < 0x100) && !lblfreespace)
+	else if((optimize_dp == optimize_dp_flag::RAM) && bank == 0x7E && (word-dp_base < 0x100) && !lbl_is_freespace)
 	{
 		return 1;
 	}
-	else if(optimize_dp == optimize_dp_flag::ALWAYS && (bank == 0x7E || !(bank & 0x40)) && (word-dp_base < 0x100) && !lblfreespace)
+	else if(optimize_dp == optimize_dp_flag::ALWAYS && (bank == 0x7E || !(bank & 0x40)) && (word-dp_base < 0x100) && !lbl_is_freespace)
 	{
 		return 1;
 	}
@@ -391,7 +400,7 @@ int getlenforlabel(int labelpos, int label_fs_id, bool exists)
 		// and we're in a bank with ram mirrors... (optimizeforbank=0x7E is checked later)
 		&& !(relaxed_bank & 0x40)
 		// and the label is in low RAM
-		&& bank == 0x7E && word < 0x2000 && !lblfreespace)
+		&& bank == 0x7E && word < 0x2000 && !lbl_is_freespace)
 	{
 		return 2;
 	}
@@ -401,27 +410,33 @@ int getlenforlabel(int labelpos, int label_fs_id, bool exists)
 		// we're in a bank with ram mirrors...
 		&& !(relaxed_bank & 0x40)
 		// and the label is in a mirrored section
-		&& !(bank & 0x40) && word < 0x8000 && !lblfreespace)
+		&& !(bank & 0x40) && word < 0x8000 && !lbl_is_freespace)
 	{
 		return 2;
 	}
 	else if (optimizeforbank>=0)
 	{
 		// if optimizing for a specific bank:
-		// if the label is in freespace, never optimize
-		if (lblfreespace) return 3;
-		else if (bank==(unsigned int)optimizeforbank) return 2;
+		// if the label is in freespace, then bank is the freespace's bank, and
+		// if that's non-negative, then the freespace is forced to that bank.
+		// if the freespace isn't forced to a specific bank, then bank is
+		// negative, so this equality will never hold.
+		if (bank == optimizeforbank) return 2;
 		else return 3;
 	}
-	else if (lblfreespace || freespaceid > 0)
-	{
-		// optimize only if the label is in the same freespace
-		// TODO: check whether they're pinned to the same bank
-		if (label_fs_id != freespaceid) return 3;
-		else return 2;
+
+	// check if the label is pinned to the current freespace.
+	// can only be checked after pass 0, as freespace pin targets aren't
+	// computed before then.
+	// This codepath also handles the case of labels that are in the current freespace.
+	if(pass > 0 && lbl_is_freespace && freespaceid > 0) {
+		int fs_pin_1 = freespaces[label_fs_id].pin_target_id;
+		int fs_pin_2 = freespaces[freespaceid].pin_target_id;
+		if(fs_pin_1 == fs_pin_2) return 2;
 	}
-	else if ((int)bank != snespos >> 16){ return 3; }
-	else { return 2;}
+
+	if (bank >= 0 && bank == cur_effective_bank) return 2;
+	else return 3;
 }
 int getlenforlabel(snes_label thislabel, bool exists) {
 	return getlenforlabel(thislabel.pos, thislabel.freespace_id, exists);

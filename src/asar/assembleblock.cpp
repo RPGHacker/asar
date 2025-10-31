@@ -761,14 +761,17 @@ static void resolve_pinned_freespaces() {
 		fs.pin_target_id = get_freespace_pin_target(value.freespace_id);
 		fs.len = 0;
 	}
+	for(int i = 1; i < freespaces.count; i++) {
+		freespace_data& fs = freespaces[i];
+		// just in case the pin target changed again or something
+		fs.pin_target_id = get_freespace_pin_target(fs.pin_target_id);
+	}
 }
 
 static void allocate_freespaces() {
 	// compute real size of all pinned freespace blocks
 	for(int i = 1; i < freespaces.count; i++) {
 		freespace_data& fs = freespaces[i];
-		// just in case the pin target changed again or something
-		fs.pin_target_id = get_freespace_pin_target(fs.pin_target_id);
 		freespace_data& target = freespaces[fs.pin_target_id];
 		target.total_len += fs.len;
 		target.search_start = std::max(fs.search_start, target.search_start);
