@@ -378,7 +378,7 @@ int getlenforlabel(int labelpos, int label_fs_id, bool exists)
 		}
 	}
 	// hirom has non-mirrored sram in 6000-7fff, so optimize mirrors shouldn't cover it
-	int mirror_bound = (mapper == hirom || mapper == exhirom) ? 0x6000 : 0x8000;
+	unsigned int mirror_bound = (mapper == hirom || mapper == exhirom) ? 0x6000 : 0x8000;
 
 	if(lbl_is_freespace) {
 		bank = freespaces[label_fs_id].bank;
