@@ -61,6 +61,17 @@ public:
 	int get_len(bool could_be_bank_ex) const;
 };
 
+class math_ast_ternary_cond : public math_ast_node {
+	owned_node m_cond, m_true, m_false;
+public:
+	math_ast_ternary_cond(owned_node cond_in, owned_node true_in, owned_node false_in)
+	: m_cond(std::move(cond_in)), m_true(std::move(true_in)), m_false(std::move(false_in)) {}
+
+	math_val evaluate(const eval_context& ctx) const;
+	int has_label() const;
+	int get_len(bool could_be_bank_ex) const;
+};
+
 class math_ast_literal : public math_ast_node {
 	math_val m_value;
 	int m_len;

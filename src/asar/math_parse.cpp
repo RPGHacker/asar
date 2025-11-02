@@ -64,7 +64,7 @@ owned_node parse_context::parse_atom() {
 	}
 	if (is_ualpha(*str) || *str=='.' || *str=='?') {
 		const char * start=str;
-		while (is_ualnum(*str) || *str == '.') str++;
+		while (is_ualnum(*str) || *str == '.' || *str == '?') str++;
 		int len=(int)(str-start);
 		while (*str==' ') str++;
 		if (*str=='(') {
@@ -80,6 +80,16 @@ owned_node parse_context::parse_atom() {
 				if(*str == ',') str++;
 			}
 			str++;
+			// ternary is basically just a function called "?"
+			if(func_name == "?") {
+				if(arguments.size() != 3) {
+					throw_err_block(2, err_argument_count, 3, (int)arguments.size());
+				}
+				return std::make_unique<math_ast_ternary_cond>(
+					std::move(arguments[0]),
+					std::move(arguments[1]),
+					std::move(arguments[2]));
+			}
 			return std::make_unique<math_ast_function_call>(std::move(arguments), std::move(func_name));
 		} else {
 			string name_part(start, len);

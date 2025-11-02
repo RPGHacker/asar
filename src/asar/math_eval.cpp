@@ -231,6 +231,22 @@ int math_ast_unop::get_len(bool could_be_bank_ex) const {
 	return m_arg->get_len(false);
 }
 
+math_val math_ast_ternary_cond::evaluate(const eval_context& ctx) const {
+	if(m_cond->evaluate(ctx).get_bool()) {
+		return m_true->evaluate(ctx);
+	} else {
+		return m_false->evaluate(ctx);
+	}
+}
+
+int math_ast_ternary_cond::has_label() const {
+	return m_cond->has_label() | m_true->has_label() | m_false->has_label();
+}
+
+int math_ast_ternary_cond::get_len(bool could_be_bank_ex) const {
+	return std::max(m_true->get_len(false), m_false->get_len(false));
+}
+
 math_val math_ast_label::evaluate(const eval_context &ctx) const {
 	if (m_cur_ns && labels.exists(m_cur_ns + m_labelname)) {
 		return math_val::make_identifier(m_cur_ns + m_labelname);

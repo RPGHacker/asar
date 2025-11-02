@@ -77,8 +77,9 @@ Asar supports the 6 usual comparison operators:
 | --- | --- |
 | <code>a \|\| b</code> | Returns 1 if at least one of `a` and `b` evaluates to true |
 | `a && b` | Returns 1 if both of `a` and `b` evaluate to true |
+| `?(a, b, c)` | Returns `b` if `a` is true, or `c` if `a` is false |
 
-These operators are lazy: they will not evaluate the right-hand argument if the result is already determined by the left-hand argument. (Specifically, `1 || anything` immediately returns `1` and doesn't evaluate `anything`, and similarly, `0 && anything` immediately returns `0`.)
+These operators are lazy: they will not evaluate the right-hand argument if the result is already determined by the left-hand argument. More specifically, `1 || anything` immediately returns `1` and doesn't evaluate `anything`; `0 && anything` immediately returns `0`; and `?(1, x, anything)` returns `x` without evaluating `anything`.
 
 ## Operator precedence
 
