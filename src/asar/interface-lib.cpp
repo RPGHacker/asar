@@ -139,7 +139,7 @@ void error_interface(const char* errid, int whichpass, const char * e_)
 	if (ismath) matherror = e_;
 	else if (pass == whichpass) {
 		// don't show current block if the error came from an error command
-		bool show_block = (strcmp(errid, "error_command") != 0);
+		bool show_block = (strcmp(errid, "Eerror_command") != 0);
 		fillerror(errors[numerror++], errid, STR "error: (" + errid + "): ", e_, show_block);
 	}
 	else {}//ignore anything else
@@ -147,9 +147,10 @@ void error_interface(const char* errid, int whichpass, const char * e_)
 
 void warn(int errid, const char * str)
 {
+	const char* warnname = get_warning_name((asar_warning_id)errid);
 	// don't show current block if the warning came from a warn command
-	bool show_block = (errid != warn_id_warn_command);
-	fillerror(warnings[numwarn++], get_warning_name((asar_warning_id)errid), STR "warning: (" + get_warning_name((asar_warning_id)errid) + "): ", str, show_block);
+	bool show_block = (strcmp(warnname, "Wwarn_command") != 0);
+	fillerror(warnings[numwarn++], warnname, STR "warning: (" + warnname + "): ", str, show_block);
 }
 
 static autoarray<labeldata> ldata;

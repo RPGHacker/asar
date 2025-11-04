@@ -1,23 +1,29 @@
 #include <vector>
+#include "libstr.h"
 
 // construct a mapping between warning ids and warning names.
 struct warn_t;
 std::vector<warn_t> all_warnings;
 int warning_id_end = 0;
 struct warn_t {
-	const char *name;
+	string name;
 	bool exists;
 	bool is_default_enabled;
 	warn_t() : name(nullptr), exists(false), is_default_enabled(false) {}
-	warn_t(int id, const char *name, bool is_default_enabled)
-	: name(name), exists(true), is_default_enabled(is_default_enabled) {
+	warn_t(int id, const char *name_in, bool is_default_enabled)
+	: exists(true), is_default_enabled(is_default_enabled) {
 		if((int)all_warnings.size() <= id) all_warnings.resize(id + 1);
+		// convert warn_xxx -> Wxxx
+		name = STR "W" + (name_in + 5);
 		all_warnings[id] = *this;
 		warning_id_end = all_warnings.size();
 	}
 };
 
-#define SAVE_WARN_NAME(id, name, is_enabled) static warn_t _useless_##id { id, name, is_enabled }
+// i love this fucking language
+#define CAT(a,b) a##b
+#define CAT2(a,b) CAT(a,b)
+#define SAVE_WARN_NAME(id, name, is_enabled) static warn_t CAT2(_useless_,__LINE__) { id, name, is_enabled }
 #include "warnings.h"
 
 #include "asar.h"
@@ -63,7 +69,7 @@ const char* get_warning_name(asar_warning_id warnid)
 	const warn_t& warning = all_warnings[warnid];
 	assert(warning.exists);
 
-	return warning.name;
+	return warning.name.data();
 }
 
 
@@ -92,7 +98,7 @@ asar_warning_id parse_warning_id_from_string(const char* string)
 	}
 	for(int i = 0; i < warning_id_end; i++)
 	{
-		if(all_warnings[i].exists && !stricmpwithlower(pos, all_warnings[i].name+1))
+		if(all_warnings[i].exists && !stricmpwithlower(pos, all_warnings[i].name.data()+1))
 		{
 			return asar_warning_id(i);
 		}

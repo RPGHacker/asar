@@ -2,8 +2,8 @@
 import re
 import string
 
-warning_pattern = re.compile(r'WRN\((.*?),\s*"(.*)"\s*,\s*(true|false)\)')
-error_pattern = re.compile(r'ERR\((.*?),\s*"(.*)"\)')
+warning_pattern = re.compile(r'WRN\(warn_(.*?),\s*"(.*)"\s*,\s*(true|false)\)')
+error_pattern = re.compile(r'ERR\(err_(.*?),\s*"(.*)"\)')
 escaping = str.maketrans({x: '\\'+x for x in string.punctuation})
 
 def escape(s):

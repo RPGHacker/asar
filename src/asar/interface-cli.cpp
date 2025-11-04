@@ -125,8 +125,8 @@ void error_interface(const char* errid, int whichpass, const char * e_)
 		errnum++;
 		const char* current_block = get_current_block();
 		// don't show current block if the error came from an error command or limit reached
-		bool show_block = (current_block && (strcmp(errid, "error_command") != 0 && strcmp(errid, "limit_reached") != 0));
-		bool show_stack = strcmp(errid, "limit_reached") != 0;
+		bool show_block = (current_block && (strcmp(errid, "Eerror_command") != 0 && strcmp(errid, "Elimit_reached") != 0));
+		bool show_stack = strcmp(errid, "Elimit_reached") != 0;
 		string location;
 		string details;
 		get_current_line_details(&location, &details, !show_block);
@@ -146,12 +146,13 @@ static bool warned=false;
 void warn(int errid, const char * e_)
 {
 	const char* current_block = get_current_block();
+	const char* warnname = get_warning_name((asar_warning_id)errid);
 	// don't show current block if the warning came from a warn command
-	bool show_block = (current_block && (errid != warn_id_warn_command));
+	bool show_block = (current_block && (strcmp(warnname, "Wwarn_command") != 0));
 	string location;
 	string details;
 	get_current_line_details(&location, &details, !show_block);
-	string warning_string = location+"warning: (" + get_warning_name((asar_warning_id)errid) + "): " + e_;
+	string warning_string = location+"warning: (" + warnname + "): " + e_;
 	string details_string = details + get_callstack() + "\n";
 	set_text_color(errloc, &warning_string, ansi_text_color::BRIGHT_YELLOW);
 	fputs(warning_string, errloc);
