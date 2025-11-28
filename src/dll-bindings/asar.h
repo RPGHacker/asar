@@ -71,13 +71,28 @@ struct patchparams {
 	// The size of this struct. Set to (int)sizeof(patchparams).
 	int structsize;
 
-	// Same parameters as asar_patch()
+	// Filename of the patch to apply. (This is a path so that Asar
+	// knows where to look for incsrc'd stuff. If you wish to apply a
+	// patch that doesn't exist on the filesystem, use a memory file.)
+	// Note that this (and all other filenames in this API) is always
+	// UTF-8 encoded, even on windows.
 	const char * patchloc;
+	// Pointer to the ROM data to apply the patch to. This, along with
+	// buflen and romlen, are assumed to be unheadered.
 	char * romdata;
+	// Length of the buffer pointed to by romdata.
 	int buflen;
+	// Size of the rom (passed as a pointer so asar can change it). This
+	// may be changed by asar, but will never go above buflen; if you
+	// try to expand the rom too much, you get a buffer_too_small error.
+	// Pass a buffer with size = asar_maxromsize() to avoid this.
+	// Note that the bytes of romdata at indices between romlen and
+	// buflen do not need to be initialized.
 	int * romlen;
 
 	// Include paths to use when searching files.
+	// Each string in includepaths is an include search path; see the
+	// "Includes" chapter of the manual for details.
 	const char** includepaths;
 	int numincludepaths;
 
@@ -136,15 +151,11 @@ int asar_apiversion(void);
  */
 bool asar_reset(void);
 
-/* Applies a patch. The first argument is a filename (so Asar knows where to
- * look for incsrc'd stuff); however, the ROM is in memory.
- * This function assumes there are no headers anywhere, neither in romdata nor
- * the sizes. romlen may be altered by this function; if this is undesirable,
- * set romlen equal to buflen.
- * The return value is whether any errors appeared (false=errors, call
- * asar_geterrors for details). If there is an error, romdata and romlen will
- * be left unchanged.
+/* Applies a patch.
  * See the documentation of struct patchparams for more information.
+ * The return value is whether any errors appeared (false=errors, call
+ * asar_geterrors for details). If there is an error, the romdata and
+ * romlen passed in the patchparams will be left unchanged.
  */
 bool asar_patch(const struct patchparams *params);
 
@@ -209,6 +220,12 @@ const struct writtenblockdata * asar_getwrittenblocks(int * count);
 enum mappertype asar_getmapper(void);
 
 /* Generates the contents of a symbols file for in a specific format.
+ * See the documentation of --symbols in the "Usage" chapter in the
+ * manual for valid values of `type`.
+ * Note that some formats include a crc checksum of the ROM. When using
+ * this function, this will be the checksum of the unheadered ROM;
+ * you'll need to fix that manually if the original ROM file was
+ * actually headered.
  */
 const char * asar_getsymbolsfile(const char* type);
 
