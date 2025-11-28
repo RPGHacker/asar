@@ -304,14 +304,17 @@ static void asar_patch_begin(char * romdata_, int buflen, int * romlen_)
 {
 	if (buflen != maxromsize)
 	{
-		romdata_r = (unsigned char*)malloc(maxromsize);
-		memcpy(const_cast<unsigned char*>(romdata_r)/*we just allocated this, it's safe to violate its const*/, romdata_, (size_t)*romlen_);
+		unsigned char* romdata_r_buffer = (unsigned char*)malloc(maxromsize);
+		memcpy(romdata_r_buffer, romdata_, (size_t)*romlen_);
+		romdata_r = romdata_r_buffer;
 	}
 	else romdata_r = (unsigned char*)romdata_;
-	romdata = (unsigned char*)malloc(maxromsize);
-	// RPG Hacker: Without this memset, freespace commands can (and probably will) fail.
-	memset((void*)romdata, 0, maxromsize);
-	memcpy(const_cast<unsigned char*>(romdata), romdata_, (size_t)*romlen_);
+	unsigned char* romdata_buffer = (unsigned char*)malloc(maxromsize);
+	// this memset shouldn't be necessary currently (expanding the rom should
+	// fill the new parts with freespacebyte), but doesn't hurt to be safe here
+	memset(romdata_buffer, 0, maxromsize);
+	memcpy(romdata_buffer, romdata_, (size_t)*romlen_);
+	romdata = romdata_buffer;
 	resetdllstuff();
 	romlen = *romlen_;
 	romlen_r = *romlen_;
