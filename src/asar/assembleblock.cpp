@@ -352,7 +352,7 @@ string posneglabelname(const char ** input, bool define)
 		{
 			if (macrorecursion == 0 || macroposlabels == nullptr || macroneglabels == nullptr)
 			{
-				if (!macrorecursion) throw_err_block(0, err_macro_label_outside_of_macro);
+				if (!macrorecursion) throw_err_block(2, err_macro_label_outside_of_macro);
 			}
 			else
 			{
