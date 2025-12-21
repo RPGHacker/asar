@@ -2314,10 +2314,10 @@ lda [!x],y	; Treated as &quot;lda [$00],y&quot;
 		
 lda !x		; Treated as &quot;lda $12$34&quot; (will throw error)
 		
-!phr = &quot;pha : phx : phy&quot;
+!phr = &quot;pha : phx : phy&quot; ; keeps whitespace
 		
 !phr		; Treated as &quot;pha : phx : phy&quot;</code></pre>
-		To assign text containing whitespace to a define, you must delimit it with two <code class="65c816_asar">&quot;</code> as shown above with !phr. Besides the regular define operator <code class="65c816_asar">=</code>, Asar also supports a number of additional define operators with slightly different functionality.<br /><br />
+		To assign text containing whitespace to a define, you must delimit it (surround it) with two <code class="65c816_asar">&quot;</code>, as shown above with <code class="65c816_asar">!phr</code>. Besides the regular define operator <code class="65c816_asar">=</code>, Asar also supports a number of additional define operators with slightly different functionality.<br /><br />
 		<table>
 			<tr>
 				<th style="width:150px">Operator</th>
