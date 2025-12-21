@@ -311,7 +311,7 @@
 ../../my_game/libraries
 		test/</code></pre>
 		<h4 id="standard-defines">Standard Defines</h4>
-		Aside from passing additional defines to Asar via the command line, it's possible to also do so via a file called <code>stddefines.txt</code>. When a file with this name exists next to the Asar executable, Asar automatically opens it and adds every line in it as an additional define. The syntax is similar to Asar's regular define syntax, with a few notable differences. There are no spaces required around the <code>=</code>, the <code>!</code> of the identifier is optional, whitespace around the identifier is ignored, so is whitespace around the value (unless the value is delimited by double quotes, in which case any whitespace inside is kept in the define), the value itself is optional (when left out, it is set to an emptry string). Lines containing only whitespace are ignored. The purpose of this file is to make it easier to distribute standard code libraries for use with Asar by making it possible to just unpack the contents of a ZIP file or similar directly into the Asar directory. See section <a href="#defines">Defines</a> for details on defines.<br />
+		Aside from passing additional defines to Asar via the command line, it's possible to also do so via a file called <code>stddefines.txt</code>. When a file with this name exists next to the Asar executable, Asar automatically opens it and adds every line in it as an additional define. The syntax is similar to Asar's regular define syntax, with a few notable differences. There are no spaces required around the <code>=</code>, the <code>!</code> of the identifier is optional, whitespace around the identifier is ignored, so is whitespace around the value (unless the value is delimited by double quotes, in which case any whitespace inside is kept in the define), the value itself is optional (when left out, it is set to an empty string). Lines containing only whitespace are ignored. The purpose of this file is to make it easier to distribute standard code libraries for use with Asar by making it possible to just unpack the contents of a ZIP file or similar directly into the Asar directory. See section <a href="#defines">Defines</a> for details on defines.<br />
 		All of the examples below are valid:
 		<pre><code>!stddefined1=1
  stddefined2=1
@@ -1517,7 +1517,7 @@ clc
 adc #-10
 and #%01111111
 lda #~$80	; Equal to lda #$FFFFFF7F</code></pre>
-		Aditionally, Asar supports character literals by delimiting a single ASCII character with <code>'</code>. Asar will automatically convert them to the integer value currently mapped to them (by default their ASCII value). They can be used in all places where number literals can be used. See section <a href="#tables">Tables</a> for details on ASCII character mapping.
+		Additionally, Asar supports character literals by delimiting a single ASCII character with <code>'</code>. Asar will automatically convert them to the integer value currently mapped to them (by default their ASCII value). They can be used in all places where number literals can be used. See section <a href="#tables">Tables</a> for details on ASCII character mapping.
 		<pre><code class="65c816_asar">lda #'a'
 sta $00
 
@@ -1688,7 +1688,7 @@ endif</code></pre>
 		The <code class="65c816_asar">warn xkas</code> command determines whether Asar should throw warnings on behavior that is known to be different between xkas and Asar. Use <code>warn xkas on</code> to enable these warnings and <code>warn xkas off</code> to disable them. It's recommended to only enable them when not using <a href="#xkas">xkas compatibility mode</a>. Note that some behavioral changes throw warnings or errors regardless of this setting.
 		<h4 id="math-pri">math pri</h4>
 		<pre><code class="65c816_asar">math pri {on/off}</code></pre>
-		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math experssions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional order of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. This command will be removed in Asar 2.0, after which <code>math pri on</code> will be the only possible behavior.
+		The <code class="65c816_asar">math pri</code> command tells Asar which order of operations to use in math expressions. When set to off (default), Asar uses left-to-right math, just like xkas v0.06. When set to on, Asar follows the conventional order of operations (exponentiation before multiplication & division, multiplication & division before addition & subtraction etc.). Parentheses can be used in either mode and tell Asar to calculate the expression inside first. For most intents and purposes, working with this flag enabled is more practical and predictable. It is disabled by default solely for the purpose of xkas backwards compatibility, unless <code class="65c816_asar">asar 1.9</code> or a higher version is specified at the start of the file, which will change the default to <code class="65c816_asar">math pri on</code>. This command will be removed in Asar 2.0, after which <code>math pri on</code> will be the only possible behavior.
 		<pre><code class="65c816_asar">math pri off
 db 1+(6/3)*5	; db 15
 
@@ -1696,7 +1696,7 @@ math pri on
 db 1+(6/3)*5	; db 11</code></pre>
 		<h4 id="math-round">math round</h4>
 		<pre><code class="65c816_asar">math round {on/off}</code></pre>
-		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifially for Asar, it is recommended to always disable this flag. If you specify a minimum supported Asar version using <code>asar 1.9</code> or higher, the default will be <code>math round off</code>. This command will be removed in Asar 2.0, after which <code>math round off</code> will be the only possible behavior.
+		The <code class="65c816_asar">math round</code> command tells Asar which rounding behavior to use in math expressions. When set to on (default), Asar truncates all numbers immediately, whereas when set to off, Asar only truncates numbers whenever they need to be cast to an integer type. Note that having this flag enabled will make it practically impossible to work with floating point numbers since calculations will lead to unexpected and impractical results. It is the default setting solely for the purpose of xkas backwards compatibility. When writing patches specifically for Asar, it is recommended to always disable this flag. If you specify a minimum supported Asar version using <code>asar 1.9</code> or higher, the default will be <code>math round off</code>. This command will be removed in Asar 2.0, after which <code>math round off</code> will be the only possible behavior.
 		<pre><code class="65c816_asar">math round on
 ; 1.75 is immediately truncated to 1, resulting in (3/4)+1
 ; 3/4 would result in 0.75, which is immediately truncated to 0, resulting in 0+1
@@ -1723,7 +1723,7 @@ db (3/4)+1.75
 		<h4 id="comments">Comments</h4>
 		You can use ; to add comments to your code, making it easier to read and understand for other people. Everything from the ; to the end of the line is silently ignored by Asar.
 		<pre><code class="65c816_asar">	lda $00		; Asar only sees the lda $00 and ignores everything else</code></pre>
-		Previously, there were exceptions to this rule in the form of lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. This functionality is deprecated, Asar 2.0 will treat these lines as regular comments. The purpose of this feature was to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they would be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. (This too is deprecated.) Aditionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#compatibility">Compatibility Settings</a> for details on xkas compatibility.
+		Previously, there were exceptions to this rule in the form of lines starting with <code class="65c816_asar">;@</code>, which are assembled normally. This functionality is deprecated, Asar 2.0 will treat these lines as regular comments. The purpose of this feature was to add code to your patch that can be used with both xkas and Asar. In xkas, lines with ;@ will simply be ignored, whereas in Asar, they would be assembled. If you don't care about backwards-compatibility, you can also just use <code class="65c816_asar">@</code>, which will make your patch only assemble with Asar and fail with xkas. (This too is deprecated.) Additionally, when Asar finds any unknown command on a line starting with ;@ or @, it will only throw a warning instead of an error. This can, at least in theory, be used to include optional features from newer Asar versions and still have your patch be compatible with older Asar versions. See section <a href="#compatibility">Compatibility Settings</a> for details on xkas compatibility.
 		<p>Also note that comments starting with <code>;[[</code> are reserved for multi-line comments in a future version of Asar. You should either change the beginning or make sure that there's a <code>]]</code> (the comment terminator) at the end of the line.</p>
 		<h4 id="brackets">Brackets</h4>
 		Brackets, { and }, may be used to help organize your code structurally. They're treated as commands by the assembler, which means they follow the same rules as other commands, but they otherwise have no effect on code assembly and are silently ignored. Since brackets have no effect on code assembly, they don't even have to match, either. It's entirely up to the coder whether, how and in what quantity brackets are used.<br />
@@ -1738,7 +1738,7 @@ db (3/4)+1.75
 .IsZero
 	rts</code></pre>
 		<h4 id="multiline">Multi-Line Operators</h4>
-		The <code class="65c816_asar">,</code> and the <code class="65c816_asar">\</code> operator are formatting operators which make it possible to split commands in Asar into multiple lines. Both are put at the end of a line and work very similarly with only one key difference. During execution, Asar will concatenate subsequent lines to lines ending with either operator and treat them as a single line. When using the comma operator, the comma itself will actually remain a part of the concatenated string, whereas when using the backslash operator, the backslash itself will be removed from the concatenated string. When using the backslash operator, please note that all whitespace following it is ignored, whereas all whitespace preceeding it is preserved. This is by design, since some commands in Asar require spaces to work, whereas other commands (like math commands) only work without spaces.
+		The <code class="65c816_asar">,</code> and the <code class="65c816_asar">\</code> operator are formatting operators which make it possible to split commands in Asar into multiple lines. Both are put at the end of a line and work very similarly with only one key difference. During execution, Asar will concatenate subsequent lines to lines ending with either operator and treat them as a single line. When using the comma operator, the comma itself will actually remain a part of the concatenated string, whereas when using the backslash operator, the backslash itself will be removed from the concatenated string. When using the backslash operator, please note that all whitespace following it is ignored, whereas all whitespace preceding it is preserved. This is by design, since some commands in Asar require spaces to work, whereas other commands (like math commands) only work without spaces.
 		<pre><code class="65c816_asar">%some_macro(!arg1, !arg2, !arg3,
 	!arg4, !arg5, !arg6)
 ; This will be treated as &quot;%some_macro(!arg1, !arg2, !arg3, !arg4, !arg5, !arg6)&quot;
@@ -1934,7 +1934,7 @@ lda #(5+6)*2	; the same as &quot;lda #22&quot;</code></pre>
 		Labels are used to represent a position in the ROM and allow you to code without having to constantly update branches and jumps/calls. They can be used with any opcode, but were specifically designed to be used with branches, jumps, calls, pointer tables etc. When used with branches, they're automatically converted to offsets.
 		<h4 id="main-labels">Main Labels</h4>
 		<pre><code class="65c816_asar">[#]{identifier}:</code></pre>
-		Main labels are the top-most level of labels supported by Asar. They're global and thus can be directly acessed from anywhere. Their identifier can contain any of the following characters<br />
+		Main labels are the top-most level of labels supported by Asar. They're global and thus can be directly accessed from anywhere. Their identifier can contain any of the following characters<br />
 		<code class="65c816_asar">a-z A-Z 0-9 _</code>
 		<pre><code class="65c816_asar">org $008000
 		
@@ -2196,7 +2196,7 @@ endstruct</code></pre>
 		<ul>
 			<li>It's possible to extend a single struct with multiple extension structs. However, this can be counter-intuitive. The size of the extended struct becomes the size of the parent struct plus the size of its largest extension struct, rather than the size of the parent struct plus the sizes of each of its extension structs. This also means that when accessing those extension structs, they all start at the same offset relative to the parent struct. This can be confusing and is often not what's actually intended, so for code clarity, it's recommended to only extend structs with at most a single other struct.</li>
 			<li>It's possible to enforce alignments when using extension structs. However, this will only determine the alignment of the parent struct and/or the extension struct(s), depending on where it's specified. It won't determine the alignment of the combined struct. This can be confusing and is usually not what is intended. There currently is no universal workaround for this, so when a certain alignment is required for a struct, it's recommended to not use extension structs with it.</li>
-			<li>It's not possible to access both, a parent struct and its extension struct, as arrays simultanously.</li>
+			<li>It's not possible to access both, a parent struct and its extension struct, as arrays simultaneously.</li>
 			<li>An extension struct can't be extended itself.</li>
 		</ul>
 		<h4 id="namespaces">Namespaces</h4>
@@ -2302,7 +2302,7 @@ dl AnotherGlobal
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="defines"><h3>Defines</h3>
-		Asar supports a define system that functions similarly to defines in other programming languages, such as C++. Defines are identifiers that you can assign any kind of text to and use in other places as substitues for that text. During compilation, Asar replaces each define it encounters with the respective text assigned to it. Defines are prefixed with a <code class="65c816_asar">!</code> and declared as follows:<br>
+		Asar supports a define system that functions similarly to defines in other programming languages, such as C++. Defines are identifiers that you can assign any kind of text to and use in other places as substitutes for that text. During compilation, Asar replaces each define it encounters with the respective text assigned to it. Defines are prefixed with a <code class="65c816_asar">!</code> and declared as follows:<br>
 		<pre><code class="65c816_asar">!{identifier} = {value}</code></pre>
 		<pre><code class="65c816_asar">!{identifier} = "{value}"</code></pre>
 		where <code>identifier</code> is a unique identifier that can contain any of the following characters:<br />
@@ -2352,7 +2352,7 @@ lda !x		; Treated as &quot;lda $12$34&quot; (will throw error)
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">#=</code></td>
-				<td>Evalutes the text as though it was a math expression, calculates its result and assigns it to the define. The math is done in-place on the same line the operator is used on and is affected by <a href="#math-pri">all of Asar's math settings</a> (such as prioritization rules and rouding behavior).</td>
+				<td>Evaluates the text as though it was a math expression, calculates its result and assigns it to the define. The math is done in-place on the same line the operator is used on and is affected by <a href="#math-pri">all of Asar's math settings</a> (such as prioritization rules and rouding behavior).</td>
 				<td><pre><code class="65c816_asar">!define = 10
 !anotherdefine #= !define+1
 ; !anotherdefine now contains &quot;11&quot;</code></pre></td>
@@ -2379,7 +2379,7 @@ if defined("define")
 endif</code></pre>
 		Note that Asar tries to replace defines wherever possible, even inside strings. In some occasions, this might be undesirable. See section <a href="#tables">Tables</a> for details on how to escape certain characters.
 		<h4 id="nested-defines">Nested Defines</h4>
-		By default, the define parser in Asar considers every supported character in a connected string to be a part of the define's name. This may not always be desired as it can lead to a certain define becoming inaccessible in a certain situation. In cases like that, the <code>{}</code> operator makes it possible to still use those defines by resovling everything inside the braces immediately.
+		By default, the define parser in Asar considers every supported character in a connected string to be a part of the define's name. This may not always be desired as it can lead to a certain define becoming inaccessible in a certain situation. In cases like that, the <code>{}</code> operator makes it possible to still use those defines by resolving everything inside the braces immediately.
 		<pre><code class="65c816_asar">!hex = $
 		
 db !hexFF     ; Error - define !hexFF not found
@@ -2654,7 +2654,7 @@ max(a, b)</code></td>
 			<tr>
 				<td><code class="65c816_asar">select(statement, true, false)</code></td>
 				<td>Returns false if statement is 0 and true otherwise. Can be considered an if/else conditional that is usable within functions.<br/>
-					NOTE: Asar always evaluates all parameters of a function before calling it, so if, for example, you pass an expression that divides by zero to select() as true, Asar will throw a division by zero error even if statement evalutes to 0 and thus false would be returned. To work around this, you can use the <code>safediv()</code> function in place of a regular division.</td>
+					NOTE: Asar always evaluates all parameters of a function before calling it, so if, for example, you pass an expression that divides by zero to select() as true, Asar will throw a division by zero error even if statement evaluates to 0 and thus false would be returned. To work around this, you can use the <code>safediv()</code> function in place of a regular division.</td>
 				<td><pre><code class="65c816_asar">function sprite_size() = select(!extra_bytes_enabled, 16+4, 16)</code></pre></td>
 			</tr>
 			<tr>
@@ -3168,7 +3168,7 @@ jsl MyOtherRoutine
 				<td>A number literal or math statement specifying the byte value to look for when searching for freespace (default: $00). To find freespace, Asar will look for continuous areas of this value. When using autoclean on this freespace, this is also the value the area will be cleaned to. Note that specifying the byte like this is deprecated. You should use the separate <code>freespacebyte</code> command instead.</td>
 			</tr>
 		</table><br/>
-		The freecode command is an alias of <code>freespace ram</code>, whreas the freedata command is an alias of <code>freespace noram</code>. There are a few things to note when working with freespace in Asar. First of all, if Asar places two freespace areas within the same bank, it will use 24-bit addressing in cases where they reference each other, despite 16-bit addressing being possible in theory. This can be worked around by only using a single freespace area instead. It's not recommended to explicitly use 16-bit addressing in these cases as the two freespace areas are not guaranteed to always end up in the same bank for all users. Secondly, when Asar places two freespace areas close to each other, a few bytes will be wasted between them for technical reasons. In most practical scenarios, the amount of wasted space should be reasonably small (&lt; 1% of the code size), nevertheless this once again can be worked around by only using a single freespace area instead. Lastly, the number of freespace areas a single Asar patch can place is limited to a maximum of 125.
+		The freecode command is an alias of <code>freespace ram</code>, whereas the freedata command is an alias of <code>freespace noram</code>. There are a few things to note when working with freespace in Asar. First of all, if Asar places two freespace areas within the same bank, it will use 24-bit addressing in cases where they reference each other, despite 16-bit addressing being possible in theory. This can be worked around by only using a single freespace area instead. It's not recommended to explicitly use 16-bit addressing in these cases as the two freespace areas are not guaranteed to always end up in the same bank for all users. Secondly, when Asar places two freespace areas close to each other, a few bytes will be wasted between them for technical reasons. In most practical scenarios, the amount of wasted space should be reasonably small (&lt; 1% of the code size), nevertheless this once again can be worked around by only using a single freespace area instead. Lastly, the number of freespace areas a single Asar patch can place is limited to a maximum of 125.
 		<pre><code class="65c816_asar">; Let's assume this to be some location in the ROM originally containing
 ;lda #$10
 ;sta $1F
