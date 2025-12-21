@@ -3329,8 +3329,10 @@ else
 endif</code></pre>
 		and is used via the syntax
 		<pre><code class="65c816_asar">assert {condition}[,text_or_function...]</code></pre>
-		where <code>custom_error_text</code> can be a custom error text and uses the same format as the <code>print</code> command. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens.
-		<pre><code class="65c816_asar">assert read1($00FFD5) != $23,"This patch is not SA-1 compatible!"</code></pre>
+		where <code>text_or_function</code> can be a custom error text and uses the same format as the <code>print</code> command. If <code>condition</code> evaluates to <code>&lt;= 0</code>, an error is thrown, otherwise nothing happens. 
+		<pre><code class="65c816_asar">assert read1($00FFD5) != $23,"This patch is not SA-1 compatible!"
+assert read2(Header.Checksum) == Checksum, "0x", hex(Header.Checksum), "==", hex(read2(Header.Checksum))
+        </code></pre>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="checks"><h3>Checks</h3>
