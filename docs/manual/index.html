@@ -1938,7 +1938,11 @@ Main:
 	jmp Main	; Equal to jmp $8000</code></pre>
 		An alternate form of defining main labels is by directly assigning a value to them. A common use-case for this is to make a label point to an existing address inside a ROM. Syntax:
 		<pre><code class="65c816_asar">{identifier} = {snes_address}</code></pre>
-		where <code>snes_address</code> can be a number or any math statement evaluating to an SNES address. Note that defining a main label this way does not start a new <a href="#sub-labels">sub label</a> group.
+		where <code>snes_address</code> can be a number or any math statement evaluating to an SNES address:
+        <pre><code class="65c816_asar">ImportantValue = $7E0200
+OtherImportantValue = ImportantValue+$04</code></pre>Note that math statements <b>cannot</b> have spaces around the operands (as mentioned in <a href="index.html#math">math</a>):
+<pre><code class="65c816_asar">ImportantValue = $7E0200
+; OtherImportantValue = ImportantValue + $04 ; this will NOT work; math statements cannot have spaces</code></pre>Defining a main label by assigning a value does not start a new <a href="#sub-labels">sub label</a> group.
 		<pre><code class="65c816_asar">Main:
 ; ...
 
