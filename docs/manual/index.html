@@ -3307,6 +3307,8 @@ SomeLargeData:
 				to reset this value.</td>
 			</tr>
 		</table><br/>
+        You can chain as many strings or functions as you need to a single print command:
+        <pre><code class="65c816_asar">print "You need to know about:", hex(read1(PlayerHealth)), " and ", dec(10+20), ", and ", hex(read1(PlayerMana))</code></pre>
 		<h4 id="warn">warn</h4>
 		The warn command lets you output a warning message to the user. Usage:
 		<pre><code class="65c816_asar">warn [text_or_function...]</code></pre>
