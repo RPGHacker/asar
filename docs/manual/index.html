@@ -1506,7 +1506,12 @@ lda $00
 arch spc700
 mov a,$00</code></pre>
 		<h4 id="number-literals">Number Literals</h4>
-		Asar supports decimal, hexadecimal and binary number literals. Hexadecimal literals use <code>$</code> as a prefix, binary literals use <code>%</code> as a prefix. Number literals can be made positive or negative by prefixing a <code>+</code> or a <code>-</code> (without a sign, positive is assumed). They can also be prefixed with a <code>~</code> to get their unary complement (a 32-bit integer with all the bits inverted).
+		Asar supports decimal, hexadecimal and binary number literals.
+        <ul>
+        <li>Hexadecimal literals use <code>$</code> as a prefix
+        <li>Binary literals use <code>%</code> as a prefix.
+        </ul>
+        Number literals can be made positive or negative by prefixing a <code>+</code> or a <code>-</code> (without a sign, positive is assumed). They can also be prefixed with a <code>~</code> to get their unary complement (a 32-bit integer with all the bits inverted).
 		<pre><code class="65c816_asar">lda $00
 clc
 adc #-10
