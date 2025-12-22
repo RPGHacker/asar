@@ -1642,7 +1642,7 @@ dw $0000,$6004      ; execution_address (exec_start label position)
 				<td>Disable Asar's address translation; the SNES address is equal to the PC address. Can be combined with <code class="65c816_asar">base</code> and macros to implement your own address translation.</td>
 			</tr>
 		</table><br/>
-		When no mapping mode is specified, Asar tries to determine the mapping mode from the output ROM. If that isn't possible, Asar defaults to lorom.
+		When no mapping mode is specified, Asar tries to determine the mapping mode from the input ROM. If that isn't possible, Asar defaults to lorom.
 		<pre><code class="65c816_asar">lorom
 org $008000
 db $FF		; Will write to PC address 0x000000
