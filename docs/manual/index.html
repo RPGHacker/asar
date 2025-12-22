@@ -2540,7 +2540,8 @@ lda .Data+data_index_to_offset(2)	; Will load $0002 into A
 read2(pos[, default])
 read3(pos[, default])
 read4(pos[, default])</code></td>
-				<td>Read one/two/three/four byte(s) from the input ROM at SNES location <code>pos</code>. Mainly intended for detecting the presence of certain hijacks/patches in a ROM. Throws an error when given an invalid address, unless the optional parameter <code>default</code> is provided in which case it is returned.</td>
+				<td>Read one/two/three/four byte(s) from the input ROM at SNES location <code>pos</code>. Mainly intended for detecting the presence of certain hijacks/patches in a ROM. Throws an error when given an invalid address, unless the optional parameter <code>default</code> is provided in which case it is returned.<br><br>
+                Note that <code>read()</code> functions will never read or detect changes that you make or data that you write; they only read from the input ROM.</td>
 				<td><pre><code class="65c816_asar">if read1($00FFD5) == $23
 	!is_sa1_rom = 1
 else
