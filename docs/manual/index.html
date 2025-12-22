@@ -294,7 +294,8 @@
 			<tr>
 				<td><code class="powershell">[rom_file]</code></td>
 				<td>Input, output</td>
-				<td>Path to the ROM file that is modified by Asar. If this file doesn't exist yet, Asar creates a new ROM file instead. When omitted, Asar checks if asm_file_name.sfc or asm_file_name.smc exists and uses the one it finds. When zero or two ROMs with that filename are found, Asar defaults to the .sfc extension. As a convention, Asar always treats .smc files as headered and .sfc files as unheadered ROMs. This means that headered .sfc files or unheadered .smc files cannot be used with Asar unless their extension is changed. This is by design and meant to encourage compliance with the convention.</td>
+				<td>Path to the ROM file that is modified by Asar. If this file doesn't exist yet, Asar creates a new ROM file instead. When omitted, Asar checks if asm_file_name.sfc or asm_file_name.smc exists and uses the one it finds. When zero or two ROMs with that filename are found, Asar defaults to the .sfc extension.<br><br>
+                As a convention, Asar always treats .smc files as headered and .sfc files as unheadered ROMs. This means that headered .sfc files or unheadered .smc files cannot be used with Asar unless their extension is changed. This is by design and meant to encourage compliance with the convention.</td>
 				<td><pre><code class="powershell">asar.exe C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.sfc</code></pre>
 				<pre><code class="powershell">asar.exe C:/homebrew/my_game/main.asm C:/homebrew/my_game/bin/my_game.smc</code></pre>
 				<pre><code class="powershell">asar.exe C:/homebrew/my_game/main.asm</code></pre></td>
