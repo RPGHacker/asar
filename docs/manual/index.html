@@ -2792,7 +2792,7 @@ db readfilenormalizd("datafile.bin", 0)</code></pre>
 		<div id="conditionals"><h3>Conditional Compilation</h3>
 		Conditional compilation allows you to only compile specific sections of code when certain conditions are met. This can be used in a number of ways, but is most commonly used in conjunction with defines to make code easily customizable and/or provide some simple configuration options to end users.
 		<h4 id="if-else">if/elseif/else/endif</h4>
-		The most basic form of conditionals are if conditionals. They are given a math statement and only compile their enclosed code if that statement evaluates to a value greater than 0.
+		The most basic form of conditionals are <code>if</code> conditionals. They are given a math statement and only compile their enclosed code if that statement evaluates to a value greater than 0.
 		<pre><code class="65c816_asar">if {condition}
 	{codeblock}
 endif</code></pre>
@@ -2864,7 +2864,7 @@ elseif !mode == 3
 else
 	error "Unsupported mode! Please choose 0, 1, 2 or 3!"
 endif</code></pre>
-		Alternatively, if conditionals can also be constructed on a single line via the following syntax:
+		Alternatively, <code>if</code> conditionals can also be constructed on a single line via the following syntax:
 		<pre><code class="65c816_asar">if {condition} : {codeblock}[ : codeblock...] : endif</code></pre>
 		Note that <code>else</code> or <code>elseif</code> are unsupported when using this syntax. The <code>endif</code> used to be optional, but this functionality is deprecated. It's recommended to always add the <code>endif</code> at the end of the line.
 		<pre><code class="65c816_asar">PressedY:
@@ -2888,7 +2888,7 @@ endif
 if SecondLabel == 0
 endif</code></pre>
 		<h4 id="while">while</h4>
-		A special variation of if conditionals are <code>while</code> loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to <code>&lt;= 0</code>. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.
+		A special variation of <code>if</code> conditionals are <code>while</code> loops. Instead of compiling their enclosed code only once, they compile it repeatedly until their condition evaluates to <code>&lt;= 0</code>. Typically, this would be used with a define that is modified inside the loop. This can be useful for generating data tables.
 		<pre><code class="65c816_asar">!counter = 0
 		
 while !counter &lt; $10
@@ -2902,7 +2902,7 @@ endwhile</code></pre>
 		Note that while loops can also end with <code>endif</code>, but this is deprecated. Be warned as improper use of while loops can lead to infinite loops and thus a dead-lock of the compiler, as Asar won't attempt to detect those.<br/><br/>
 
 		<h4 id="for">for</h4>
-		For loops repeat the contents a specified number of times. In the for loop body, you have access to a loop counter as a define. The range is specified as start-inclusive and end-exclusive.
+		<code>for</code> loops repeat the contents a specified number of times. In the <code>for</code> loop body, you have access to a loop counter as a define. The range is specified as start-inclusive and end-exclusive.
 
 		For example:
 		<pre><code class="65c816_asar">for i = 1..5
@@ -2910,7 +2910,7 @@ endwhile</code></pre>
 	db 2*!i
 endfor</code></pre>
 		<p>This will write the bytes 01 02 02 04 03 06 04 08.</p>
-		<p>You can also put for loops on a single line, however in this case due to the order in which Asar parses defines, you will not be able to use the loop counter. E.g. <code>for i = 0..10 : nop : endfor</code>.</p>
+		<p>You can also put <code>for</code> loops on a single line, however in this case due to the order in which Asar parses defines, you will not be able to use the loop counter. E.g. <code>for i = 0..10 : nop : endfor</code>.</p>
 		<a href="#contents">Return to top</a></div>
 		<hr />
 		<div id="binary-data"><h3>Binary Data</h3>
@@ -3204,7 +3204,7 @@ MyNewCode:
 		<ul>
 			<li>
 				<b>When used with a <code>jml</code> or <code>jsl</code>:</b><br/>
-				The <code>label</code> parameter must be a label pointing to inside a freespace area. When the patch is applied and the autoclean is encountered, Asar checks whether the output ROM contains a jml/jsl at the current pc. If it does, Asar checks whether the jml/jsl points to the expanded area of the ROM (banks $10+). If it does, Asar checks whether the jml/jsl points to an area protected by a RATS tag (including the RATS tag itself). If it does, Asar cleans up that area and removes the RATS tag.
+				The <code>label</code> parameter must be a label pointing to inside a freespace area. When the patch is applied and the autoclean is encountered, Asar checks whether the output ROM contains a <code>jml</code>/<code>jsl</code> at the current pc. If it does, Asar checks whether the <code>jml</code>/<code>jsl</code> points to the expanded area of the ROM (banks $10+). If it does, Asar checks whether the <code>jml</code>/<code>jsl</code> points to an area protected by a RATS tag (including the RATS tag itself). If it does, Asar cleans up that area and removes the RATS tag.
 			</li>
 			<li>
 				<b>When used with a <code>dl</code>:</b><br/>
@@ -3212,14 +3212,14 @@ MyNewCode:
 			</li>
 			<li>
 				<b>When used with just an address:</b><br/>
-				The <code>snes_address</code> parameter must be any label, number literal or math statement evaluating to an SNES address pointing to inside a freespace area. When the patch is applied and the autoclean is encountered, Asar checks whether that address points to the expanded area of the ROM (banks $10+). If it does, Asar checks whether it points to an area protected by a RATS tag (including the RATS tag itself). If it does, Asar cleans up that area and removes the RATS tag.
+				The <code>snes_address</code> parameter must be any label, number literal or math statement evaluating to an SNES address pointing to inside a freespace area. When the patch is applied and the <code>autoclean</code> is encountered, Asar checks whether that address points to the expanded area of the ROM (banks $10+). If it does, Asar checks whether it points to an area protected by a RATS tag (including the RATS tag itself). If it does, Asar cleans up that area and removes the RATS tag.
 			</li>
 		</ul>
-		When using autoclean with a jml, jsl or dl, Asar will also assemble the respective line of code at the current pc. For simplicity, you can treat the autoclean command like a modifier in those cases. A few more things to note when using the autoclean command:
+		When using <code>autoclean</code> with a <code>jml</code>, <code>jsl</code> or <code>dl</code>, Asar will also assemble the respective line of code at the current pc. For simplicity, you can treat the <code>autoclean</code> command like a modifier in those cases. A few more things to note when using the <code>autoclean</code> command:
 		<ul>
-			<li>The autoclean command itself may not be used inside a freespace area. To automatically clean up freespace that is only referenced within another freespace area, you can use the <a href="#prot">prot</a> command.</li>
-			<li>It is safe to have multiple autoclean commands pointing to the same freespace area.</li>
-			<li>You can not use autoclean with a label pointing to the very end of a freespace area.</li>
+			<li>The <code>autoclean</code> command itself may not be used inside a freespace area. To automatically clean up freespace that is only referenced within another freespace area, you can use the <a href="#prot">prot</a> command.</li>
+			<li>It is safe to have multiple <code>autoclean</code> commands pointing to the same freespace area.</li>
+			<li>You can not use <code>autoclean</code> with a label pointing to the very end of a freespace area.</li>
 		</ul>		
 		<pre><code class="65c816_asar">; Let's assume this to be some location in the ROM containing a function pointer table or similar
 org $00A5F2
@@ -3237,7 +3237,7 @@ MyNewFunction2:
 	rtl</code></pre>
 		<h4 id="prot">prot</h4>		
 		<pre><code class="65c816_asar">prot {label}[,label...]</code></pre>
-		The <code class="65c816_asar">prot</code> command makes it possible for Asar to automatically clean up a freespace area that is only referenced within another freespace area and thus can't be cleaned via an autoclean directly. It must be used at the beginning of a freespace area (right after the <code>freespace</code> command), where the <code>label</code> parameter must be a label pointing to inside a freespace area (you can pass up to 85 labels separated by commas to a single prot). When a freespace area containing a prot is cleaned by an autoclean, all freespace areas referenced by the prot are also cleaned up.		
+		The <code class="65c816_asar">prot</code> command makes it possible for Asar to automatically clean up a freespace area that is only referenced within another freespace area and thus can't be cleaned via an <code>autoclean</code> directly. It must be used at the beginning of a freespace area (right after the <code>freespace</code> command), where the <code>label</code> parameter must be a label pointing to inside a freespace area (you can pass up to 85 labels separated by commas to a single <code>prot</code>). When a freespace area containing a <code>prot</code> is cleaned by an <code>autoclean</code>, all freespace areas referenced by the <code>prot</code> are also cleaned up.		
 		<pre><code class="65c816_asar">org $0194BC
 	autoclean jsl MyNewFunction
 	
