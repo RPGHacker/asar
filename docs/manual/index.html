@@ -3347,7 +3347,7 @@ assert read2(Header.Checksum) == Checksum, "0x", hex(Header.Checksum), "==", hex
 		Checks allow Asar to monitor certain states and throw warnings or errors when certain criteria are met. This can be helpful for catching or preventing certain problems.
 		<h4 id="check-title">check title</h4>
 		<pre><code class="65c816_asar">check title &quot;{title}&quot;</code></pre>
-		The check title command verifies that the title stored in the input ROM is identical to <code>title</code>. If it isn't, an error is thrown (unless <code>--no-title-check</code> is passed to the application, in which case only a warning is thrown - see section <a href="#usage">Usage</a> for details). The purpose of this command is to assure that patches are applied to the correct input ROM.
+		The <code class="65c816_asar">check title</code> command verifies that the title stored in the input ROM is identical to <code>title</code>. If it isn't, an error is thrown (unless <code>--no-title-check</code> is passed to the application, in which case only a warning is thrown - see section <a href="#usage">Usage</a> for details). The purpose of this command is to assure that patches are applied to the correct input ROM.
 		<pre><code class="65c816_asar">; This patch is only for a Super Mario World ROM
 check title &quot;SUPER MARIOWORLD     &quot;
 
