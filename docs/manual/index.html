@@ -1802,7 +1802,7 @@ skip align $20 offset $17
 </code></pre>
 		<h4 id="warnpc">warnpc</h4>
 		<pre><code class="65c816_asar">warnpc {snes_address}</code></pre>
-		DEPRECATED: you can achieve the exact same thing with <code>assert pc() &lt;= {snes_address}</code>.<be></be>
+		DEPRECATED: you can achieve the exact same thing with <code>assert pc() &lt;= {snes_address}</code>.<br><br>
 		The <code class="65c816_asar">warnpc</code> command checks if the current pc is <code>&gt; snes_address</code>. If that's the case, it throws an error. This is useful for detecting overflow errors.
 		<pre><code class="65c816_asar">org $008000
 incbin datafile.bin
