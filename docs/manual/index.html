@@ -2540,7 +2540,7 @@ lda .Data+data_index_to_offset(2)	; Will load $0002 into A
 read2(pos[, default])
 read3(pos[, default])
 read4(pos[, default])</code></td>
-				<td>Read one/two/three/four byte(s) from the output ROM at SNES location pos. Mainly intended for detecting the presence of certain hijacks/patches in a ROM. Throws an error when given an invalid address, unless the optional parameter default is provided in which case it is returned.</td>
+				<td>Read one/two/three/four byte(s) from the input ROM at SNES location <code>pos</code>. Mainly intended for detecting the presence of certain hijacks/patches in a ROM. Throws an error when given an invalid address, unless the optional parameter <code>default</code> is provided in which case it is returned.</td>
 				<td><pre><code class="65c816_asar">if read1($00FFD5) == $23
 	!is_sa1_rom = 1
 else
@@ -2565,7 +2565,7 @@ canread2(pos)
 canread3(pos)
 canread4(pos)
 canread(pos, num)</code></td>
-				<td>Returns 1 if reading one/two/three/four/num bytes from the output ROM at SNES location pos would succeed and 0 otherwise.</td>
+				<td>Returns 1 if reading one/two/three/four/num bytes from the input ROM at SNES location <code>pos</code> would succeed and 0 otherwise.</td>
 				<td><pre><code class="65c816_asar">if canread1($00FFD5) == 1
 	print "Detected ROM type: $",hex(read1($00FFD5))
 else
