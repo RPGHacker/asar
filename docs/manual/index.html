@@ -2367,7 +2367,7 @@ lda !x		; Treated as &quot;lda $12$34&quot; (will throw error)
 ; !define now contains &quot;10&quot;</code></pre></td>
 			</tr>
 		</table><br />
-		Similarly to C's ifdef and undef, Asar allows you to check for a define's existence using the <code class="65c816_asar">defined(&quot;{identifier}&quot;)</code> function and to delete a define using the <code class="65c816_asar">undef &quot;{identifier}&quot;</code> command. Make sure to leave the <code class="65c816_asar">!</code> out of the identifier when using these functions, as Asar would otherwise try to resolve the defines.
+		Similarly to C's <code>ifdef</code> and <code>undef</code>, Asar allows you to check for a define's existence using the <code class="65c816_asar">defined(&quot;{identifier}&quot;)</code> function and to delete a define using the <code class="65c816_asar">undef &quot;{identifier}&quot;</code> command. Make sure to leave the <code class="65c816_asar">!</code> out of the identifier when using these functions, as Asar would otherwise try to resolve the defines.
 		<pre><code class="65c816_asar">!define = "hello"
 		
 if defined("define")
