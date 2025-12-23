@@ -1765,7 +1765,7 @@ function func(param) = ((param*param)+1000)\
 ; This will be treated as &quot;function func(param) = ((param*param)+1000)/256&quot;</code></pre>
 
 		<h4 id="singleline">Single-Line Operator</h4>
-		Contrary to the multi-line operators, the single-line operator <code class="65c816_asar">:</code> is a formatting operator which makes it possible to treat a single line of code as multiple lines. It requires a space before and after usage to differentiate it from the : used with certain commands. When used between different commands, Asar interprets it similarly to a new line and treats each command as being on a separate line. This can be used to link multiple commands together into functional blocks and make the code more readable.
+		Contrary to the multi-line operators, the single-line operator <code class="65c816_asar">:</code> is a formatting operator which makes it possible to treat a single line of code as multiple lines. It requires a space before and after usage to differentiate it from the <code>:</code> used with certain commands. When used between different commands, Asar interprets it similarly to a new line and treats each command as being on a separate line. This can be used to link multiple commands together into functional blocks and make the code more readable.
 		<pre><code class="65c816_asar">lda #$00 : sta $00
 		
 ; Treated as:
