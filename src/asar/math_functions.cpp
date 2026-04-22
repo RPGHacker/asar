@@ -27,7 +27,8 @@ cachedfile * opencachedfile(string fname, bool should_error)
 	const char* current_file = get_current_file_name();
 
 	// do not call filesystem->create_absolute_path() here - that requires file existence syscalls, largely defeating the point of the cache
-	string cache_key = dir(current_file) + string("\x00", 1) + fname;
+	// \x80 is impossible to have in a filename without Asar complaining about invalid utf8
+	string cache_key = dir(current_file) + "\x80" + fname;
 
 	for (int i = 0; i < numcachedfiles; i++)
 	{
