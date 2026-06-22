@@ -321,9 +321,13 @@ void createuserfunc(const char * name, const char * arguments, const char * cont
 	}
 
 	parse_context ctx{ content, arg_indices };
+	// define the function name with a dummy function to allow recursive calls to it within its own body
+	math_user_function dummy_func = { std::make_unique<math_ast_literal>((int64_t)0), arg_count };
+	auto func_slot = user_functions.emplace(name, std::move(dummy_func)).first;
+
 	auto parsed = ctx.parse();
 	math_user_function userfunc = { std::move(parsed), arg_count };
-	user_functions.emplace(name, std::move(userfunc));
+	func_slot->second = std::move(userfunc);
 }
 
 owned_node parse_math_expr(const char * str) {
