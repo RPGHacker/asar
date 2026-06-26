@@ -40,8 +40,8 @@ public:
 	: m_left(std::move(left_in)), m_right(std::move(right_in)), m_type(type_in) {}
 
 	math_val evaluate(const eval_context &ctx) const;
-	int has_label() const;
-	int get_len(bool could_be_bank_ex) const;
+	int has_label(const static_context& ctx) const;
+	int get_len(bool could_be_bank_ex, const static_context& ctx) const;
 };
 
 enum class math_unop_type {
@@ -57,8 +57,8 @@ public:
 	math_ast_unop(owned_node arg_in, math_unop_type type_in)
 	: m_arg(std::move(arg_in)), m_type(type_in) {}
 	math_val evaluate(const eval_context &ctx) const;
-	int has_label() const;
-	int get_len(bool could_be_bank_ex) const;
+	int has_label(const static_context& ctx) const;
+	int get_len(bool could_be_bank_ex, const static_context& ctx) const;
 };
 
 class math_ast_ternary_cond : public math_ast_node {
@@ -68,8 +68,8 @@ public:
 	: m_cond(std::move(cond_in)), m_true(std::move(true_in)), m_false(std::move(false_in)) {}
 
 	math_val evaluate(const eval_context& ctx) const;
-	int has_label() const;
-	int get_len(bool could_be_bank_ex) const;
+	int has_label(const static_context& ctx) const;
+	int get_len(bool could_be_bank_ex, const static_context& ctx) const;
 };
 
 class math_ast_literal : public math_ast_node {
@@ -78,9 +78,9 @@ class math_ast_literal : public math_ast_node {
 public:
 	math_ast_literal(math_val value, int len=0) : m_value(value), m_len(len) {}
 	math_val evaluate(const eval_context& ctx) const { return m_value; }
-	int has_label() const { return 0; }
-	int get_len(bool could_be_bank_ex) const { return m_len; }
-	friend int math_ast_binop::get_len(bool) const;
+	int has_label(const static_context& ctx) const { return 0; }
+	int get_len(bool could_be_bank_ex, const static_context& ctx) const { return m_len; }
+	friend int math_ast_binop::get_len(bool, const static_context&) const;
 };
 
 class math_ast_label : public math_ast_node {
@@ -94,22 +94,22 @@ public:
 		// this is initialized with the global ns
 		, m_cur_ns(ns) {}
 	math_val evaluate(const eval_context &ctx) const;
-	int has_label() const;
-	int get_len(bool could_be_bank_ex) const;
+	int has_label(const static_context& ctx) const;
+	int get_len(bool could_be_bank_ex, const static_context& ctx) const;
 };
 
 
 class math_builtin_function {
 	using call_t = math_val(*)(const std::vector<math_val>& args);
-	using haslabel_t = int(*)();
-	using getlen_t = int(*)(const std::vector<owned_node>& args, bool could_be_bank_ex);
-	static int default_has_label() {
+	using haslabel_t = int(*)(const math_ast_node::static_context& ctx);
+	using getlen_t = int(*)(const std::vector<owned_node>& args, bool could_be_bank_ex, const math_ast_node::static_context& ctx);
+	static int default_has_label(const math_ast_node::static_context& ctx) {
 		return 0;
 	}
-	static int default_get_len(const std::vector<owned_node>& args, bool could_be_bank_ex) {
+	static int default_get_len(const std::vector<owned_node>& args, bool could_be_bank_ex, const math_ast_node::static_context& ctx) {
 		int res = 0;
 		for(auto& v : args) {
-			res = std::max(res, v->get_len(false));
+			res = std::max(res, v->get_len(false, ctx));
 		}
 		return res;
 	}
@@ -124,11 +124,11 @@ public:
 	math_val call(const std::vector<math_val>& args) const {
 		return m_call(args);
 	}
-	int has_label() const {
-		return m_haslabel();
+	int has_label(const math_ast_node::static_context& ctx) const {
+		return m_haslabel(ctx);
 	}
-	int get_len(const std::vector<owned_node>& args, bool could_be_bank_ex) const {
-		return m_getlen(args, could_be_bank_ex);
+	int get_len(const std::vector<owned_node>& args, bool could_be_bank_ex, const math_ast_node::static_context& ctx) const {
+		return m_getlen(args, could_be_bank_ex, ctx);
 	}
 };
 
@@ -139,8 +139,8 @@ public:
 	math_user_function(owned_node body, size_t arg_count)
 	: m_arg_count(arg_count), m_func_body(std::move(body)) {}
 	math_val call(const std::vector<math_val> &args) const;
-	int has_label() const;
-	int get_len(const std::vector<owned_node> &args, bool could_be_bank_ex) const;
+	int has_label(const math_ast_node::static_context& ctx) const;
+	int get_len(const std::vector<owned_node> &args, bool could_be_bank_ex, const math_ast_node::static_context& ctx) const;
 };
 
 class math_function_ref {
@@ -151,11 +151,11 @@ public:
 	math_val call(const std::vector<math_val>& args) const {
 		return std::visit([&](auto& i) { return i->call(args); }, inner);
 	}
-	int has_label() const {
-		return std::visit([&](auto& i) { return i->has_label(); }, inner);
+	int has_label(const math_ast_node::static_context& ctx) const {
+		return std::visit([&](auto& i) { return i->has_label(ctx); }, inner);
 	}
-	int get_len(const std::vector<owned_node>& args, bool could_be_bank_ex) const {
-		return std::visit([&](auto& i) { return i->get_len(args, could_be_bank_ex); }, inner);
+	int get_len(const std::vector<owned_node>& args, bool could_be_bank_ex, const math_ast_node::static_context& ctx) const {
+		return std::visit([&](auto& i) { return i->get_len(args, could_be_bank_ex, ctx); }, inner);
 	}
 };
 
@@ -172,8 +172,8 @@ public:
 		: m_arguments(std::move(args))
 		, m_func(lookup_fname(function_name)) {}
 	math_val evaluate(const eval_context &ctx) const;
-	int has_label() const;
-	int get_len(bool could_be_bank_ex) const;
+	int has_label(const static_context& ctx) const;
+	int get_len(bool could_be_bank_ex, const static_context& ctx) const;
 };
 
 // only for use inside user function definitions
@@ -188,7 +188,7 @@ public:
 
 	// if a function is called with a label as an argument, that gets checked by
 	// the function call node, not here
-	int has_label() const { return 0; }
+	int has_label(const static_context& ctx) const { return 0; }
 	// i don't think these should ever have their len gotten?
-	int get_len(bool could_be_bank_ex) const { return 0; }
+	int get_len(bool could_be_bank_ex, const static_context& ctx) const { return 0; }
 };

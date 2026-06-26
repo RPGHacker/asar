@@ -70,12 +70,20 @@ public:
 		// TODO would it be faster to make this a reference? does that avoid any significant copies?
 		std::vector<math_val> userfunc_params;
 	};
+	// info necessary for static analysis.
+	// external callers shouldn't need to pass in anything other than the default-constructed one.
+	class static_context {
+	public:
+		// which user func (addr of math_user_function) we're in.
+		// sufficient to detect recursion since we don't allow mutually recursive definitions.
+		const void* current_user_func;
+	};
 
 	virtual math_val evaluate(const eval_context& = {}) const = 0;
 	// 0 - no label, 1 - static label, 3 - nonstatic label, 7 - forward label
-	virtual int has_label() const = 0;
+	virtual int has_label(const static_context& = {}) const = 0;
 	// how many bytes long should the result of this expression be?
-	virtual int get_len(bool could_be_bank_ex) const = 0;
+	virtual int get_len(bool could_be_bank_ex, const static_context& = {}) const = 0;
 	virtual ~math_ast_node() = default;
 
 	// helper functions:

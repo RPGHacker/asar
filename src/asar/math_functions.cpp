@@ -159,11 +159,11 @@ template<int& variable>
 math_val fn_pc_realbase() {
 	return (int64_t)variable;
 }
-int haslabel_always() {
+int haslabel_always(const math_ast_node::static_context& ctx) {
 	return 3;
 }
 template<int& variable>
-int getlen_pc_realbase(const std::vector<owned_node>& args, bool could_be_bank_ex) {
+int getlen_pc_realbase(const std::vector<owned_node>& args, bool could_be_bank_ex, const math_ast_node::static_context& ctx) {
 	// todo : should this use freespaceid even with base active???
 	return getlenforlabel(variable, freespaceid, true);
 }
@@ -171,7 +171,7 @@ int getlen_pc_realbase(const std::vector<owned_node>& args, bool could_be_bank_e
 math_val fn_bank(math_val arg) {
 	return (arg.get_integer() >> 16);
 }
-int getlen_bank(const std::vector<owned_node>& args, bool could_be_bank_ex) {
+int getlen_bank(const std::vector<owned_node>& args, bool could_be_bank_ex, const math_ast_node::static_context& ctx) {
 	return 1;
 }
 

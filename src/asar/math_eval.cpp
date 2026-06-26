@@ -183,12 +183,12 @@ math_val math_ast_binop::evaluate(const eval_context &ctx) const {
 	return evaluate_binop(lhs, rhs, m_type);
 }
 
-int math_ast_binop::has_label() const {
-	return m_left->has_label() | m_right->has_label();
+int math_ast_binop::has_label(const static_context& ctx) const {
+	return m_left->has_label(ctx) | m_right->has_label(ctx);
 }
 
 
-int math_ast_binop::get_len(bool could_be_bank_ex) const {
+int math_ast_binop::get_len(bool could_be_bank_ex, const math_ast_node::static_context& ctx) const {
 	if(could_be_bank_ex) {
 		int want_rhs = 0;
 		if(m_type == math_binop_type::div) {
@@ -205,7 +205,7 @@ int math_ast_binop::get_len(bool could_be_bank_ex) const {
 			}
 		}
 	}
-	return std::max(m_left->get_len(false), m_right->get_len(false));
+	return std::max(m_left->get_len(false, ctx), m_right->get_len(false, ctx));
 }
 math_val math_ast_unop::evaluate(const eval_context &ctx) const {
 	math_val arg = m_arg->evaluate(ctx);
@@ -223,12 +223,12 @@ math_val math_ast_unop::evaluate(const eval_context &ctx) const {
 	throw_err_block(pass, err_internal_error, "evaluate_unop invalid unop");
 }
 
-int math_ast_unop::has_label() const { return m_arg->has_label(); }
+int math_ast_unop::has_label(const static_context& ctx) const { return m_arg->has_label(ctx); }
 
-int math_ast_unop::get_len(bool could_be_bank_ex) const {
+int math_ast_unop::get_len(bool could_be_bank_ex, const math_ast_node::static_context& ctx) const {
 	if (could_be_bank_ex && m_type == math_unop_type::bank_extract)
 		return 1;
-	return m_arg->get_len(false);
+	return m_arg->get_len(false, ctx);
 }
 
 math_val math_ast_ternary_cond::evaluate(const eval_context& ctx) const {
@@ -239,12 +239,12 @@ math_val math_ast_ternary_cond::evaluate(const eval_context& ctx) const {
 	}
 }
 
-int math_ast_ternary_cond::has_label() const {
-	return m_cond->has_label() | m_true->has_label() | m_false->has_label();
+int math_ast_ternary_cond::has_label(const static_context& ctx) const {
+	return m_cond->has_label(ctx) | m_true->has_label(ctx) | m_false->has_label(ctx);
 }
 
-int math_ast_ternary_cond::get_len(bool could_be_bank_ex) const {
-	return std::max(m_true->get_len(false), m_false->get_len(false));
+int math_ast_ternary_cond::get_len(bool could_be_bank_ex, const math_ast_node::static_context& ctx) const {
+	return std::max(m_true->get_len(false, ctx), m_false->get_len(false, ctx));
 }
 
 math_val math_ast_label::evaluate(const eval_context &ctx) const {
@@ -261,7 +261,7 @@ math_val math_ast_label::evaluate(const eval_context &ctx) const {
 	}
 }
 
-int math_ast_label::has_label() const {
+int math_ast_label::has_label(const static_context& ctx) const {
 	if (m_cur_ns && labels.exists(m_cur_ns + m_labelname)) {
 		return labels.find(m_cur_ns + m_labelname).is_static ? 1 : 3;
 	} else if (labels.exists(m_labelname)) {
@@ -271,7 +271,7 @@ int math_ast_label::has_label() const {
 	return 7;
 }
 
-int math_ast_label::get_len(bool could_be_bank_ex) const {
+int math_ast_label::get_len(bool could_be_bank_ex, const math_ast_node::static_context& ctx) const {
 	snes_label label;
 	if (m_cur_ns && labels.exists(m_cur_ns + m_labelname)) {
 		label = labels.find(m_cur_ns + m_labelname);
@@ -301,16 +301,16 @@ math_val math_ast_function_call::evaluate(const eval_context &ctx) const {
 	return m_func.call(arg_vals);
 }
 
-int math_ast_function_call::has_label() const {
-	int out = m_func.has_label();
+int math_ast_function_call::has_label(const static_context& ctx) const {
+	int out = m_func.has_label(ctx);
 	for (auto const &p : m_arguments) {
-		out |= p->has_label();
+		out |= p->has_label(ctx);
 	}
 	return out;
 }
 
-int math_ast_function_call::get_len(bool could_be_bank_ex) const {
-	return m_func.get_len(m_arguments, could_be_bank_ex);
+int math_ast_function_call::get_len(bool could_be_bank_ex, const math_ast_node::static_context& ctx) const {
+	return m_func.get_len(m_arguments, could_be_bank_ex, ctx);
 }
 
 math_val math_user_function::call(const std::vector<math_val> &args) const {
@@ -321,17 +321,22 @@ math_val math_user_function::call(const std::vector<math_val> &args) const {
 	return m_func_body->evaluate(new_ctx);
 }
 
-int math_user_function::has_label() const { return m_func_body->has_label(); }
+int math_user_function::has_label(const math_ast_node::static_context& ctx) const {
+	if(ctx.current_user_func == this) return 0;
+	math_ast_node::static_context new_ctx = ctx;
+	new_ctx.current_user_func = this;
+	return m_func_body->has_label(new_ctx);
+}
 
 int math_user_function::get_len(const std::vector<owned_node> &args,
-								bool could_be_bank_ex) const {
-	// TODO: this doesn't forward could_be_bank_ex to the fn call...
-	// supporting that properly would require stringing some context through all
-	// get_len calls; supporting it less properly (making a special return value of
-	// get_len signify bankextract) could be viable tho...
-	int len = m_func_body->get_len(false);
+								bool could_be_bank_ex, const math_ast_node::static_context& ctx) const {
+	if(ctx.current_user_func == this) return 0;
+	math_ast_node::static_context new_ctx = ctx;
+	new_ctx.current_user_func = this;
+
+	int len = m_func_body->get_len(false, new_ctx);
 	for (auto &arg : args) {
-		len = std::max(len, arg->get_len(false));
+		len = std::max(len, arg->get_len(false, ctx));
 	}
 	return len;
 }
