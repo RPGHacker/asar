@@ -46,19 +46,17 @@ void print(const char * str)
 static FILE * errloc=stderr;
 static int errnum=0;
 
-namespace ansi_text_color {
-	enum e : int {
-		BRIGHT_RED,
-		BRIGHT_YELLOW,
-	};
-}
+enum class ansi_text_color {
+	BRIGHT_RED,
+	BRIGHT_YELLOW,
+};
 
 #if defined(_WIN32)
 static bool has_windows_screen_info = false;
 static DWORD windows_screen_attributes = 0u;
 #endif
 
-static void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color::e color)
+static void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color color)
 {
 #if defined(linux)
 	if (isatty(fileno(output_loc)))
@@ -81,20 +79,20 @@ static void set_text_color(FILE* output_loc, string* in_out_str, ansi_text_color
 	HANDLE win_handle = (HANDLE)_get_osfhandle(fileno(output_loc));
 	if (GetConsoleScreenBufferInfo(win_handle, &screenInfo) == TRUE)
 	{
-		DWORD color = 0u;
+		DWORD wcolor = 0u;
 		switch (color)
 		{
 		case ansi_text_color::BRIGHT_RED:
-			color = FOREGROUND_RED;
+			wcolor = FOREGROUND_RED;
 			break;
 		case ansi_text_color::BRIGHT_YELLOW:
-			color = FOREGROUND_RED | FOREGROUND_GREEN;
+			wcolor = FOREGROUND_RED | FOREGROUND_GREEN;
 			break;
 		}
 
 		windows_screen_attributes = screenInfo.wAttributes;
 		has_windows_screen_info = true;
-		SetConsoleTextAttribute(win_handle, (windows_screen_attributes & 0x00F0) | FOREGROUND_INTENSITY | color);
+		SetConsoleTextAttribute(win_handle, (windows_screen_attributes & 0x00F0) | FOREGROUND_INTENSITY | wcolor);
 	}
 #endif
 }
