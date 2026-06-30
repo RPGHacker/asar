@@ -24,6 +24,7 @@ void libcon_pause()
 		system("pause");
 #else
 		printf("Press Enter to continue");
+		fflush(stdout);
 		getchar();
 #endif
 		confirmclose=true;
@@ -88,6 +89,7 @@ static const char * requirestrfromuser(const char * question, bool filename)
 	{
 		*rval=0;
 		printf("%s ", question);
+		fflush(stdout);
 		if(!u8_fgets(rval, 250, stdin)) {
 			fprintf(stderr, "Unexpected end of input\n");
 			exit(1);
@@ -112,6 +114,7 @@ static const char * requeststrfromuser(const char * question, bool filename, con
 	char * rval=(char*)malloc(256);
 	*rval=0;
 	printf("%s ", question);
+	fflush(stdout);
 	if(!u8_fgets(rval, 250, stdin)) return defval;
 	char *eol = strchr(rval, '\n');
 	if(!eol) return defval;
