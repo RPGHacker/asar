@@ -2136,7 +2136,7 @@ void cf_start(const char* par, int& single_line_for_tracker) {
 		type == c_elseif ? "elseif" :
 		type == c_while ? "while" : "for";
 	whiletracker wstatus;
-	wstatus.startline = get_current_line();
+	wstatus.startline = cur_logical_lineno;
 	wstatus.iswhile = type == c_while;
 	wstatus.cond = false;
 	wstatus.is_for = false;

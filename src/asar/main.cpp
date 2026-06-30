@@ -2,6 +2,7 @@
 //   ~Alcaro, 2019 (discussing Asar)
 #include "addr2line.h"
 #include "asar.h"
+#include "unicode.h"
 #include "virtualfile.h"
 #include "platform/file-helpers.h"
 #include "assembleblock.h"
@@ -473,10 +474,14 @@ struct stricompare {
 	}
 };
 
+struct sourceline {
+	char* line;
+	int lineno;
+};
+
 struct sourcefile {
 	char *data;
-	char** contents;
-	int numlines;
+	autoarray<sourceline> lines;
 };
 
 static assocarr<sourcefile> filecontents;
@@ -745,6 +750,7 @@ bool file_included_once(const char* file)
 
 autoarray<string> macro_defs;
 int in_macro_def=0;
+int cur_logical_lineno;
 
 void assemblefile(const char * filename)
 {
@@ -760,9 +766,6 @@ void assemblefile(const char * filename)
 	// that called assemblefile
 	//callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
 
-	sourcefile file;
-	file.contents = nullptr;
-	file.numlines = 0;
 	int startif=numif;
 	if (!filecontents.exists(absolutepath))
 	{
@@ -775,88 +778,156 @@ void assemblefile(const char * filename)
 		callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
 
 		sourcefile& newfile = filecontents.create(absolutepath);
-		newfile.contents =split(temp, '\n');
 		newfile.data = temp;
-		for (int i=0;newfile.contents[i];i++)
-		{
-			newfile.numlines++;
-			char * line = newfile.contents[i];
-			int i_temp = i;
-			char * comment;
-			while((comment = strqchr(line, ';'))) {
-				if(comment[1] == '[' && comment[2] == '[') {
-					// block comment - find where it ends
-					char* theline = comment + 3;
-					char* comment_end = strstr(theline, "]]");
-					while(comment_end == nullptr) {
-						i_temp++;
-						char* new_line = newfile.contents[i_temp];
-						if(new_line == nullptr) {
-							callstack_push cs_push(callstack_entry_type::LINE, line, i);
-							throw_err_null(0, err_unclosed_block_comment);
-							// make sure this line is still parsed correctly
-							*comment = 0;
-							// but don't go looking at any other lines
-							goto break_outer;
+		char *inp = temp, *outp = temp, *linestartp = temp;
+		enum class state_t {
+			line_start, // eat whitespace
+			line,
+			quote,
+			linecomment,
+			blockcomment,
+			blockcomment_start,
+		};
+		int lineno = 0;
+		bool skip_ws = false;
+		state_t state = state_t::line_start;
+		bool done = false;
+		// invariant: always outp <= inp
+		for(;!done; inp++) {
+			// for this lineno accounting to work, changing inp must only be
+			// done when we are sure that we're not skipping over a newline
+			if(*inp == '\n') lineno++;
+			if(!*inp) {
+				// inject a \n as the last char of the file, to work around stupid users making files that don't have a trailing \n
+				*inp = '\n';
+				done=true;
+			}
+			switch(state) {
+				case state_t::line_start:
+					if(isspace(*inp)) continue; // also catches \n
+					if(*inp == ';') {
+						// hacky
+						if(inp[1] == '[' && inp[2] == '[') {
+							inp += 2;
+							state = state_t::blockcomment_start;
 						}
-						comment_end = strstr(new_line, "]]");
-						// this line is itself part of the comment, so ignore it
-						//new_line[0] = 0;
-						// except not like that^, because that will break the
-						// memmove below
-						static char junk[]="";
-						// using a static here should be fine, since if the line
-						// doesn't contain ',' or '\' we won't go mutating it
-						newfile.contents[i_temp] = junk;
+						else state = state_t::linecomment;
+						continue;
 					}
-					// comment_end+2 is a valid pointer, since comment_end is
-					// guaranteed to start with ]]
-					comment_end += 2;
-					// stitch together the part of the line before the comment,
-					// and the part of the line after it
-					memmove(comment, comment_end, strlen(comment_end) + 1);
-					// and then recheck for ; in the line again...
-				} else {
-					*comment = 0;
+					state = state_t::line;
+					newfile.lines.append({outp, lineno});
+					linestartp = outp;
+					// fall through
+				case state_t::line:
+					if(*inp == '\n') {
+						goto endoftheline;
+					} else {
+						if(skip_ws && isspace(*inp)) continue;
+						skip_ws = false;
+						if(*inp == ';') {
+							if(inp[1] == '[' && inp[2] == '[')
+								inp += 2, state = state_t::blockcomment;
+							else state = state_t::linecomment;
+							continue;
+						}
+						*outp++ = *inp;
+						if(*inp == '"') state = state_t::quote;
+						if(*inp == '\'') {
+							inp++;
+							if(!*inp || *inp == '\n') {
+								callstack_push cs_push(callstack_entry_type::LINE, "", lineno); // TODO
+								throw_err_null(0, err_mismatched_quotes);
+								// forget this line
+								newfile.lines.reset(newfile.lines.count-1);
+								state = state_t::line_start;
+								continue;
+							}
+							*outp++ = *inp++;
+							while((*(unsigned char*)inp & 0xc0) == 0x80) *outp++ = *inp++; // utf8 continuation bytes
+							if(*inp != '\'') {
+								callstack_push cs_push(callstack_entry_type::LINE, "", lineno); // TODO
+								throw_err_null(0, err_mismatched_quotes);
+								// forget this line
+								newfile.lines.reset(newfile.lines.count-1);
+								state = state_t::line_start;
+								while(*inp&&*inp!='\n') inp++; // skip the rest of the line
+								continue;
+							}
+							*outp++ = *inp;
+						}
+					}
+					break;
+				case state_t::quote:
+					if(*inp == '\n') {
+						string templine(linestartp, outp-linestartp);
+						callstack_push cs_push(callstack_entry_type::LINE, templine, lineno);
+						throw_err_null(0, err_mismatched_quotes);
+						// forget this line
+						newfile.lines.reset(newfile.lines.count-1);
+						state = state_t::line_start;
+						continue;
+					}
+					*outp++ = *inp;
+					if(*inp == '"') state = state_t::line;
+					break;
+				case state_t::linecomment:
+					if(*inp == '\n') goto endoftheline;
+					break;
+				case state_t::blockcomment:
+					if(*inp == ']' && inp[1] == ']') {
+						state = state_t::line;
+						inp++;
+					}
+					break;
+				case state_t::blockcomment_start:
+					if(*inp == ']' && inp[1] == ']') {
+						state = state_t::line_start;
+						inp++;
+					}
+					break;
+			}
+			continue;
+endoftheline:
+			// find last non-ws char
+			char* tempp = outp-1;
+			while(tempp >= linestartp && isspace(*tempp)) tempp--;
+			if(tempp >= linestartp) {
+				if(*tempp == '\\') {
+					// line joiner
+					outp = tempp; // remove the '\'
+					state = state_t::line; skip_ws = true;
+					continue;
+				} else if(*tempp == ',') {
+					// comma line joiner
+					outp = tempp+1;
+					state = state_t::line; skip_ws = true;
+					continue;
 				}
 			}
-		break_outer:
-			if (!confirmquotes(line)) {
-				callstack_push cs_push(callstack_entry_type::LINE, line, i);
-				throw_err_null(0, err_mismatched_quotes);
-				line[0] = '\0';
-			}
-			newfile.contents[i] = strip_whitespace(line);
+			// otherwise, normal line end
+			tempp[1] = 0; // trims any trailing whitespace
+			outp = tempp+2; // tempp is at most outp-1, so this is at most outp++
+			state = state_t::line_start;
 		}
-		for(int i=0;newfile.contents[i];i++)
-		{
-			char* line = newfile.contents[i];
-			if(!*line) continue;
-			for (int j=1;line[strlen(line) - 1] == ',' && newfile.contents[i+j];j++)
-			{
-				// not using strcat because the source and dest overlap here
-				char* otherline = newfile.contents[i+j];
-				char* line_end = line + strlen(line);
-				while(*otherline) *line_end++ = *otherline++;
-				*line_end = '\0';
-				static char nullstr[]="";
-				newfile.contents[i+j]=nullstr;
-			}
+		if(state == state_t::blockcomment || state == state_t::blockcomment_start) {
+			callstack_push cs_push(callstack_entry_type::LINE, "", 0); // TODO
+			throw_err_null(0, err_unclosed_block_comment);
+			state = state_t::line_start;
 		}
-		file = newfile;
-	} else { // filecontents.exists(absolutepath)
-		file = filecontents.find(absolutepath);
+		// TODO we can reach this if the last line of input ends with \ or ,
+		if(state != state_t::line_start) throw_err_fatal(0, err_internal_error, "state machine broke");
 	}
+	sourcefile& file = filecontents.find(absolutepath);
 	// previous callstack_push got dropped by the end of the if scope
 	callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
 	asarverallowed=true;
-	for (int i=0;file.contents[i] && i<file.numlines;i++)
+	for (int i=0;i<file.lines.count;i++)
 	{
-		string connectedline;
-		int skiplines = getconnectedlines<char**>(file.contents, i, connectedline);
+		sourceline& l = file.lines[i];
+		string connectedline(l.line);
+		cur_logical_lineno = i;
 
-		bool was_loop_end = do_line_logic(connectedline, absolutepath, i);
-		i += skiplines;
+		bool was_loop_end = do_line_logic(connectedline, absolutepath, l.lineno);
 
 		// if a loop ended on this line, should it run again?
 		if (was_loop_end && whilestatus[numif].cond)
@@ -1099,7 +1170,6 @@ static void clearfile(const string & key, sourcefile& filecontent)
 {
 	(void)key;
 	cfree(filecontent.data);
-	cfree(filecontent.contents);
 }
 #undef cfree
 

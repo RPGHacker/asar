@@ -191,12 +191,12 @@ void callmacro(const char * data)
 
 		for (int i=0;i<thismacro->numlines;i++)
 		{
+			cur_logical_lineno = i;
 			bool was_loop_end = do_line_logic(thismacro->lines[i], thismacro->fname, thismacro->startline+i+1);
 
 			if (was_loop_end && whilestatus[numif].cond)
-				// RPG Hacker: -1 to compensate for the i++, and another -1
-				// because ->lines doesn't include the macro header.
-				i = whilestatus[numif].startline - thismacro->startline - 2;
+				// -1 to compensate for the i++
+				i = whilestatus[numif].startline - 1;
 		}
 	}
 

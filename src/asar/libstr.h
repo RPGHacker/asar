@@ -531,30 +531,3 @@ inline string &lower(string &old)
 	return old;
 }
 
-
-// Returns number of connected lines - 1
-template<typename stringarraytype>
-inline int getconnectedlines(stringarraytype& lines, int startline, string& out)
-{
-	int count = 0;
-
-	for (int i = startline; lines[i]; i++)
-	{
-		// The line should already be stripped of any comments at this point
-		int linestartpos = (int)strlen(lines[i]);
-
-		if(linestartpos && lines[i][linestartpos - 1] == '\\')
-		{
-			count++;
-			out += string(lines[i], linestartpos - 1);
-			continue;
-		}
-		else
-		{
-			out += string(lines[i], linestartpos);
-			return count;
-		}
-	}
-
-	return count;
-}
