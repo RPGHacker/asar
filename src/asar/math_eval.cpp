@@ -336,3 +336,26 @@ int math_user_function::get_len(const std::vector<owned_node> &args,
 	return len;
 }
 
+bool math_ast_node::is_label_offset(snes_label& out_base, int64_t& out_offset) {
+	// callers of this function are all places where forward labels are banned anyways
+	if(has_label() > 3) return false;
+	if(auto me = dynamic_cast<math_ast_label*>(this)) {
+		auto val = me->evaluate({}).get_identifier();
+		out_base = labels.find(val);
+		out_offset = 0;
+		return true;
+	}
+	auto me = dynamic_cast<math_ast_binop*>(this);
+	if(!me) return false;
+	if(me->m_type != math_binop_type::add && me->m_type != math_binop_type::sub) return false;
+
+	auto lhs = dynamic_cast<math_ast_label*>(me->m_left.get());
+	if(!lhs) return false;
+	auto val = lhs->evaluate({}).get_identifier();
+	out_base = labels.find(val);
+
+	if(me->m_right->has_label() > 1) return false;
+	out_offset = me->m_right->evaluate_static().get_integer();
+	if(me->m_type == math_binop_type::sub) out_offset = -out_offset;
+	return true;
+}

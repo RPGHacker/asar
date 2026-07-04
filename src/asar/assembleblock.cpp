@@ -494,22 +494,24 @@ bool labelval(string name, snes_label * rval, bool define)
 	return labelvalcore(&str, rval, define, false);
 }
 
-static void setlabel(string name, int loc=-1, bool is_static=false)
+static void setlabel(string name, int loc=-1, bool is_static=false, int fsid=-1)
 {
-	int lbl_fs_id = 0;
-	if (loc==-1)
-	{
-		verifysnespos();
-		loc = snespos;
-		// if base is not active:
-		if(snespos == realsnespos) lbl_fs_id = freespaceid;
-		// if base is active, always treat the label as freespace 0, i.e. not freespace.
+	if(fsid == -1) {
+		fsid = 0;
+		if (loc==-1)
+		{
+			verifysnespos();
+			loc = snespos;
+			// if base is not active:
+			if(snespos == realsnespos) fsid = freespaceid;
+			// if base is active, always treat the label as freespace 0, i.e. not freespace.
+		}
 	}
 
 	snes_label label_data;
 	label_data.pos = (unsigned int)loc;
 	label_data.is_static = is_static;
-	label_data.freespace_id = lbl_fs_id;
+	label_data.freespace_id = fsid;
 
 	unsigned int labelpos;
 	if (pass==0)
@@ -2346,12 +2348,20 @@ static void cmd_label_assign(const char* firstword, const char* params) {
 	completename += newlabelname;
 
 	auto expr = parse_math_expr(params + 2);
-	int64_t num = expr->evaluate_non_forward().get_integer();
 	bool is_static = expr->has_label() <= 1;
+	int fs_id = -1;
+	int64_t num;
+	snes_label base; int64_t offset;
+	if (expr->is_label_offset(base, offset)) {
+		num = base.pos + offset;
+		fs_id = base.freespace_id;
+	} else {
+		num = expr->evaluate_non_forward().get_integer();
+	}
 
 	if (num&~0xFFFFFF) throw_err_block(1, err_snes_address_out_of_bounds, hex(num, 6).data());
 
-	setlabel(ns + completename, num, is_static);
+	setlabel(ns + completename, num, is_static, fs_id);
 }
 
 // single_line_for_tracker is:

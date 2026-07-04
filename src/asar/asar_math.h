@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <memory>
 #include <vector>
+#include "assembleblock.h"
 #include "errors.h"
 #include "libstr.h"
 
@@ -91,6 +92,9 @@ public:
 			throw_err_block(0, err_label_forward);
 		return evaluate();
 	}
+
+	// whether this expression is of the form "label +- offset", where offset is static
+	bool is_label_offset(snes_label& out_base, int64_t& out_offset);
 };
 
 void initmathcore();
