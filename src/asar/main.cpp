@@ -779,144 +779,94 @@ void assemblefile(const char * filename)
 
 		sourcefile& newfile = filecontents.create(absolutepath);
 		newfile.data = temp;
-		char *inp = temp, *outp = temp, *linestartp = temp;
-		enum class state_t {
-			line_start, // eat whitespace
-			line,
-			quote,
-			linecomment,
-			blockcomment,
-			blockcomment_start,
-		};
+		char *inp = temp, *outp = temp, *line_start_p = temp;
 		int lineno = 0;
-		bool skip_ws = false;
-		state_t state = state_t::line_start;
-		bool done = false;
-		// invariant: always outp <= inp
-		for(;!done; inp++) {
-			// for this lineno accounting to work, changing inp must only be
-			// done when we are sure that we're not skipping over a newline
-			if(*inp == '\n') lineno++;
-			if(!*inp) {
-				// inject a \n as the last char of the file, to work around stupid users making files that don't have a trailing \n
-				*inp = '\n';
-				done=true;
+		// whether there was a mismatched quote error on this line
+		bool linebad = false;
+		// munch is just `inp++` except it updates lineno correctly
+#define munch (*inp == '\n' ? lineno++ : 0, inp++)
+#define eol (*inp == 0 || *inp == '\n')
+
+		auto munch_comm = [&]() {
+			char* inp_start = inp;
+			int lineno_start = lineno;
+			munch; // eat the ';'
+			if(inp[0] == '[' && inp[1] == '[') {
+				// block comment
+				while(*inp && (inp[0] != ']' || inp[1] != ']')) munch;
+				if(!*inp) {
+					// we need to construct a nice callstack_push entry for the error.
+					// i think it's good enough to display the offending line starting from the comment start.
+					char* end = strchr(inp_start, '\n');
+					while(isspace(end[-1])) end--;
+					*end = 0;
+					callstack_push cs_push(callstack_entry_type::LINE, inp_start, lineno_start);
+					throw_err_null(0, err_unclosed_block_comment);
+				} else {
+					inp += 2; // the two chars are known to be ]], no need to use munch
+				}
+			} else {
+				while(!eol) munch;
 			}
-			switch(state) {
-				case state_t::line_start:
-					if(isspace(*inp)) continue; // also catches \n
-					if(*inp == ';') {
-						// hacky
-						if(inp[1] == '[' && inp[2] == '[') {
-							inp += 2;
-							state = state_t::blockcomment_start;
-						}
-						else state = state_t::linecomment;
-						continue;
-					}
-					state = state_t::line;
-					newfile.lines.append({outp, lineno});
-					linestartp = outp;
-					// fall through
-				case state_t::line:
-					if(*inp == '\n') {
-						goto endoftheline;
-					} else {
-						if(skip_ws && isspace(*inp)) continue;
-						skip_ws = false;
-						if(*inp == ';') {
-							if(inp[1] == '[' && inp[2] == '[')
-								inp += 2, state = state_t::blockcomment;
-							else state = state_t::linecomment;
-							continue;
-						}
-						*outp++ = *inp;
-						if(*inp == '"') state = state_t::quote;
-						if(*inp == '\'') {
-							inp++;
-							if(!*inp || *inp == '\n') {
-								callstack_push cs_push(callstack_entry_type::LINE, "", lineno); // TODO
-								throw_err_null(0, err_mismatched_quotes);
-								// forget this line
-								newfile.lines.reset(newfile.lines.count-1);
-								state = state_t::line_start;
-								continue;
-							}
-							*outp++ = *inp++;
-							while((*(unsigned char*)inp & 0xc0) == 0x80) *outp++ = *inp++; // utf8 continuation bytes
-							if(*inp != '\'') {
-								callstack_push cs_push(callstack_entry_type::LINE, "", lineno); // TODO
-								throw_err_null(0, err_mismatched_quotes);
-								// forget this line
-								newfile.lines.reset(newfile.lines.count-1);
-								state = state_t::line_start;
-								while(*inp&&*inp!='\n') inp++; // skip the rest of the line
-								continue;
-							}
-							*outp++ = *inp;
-						}
-					}
-					break;
-				case state_t::quote:
-					if(*inp == '\n') {
-						string templine(linestartp, outp-linestartp);
-						callstack_push cs_push(callstack_entry_type::LINE, templine, lineno);
-						throw_err_null(0, err_mismatched_quotes);
-						// forget this line
-						newfile.lines.reset(newfile.lines.count-1);
-						state = state_t::line_start;
-						continue;
-					}
-					*outp++ = *inp;
-					if(*inp == '"') state = state_t::line;
-					break;
-				case state_t::linecomment:
-					if(*inp == '\n') goto endoftheline;
-					break;
-				case state_t::blockcomment:
-					if(*inp == ']' && inp[1] == ']') {
-						state = state_t::line;
-						inp++;
-					}
-					break;
-				case state_t::blockcomment_start:
-					if(*inp == ']' && inp[1] == ']') {
-						state = state_t::line_start;
-						inp++;
-					}
-					break;
-			}
-			continue;
-endoftheline:
-			// find last non-ws char
-			char* tempp = outp-1;
-			while(tempp >= linestartp && isspace(*tempp)) tempp--;
-			if(tempp >= linestartp) {
-				if(*tempp == '\\') {
-					// line joiner
-					outp = tempp; // remove the '\'
-					state = state_t::line; skip_ws = true;
-					continue;
-				} else if(*tempp == ',') {
-					// comma line joiner
-					outp = tempp+1;
-					state = state_t::line; skip_ws = true;
-					continue;
+		};
+		while(true) {
+			// we are currently at the start of a line
+			while(isspace(*inp)) munch; // includes \n; we don't care about blank lines
+			if(*inp == ';') { munch_comm(); continue; }
+			if(!*inp) break;
+			// not space, not a comment
+			newfile.lines.append({outp, lineno});
+			line_start_p = outp;
+			linebad = false;
+continue_line:
+			while(!eol) {
+				if(*inp == ';') { munch_comm(); continue; }
+				char c = *munch;
+				*outp++ = c;
+				if(c == '"') {
+					while(!eol && *inp != '"') *outp++ = *munch;
+					if(*inp != '"') { linebad = true; continue; }
+					*outp++ = *munch;
+				} else if(c == '\'') {
+					if(eol) { linebad = true; continue; }
+					*outp++ = *munch; // the char between the quotes
+					while(((unsigned char)*inp & 0xc0) == 0x80) *outp++ = *inp++; // utf8 continuation bytes
+					if(*inp != '\'') { linebad = true; continue; }
+					*outp++ = *munch;
 				}
 			}
-			// otherwise, normal line end
-			tempp[1] = 0; // trims any trailing whitespace
-			outp = tempp+2; // tempp is at most outp-1, so this is at most outp++
-			state = state_t::line_start;
+			// end of line
+			if(*inp) munch; // eat the \n
+
+			char* line_end_p = outp;
+			while(line_end_p > line_start_p && isspace(line_end_p[-1])) line_end_p--;
+			*line_end_p = 0; // terminates line and trims any trailing whitespace
+			outp = line_end_p+1;
+
+			if(linebad) {
+				callstack_push cs_push(callstack_entry_type::LINE, line_start_p, lineno);
+				throw_err_null(0, err_mismatched_quotes);
+				// forget this line
+				newfile.lines.reset(newfile.lines.count-1);
+				continue;
+			}
+
+			if(line_end_p > line_start_p) {
+				if(line_end_p[-1] == '\\') {
+					// line joiner
+					outp = line_end_p-1; // remove the '\'
+					goto continue_line;
+				} else if(line_end_p[-1] == ',') {
+					// comma line joiner
+					outp = line_end_p;
+					goto continue_line;
+				}
+			}
 		}
-		if(state == state_t::blockcomment || state == state_t::blockcomment_start) {
-			callstack_push cs_push(callstack_entry_type::LINE, "", 0); // TODO
-			throw_err_null(0, err_unclosed_block_comment);
-			state = state_t::line_start;
-		}
-		// TODO we can reach this if the last line of input ends with \ or ,
-		if(state != state_t::line_start) throw_err_fatal(0, err_internal_error, "state machine broke");
+#undef munch
+#undef eol
 	}
+
 	sourcefile& file = filecontents.find(absolutepath);
 	// previous callstack_push got dropped by the end of the if scope
 	callstack_push cs_push(callstack_entry_type::FILE, absolutepath);
