@@ -479,16 +479,7 @@ int main(int argc, const char * argv[])
 			if (file_exists(romname+".sfc")) romname+=".sfc";
 			else if (file_exists(romname+".smc")) romname+=".smc";
 		}
-		if (!file_exists(romname))
-		{
-			FileHandleType f = open_file(romname, FileOpenMode_Write);
-			if (f == InvalidFileHandle)
-			{
-				throw_err_fatal(pass, err_create_rom_failed);
-			}
-			close_file(f);
-		}
-		if (!openrom(romname, false))
+		if (!openrom(romname))
 		{
 			pause(err);
 			return 1;
@@ -616,7 +607,7 @@ int main(int argc, const char * argv[])
 			if (verbose) puts("Assembling completed without problems.");
 			pause(yes);
 		}
-		unsigned int romCrc = closerom();
+		unsigned int romCrc = closerom(true, romname);
 		if (symbols)
 		{
 			if (!symfilename) symfilename = get_base_name(romname)+".sym";

@@ -8,8 +8,8 @@
 extern const unsigned char * romdata;
 extern int romlen;
 extern unsigned char freespacebyte;
-bool openrom(const char * filename, bool confirm=true);
-uint32_t closerom(bool save = true);
+bool openrom(const char * filename);
+uint32_t closerom(bool save, const char* filename=nullptr);
 
 enum mapper_t {
 	invalid_mapper,

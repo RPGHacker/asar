@@ -11,7 +11,6 @@ const unsigned char * romdata= nullptr; // NOTE: Changed into const to prevent d
 int romlen;
 static bool header;
 unsigned char freespacebyte;
-static FileHandleType thisfile = InvalidFileHandle;
 
 autoarray<writtenblockdata> writtenblocks;
 static int last_writtenblock_ind = 0;
@@ -527,53 +526,75 @@ int getsnesfreespace(int size, int target_bank, bool autoexpand, bool respectban
 	return snesfree;
 }
 
-bool openrom(const char * filename, bool confirm)
+bool openrom(const char * filename)
 {
-	closerom();
-	thisfile = open_file(filename, FileOpenMode_ReadWrite);
-	if (thisfile == InvalidFileHandle)
-	{
-		throw_err_null(pass, err_open_rom_failed);
-		return false;
-	}
-	header=false;
+	closerom(false); // todo: why?
+	bool fname_smc = false, fname_sfc = false;
 	if (strlen(filename)>4)
 	{
 		const char * fnameend=strchr(filename, '\0')-4;
-		header=(!stricmp(fnameend, ".smc"));
+		fname_smc = (!stricmp(fnameend, ".smc"));
+		fname_sfc = (!stricmp(fnameend, ".sfc"));
 	}
-	romlen=(int)get_file_size(thisfile)-(header*512);
-	if (romlen<0) romlen=0;
-	set_file_pos(thisfile, header*512);
-	romdata=(unsigned char*)malloc(sizeof(unsigned char)*16*1024*1024);
-	int truelen=(int)read_file(thisfile, (void*)romdata, (uint32_t)romlen);
-	if (truelen!=romlen)
-	{
-		free(const_cast<unsigned char*>(romdata));
-		throw_err_null(pass, err_open_rom_failed);
-		return false;
+	header = fname_smc;
+	autoptr<unsigned char*> rom_buffer = (unsigned char*)malloc(16*1024*1024);
+	romlen = 0;
+	if(file_exists(filename)) {
+		FileHandleType thisfile = open_file(filename, FileOpenMode_Read);
+		if (thisfile == InvalidFileHandle)
+		{
+			throw_err_null(pass, err_open_rom_failed);
+			return false;
+		}
+		uint64_t fisze = get_file_size(thisfile);
+		header = false;
+		if(fisze % 1024 == 512) {
+			header = true;
+			if(fname_sfc) {
+				throw_err_null(pass, err_header_mismatch, "headered", "sfc", "unheadered");
+				return false;
+			}
+		} else if(fisze % 1024 == 0) {
+			if(fname_smc) {
+				throw_err_null(pass, err_header_mismatch, "unheadered", "smc", "headered");
+				return false;
+			}
+		} else {
+			// weird file size - we'll just assume unheadered and not check the extension
+		}
+		romlen=(int)get_file_size(thisfile)-(header*512);
+		if (romlen<0) romlen=0;
+		set_file_pos(thisfile, header*512);
+		int truelen=(int)read_file(thisfile, (void*)rom_buffer, (uint32_t)romlen);
+		if (truelen!=romlen)
+		{
+			throw_err_null(pass, err_open_rom_failed);
+			return false;
+		}
+		close_file(thisfile);
 	}
+	romdata = rom_buffer;
+	rom_buffer = nullptr;
 	memset(const_cast<unsigned char*>(romdata)+romlen, 0x00, (size_t)(16*1024*1024-romlen));
-	if (confirm && snestopc(0x00FFC0)+21<(int)romlen && strncmp((const char*)romdata+snestopc(0x00FFC0), "SUPER MARIOWORLD     ", 21))
-	{
-		closerom(false);
-		if(header) throw_err_null(pass, err_open_rom_not_smw_extension);
-		else throw_err_null(pass, err_open_rom_not_smw_header);
-		return false;
-	}
 
 	romdata_r=(unsigned char*)malloc((size_t)romlen);
 	romlen_r=romlen;
-	memcpy((void*)romdata_r, romdata, (size_t)romlen);//recently allocated, dead
+	memcpy((void*)romdata_r, romdata, (size_t)romlen);
 
 	return true;
 }
 
-uint32_t closerom(bool save)
+uint32_t closerom(bool save, const char* filename)
 {
 	uint32_t romCrc = 0;
-	if (thisfile != InvalidFileHandle && save && romlen)
+	if(save)
 	{
+		FileHandleType thisfile = open_file(filename, FileOpenMode_Write);
+		if (thisfile == InvalidFileHandle)
+		{
+			throw_err_null(pass, err_open_rom_failed);
+			return 0;
+		}
 		set_file_pos(thisfile, header*512);
 		write_file(thisfile, romdata, (uint32_t)romlen);
 
@@ -589,11 +610,10 @@ uint32_t closerom(bool save)
 			romCrc = crc32(filedata, (unsigned int)(romlen + header * 512));
 			free(filedata);
 		}
+		close_file(thisfile);
 	}
-	if (thisfile != InvalidFileHandle) close_file(thisfile);
 	if (romdata) free(const_cast<unsigned char*>(romdata));
 	if (romdata_r) free(const_cast<unsigned char*>(romdata_r));
-	thisfile= InvalidFileHandle;
 	romdata= nullptr;
 	romdata_r = nullptr;
 	romlen=0;
@@ -625,7 +645,7 @@ static unsigned int getchecksum()
 
 void fixchecksum()
 {
-	// randomdude999: clear out checksum bytes before recalculating checksum, this should make it correct on roms that don't have a checksum yet
+	// clear out checksum bytes before recalculating checksum, this should make it correct on roms that don't have a checksum yet
 	writeromdata(snestopc(0x00FFDC), "\xFF\xFF\0\0", 4);
 	int checksum=(int)getchecksum();
 	writeromdata_byte(snestopc(0x00FFDE), (unsigned char)(checksum&255));
