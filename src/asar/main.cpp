@@ -899,6 +899,8 @@ continue_line:
 	incsrcdepth--;
 }
 
+bool for_loop_expansion_warning = false;
+
 // RPG Hacker: At some point, this should probably be merged
 // into assembleline(), since the two names just cause
 // confusion otherwise.
@@ -909,12 +911,18 @@ bool do_line_logic(const string& line, const char* filename, int lineno)
 	int single_line_for_tracker = 1;
 	try
 	{
+		for_loop_expansion_warning = false;
 		string current_line;
 		if (numif==numtrue || (numtrue+1==numif && stribegin(line, "elseif ")))
 		{
 			callstack_push cs_push(callstack_entry_type::LINE, line, lineno);
 			string tmp=replace_macro_args(line);
 			tmp.qnormalize();
+			if(stribegin(tmp, "for !") && tmp[5] != '{') {
+				// we can't throw a warning here directly, since then it'll get
+				// thrown repeatedly in every iteration of the loop.
+				for_loop_expansion_warning = true;
+			}
 			resolvedefines(current_line, tmp);
 			if (!confirmquotes(current_line)) throw_err_line(0, err_mismatched_quotes);
 		}

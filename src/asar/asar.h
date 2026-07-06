@@ -107,6 +107,8 @@ extern int in_macro_def;
 
 extern int cur_logical_lineno;
 
+extern bool for_loop_expansion_warning;
+
 //this is a trick to namespace an enum to avoid name collision without too much verbosity
 //could technically name the enum too but this is fine for now.
 namespace optimize_dp_flag {

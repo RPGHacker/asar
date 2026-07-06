@@ -2181,6 +2181,7 @@ void cf_start(const char* par, int& single_line_for_tracker) {
 
 		if(!is_for_cont)
 		{
+			if(for_loop_expansion_warning) throw_warning(0, warn_for_loop_define);
 			const char* past_eq = strchr(par, '=');
 			if(!past_eq)
 				throw_err_block(0, err_broken_for_loop, "missing loop range");

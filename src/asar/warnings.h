@@ -36,6 +36,7 @@ WRN(warn_mapper_already_set, "A mapper has already been selected.", true)
 WRN(warn_feature_deprecated, "DEPRECATION NOTIFICATION: Feature \"%s\" is deprecated and will be REMOVED in the future. Please update your code to conform to newer styles. Suggested work around: %s.", true)
 WRN(warn_invalid_warning_id, "Warning '%s' (passed to %s) doesn't exist.", true)
 WRN(warn_byte_order_mark_utf8, "UTF-8 byte order mark detected and skipped.", true)
+WRN(warn_for_loop_define, "For loop variable name underwent define expansion - this is very likely not what you wanted. Loop variables are specified without !. Remove the !, or use !{name} to silence this warning.", true)
 
 #undef WRN
 #define throw_warning(whichpass, id, ...) id(whichpass, ## __VA_ARGS__)
