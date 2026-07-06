@@ -231,7 +231,7 @@ owned_node parse_context::parse_binops(int depth) {
 	const char* posneglabel = str;
 	string posnegname = posneglabelname(&posneglabel, false);
 	if (posnegname.length() > 0 &&
-		(*posneglabel == '\0' || *posneglabel == ')')) {
+		(*posneglabel == '\0' || *posneglabel == ')' || *posneglabel == ',')) {
 		str = posneglabel;
 		return std::make_unique<math_ast_label>(posnegname);
 	}
