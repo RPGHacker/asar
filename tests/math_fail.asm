@@ -32,3 +32,6 @@ assert datasize(2)
 assert "1" - "2"
 ;`errEbad_type
 assert "1"%"2"
+
+;`errEerror_command
+assert error("error??? " + hex(1234))

@@ -440,6 +440,11 @@ string fmt_double(math_val value, int precision) {
 	return ftostrvar(value.get_double(), precision);
 }
 
+math_val fn_error(math_val message) {
+	string message_s = STR ": " + message.get_str();
+	throw_err_block(2, err_error_command, message_s.data());
+}
+
 } // namespace
 
 void closecachedfiles()
@@ -546,4 +551,6 @@ const std::unordered_map<string, math_builtin_function> builtin_functions = {
 	{ "dec", fn_fmt_num<fmt_dec> },
 	{ "hex", fn_fmt_num<fmt_hex> },
 	{ "double", fn_fmt_num<fmt_double, 5> },
+
+	{ "error", fixed_arity<fn_error> }
 };
