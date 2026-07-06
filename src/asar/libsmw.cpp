@@ -539,7 +539,7 @@ bool openrom(const char * filename)
 	header = fname_smc;
 	autoptr<unsigned char*> rom_buffer = (unsigned char*)malloc(16*1024*1024);
 	romlen = 0;
-	if(file_exists(filename)) {
+	if(*filename && file_exists(filename)) {
 		FileHandleType thisfile = open_file(filename, FileOpenMode_Read);
 		if (thisfile == InvalidFileHandle)
 		{

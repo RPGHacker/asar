@@ -278,12 +278,15 @@ int main(int argc, const char * argv[])
 			"                   Enables detailed call stack information for warnings and errors.\n\n"
 			" --error-limit=<N> \n"
 			"                   Stop after encountering this many errors, instead of the default 20\n\n"
+			" -o, --output <filename>\n"
+			"                   Write output ROM to the specified filename (instead of overwriting input ROM).\n\n"
 			);
 		ignoretitleerrors=false;
 		string par;
 		bool verbose=libcon_interactive;
 		string symbols="";
 		string symfilename="";
+		string outname="";
 
 		autoarray<string> includepaths;
 		autoarray<const char*> includepath_cstrs;
@@ -362,6 +365,7 @@ int main(int argc, const char * argv[])
 				}
 			}),
 			opt(0, "full-error-stack", [&](){ simple_callstacks = false; }),
+			opt('o', "output", [&](const char* arg){ outname = arg; }),
 			opt('h', "help", [&]() { libcon_badusage(); })
 		);
 
@@ -387,10 +391,13 @@ int main(int argc, const char * argv[])
 			return 1;
 		}
 
-		//char * outname=libcon_optional_filename("Enter output ROM name:", nullptr);
 		//libcon_end();
 		if (!strchr(asmname, '.') && !file_exists(asmname)) asmname+=".asm";
-		if (!romname)
+		if (!romname && outname) {
+			// `-o` without input romname = always patch on empty input
+		}
+		// otherwise try to autodetect an input romname
+		else if (!romname)
 		{
 			string romnametmp = get_base_name(asmname);
 			if (file_exists(romnametmp+".sfc")) romname=romnametmp+".sfc";
@@ -530,10 +537,12 @@ int main(int argc, const char * argv[])
 			if (verbose) puts("Assembling completed without problems.");
 			pause(yes);
 		}
-		unsigned int romCrc = closerom(true, romname);
+
+		if(!outname) outname = romname;
+		unsigned int romCrc = closerom(true, outname);
 		if (symbols)
 		{
-			if (!symfilename) symfilename = get_base_name(romname)+".sym";
+			if (!symfilename) symfilename = get_base_name(outname)+".sym";
 			string contents = create_symbols_file(symbols, romCrc).convert_line_endings_to_native();
 
 			FileHandleType symfile = open_file(symfilename, FileOpenMode_Write);
