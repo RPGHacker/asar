@@ -27,6 +27,12 @@ struct errnull : public errblock {};
 
 ERR(err_limit_reached, "Over %d errors detected. Aborting.")
 ERR(err_werror, "One or more warnings was detected with werror on.")
+ERR(err_cli_no_arg, "The option '%s' does not take an argument.")
+ERR(err_cli_missing_arg, "The option '%s' requires an argument.")
+ERR(err_cli_bad_value, "Bad value for option '%s'. Allowed values are %s.")
+ERR(err_cli_unknown_opt, "Unknown command-line option '%s', use '--help' for more information.")
+ERR(err_cli_missing_asmname, "Missing asm file argument, use '--help' for more information.")
+ERR(err_cli_too_many_args, "Too many arguments given, use '--help' for more information.")
 ERR(err_buffer_too_small, "The given buffer is too small to contain the resulting ROM.")
 ERR(err_params_null, "params passed to asar_patch_ex() is null.")
 ERR(err_params_invalid_size, "Size of params passed to asar_patch_ex() is invalid.")

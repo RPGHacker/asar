@@ -7,6 +7,7 @@
 #include "asar_math.h"
 #include "unicode.h"
 #include "platform/thread-helpers.h"
+#include "argparse.h"
 
 #if defined(windows)
 #	define NOMINMAX
@@ -200,16 +201,6 @@ int main(int argc, const char * argv[])
 		pause_yes,
 	} pause=pause_no;
 
-	enum cmdlparam
-	{
-		cmdlparam_none,
-
-		cmdlparam_addincludepath,
-		cmdlparam_adddefine,
-
-		cmdlparam_count
-	};
-
 #if defined(windows)
 	// RPG Hacker: MinGW compatibility hack.
 #	if !defined(_O_U16TEXT)
@@ -253,11 +244,6 @@ int main(int argc, const char * argv[])
 		string version=STR"Asar "+dec(asarver_maj)+"."+dec(asarver_min)+"."+dec(asarver_bug)+(asarver_beta?"pre":"")
 				+", originally developed by Alcaro, maintained by Asar devs.\n"+
 				"Source code: https://github.com/RPGHacker/asar\n";
-		const char * myname=argv[0];
-		if (strrchr(myname, '/')) myname=strrchr(myname, '/')+1;
-		//char * dot=strrchr(myname, '.');
-		//if (dot) *dot='\0';
-		//if (dot) *dot='.';
 		libcon_init(argc, argv,
 			"[options] asm_file [rom_file]\n\n"
 			"Supported options:\n\n"
@@ -304,168 +290,105 @@ int main(int argc, const char * argv[])
 		// need to do this before option processing since the option parser already does set_warning_enabled
 		reset_warnings_to_default();
 
-		while ((par=libcon_option()))
-		{
-			cmdlparam postprocess_param = cmdlparam_none;
-			const char* postprocess_arg = nullptr;
-
-#define checkstartmatch(arg, stringliteral) (!strncmp(arg, stringliteral, strlen(stringliteral)))
-
-			if (par=="--no-title-check") ignoretitleerrors=true;
-			else if (par == "-v" || par=="--verbose") verbose=true;
-			else if (checkstartmatch(par, "--symbols="))
-			{
-				if (par == "--symbols=none") symbols = "";
-				else if (par=="--symbols=wla") symbols="wla";
-				else if (par=="--symbols=nocash") symbols="nocash";
-				else libcon_badusage();
-			}
-			else if (checkstartmatch(par, "--symbols-path=")) {
-				symfilename=((const char*)par) + strlen("--symbols-path=");
-			}
-			else if (checkstartmatch(par, "--error-limit="))
-			{
-				char* out;
-				long lim = strtol((const char*)par + strlen("--error-limit="), &out, 10);
-				max_num_errors = lim;
-			}
-			else if (par=="--version")
-			{
+		autoarray<const char*> positional_args = parse_opts(argc, argv,
+			opt(0, "no-title-check", [&](){ ignoretitleerrors = true; }),
+			opt('v', "verbose", [&](){ verbose = true; }),
+			opt(0, "symbols", [&](string arg) {
+				if(arg == "none") symbols = "";
+				else if(arg == "wla") symbols = "wla";
+				else if(arg == "nocash") symbols = "nocash";
+				else throw_err_null(pass, err_cli_bad_value, "symbols", "'none', 'wla', 'nocash'");
+			}),
+			opt(0, "symbols-path", [&](const char* arg){ symfilename = arg; }),
+			opt(0, "error-limit", [&](const char* arg){
+				char* end;
+				long val = strtol(arg, &end, 10);
+				if(*end) throw_err_null(pass, err_cli_bad_value, "error-limit", "integers");
+				else max_num_errors = val;
+			}),
+			opt(0, "version", [&](){
 				puts(version);
-				return 0;
-			}
-			else if (checkstartmatch(par, "--pause-mode="))
-			{
-				if (par=="--pause-mode=never") pause=pause_no;
-				else if (par=="--pause-mode=on-error") pause=pause_err;
-				else if (par=="--pause-mode=on-warning") pause=pause_warn;
-				else if (par=="--pause-mode=always") pause=pause_yes;
-				else libcon_badusage();
-			}
-			else if(checkstartmatch(par, "--fix-checksum=")) {
-				if(par=="--fix-checksum=on") {
-					force_checksum_fix = true;
-					checksum_fix_enabled = true;
-				} else if(par=="--fix-checksum=off") {
-					force_checksum_fix = true;
-					checksum_fix_enabled = false;
-				} else libcon_badusage();
-			}
-			else if (checkstartmatch(par, "-I"))
-			{
-				postprocess_param = cmdlparam_addincludepath;
-				postprocess_arg = ((const char*)par) + strlen("-I");
-			}
-			else if (checkstartmatch(par, "-D"))
-			{
-				postprocess_param = cmdlparam_adddefine;
-				postprocess_arg = ((const char*)par) + strlen("-D");
-			}
-			else if (par == "--include")
-			{
-				postprocess_arg = libcon_option_value();
-				if (postprocess_arg != nullptr)
-				{
-					postprocess_param = cmdlparam_addincludepath;
+				exit(0);
+			}),
+			opt(0, "pause-mode", [&](string arg){
+				if(arg == "never") pause = pause_no;
+				else if(arg == "on-error") pause = pause_err;
+				else if(arg == "on-warning") pause = pause_warn;
+				else if(arg == "always") pause = pause_yes;
+				else throw_err_null(pass, err_cli_bad_value, "pause-mode",
+						"'never', 'on-error', 'on-warning', 'always'");
+			}),
+			opt(0, "fix-checksum", [&](string arg){
+				force_checksum_fix = true;
+				if(arg == "on") checksum_fix_enabled = true;
+				else if(arg == "off") checksum_fix_enabled = false;
+				else throw_err_null(pass, err_cli_bad_value, "fix-checksum", "'on', 'off'");
+			}),
+			opt('I', "include", [&](const char* arg){
+				includepaths.append(arg);
+			}),
+			opt('D', "define", [&](const char* arg){
+				string name;
+				string value;
+				if(const char * eq_loc = strchr(arg, '=')) {
+					name.assign(arg, eq_loc - arg);
+					value = eq_loc + 1;
+				} else {
+					name = arg;
 				}
-			}
-			else if (par == "--define")
-			{
-				postprocess_arg = libcon_option_value();
-				if (postprocess_arg != nullptr)
-				{
-					postprocess_param = cmdlparam_adddefine;
-				}
-			}
-			else if (checkstartmatch(par, "-w"))
-			{
-				const char* w_param = ((const char*)par) + strlen("-w");
-
-				if (checkstartmatch(w_param, "error"))
-				{
-					werror = true;
-				}
-				else if (checkstartmatch(w_param, "no"))
-				{
-					const char* name_start = w_param + strlen("no");
+				strip_whitespace(name);
+				name.strip_prefix('!');
+				if(!validatedefinename(name)) throw_err_null(pass, err_cmdl_define_invalid, "command line defines", name.data());
+				else if(clidefines.exists(name)) throw_err_null(pass, err_cmdl_define_override, "Command line define", name.data());
+				else clidefines.create(name) = value;
+			}),
+			opt('w', nullptr, [&](const char* arg){
+				if(arg == STR "error") { werror = true; }
+				else if(!strncmp(arg, "no", 2)) {
+					const char* name_start = arg + 2;
 					asar_warning_id warnid = parse_warning_id_from_string(name_start);
-
-					if (warnid != warning_id_end)
-					{
+					if(warnid != warning_id_end) {
 						set_warning_enabled(warnid, false);
-					}
-					else
-					{
+					} else {
 						throw_warning(pass, warn_invalid_warning_id, name_start, "-wno");
 					}
-				}
-				else
-				{
-					asar_warning_id warnid = parse_warning_id_from_string(w_param);
-
-					if (warnid != warning_id_end)
-					{
+				} else {
+					asar_warning_id warnid = parse_warning_id_from_string(arg);
+					if(warnid != warning_id_end) {
 						set_warning_enabled(warnid, true);
-					}
-					else
-					{
-						throw_warning(pass, warn_invalid_warning_id, w_param, "-w");
+					} else {
+						throw_warning(pass, warn_invalid_warning_id, arg, "-w");
 					}
 				}
+			}),
+			opt(0, "full-error-stack", [&](){ simple_callstacks = false; }),
+			opt('h', "help", [&]() { libcon_badusage(); })
+		);
 
-			}
-			else if (par=="--full-error-stack") simple_callstacks=false;
-			else libcon_badusage();
-
-			if (postprocess_param == cmdlparam_addincludepath)
-			{
-				includepaths.append(postprocess_arg);
-			}
-			else if (postprocess_param == cmdlparam_adddefine)
-			{
-				if (strchr(postprocess_arg, '=') != nullptr)
-				{
-					// argument contains value, not only name
-					const char* eq_loc = strchr(postprocess_arg, '=');
-					string name = string(postprocess_arg, (int)(eq_loc - postprocess_arg));
-					strip_whitespace(name);
-					name.strip_prefix('!'); // remove leading ! if present
-
-					if (!validatedefinename(name)) throw_err_null(pass, err_cmdl_define_invalid, "command line defines", name.data());
-
-					if (clidefines.exists(name)) {
-						throw_err_null(pass, err_cmdl_define_override, "Command line define", name.data());
-						pause(err);
-						return 1;
-					}
-					clidefines.create(name) = eq_loc + 1;
-				}
-				else
-				{
-					// argument doesn't have a value, only name
-					string name = postprocess_arg;
-					strip_whitespace(name);
-					name.strip_prefix('!'); // remove leading ! if present
-
-					if (!validatedefinename(name)) throw_err_null(pass, err_cmdl_define_invalid, "command line defines", name.data());
-
-					if (clidefines.exists(name)) {
-						throw_err_null(pass, err_cmdl_define_override, "Command line define", name.data());
-						pause(err);
-						return 1;
-					}
-					clidefines.create(name) = "";
-				}
-			}
-		}
 		if (verbose)
 		{
 			puts(version);
 		}
-		string asmname=libcon_require_filename("Enter patch name:");
-		string romname=libcon_optional_filename("Enter ROM name:", nullptr);
+		string asmname, romname;
+		if(libcon_interactive) {
+			asmname=libcon_require_filename("Enter patch name:");
+			romname=libcon_optional_filename("Enter ROM name:", nullptr);
+		} else {
+			if(positional_args.count < 1) throw_err_null(pass, err_cli_missing_asmname);
+			else asmname = positional_args[0];
+
+			if(positional_args.count == 2) romname = positional_args[1];
+
+			if(positional_args.count > 2) throw_err_null(pass, err_cli_too_many_args);
+		}
+
+		if(errored) {
+			pause(err);
+			return 1;
+		}
+
 		//char * outname=libcon_optional_filename("Enter output ROM name:", nullptr);
-		libcon_end();
+		//libcon_end();
 		if (!strchr(asmname, '.') && !file_exists(asmname)) asmname+=".asm";
 		if (!romname)
 		{
