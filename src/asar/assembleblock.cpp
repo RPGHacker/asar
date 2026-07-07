@@ -1320,6 +1320,14 @@ void cmd_endstruct(char** words, int numwords) {
 		structs.create(struct_parent) = parent;
 	}
 
+	// create a fake label for the end, so that datasize() acts nicer on the last label in the struct
+	string endname = STR ":endstruct_";
+	if(in_sub_struct) {
+		endname += struct_parent + ".";
+	}
+	endname += struct_name;
+	setlabel(endname, snespos, static_struct);
+
 	pop_pc();
 	in_struct = false;
 	in_sub_struct = false;
