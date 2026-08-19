@@ -4,7 +4,7 @@ to compile the HTML version of the book, run `mdbook build` in this directory.
 you'll need to have python3 installed and available under that name, as some of
 the preprocessing scripts are written in python.
 
-tested with mdbook v0.4.36, some of the below hacks might break with a newer one
+tested with mdbook v0.5.4, some of the below hacks might break with a newer one
 
 the highlighting is a bit of a mess: theme/highlight.js is the file actually
 used by mdbook. we can't add hljs-asar as a separate js file, because it'll be

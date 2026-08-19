@@ -197,7 +197,7 @@ This part of the changelog was written retroactively and may be incorrect and/or
 -   Added print dec($1234) and print hex(1234).
 -   Attached test suite in the source zip, in case some other programmers are interested.
 -   Added @include and @includefrom, which throws errors if Asar is invoked directly on them.
--   Added a -pause=<action> flag on the command line. Valid actions are "yes", "warn", "err", and "no" (default).
+-   Added a -pause=\<action\> flag on the command line. Valid actions are "yes", "warn", "err", and "no" (default).
 -   Added a couple of synonyms to the single-bit SPC700 opcodes.
 -   Added underscore-prefixed versions of all builtin functions.
 -   Added error-safe readN and canreadN.

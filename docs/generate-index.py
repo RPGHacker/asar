@@ -8,6 +8,7 @@ sys.dont_write_bytecode = True
 import parse_warnings
 
 index = {}
+anchor = 0
 
 class Location():
     def __init__(self, path, name, anchor):
@@ -21,9 +22,8 @@ def walk_section(sec):
         chap = sec["Chapter"]
         for x in chap["sub_items"]:
             walk_section(x)
-        anchor = 0
         def replace_match(m):
-            nonlocal anchor
+            global anchor
             content = m.group(1).strip()
             this_anch = "a" + str(anchor)
             anchor += 1
@@ -75,6 +75,6 @@ if __name__ == '__main__':
 
     # load both the context and the book representations from stdin
     context, book = json.load(sys.stdin)
-    for x in book['sections']:
+    for x in book['items']:
         walk_section(x)
     print(json.dumps(book))
