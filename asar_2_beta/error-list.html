@@ -1,0 +1,423 @@
+<!DOCTYPE HTML>
+<html lang="en" class="light sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>List of all errors - Asar Manual</title>
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-a015daf4.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-08926cec.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-08926cec.css">
+
+        <!-- Custom theme stylesheets -->
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "light";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-fcfafc04.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-2cbe6dcf.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('light')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Asar Manual</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="list-of-all-errors"><a class="header" href="#list-of-all-errors">List of all errors</a></h1>
+<p>This list is extracted directly from the source code. Some errors might be unused or have incomplete messages (due to the messages being partially computed at runtime).</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Error name</th><th>Message</th></tr>
+</thead>
+<tbody>
+<tr><td>Elimit_reached</td><td>Over %d errors detected. Aborting.</td></tr>
+<tr><td>Ewerror</td><td>One or more warnings was detected with werror on.</td></tr>
+<tr><td>Ecli_no_arg</td><td>The option '%s' does not take an argument.</td></tr>
+<tr><td>Ecli_missing_arg</td><td>The option '%s' requires an argument.</td></tr>
+<tr><td>Ecli_bad_value</td><td>Bad value for option '%s'. Allowed values are %s.</td></tr>
+<tr><td>Ecli_unknown_opt</td><td>Unknown command-line option '%s', use '--help' for more information.</td></tr>
+<tr><td>Ecli_missing_asmname</td><td>Missing asm file argument, use '--help' for more information.</td></tr>
+<tr><td>Ecli_too_many_args</td><td>Too many arguments given, use '--help' for more information.</td></tr>
+<tr><td>Ebuffer_too_small</td><td>The given buffer is too small to contain the resulting ROM.</td></tr>
+<tr><td>Eparams_null</td><td>params passed to asar_patch_ex() is null.</td></tr>
+<tr><td>Eparams_invalid_size</td><td>Size of params passed to asar_patch_ex() is invalid.</td></tr>
+<tr><td>Ecmdl_define_invalid</td><td>Invalid define name in %s: '%s'.</td></tr>
+<tr><td>Ecmdl_define_override</td><td>%s '%s' overrides a previous define. Did you specify the same define twice?</td></tr>
+<tr><td>Eopen_rom_failed</td><td>Couldn't open ROM.</td></tr>
+<tr><td>Eheader_mismatch</td><td>This ROM is %s, but its file extension (%s) implies %s. Either fix the header or rename the file.</td></tr>
+<tr><td>Estddefines_no_identifier</td><td>stddefines.txt contains a line with a value, but no identifier.</td></tr>
+<tr><td>Estddefine_after_closing_quote</td><td>Broken std defines. (Something after closing quote)</td></tr>
+<tr><td>Efailed_to_open_file</td><td>Failed to open file '%s'.</td></tr>
+<tr><td>Efile_not_found</td><td>File '%s' wasn't found.</td></tr>
+<tr><td>Efile_offset_out_of_bounds</td><td>File offset %s out of bounds for file '%s'.</td></tr>
+<tr><td>Emismatched_parentheses</td><td>Mismatched parentheses.</td></tr>
+<tr><td>Einvalid_hex_value</td><td>Invalid hex value.</td></tr>
+<tr><td>Einvalid_binary_value</td><td>Invalid binary value.</td></tr>
+<tr><td>Einvalid_character</td><td>Invalid character.</td></tr>
+<tr><td>Einvalid_number</td><td>Invalid number.</td></tr>
+<tr><td>Egarbage_near_quoted_string</td><td>Garbage near quoted string.</td></tr>
+<tr><td>Emismatched_quotes</td><td>Mismatched quotes.</td></tr>
+<tr><td>Erom_too_short</td><td>ROM is too short to have a title. (Expected '%s')</td></tr>
+<tr><td>Erom_title_incorrect</td><td>ROM title is incorrect. Expected '%s', got '%s'.</td></tr>
+<tr><td>Ebank_border_crossed</td><td>A bank border was crossed, SNES address $%06X.</td></tr>
+<tr><td>Estart_of_file</td><td>This command may only be used at the start of a file.</td></tr>
+<tr><td>Einvalid_version_number</td><td>Invalid version number.</td></tr>
+<tr><td>Easar_too_old</td><td>This version of Asar is too old for this patch.</td></tr>
+<tr><td>Erelative_branch_out_of_bounds</td><td>Relative branch out of bounds. (Distance is %s).</td></tr>
+<tr><td>Esnes_address_doesnt_map_to_rom</td><td>SNES address %s doesn't map to ROM.</td></tr>
+<tr><td>Esnes_address_out_of_bounds</td><td>SNES address %s out of bounds.</td></tr>
+<tr><td>Einvalid_tcall</td><td>Invalid tcall.</td></tr>
+<tr><td>Euse_xplus</td><td>Use (x+) instead.</td></tr>
+<tr><td>Eopcode_length_too_long</td><td>Opcode length is too long.</td></tr>
+<tr><td>Esuperfx_invalid_short_address</td><td>Invalid short address parameter: $%s. (Must be even number and $0000-$01FE)</td></tr>
+<tr><td>Esuperfx_invalid_register</td><td>Invalid register for opcode; valid range is %d-%d.</td></tr>
+<tr><td>Einvalid_opcode_length</td><td>Invalid opcode length specification.</td></tr>
+<tr><td>Einvalid_mapper</td><td>Invalid mapper.</td></tr>
+<tr><td>Enan</td><td>NaN encountered.</td></tr>
+<tr><td>Edivision_by_zero</td><td>Division by zero.</td></tr>
+<tr><td>Eunknown_operator</td><td>Unknown operator.</td></tr>
+<tr><td>Einvalid_input</td><td>Invalid input.</td></tr>
+<tr><td>Einvalid_function_name</td><td>Invalid function name.</td></tr>
+<tr><td>Efunction_not_found</td><td>Function '%s' wasn't found.</td></tr>
+<tr><td>Efunction_redefined</td><td>Function '%s' redefined.</td></tr>
+<tr><td>Ebroken_function_declaration</td><td>Broken function declaration.</td></tr>
+<tr><td>Einvalid_param_name</td><td>Invalid parameter name '%s'.</td></tr>
+<tr><td>Einvalid_label_name</td><td>Invalid label name.</td></tr>
+<tr><td>Elabel_not_found</td><td>Label '%s' wasn't found.</td></tr>
+<tr><td>Elabel_redefined</td><td>Label '%s' redefined.</td></tr>
+<tr><td>Ebroken_label_definition</td><td>Broken label definition.</td></tr>
+<tr><td>Emacro_label_outside_of_macro</td><td>Macro label outside of a macro.</td></tr>
+<tr><td>Einvalid_namespace_name</td><td>Invalid namespace name.</td></tr>
+<tr><td>Einvalid_namespace_use</td><td>Invalid use of namespace command.</td></tr>
+<tr><td>Einvalid_struct_name</td><td>Invalid struct name.</td></tr>
+<tr><td>Estruct_not_found</td><td>Struct '%s' wasn't found.</td></tr>
+<tr><td>Estruct_redefined</td><td>Struct '%s' redefined.</td></tr>
+<tr><td>Estruct_invalid_parent_name</td><td>Invalid parent name.</td></tr>
+<tr><td>Einvalid_label_missing_closer</td><td>Invalid label name, missing array closer.</td></tr>
+<tr><td>Elabel_missing_parent</td><td>This label has no parent.</td></tr>
+<tr><td>Estruct_without_endstruct</td><td>struct without matching endstruct.</td></tr>
+<tr><td>Enested_struct</td><td>Can not nest structs.</td></tr>
+<tr><td>Emissing_struct_params</td><td>Missing struct parameters.</td></tr>
+<tr><td>Etoo_many_struct_params</td><td>Too many struct parameters.</td></tr>
+<tr><td>Emissing_extends</td><td>Missing extends keyword.</td></tr>
+<tr><td>Einvalid_endstruct_count</td><td>Invalid endstruct parameter count.</td></tr>
+<tr><td>Eexpected_align</td><td>Expected align parameter.</td></tr>
+<tr><td>Eendstruct_without_struct</td><td>endstruct can only be used in combination with struct.</td></tr>
+<tr><td>Ealignment_too_small</td><td>Alignment must be &gt;= 1.</td></tr>
+<tr><td>Einvalid_define_name</td><td>Invalid define name.</td></tr>
+<tr><td>Edefine_not_found</td><td>Define '%s' wasn't found.</td></tr>
+<tr><td>Edefine_not_found2</td><td>Define '%s' wasn't found.</td></tr>
+<tr><td>Ebroken_define_declaration</td><td>Broken define declaration.</td></tr>
+<tr><td>Eoverriding_builtin_define</td><td>Trying to set define '%s', which is the name of a built-in define and thus can't be modified.</td></tr>
+<tr><td>Emismatched_braces</td><td>Mismatched braces.</td></tr>
+<tr><td>Einvalid_macro_name</td><td>Invalid macro name.</td></tr>
+<tr><td>Emacro_not_found</td><td>Macro '%s' wasn't found.</td></tr>
+<tr><td>Emacro_redefined</td><td>Macro '%s' redefined. First defined at: %s:%d</td></tr>
+<tr><td>Ebroken_macro_declaration</td><td>Broken macro declaration.</td></tr>
+<tr><td>Einvalid_macro_param_name</td><td>Invalid macro parameter name.</td></tr>
+<tr><td>Emacro_param_not_found</td><td>Macro parameter '%s' wasn't found.%s</td></tr>
+<tr><td>Emacro_param_redefined</td><td>Macro parameter '%s' redefined</td></tr>
+<tr><td>Ebroken_macro_usage</td><td>Broken macro usage.</td></tr>
+<tr><td>Emacro_wrong_num_params</td><td>Wrong number of parameters to macro.</td></tr>
+<tr><td>Emisplaced_endmacro</td><td>Misplaced endmacro.</td></tr>
+<tr><td>Eunclosed_macro</td><td>Unclosed macro: '%s'.</td></tr>
+<tr><td>Emisplaced_elseif</td><td>Misplaced elseif.</td></tr>
+<tr><td>Eelseif_in_while</td><td>Can't use elseif in a while loop.</td></tr>
+<tr><td>Emisplaced_endif</td><td>Misplaced endif.</td></tr>
+<tr><td>Emisplaced_else</td><td>Misplaced else.</td></tr>
+<tr><td>Eelse_in_while_loop</td><td>Can't use else in a while loop.</td></tr>
+<tr><td>Eunclosed_if</td><td>Unclosed if statement.</td></tr>
+<tr><td>Eunknown_command</td><td>Unknown command.</td></tr>
+<tr><td>Ebroken_incbin</td><td>Broken incbin command.</td></tr>
+<tr><td>Erecursion_limit</td><td>Recursion limit reached.</td></tr>
+<tr><td>Ecant_be_main_file</td><td>This file may not be used as the main file.%s</td></tr>
+<tr><td>Eno_labels_here</td><td>Can't use non-static labels here.</td></tr>
+<tr><td>Einvalid_freespace_request</td><td>Invalid freespace request.</td></tr>
+<tr><td>Estatic_freespace_autoclean</td><td>A static freespace must be targeted by at least one autoclean.</td></tr>
+<tr><td>Estatic_freespace_growing</td><td>A static freespace may not grow.</td></tr>
+<tr><td>Eno_freespace_in_mapped_banks</td><td>No freespace found in the mapped banks. (Requested size: %s)</td></tr>
+<tr><td>Eno_freespace</td><td>No freespace found. (Requested size: %s)</td></tr>
+<tr><td>Eprot_not_at_freespace_start</td><td>PROT must be used at the start of a freespace block.</td></tr>
+<tr><td>Eprot_too_many_entries</td><td>Too many entries to PROT.</td></tr>
+<tr><td>Eautoclean_in_freespace</td><td>autoclean used in freespace.</td></tr>
+<tr><td>Eautoclean_label_at_freespace_end</td><td>Don't autoclean a label at the end of a freespace block, you'll remove some stuff you're not supposed to remove.</td></tr>
+<tr><td>Ebroken_autoclean</td><td>Broken autoclean command.</td></tr>
+<tr><td>Epulltable_without_table</td><td>Using pulltable when there is no table on the stack yet.</td></tr>
+<tr><td>Epad_in_freespace</td><td>pad does not make sense in a freespaced code.</td></tr>
+<tr><td>Epushpc_without_pullpc</td><td>pushpc without matching pullpc.</td></tr>
+<tr><td>Epullpc_without_pushpc</td><td>pullpc without matching pushpc.</td></tr>
+<tr><td>Epullpc_different_arch</td><td>pullpc in another architecture than the pushpc.</td></tr>
+<tr><td>Epullbase_without_pushbase</td><td>pullbase without matching pushbase.</td></tr>
+<tr><td>Einvalid_check</td><td>Invalid check command.</td></tr>
+<tr><td>Eassertion_failed</td><td>Assertion failed%s</td></tr>
+<tr><td>Eerror_command</td><td>error command%s</td></tr>
+<tr><td>Eunknown_variable</td><td>Unknown variable.</td></tr>
+<tr><td>Epushwarnings_without_pullwarnings</td><td>warnings push without matching warnings pull.</td></tr>
+<tr><td>Epullwarnings_without_pushwarnings</td><td>warnings pull without matching warnings push.</td></tr>
+<tr><td>Efailed_to_open_file_access_denied</td><td>Failed to open file '%s'. Access denied.</td></tr>
+<tr><td>Efailed_to_open_not_regular_file</td><td>Failed to open file '%s'. Not a regular file (did you try to use a directory?)</td></tr>
+<tr><td>Ebad_dp_base</td><td>The dp base should be page aligned (i.e. a multiple of 256), got %s</td></tr>
+<tr><td>Ebad_dp_optimize</td><td>Bad dp optimize value %s, expected: [none, ram, always]</td></tr>
+<tr><td>Ebad_address_optimize</td><td>Bad dp optimize value %s, expected: [default, ram, mirrors]</td></tr>
+<tr><td>Ebad_optimize</td><td>Bad optimize value %s, expected: [dp, address]</td></tr>
+<tr><td>Eduplicate_param_name</td><td>Duplicated parameter name: %s in creation of function %s</td></tr>
+<tr><td>Einvalid_alignment</td><td>Invalid alignment. Expected a power of 2.</td></tr>
+<tr><td>Ealignment_too_big</td><td>Requested alignment too large.</td></tr>
+<tr><td>Enegative_shift</td><td>Bitshift amount is negative.</td></tr>
+<tr><td>Emacro_not_varadic</td><td>Invalid use of %s, active macro is not variadic.</td></tr>
+<tr><td>Evararg_sizeof_nomacro</td><td>Invalid use of sizeof(...), no active macro.</td></tr>
+<tr><td>Emacro_wrong_min_params</td><td>Variadic macro call with too few parameters</td></tr>
+<tr><td>Evararg_out_of_bounds</td><td>Variadic macro parameter %s is out of bounds.%s</td></tr>
+<tr><td>Evararg_must_be_last</td><td>Variadic macro parameter must be the last parameter.</td></tr>
+<tr><td>Einvalid_global_label</td><td>Global label definition contains an invalid label [%s].</td></tr>
+<tr><td>Espc700_addr_out_of_range</td><td>Address %s out of range for instruction, valid range is 0000-1FFF</td></tr>
+<tr><td>Elabel_ambiguous</td><td>Label (%s) location is ambiguous due to straddling optimization border.</td></tr>
+<tr><td>Efeature_unavaliable_in_spcblock</td><td>This feature may not be used while an spcblock is active</td></tr>
+<tr><td>Eendspcblock_without_spcblock</td><td>Use of endspcblock without matching spcblock</td></tr>
+<tr><td>Emissing_endspcblock</td><td>Use of endspcblock without matching spcblock</td></tr>
+<tr><td>Espcblock_inside_struct</td><td>Can not start an spcblock while a struct is still open</td></tr>
+<tr><td>Espcblock_too_few_args</td><td>Too few args passed to spcblock</td></tr>
+<tr><td>Espcblock_too_many_args</td><td>Too many args passed to spcblock</td></tr>
+<tr><td>Eunknown_spcblock_type</td><td>Unknown spcblock format</td></tr>
+<tr><td>Ecustom_spcblock_missing_macro</td><td>Custom spcblock types must refer to a valid macro</td></tr>
+<tr><td>Espcblock_macro_doesnt_exist</td><td>Macro specified to custom spcblock was not found</td></tr>
+<tr><td>Eextra_spcblock_arg_for_type</td><td>Only custom spcblock type takes a fourth argument</td></tr>
+<tr><td>Espcblock_macro_must_be_varadic</td><td>Custom spcblock macros must be variadic</td></tr>
+<tr><td>Espcblock_macro_invalid_static_args</td><td>Custom spcblock macros must have three static arguments</td></tr>
+<tr><td>Espcblock_custom_types_incomplete</td><td>Custom spcblock types are not yet supported. One day.</td></tr>
+<tr><td>Einvalid_endspcblock_arg</td><td>Invalid argument to endspcblock: "%s"</td></tr>
+<tr><td>Eunknown_endspcblock_format</td><td>Unsupported endspcblock format. Currently supported formats are "endspcblock" and "endspcblock execute [label]"</td></tr>
+<tr><td>Einternal_error</td><td>An internal error occured (%s). This is a bug in Asar, please report it at https://github.com/RPGHacker/asar/issues, along with a patch that reproduces it if possible.</td></tr>
+<tr><td>Epushns_without_pullns</td><td>pushns without matching pullns.</td></tr>
+<tr><td>Epullns_without_pushns</td><td>pullns without matching pushns.</td></tr>
+<tr><td>Elabel_forward</td><td>The use of forward labels is not allowed in this context.</td></tr>
+<tr><td>Eundefined_char</td><td>'%s' is not defined in the character table</td></tr>
+<tr><td>Einvalid_utf8</td><td>Invalid text encoding detected. Asar expects UTF-8-encoded text. Please re-save this file in a text editor of choice using UTF-8 encoding.</td></tr>
+<tr><td>Ecmdl_utf16_to_utf8_failed</td><td>UTF-16 to UTF-8 string conversion failed: %s.</td></tr>
+<tr><td>Ebroken_command</td><td>Broken %s command. %s</td></tr>
+<tr><td>Eoob</td><td>Operation out of bounds: Requested index %d for object of size %d</td></tr>
+<tr><td>Eunclosed_vararg</td><td>Variadic macro parameter wasn't closed properly.</td></tr>
+<tr><td>Einvalid_depth_resolve</td><td>Invalid %s resolution depth: Trying to backwards-resolve a %s using %i '^', but current scope only supports up to %i '^'.</td></tr>
+<tr><td>Eplatform_paths</td><td>Platform-specific paths aren'supported. Please use platform-independent paths (use / instead of \\).</td></tr>
+<tr><td>Ebad_single_line_for</td><td>Single-line for loop not allowed here.</td></tr>
+<tr><td>Ebroken_for_loop</td><td>Broken for loop command: %s</td></tr>
+<tr><td>Emissing_org</td><td>Missing org or freespace command.</td></tr>
+<tr><td>Eunclosed_block_comment</td><td>Unclosed block comment.</td></tr>
+<tr><td>Ebad_addr_mode</td><td>This addressing mode is not valid for this instruction.</td></tr>
+<tr><td>Ebad_access_width</td><td>This addressing mode can accept %s arguments, but the provided argument is %d-bit.</td></tr>
+<tr><td>Elabel_before_if</td><td>Labels are not allowed before "%s" commands. Suggestion: move the label to a separate line.</td></tr>
+<tr><td>Ebad_type</td><td>Type error when evaluating math: expected %s, got %s</td></tr>
+<tr><td>Eargument_count</td><td>Wrong number of arguments. Expected %d, got %d</td></tr>
+</tbody>
+</table>
+</div>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="warning-list.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                            </a>
+
+                            <a rel="next prefetch" href="changelog.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="warning-list.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
+                    </a>
+
+                    <a rel="next prefetch" href="changelog.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/></svg></span>
+                    </a>
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-143a1b38.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+
+
+
+    </div>
+    </body>
+</html>
