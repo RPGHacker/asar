@@ -82,12 +82,9 @@ static bool evaluate_eq(math_val lhs, math_val rhs) {
 		return lhs.get_str() == rhs.get_str();
 	} else {
 		// both non strings: compare as numbers
-		if(lhs.m_type == math_val_type::floating || rhs.m_type == math_val_type::floating)
-			// one floating: compare as floats
-			return lhs.get_double() == rhs.get_double();
-		else
-			// both ints: compare as ints
-			return lhs.get_integer() == rhs.get_integer();
+		// compare as both types, to ensure rounding errors don't return things like 0x5555555555555555 == 0x5555555555555556+511.0
+		// (but omit integer compare if that'd overflow)
+		return lhs.get_double() == rhs.get_double() && (fabs(lhs.get_double()) > INT64_MAX || lhs.get_integer() == rhs.get_integer());
 	}
 }
 
