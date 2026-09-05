@@ -2624,7 +2624,7 @@ log10(x)</code></td>
 				<td><code class="65c816_asar">snestopc(address)
 pctosnes(address)</code></td>
 				<td>Functions for converting between SNES and PC addresses. Affected by the current <a href="#mappers">mapping mode</a>.</td>
-				<td><pre><code class="65c816_asar">print "SNES address $018000 in the current mapping mode is equivalent to PC address 0x",dec(snestopc($018000))</code></pre></td>
+				<td><pre><code class="65c816_asar">print "SNES address $018000 in the current mapping mode is equivalent to PC address 0x",hex(snestopc($018000))</code></pre></td>
 			</tr>
 			<tr>
 				<td><code class="65c816_asar">min(a, b)
