@@ -26,16 +26,13 @@ cachedfile * opencachedfile(string fname, bool should_error)
 
 	const char* current_file = get_current_file_name();
 
-	// RPG Hacker: Only using a combined path here because that should
-	// hopefully result in a unique string for every file, whereas
-	// fname could be a relative path, which isn't guaranteed to be unique.
-	// Note that this does not affect how we open the file - this is
-	// handled by the filesystem and uses our include paths etc.
-	string combinedname = filesystem->create_absolute_path(dir(current_file), fname);
+	// do not call filesystem->create_absolute_path() here - that requires file existence syscalls, largely defeating the point of the cache
+	// \x80 is impossible to have in a filename without Asar complaining about invalid utf8
+	string cache_key = dir(current_file) + "\x80" + fname;
 
 	for (int i = 0; i < numcachedfiles; i++)
 	{
-		if (cachedfiles[i].used && cachedfiles[i].filename == combinedname)
+		if (cachedfiles[i].used && cachedfiles[i].filename == cache_key)
 		{
 			cachedfilehandle = &cachedfiles[i];
 			break;
@@ -62,7 +59,7 @@ cachedfile * opencachedfile(string fname, bool should_error)
 			if (cachedfilehandle->filehandle != INVALID_VIRTUAL_FILE_HANDLE)
 			{
 				cachedfilehandle->used = true;
-				cachedfilehandle->filename = combinedname;
+				cachedfilehandle->filename = cache_key;
 				cachedfilehandle->filesize = filesystem->get_file_size(cachedfilehandle->filehandle);
 				cachedfileindex++;
 				// randomdude999: when we run out of cached files, just start overwriting ones from the start
