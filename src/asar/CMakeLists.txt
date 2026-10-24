@@ -3,11 +3,19 @@
 
 cmake_minimum_required(VERSION 3.13.0...3.31.0)
 
-option(ASAR_GEN_EXE "Build Asar standalone application" ON)
-option(ASAR_GEN_DLL "Build Asar shared library" ON)
-option(ASAR_GEN_LIB "Build Asar static library" ON)
+if(EMSCRIPTEN)
+	set(GEN_DEFAULTS OFF)
+	set(USE_THREADS_DEF OFF)
+else()
+	set(GEN_DEFAULTS ON)
+	set(USE_THREADS_DEF ON)
+endif()
+
+option(ASAR_GEN_EXE "Build Asar standalone application" ${GEN_DEFAULTS})
+option(ASAR_GEN_DLL "Build Asar shared library" ${GEN_DEFAULTS})
+option(ASAR_GEN_LIB "Build Asar static library" ${GEN_DEFAULTS})
 option(ASAR_COVERAGE "Build Asar with coverage tracking support" OFF)
-option(ASAR_USE_THREADS "Run Asar in a new thread to alleviate stack usage problems" ON)
+option(ASAR_USE_THREADS "Run Asar in a new thread to alleviate stack usage problems" ${USE_THREADS_DEF})
 set(MSVC_LIB_TYPE "" CACHE STRING "In MSVC, set the type of the runtime library: options are D for dynamic and T for static")
 
 
@@ -246,6 +254,13 @@ if(WIN32)
 
 		"${CMAKE_CURRENT_SOURCE_DIR}/res/windows/asar_lib.rc"
 	)
+elseif(EMSCRIPTEN)
+	list(
+		APPEND ASAR_SHARED_SOURCE_FILES
+
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/file-helpers-null.cpp"
+		"${CMAKE_CURRENT_SOURCE_DIR}/platform/emscripten-bindings.cpp"
+	)
 elseif(UNIX)
 	# Linux-specific files
 	list(
@@ -364,6 +379,50 @@ endif()
 
 
 
+
+# Define emscripten library
+
+if (EMSCRIPTEN)
+	# emscripten is Good Software, so i apparently need to use add_executable
+	# to define a fucking library
+	add_executable(
+		asar-wasm
+		"${CMAKE_CURRENT_SOURCE_DIR}/interface-lib.cpp"
+
+		${ASAR_SHARED_SOURCE_FILES}
+		${ASAR_LIB_RESOURCE_FILES}
+	)
+	target_compile_definitions(asar-wasm PRIVATE "ASAR_STATIC")
+	set_asar_shared_properties(asar-wasm "D" FALSE)
+
+	set_target_properties(asar-wasm
+		PROPERTIES
+		OUTPUT_NAME "asar"
+		ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/lib"
+		LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/../dll-bindings/internal/asar_mod.js"
+	)
+
+	target_compile_options(asar-wasm PRIVATE
+		-fwasm-exceptions
+	)
+	target_link_options(asar-wasm PRIVATE
+		-fwasm-exceptions
+		# not sure if 16M stack is a good idea in wasm........
+		-sSTACK_SIZE=16777216
+		-sALLOW_MEMORY_GROWTH
+		-sMODULARIZE
+		-sEXPORT_NAME=Asar
+		-sEXPORT_ES6
+		-sDEFAULT_LIBRARY_FUNCS_TO_INCLUDE=stackAlloc,stackSave,stackRestore,$stringToUTF8OnStack,$lengthBytesUTF8,$stringToUTF8,$writeArrayToMemory,$UTF8ToString
+		-sEXPORTED_FUNCTIONS=_malloc,_free
+		-sEXPORT_KEEPALIVE=0
+		--post-js "${CMAKE_CURRENT_SOURCE_DIR}/../dll-bindings/internal/asar_mod.js"
+		--closure 1
+		#-sASSERTIONS
+	)
+endif()
 
 
 # Define a pkgconfig file

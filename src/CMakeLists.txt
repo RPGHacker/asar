@@ -9,4 +9,6 @@ project(asar-all)
 option(ASAR_USE_SANITIZER "Build Asar with ASan and UBSan" OFF)
 
 add_subdirectory(asar)
-add_subdirectory(tests)
+if(NOT(EMSCRIPTEN))
+	add_subdirectory(tests)
+endif()

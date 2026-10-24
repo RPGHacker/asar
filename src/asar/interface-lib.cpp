@@ -9,15 +9,18 @@
 #include <algorithm>
 
 #if defined(CPPCLI)
-#define EXPORT extern "C"
+#  define EXPORT extern "C"
 #elif defined(_WIN32)
-#ifdef ASAR_SHARED
-#define EXPORT extern "C" __declspec(dllexport)
-#elif defined(ASAR_STATIC)
-#define EXPORT extern "C"
-#endif
+#  ifdef ASAR_SHARED
+#    define EXPORT extern "C" __declspec(dllexport)
+#  elif defined(ASAR_STATIC)
+#    define EXPORT extern "C"
+#  endif
+#elif defined(__EMSCRIPTEN__)
+#  include <emscripten.h>
+#  define EXPORT extern "C" EMSCRIPTEN_KEEPALIVE
 #else
-#define EXPORT extern "C" __attribute__ ((visibility ("default")))
+#  define EXPORT extern "C" __attribute__ ((visibility ("default")))
 #endif
 
 static autoarray<const char *> prints;
@@ -611,6 +614,7 @@ EXPORT int asar_getlabelval(const char * name)
 
 /* $EXPORT$
  * Get the value of a define.
+ * If the define does not exist, returns empty string.
  */
 EXPORT const char * asar_getdefine(const char * name)
 {
@@ -675,6 +679,7 @@ EXPORT double asar_math(const char * math_, const char ** error)
 	ismath=true;
 	initmathcore();
 	double rval=0;
+	*error = nullptr;
 	try
 	{
 		rval = parse_math_expr(math_)->evaluate().get_double();
