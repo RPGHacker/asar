@@ -27,6 +27,16 @@ target_link_libraries(YourTarget PUBLIC asar-static)
 ```
 to be able to include the header files. It is also recommended to turn off every build in target in asar except the static one using the appropriate CMake options. You will need to make sure that your project has an Asar compatible license.
 
+## Asar WebAssembly
+
+Asar can be built with Emscripten to run in the browser (or any other WASM runtime I suppose). Install the Emscripten toolchain, then run
+
+`emcmake cmake -S src -B build -DCMAKE_BUILD_TYPE=MinSizeRel && make -C build`
+
+(or basically any other CMake incantation, just invoke it via `emcmake`). This will build `asar/lib/asar.wasm` and `asar/lib/asar.js`. Put both files on your server, then import `asar.js`, which will provide an API described in `src/dll-bindings/asar.d.ts`. (It must be loaded as an ES6 module; if you don't want that then remove `-sEXPORT_ES6` in Asar's CMakeLists.txt.)
+
+Asar relies on WebAssembly Exception Handling, which is supported in browsers since around 2022.
+
 ## Folder layout
 * `docs` contains the source of the manual and changelog.
   (You can view an online version of the manual [here](https://rpghacker.github.io/asar/manual/) and an online version of the changelog [here](https://rpghacker.github.io/asar/changelog/)).
