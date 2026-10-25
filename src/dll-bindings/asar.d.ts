@@ -15,7 +15,7 @@ export type PatchParams = {
 	std_define_file?: string,
 	warning_overrides?: {[warnid: string]: boolean},
 	memory_files?: {[path: string]: Uint8Array | string},
-	override_checksum?: boolean,
+	generate_checksum?: boolean,
 	full_call_stack?: boolean,
 };
 

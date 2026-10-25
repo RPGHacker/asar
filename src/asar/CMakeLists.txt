@@ -259,7 +259,6 @@ elseif(EMSCRIPTEN)
 		APPEND ASAR_SHARED_SOURCE_FILES
 
 		"${CMAKE_CURRENT_SOURCE_DIR}/platform/generic/file-helpers-null.cpp"
-		"${CMAKE_CURRENT_SOURCE_DIR}/platform/emscripten-bindings.cpp"
 	)
 elseif(UNIX)
 	# Linux-specific files
