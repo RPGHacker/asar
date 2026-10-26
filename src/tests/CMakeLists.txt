@@ -87,7 +87,7 @@ set(CXX_EXTENSIONS OFF)
 add_custom_target(run-tests)
 set_property(TARGET run-tests PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 
-if(ASAR_GEN_DLL_TEST)
+if(ASAR_GEN_DLL_TEST AND NOT(EMSCRIPTEN))
 	add_executable(newtest
 		"${CMAKE_CURRENT_SOURCE_DIR}/newtest.cpp"
 		"${CMAKE_CURRENT_SOURCE_DIR}/../dll-bindings/asardll.c"
@@ -167,4 +167,12 @@ if(ASAR_GEN_DLL_TEST)
 		add_dependencies(run-tests run-cs-interface-test)
 		set_property(TARGET run-cs-interface-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 	endif()
+endif()
+
+if(ASAR_GEN_DLL_TEST AND EMSCRIPTEN)
+	add_custom_target(run-wasm-test
+		node "${CMAKE_CURRENT_SOURCE_DIR}/wasm-api-test.js" "$<TARGET_FILE:asar-wasm>"
+		VERBATIM)
+	add_dependencies(run-tests run-wasm-test)
+	set_property(TARGET run-wasm-test PROPERTY EXCLUDE_FROM_DEFAULT_BUILD TRUE)
 endif()

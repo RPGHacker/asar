@@ -68,15 +68,13 @@ export interface AsarInterface {
 	apiversion(): number;
 
 	// Clears out all errors, warnings and printed statements, and clears the
-	// file cache. Not really useful, since asar_patch() already does this.
+	// file cache. Not really useful, since patch() already does this.
 	reset(): boolean;
 
 	// Apply a patch. See documentation of PatchParams for options.
-	patch(options: PatchParams): {
-		ok: boolean,
-		// null if ok==false
-		rom_data: Uint8Array | null,
-	};
+	patch(options: PatchParams):
+		{ok: true, rom_data: Uint8Array} |
+		{ok: false, rom_data: null};
 	// Returns the maximum possible size of the output ROM from patch().
 	maxromsize(): number;
 
@@ -106,7 +104,7 @@ export interface AsarInterface {
 	// (no namespaces), and has access to all functions and labels from the last
 	// call to patch(). Returns pair of [result, error_msg], exactly one of
 	// which will be null.
-	math(math_str: string): ([number, null] | [null, string]);
+	math(math_str: string): [number, null] | [null, string];
 
 	// Get a list of all the blocks written to the ROM by the last patch().
 	getwrittenblocks(): {
