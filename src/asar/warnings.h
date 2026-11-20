@@ -37,6 +37,17 @@ WRN(warn_feature_deprecated, "DEPRECATION NOTIFICATION: Feature \"%s\" is deprec
 WRN(warn_invalid_warning_id, "Warning '%s' (passed to %s) doesn't exist.", true)
 WRN(warn_byte_order_mark_utf8, "UTF-8 byte order mark detected and skipped.", true)
 WRN(warn_for_loop_define, "For loop variable name underwent define expansion - this is very likely not what you wanted. Loop variables are specified without !. Remove the !, or use !{name} to silence this warning.", true)
+WRN(warn_cx4_a_operand_reads_zero, "Register A reads as 0 when used as an operand. Use #$00 if that is intended, or copy A to another register with ST first.", true)
+WRN(warn_cx4_write_ignored, "Writes to %s are ignored, so this ST does nothing.", true)
+WRN(warn_cx4_bus_write_ignores_value, "A bus write through %s sends MDR, not the stored value. Use ST %s, MDR.", true)
+WRN(warn_cx4_register_low_bits, "%s only uses the low 4 bits of the register code, so %s ($%s) acts as R%s. Write R%s if that is intended.", true)
+WRN(warn_cx4_bus_read_reads_zero, "Reading %s returns 0 and starts a bus read into MDR. Use LD MDR, %s, and read MDR after WAIT, instead.", true)
+WRN(warn_cx4_last_word_of_page, "This instruction is at the last word of a 512-byte page. The Cx4 switches to page P (or stops) before running it, so execution doesn't go on in the next page.", true)
+WRN(warn_cx4_branch_last_word_of_page, "%s is at the last word of a 512-byte page. The Cx4 switches to page P (or stops) before running it.%s", true)
+WRN(warn_cx4_skip_second_to_last_word_of_page, "%s is at the second-to-last word of a 512-byte page. If it skips, the Cx4 switches to page P, or stops if it's in cache page 1.", true)
+WRN(warn_cx4_constant_shift_count, "Shifting by %s always shifts by 0. A register shift count only uses the low 5 bits of the value ($%s), and a count above 24 acts as 0.", true)
+WRN(warn_cx4_shift_count_above_24, "Shift count %s is above 24, so it shifts by 0.", true)
+WRN(warn_cx4_mach_write_truncated, "A store to MACH only keeps bits 0-7 of the value, and clears bits 32-47 of the multiply result.", true)
 
 #undef WRN
 #define throw_warning(whichpass, id, ...) id(whichpass, ## __VA_ARGS__)

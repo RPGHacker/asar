@@ -3,7 +3,7 @@
 #include "assocarr.h"
 #include "autoarray.h"
 
-enum { arch_65816, arch_spc700, arch_superfx };
+enum { arch_65816, arch_spc700, arch_superfx, arch_cx4 };
 extern int arch;
 
 struct snes_struct {

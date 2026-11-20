@@ -48,6 +48,7 @@ ZERO_CHECK.*
 cmake_install.cmake
 Project.sln
 CMakeCache.txt
+src/tests/csharp-test/obj/
 
 # Test folders
 tests_tmp_dll/
