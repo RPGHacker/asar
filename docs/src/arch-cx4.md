@@ -38,8 +38,9 @@ Each `IR` constant can also be written as `#` followed by its 6-digit value:
 
 ## Syntax notes
 
+- **Instructions with commas.** The convention is always `<dest>, <source>`.
 - **Shifted A.** `CMP`, `CMPR`, `ADD`, `SUB`, `SUBR`, `XNOR`, `XOR`, `AND` and `OR` can shift A left before the operation: `A`, `A << 1`, `A << 8` or `A << 16`. Writing `A << 0` is the same as just `A`. The shift count may be a math expression, but it must evaluate to one of these values.
-- **Reversed operations.** `CMPR` and `SUBR` compute the `operand-A` of `A-operand`, and are written with A on the right: `SUBR R0, A << 1`.
+- **Reversed operations.** `CMPR` and `SUBR` compute the `operand-A` instead of `A-operand`, and are written with A on the right: `SUBR R0, A << 1`.
 - **Shifts.** `SHR`, `ASR`, `ROR` and `SHL` take a shift count of `#0` to `#31`.
 - **Branches and jumps.** `BRA`/`BEQ`/`BCS`/`BMI`/`BVS` jump to the label, `JSR`/`JEQ`/`JCS`/`JMI`/`JVS` call the label (use `RTS` to return). Prefix the target with a `P:` for a far branch or jump, which goes to the page held in the `P` register at the moment (e.g. `BRA P:mylabel`).
 - **Cx4 RAM.** `RDRAM` and `WRRAM` always needs to specify `RAMB+0`, `RAMB+1` or `RAMB+2`. The address is either `A`, or `DPR+` with an offset; If you don't want to specify an offset for DPR, you must use `DPR+0`. The `LD` instruction must address `RAMB` as such; it loads all 24 bits of RAMB at once.

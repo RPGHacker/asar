@@ -486,6 +486,7 @@ namespace {
 
 	// Register A ($00) reads as the value 0 when it's the register operand.
 	// This is an unintuitive side effect and the user should be warned about it.
+	// Pending hardware confirmation.
 	void warn_if_a_operand(int reg) {
 		if (reg == (int)special_purpose_registers::a)
 		{
@@ -496,6 +497,7 @@ namespace {
 	// BUSROM ($2E) or BUSRAM ($2F) should really only be read with
 	// an LD MDR, BUSROM or LD MDR, BUSRAM.
 	// In all other cases, it reads as value 0 and starts a bus read
+	// Pending hardware confirmation.
 	void warn_if_bus_read(int reg) {
 		if (reg == (int)special_purpose_registers::busrom)
 		{
@@ -678,7 +680,7 @@ namespace {
 		return true;
 	}
 
-	// Opcodes that can shift A: CMP ADD SUB XNOR XOR AND OR, with a register operand
+	// Opcodes that can shift A: CMP ADD SUB XNOR XOR AND OR, with an immediate operand
 	// Reversed versions also: CMPR SUBR, uses flag_reversed to switch dest, src
 	bool parse_shifted_a_imm(const char* par, const mnem_kind_info& info, parse_result& out) {
 		string first, second;
@@ -895,14 +897,15 @@ namespace {
 		return true;
 	}
 
-	// RDROM. It always has A as an operand
+	// RDROM with A as an operand
+	// i.e. RDROM A
 	bool parse_rom_a(const char* par, const mnem_kind_info& info, parse_result& out) {
 		string operand = par;
 		strip_whitespace(operand);
 		return is_word(operand, "a");
 	}
 
-	// RDROM. It takes a 10-bit data ROM address ($000-$3FF)
+	// RDROM with a 10-bit data ROM address ($000-$3FF) as an operand
 	// e.g. RDROM $123
 	bool parse_rom_abs(const char* par, const mnem_kind_info& info, parse_result& out) {
 		string operand = par;
@@ -933,7 +936,7 @@ namespace {
 	// ST instruction that can write to any register. The source is A or MDR.
 	// Writes to A and IR0-IR15 are ignored, pending hardware confirmation.
 	// Writing A to BUSROM and BUSRAM ignores the value in A; It writes MDR to the address
-	// in MAR, pending hardware confirmation.
+	// in MAR, also pending hardware confirmation.
 	bool parse_store(const char* par, const mnem_kind_info& info, parse_result& out) {
 		string first, second;
 		if (!split_operands(par, first, second))
@@ -1023,8 +1026,8 @@ namespace {
 	}
 
 	// Moving past the last word of a page switches to page P,
-	//  or stops on the second cache page.
-	// Only STOP doesSo at the last word, only STOP does what it says.
+	// or stops on the second cache page.
+	// So at the last word, only STOP does what it says.
 	// Pending hardware confirmation.
 	void warn_if_last_word_of_page(const string& mnem, const mnem_kind_info& info, const parse_result& res) {
 		if ((snespos & 0x1FF) != 0x1FE || info.opcode == 0xFC) // 0xFC: STOP
