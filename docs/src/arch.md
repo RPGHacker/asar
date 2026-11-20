@@ -7,6 +7,7 @@ Asar supports a number of different target architectures for code compilation. T
 - `65816`: Compiles code for the 65C816, used by the main SNES CPU and by SA-1. This is the default architecture. It supports the syntax recommended by WDC, with the exception of the `MVN` and `MVP` instructions. See the instruction list page for details.
 - `spc700`: Compiles code for the SPC700 CPU, the audio coprocessor in the SNES. Follows the format the SNES Dev Manual recommends, with the exception of `mov (x)+,a` and `mov a,(x)+`, which are moved to `mov (x+),a` and `mov a,(x+)`. See also the [`spcblock`](#spcblock) section for an alternative way of assembling SPC700 code.
 - `superfx`: Compiles code for the SuperFX coprocessor.
+- `cx4`: Compiles code for the Cx4 coprocessor.
 
 All of Asar's features should be compatible with all of the supported target architectures, but it's not recommended to mix labels between different architectures as that will lead to undefined behavior. Opcodes in Asar are case-insensitive, which means that `LDA` and `lda` will be treated equally.
 

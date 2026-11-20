@@ -215,6 +215,9 @@ static bool asblock_pick(const string& firstword, const char* par)
 		char* words[] = { dup.raw(), duppar.raw() };
 		return asblock_superfx(words, *par ? 2 : 1);
 	}
+	if (arch == arch_cx4) {
+		return asblock_cx4(firstword, par);
+	}
 	return true;
 }
 
@@ -1980,8 +1983,9 @@ void cmd_arch(const char* par) {
 	if(in_spcblock) throw_err_block(0, err_feature_unavaliable_in_spcblock);
 	if (!stricmp(par, "65816")) { arch=arch_65816; return; }
 	if (!stricmp(par, "spc700")) { arch=arch_spc700; return; }
-	if (!stricmp(par, "superfx")) { arch=arch_superfx; return; }
-	throw_err_block(0, err_broken_command, "arch", "Invalid architecture, expected one of 65816, spc700, superfx");
+	if (!stricmp(par, "superfx")) { arch = arch_superfx; return; }
+	if (!stricmp(par, "cx4")) { arch = arch_cx4; return; }
+	throw_err_block(0, err_broken_command, "arch", "Invalid architecture, expected one of 65816, spc700, superfx, cx4");
 }
 
 void cmd_braces(const char* par) {

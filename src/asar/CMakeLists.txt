@@ -185,6 +185,7 @@ list(
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-65816.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-spc700.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/arch-superfx.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/arch-cx4.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/assembleblock.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/crc32.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/libcon.cpp"

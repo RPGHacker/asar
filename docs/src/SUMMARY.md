@@ -8,6 +8,7 @@
   - [List of 65816 Instructions](./arch-65816.md)
   - [List of SPC700 Instructions](./arch-spc700.md)
   - [List of SuperFX Instructions](./arch-superfx.md)
+  - [List of Cx4 Instructions](./arch-cx4.md)
 - [Mapping Modes](./mapping-modes.md)
 - [Compatibility Settings](./compat.md)
 - [Code Formatting and Syntax](./formatting.md)
